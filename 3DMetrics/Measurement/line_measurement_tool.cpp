@@ -3,7 +3,7 @@
 
 LineMeasurementTool::LineMeasurementTool():MeasurementTool()
 {
-    m_point_size = 0.01;
+    m_point_size = 0.5;
 }
 
 LineMeasurementTool::~LineMeasurementTool()
@@ -21,11 +21,10 @@ void LineMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
         m_measurement_counter++;
 
         // point
-        QString point_number = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
+        QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
+        osg::Vec4 color(1.0f,0.0f,0.0f,1.0f);
+        drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
 
-        osg::ref_ptr<osg::ShapeDrawable> shape_point_drawable = new osg::ShapeDrawable(new osg::Sphere(m_measurement_pt->back(),m_point_size));
-        _measurement_geode->addDrawable(shape_point_drawable);
-        m_point_qmap[point_number] = shape_point_drawable;    
 
     }
     else if(m_measurement_pt->size() >= 2)
@@ -33,41 +32,17 @@ void LineMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
 
         // points
 
-        QString point_number = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
+        QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
 
-        osg::ref_ptr<osg::ShapeDrawable> shape_point_drawable = new osg::ShapeDrawable(new osg::Sphere(m_measurement_pt->back(),m_point_size));
-        _measurement_geode->addDrawable(shape_point_drawable);
-
-        m_point_qmap[point_number] = shape_point_drawable;
-
+        osg::Vec4 color(1.0f,0.0f,0.0f,1.0f);
+        drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
 
         // lines
 
         m_lines_counter++;
 
-        int current_point = (int) m_measurement_pt->size();
-
-        QString line_number = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size()-1);
-
-        osg::DrawElementsUInt* line =
-                new osg::DrawElementsUInt( osg::PrimitiveSet::LINES, 0 );
-        line->push_back(current_point-2);
-        line->push_back(current_point-1);
-
-        osg::Geometry* geoPoints = new osg::Geometry;
-        geoPoints->setVertexArray(m_measurement_pt);
-        geoPoints->addPrimitiveSet(line);
-
-
-        osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
-        tabCouleur->push_back(osg::Vec4d(1.0f, 0.0f, 0.0f, 1.0f)); //red
-        geoPoints->setColorArray(tabCouleur);
-
-        geoPoints->setColorBinding(osg::Geometry::BIND_OVERALL);
-
-        _measurement_geode->addDrawable(geoPoints);
-
-        m_point_qmap[line_number] = geoPoints;
+        QString line_name = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size()-1);
+        drawJunctionLineWithLastPoint(_measurement_geode, line_name);
 
     }
 
@@ -93,15 +68,15 @@ void LineMeasurementTool::removeMeasurement(osg::ref_ptr<osg::Geode> &_measureme
     for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
     {
         QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
-        _measurement_geode->removeDrawable(m_point_qmap[point_number]);
-        m_point_qmap.remove(point_number);
+        _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+        m_geo_drawable_map.remove(point_number);
     }
 
     for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
     {
         QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-        _measurement_geode->removeDrawable(m_point_qmap[line_number]);
-        m_point_qmap.remove(line_number);
+        _measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
+        m_geo_drawable_map.remove(line_number);
     }
 
 

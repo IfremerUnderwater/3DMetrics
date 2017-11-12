@@ -13,7 +13,7 @@ DEFINES += WITH_OSG
 
 QMAKE_CXXFLAGS += -std=c++11
 
-TARGET = TestIHM
+TARGET = 3DMetrics
 TEMPLATE = app
 
 

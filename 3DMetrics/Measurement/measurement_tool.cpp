@@ -41,16 +41,16 @@ void MeasurementTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement
         {
             QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
 
-            if(!_measurement_geode->containsDrawable(m_point_qmap[point_number]))
-                _measurement_geode->addDrawable(m_point_qmap[point_number]);
+            if(!_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+                _measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
         }
 
         for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
         {
             QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
 
-            if(!_measurement_geode->containsDrawable(m_point_qmap[line_number]))
-                _measurement_geode->addDrawable(m_point_qmap[line_number]);
+            if(!_measurement_geode->containsDrawable(m_geo_drawable_map[line_number]))
+                _measurement_geode->addDrawable(m_geo_drawable_map[line_number]);
         }
     }
     else
@@ -59,16 +59,16 @@ void MeasurementTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement
         {
             QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
 
-            if(_measurement_geode->containsDrawable(m_point_qmap[point_number]))
-                _measurement_geode->removeDrawable(m_point_qmap[point_number]);
+            if(_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+                _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
         }
 
         for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
         {
             QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
 
-            if(_measurement_geode->containsDrawable(m_point_qmap[line_number]))
-                _measurement_geode->removeDrawable(m_point_qmap[line_number]);
+            if(_measurement_geode->containsDrawable(m_geo_drawable_map[line_number]))
+                _measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
         }
     }
 }
@@ -104,7 +104,7 @@ void MeasurementTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
 
         _measurement_geode->addDrawable(geoPoints);
 
-        m_point_qmap[line_number] = geoPoints;
+        m_geo_drawable_map[line_number] = geoPoints;
 
         m_meas_points_number[m_measurement_counter] = m_measurement_pt->size();
 
@@ -117,7 +117,7 @@ void MeasurementTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
 
 void MeasurementTool::resetModelData()
 {
-    m_point_qmap.clear();
+    m_geo_drawable_map.clear();
     m_meas_points_number.clear();
     m_measurement_counter=0;
     m_measur_type.clear();
@@ -155,6 +155,58 @@ QMap<int,int> MeasurementTool::getMeasurPtsNumber()
 QMap<int,int> MeasurementTool::getMeasurLinesNumber()
 {
     return m_meas_lines_number;
+}
+
+void MeasurementTool::drawPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name)
+{
+    // point
+    osg::Geometry* shape_point_drawable = new osg::Geometry();
+    osg::Vec3Array* vertices = new osg::Vec3Array;
+    vertices->push_back(_point);
+
+    // pass the created vertex array to the points geometry object.
+    shape_point_drawable->setVertexArray(vertices);
+
+    osg::Vec4Array* colors = new osg::Vec4Array;
+    // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
+    colors->push_back(_color);
+
+    // pass the color array to points geometry, note the binding to tell the geometry
+    // that only use one color for the whole object.
+    shape_point_drawable->setColorArray(colors, osg::Array::BIND_OVERALL);
+
+    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+    // in this case is POINTS (which has the same value GL_POINTS), the second
+    // parameter is the index position into the vertex array of the first point
+    // to draw, and the third parameter is the number of points to draw.
+    shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
+
+    _measurement_geode->addDrawable(shape_point_drawable);
+    m_geo_drawable_map[_point_name] = shape_point_drawable;
+}
+
+void MeasurementTool::drawJunctionLineWithLastPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, QString &line_name)
+{
+    int current_point = (int) m_measurement_pt->size();
+
+    osg::DrawElementsUInt* line =
+            new osg::DrawElementsUInt( osg::PrimitiveSet::LINES, 0 );
+    line->push_back(current_point-2);
+    line->push_back(current_point-1);
+
+    osg::Geometry* geoPoints = new osg::Geometry;
+    geoPoints->setVertexArray(m_measurement_pt);
+    geoPoints->addPrimitiveSet(line);
+
+
+    osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
+    tabCouleur->push_back(osg::Vec4d(1.0f, 0.0f, 0.0f, 1.0f)); //red
+    geoPoints->setColorArray(tabCouleur,osg::Array::BIND_OVERALL);
+
+    _measurement_geode->addDrawable(geoPoints);
+
+    m_geo_drawable_map[line_name] = geoPoints;
 }
 
 

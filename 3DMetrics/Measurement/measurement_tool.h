@@ -73,13 +73,18 @@ public:
     QMap<int,int> getMeasurPtsNumber();
     QMap<int,int> getMeasurLinesNumber();
 
+    // draw a point with given color in the provided geode
+    void drawPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
+    // Join last picked point with the previous one
+    void drawJunctionLineWithLastPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, QString &line_name);
+
 protected:
     osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;
     QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_history_qmap;
     int m_measurement_counter;
 
     // contains points and lines
-    QMap<QString, osg::ref_ptr<osg::Drawable> > m_point_qmap;
+    QMap<QString, osg::ref_ptr<osg::Drawable> > m_geo_drawable_map;
 
     //use to delete or create measurements
     QMap<int,QString> m_measur_qmap;

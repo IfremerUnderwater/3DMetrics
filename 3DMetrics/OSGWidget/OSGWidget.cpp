@@ -40,6 +40,113 @@
 #include <osg/Referenced>
 #include <osg/LineSegment>
 #include <osg/Geometry>
+#include <osg/Point>
+#include <osg/LineWidth>
+
+
+class KeyboardEventHandler : public osgGA::GUIEventHandler
+{
+public:
+
+    KeyboardEventHandler(osg::StateSet* stateset):
+        _stateset(stateset)
+    {
+        _point = new osg::Point;
+        _point->setDistanceAttenuation(osg::Vec3(0.0,0.0000,0.05f));
+        _point->setSize(90);
+        _stateset->setAttribute(_point.get());
+
+        _line_width = new osg::LineWidth();
+        _line_width->setWidth(2.0);
+        _stateset->setAttribute(_line_width.get());
+
+    }
+
+    virtual bool handle(const osgGA::GUIEventAdapter& ea,osgGA::GUIActionAdapter&)
+    {
+        switch(ea.getEventType())
+        {
+        case(osgGA::GUIEventAdapter::KEYDOWN):
+        {
+            if (ea.getKey()=='+' || ea.getKey()==osgGA::GUIEventAdapter::KEY_KP_Add)
+            {
+                changePointSize(1.0f);
+                changeLineWidth(1.0f);
+                return true;
+            }
+            else if (ea.getKey()=='-' || ea.getKey()==osgGA::GUIEventAdapter::KEY_KP_Subtract)
+            {
+                changePointSize(-1.0f);
+                changeLineWidth(-1.0f);
+                return true;
+            }
+            else if (ea.getKey()=='<')
+            {
+                changePointAttenuation(1.1f);
+                return true;
+            }
+            else if (ea.getKey()=='>')
+            {
+                changePointAttenuation(1.0f/1.1f);
+                return true;
+            }
+            break;
+        }
+        default:
+            break;
+        }
+        return false;
+    }
+
+
+    float getPointSize() const
+    {
+        return _point->getSize();
+    }
+
+    float getLineWidth() const
+    {
+        return _line_width->getWidth();
+    }
+
+    void setPointSize(float psize)
+    {
+        if (psize>0.0)
+        {
+            _point->setSize(psize);
+        }
+        std::cout<<"Point size "<<psize<<std::endl;
+    }
+
+    void setLineWidth(float pwidth)
+    {
+        if (pwidth>0.0)
+        {
+            _line_width->setWidth(pwidth);
+        }
+        std::cout<<"Line width "<<pwidth<<std::endl;
+    }
+
+    void changePointSize(float delta)
+    {
+        setPointSize(getPointSize()+delta);
+    }
+
+    void changeLineWidth(float delta)
+    {
+        setLineWidth(getLineWidth()+delta);
+    }
+
+    void changePointAttenuation(float scale)
+    {
+        _point->setDistanceAttenuation(_point->getDistanceAttenuation()*scale);
+    }
+
+    osg::ref_ptr<osg::StateSet> _stateset;
+    osg::ref_ptr<osg::Point>    _point;
+    osg::ref_ptr<osg::LineWidth> _line_width;
+
+};
 
 
 
@@ -79,6 +186,7 @@ OSGWidget::OSGWidget( QWidget* parent,
     view->setCamera( camera );
 
     view->addEventHandler( new osgViewer::StatsHandler );
+    view->addEventHandler(new KeyboardEventHandler(view->getCamera()->getOrCreateStateSet()));
 
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
     //manipulator->setAllowThrow( false );
@@ -365,7 +473,7 @@ QMap<int, osg::ref_ptr<osg::Vec3dArray> > OSGWidget::getPointsCoordinates(QStrin
 {
     if(_measur_type == "Distance measurement")
     {
-         return m_line_measurement_tool.getMeasurementsHistoryQmap();
+        return m_line_measurement_tool.getMeasurementsHistoryQmap();
     }
     else if(_measur_type == "Surface measurement")
     {
@@ -383,7 +491,7 @@ QMap<int,int> OSGWidget::getMeasurPtsNumber(QString _measur_type)
 {
     if(_measur_type == "Distance measurement")
     {
-         return m_line_measurement_tool.getMeasurPtsNumber();
+        return m_line_measurement_tool.getMeasurPtsNumber();
     }
     else if(_measur_type == "Surface measurement")
     {
@@ -401,7 +509,7 @@ QMap<int,int> OSGWidget::getMeasurLinesNumber(QString _measur_type)
 {
     if(_measur_type == "Distance measurement")
     {
-         return m_line_measurement_tool.getMeasurLinesNumber();
+        return m_line_measurement_tool.getMeasurLinesNumber();
     }
     else if(_measur_type == "Surface measurement")
     {
