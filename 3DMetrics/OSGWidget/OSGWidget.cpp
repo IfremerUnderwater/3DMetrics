@@ -53,11 +53,11 @@ public:
     {
         _point = new osg::Point;
         _point->setDistanceAttenuation(osg::Vec3(0.0,0.0000,0.05f));
-        _point->setSize(90);
+        _point->setSize(30);
         _stateset->setAttribute(_point.get());
 
         _line_width = new osg::LineWidth();
-        _line_width->setWidth(2.0);
+        _line_width->setWidth(4.0);
         _stateset->setAttribute(_line_width.get());
 
     }
@@ -286,9 +286,14 @@ void OSGWidget::setClearColor(double r_p, double g_p, double b_p, double alpha_p
 
 void OSGWidget::clearSceneData()
 {
+
     osgViewer::View *view = m_viewer->getView(0);
+    //view->getDatabasePager()->cancel();
+    //view->getDatabasePager()->clear();
     view->setSceneData( 0 );
 
+    m_loadedModel->unref();
+    m_group->unref();
     m_loadedModel = NULL;
     m_group = NULL;
     m_measurement_geode = NULL;
@@ -301,6 +306,8 @@ void OSGWidget::clearSceneData()
 
     m_interest_point_tool.resetModelData();
     m_interest_point_tool.resetInterestPointData();
+
+
 
     // Allocate group and measurement for next model
     m_group = new osg::Group;

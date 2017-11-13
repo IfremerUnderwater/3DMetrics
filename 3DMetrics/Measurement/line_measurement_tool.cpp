@@ -31,7 +31,6 @@ void LineMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
     {
 
         // points
-
         QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
 
         osg::Vec4 color(1.0f,0.0f,0.0f,1.0f);

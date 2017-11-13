@@ -21,7 +21,7 @@ void MeasurementTool::pushNewPoint(osg::ref_ptr<osg::Geode> & _measurement_geode
 
     m_measurement_pt->push_back(_point);
 
-    // Ask for drawing
+    // drawing
     draw(_measurement_geode);
 
 
@@ -94,7 +94,6 @@ void MeasurementTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
         osg::Geometry* geoPoints = new osg::Geometry;
         geoPoints->setVertexArray(m_measurement_pt);
         geoPoints->addPrimitiveSet(line);
-
 
         osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
         tabCouleur->push_back(osg::Vec4d(1.0f, 0.0f, 0.0f, 1.0f)); //red
