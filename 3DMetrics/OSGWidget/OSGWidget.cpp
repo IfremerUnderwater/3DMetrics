@@ -1,12 +1,9 @@
 ﻿#include "OSGWidget.h"
-//#include "PickHandler.h"
 
 #include <QDebug>
 #include <QKeyEvent>
 #include <QWheelEvent>
 
-
-#ifdef WITH_OSG
 
 #include <osg/Camera>
 
@@ -150,12 +147,8 @@ public:
 
 
 
-OSGWidget::OSGWidget( QWidget* parent,
-                      const QGLWidget* shareWidget,
-                      Qt::WindowFlags f )
-    : QGLWidget( parent,
-                 shareWidget,
-                 f )
+OSGWidget::OSGWidget(QWidget* parent)
+    : QOpenGLWidget( parent)
     , m_graphicsWindow( new osgViewer::GraphicsWindowEmbedded( this->x(),
                                                                this->y(),
                                                                this->width(),
@@ -197,7 +190,6 @@ OSGWidget::OSGWidget( QWidget* parent,
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
     m_viewer->realize();
 
-    this->setAutoBufferSwap( false );
 
     // This ensures that the widget will receive keyboard events. This focus
     // policy is not set by default. The default, Qt::NoFocus, will result in
@@ -213,10 +205,10 @@ OSGWidget::OSGWidget( QWidget* parent,
     connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
     m_timer.start( 10 );
 
-    // Create group that will contain measurement geode and 3D model
-    m_group = new osg::Group;
-    m_measurement_geode = new osg::Geode;
-    m_group->addChild(m_measurement_geode);
+//    // Create group that will contain measurement geode and 3D model
+//    m_group = new osg::Group;
+//    m_measurement_geode = new osg::Geode;
+//    m_group->addChild(m_measurement_geode);
 
 }
 
@@ -228,12 +220,11 @@ bool OSGWidget::setSceneFromFile(std::string sceneFile_p)
 {
     // load the data
     setlocale(LC_ALL, "C");
-    //_loadedModel = osgDB::readRefNodeFile(sceneFile_p, new osgDB::Options("noTriStripPolygons"));
+
     m_loadedModel = osgDB::readRefNodeFile(sceneFile_p);
     osg::StateSet* stateSet = m_loadedModel->getOrCreateStateSet();
     stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    //m_group = dynamic_cast<osg::Group*>(m_loadedModel.get());
     m_group->addChild(m_loadedModel.get());
 
     if (!m_group)
@@ -315,244 +306,18 @@ void OSGWidget::clearSceneData()
 }
 
 
-
-void OSGWidget::removeLastMeasurementOfType(ToolState _meas_type)
-{
-    switch( _meas_type )
-    {
-    case IDLE_STATE:
-
-        break;
-
-    case LINE_MEASUREMENT_STATE:
-    {
-        m_line_measurement_tool.removeLastMeasurement(m_measurement_geode);
-    }
-        break;
-
-    case SURFACE_MEASUREMENT_STATE:
-    {
-        m_surface_measurement_tool.removeLastMeasurement(m_measurement_geode);
-    }
-        break;
-
-    case INTEREST_POINT_STATE:
-    {
-        m_interest_point_tool.removeLastMeasurement(m_measurement_geode);
-    }
-        break;
-
-    case CUT_AREA_TOOL_STATE:
-
-        break;
-
-    case ZOOM_IN_TOOL_STATE:
-
-        break;
-
-    case ZOOM_OUT_TOOL_STATE:
-
-        break;
-
-    case  FULL_SCREEN_TOOL_STATE:
-
-        break;
-
-    case CROP_TOOL_STATE:
-
-        break;
-    }
-
-    m_group->removeChild(m_measurement_geode);
+void OSGWidget::initializeGL(){
+    // Create group that will contain measurement geode and 3D model
+    m_group = new osg::Group;
+    m_measurement_geode = new osg::Geode;
     m_group->addChild(m_measurement_geode);
 
-}
-
-
-void OSGWidget::removeMeasurementOfType(ToolState _meas_type, int _meas_index)
-{
-    switch( _meas_type )
-    {
-    case IDLE_STATE:
-
-        break;
-
-    case LINE_MEASUREMENT_STATE:
-    {
-        m_line_measurement_tool.removeMeasurement(m_measurement_geode, _meas_index);
-    }
-        break;
-
-    case SURFACE_MEASUREMENT_STATE:
-    {
-        m_surface_measurement_tool.removeMeasurement(m_measurement_geode, _meas_index);
-    }
-        break;
-
-    case INTEREST_POINT_STATE:
-    {
-        m_interest_point_tool.removeMeasurement(m_measurement_geode, _meas_index);
-    }
-        break;
-
-    case CUT_AREA_TOOL_STATE:
-
-        break;
-
-    case ZOOM_IN_TOOL_STATE:
-
-        break;
-
-    case ZOOM_OUT_TOOL_STATE:
-
-        break;
-
-    case  FULL_SCREEN_TOOL_STATE:
-
-        break;
-
-    case CROP_TOOL_STATE:
-
-        break;
-    }
-
-    m_group->removeChild(m_measurement_geode);
-    m_group->addChild(m_measurement_geode);
-}
-
-
-// hide/show measurement method
-void OSGWidget::hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible)
-{
-    switch( _meas_type )
-    {
-    case IDLE_STATE:
-
-        break;
-
-    case LINE_MEASUREMENT_STATE:
-    {
-        m_line_measurement_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
-    }
-        break;
-
-    case SURFACE_MEASUREMENT_STATE:
-    {
-        m_surface_measurement_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
-    }
-        break;
-
-    case INTEREST_POINT_STATE:
-    {
-        m_interest_point_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
-    }
-        break;
-
-    case CUT_AREA_TOOL_STATE:
-
-        break;
-
-    case ZOOM_IN_TOOL_STATE:
-
-        break;
-
-    case ZOOM_OUT_TOOL_STATE:
-
-        break;
-
-    case  FULL_SCREEN_TOOL_STATE:
-
-        break;
-
-    case CROP_TOOL_STATE:
-
-        break;
-    }
-
-    m_group->removeChild(m_measurement_geode);
-    m_group->addChild(m_measurement_geode);
-}
-
-
-
-
-QMap<int, osg::ref_ptr<osg::Vec3dArray> > OSGWidget::getPointsCoordinates(QString _measur_type)
-{
-    if(_measur_type == "Distance measurement")
-    {
-        return m_line_measurement_tool.getMeasurementsHistoryQmap();
-    }
-    else if(_measur_type == "Surface measurement")
-    {
-        return m_surface_measurement_tool.getMeasurementsHistoryQmap();
-    }
-    else if(_measur_type == "Interest Point measurement")
-    {
-        return m_interest_point_tool.getMeasurementsHistoryQmap();
-    }
-}
-
-
-
-QMap<int,int> OSGWidget::getMeasurPtsNumber(QString _measur_type)
-{
-    if(_measur_type == "Distance measurement")
-    {
-        return m_line_measurement_tool.getMeasurPtsNumber();
-    }
-    else if(_measur_type == "Surface measurement")
-    {
-        return m_surface_measurement_tool.getMeasurPtsNumber();
-    }
-    else if(_measur_type == "Interest Point measurement")
-    {
-        return m_interest_point_tool.getMeasurPtsNumber();
-    }
-}
-
-
-
-QMap<int,int> OSGWidget::getMeasurLinesNumber(QString _measur_type)
-{
-    if(_measur_type == "Distance measurement")
-    {
-        return m_line_measurement_tool.getMeasurLinesNumber();
-    }
-    else if(_measur_type == "Surface measurement")
-    {
-        return m_surface_measurement_tool.getMeasurLinesNumber();
-    }
-    else if(_measur_type == "Interest Point measurement")
-    {
-        return m_interest_point_tool.getMeasurLinesNumber();
-    }
-}
-
-
-
-
-void OSGWidget::paintEvent( QPaintEvent* /* paintEvent */ )
-{
-    this->makeCurrent();
-
-    QPainter painter( this );
-    painter.setRenderHint( QPainter::Antialiasing );
-
-    this->paintGL();
-
-#ifdef WITH_SELECTION_PROCESSING
-    if( selectionActive_ && !selectionFinished_ )
-    {
-        painter.setPen( Qt::black );
-        painter.setBrush( Qt::transparent );
-        painter.drawRect( makeRectangle( selectionStart_, selectionEnd_ ) );
-    }
-#endif
-
-    painter.end();
-
-    this->swapBuffers();
-    this->doneCurrent();
+    // Init properties
+    osg::StateSet* stateSet = m_group->getOrCreateStateSet();
+    osg::Material* material = new osg::Material;
+    material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
+    stateSet->setAttributeAndModes( material, osg::StateAttribute::ON );
+    //stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 }
 
 void OSGWidget::paintGL()
@@ -969,6 +734,221 @@ void OSGWidget::mouseReleaseEvent(QMouseEvent* event)
     }
 }
 
+
+
+void OSGWidget::removeLastMeasurementOfType(ToolState _meas_type)
+{
+    switch( _meas_type )
+    {
+    case IDLE_STATE:
+
+        break;
+
+    case LINE_MEASUREMENT_STATE:
+    {
+        m_line_measurement_tool.removeLastMeasurement(m_measurement_geode);
+    }
+        break;
+
+    case SURFACE_MEASUREMENT_STATE:
+    {
+        m_surface_measurement_tool.removeLastMeasurement(m_measurement_geode);
+    }
+        break;
+
+    case INTEREST_POINT_STATE:
+    {
+        m_interest_point_tool.removeLastMeasurement(m_measurement_geode);
+    }
+        break;
+
+    case CUT_AREA_TOOL_STATE:
+
+        break;
+
+    case ZOOM_IN_TOOL_STATE:
+
+        break;
+
+    case ZOOM_OUT_TOOL_STATE:
+
+        break;
+
+    case  FULL_SCREEN_TOOL_STATE:
+
+        break;
+
+    case CROP_TOOL_STATE:
+
+        break;
+    }
+
+    m_group->removeChild(m_measurement_geode);
+    m_group->addChild(m_measurement_geode);
+
+}
+
+
+void OSGWidget::removeMeasurementOfType(ToolState _meas_type, int _meas_index)
+{
+    switch( _meas_type )
+    {
+    case IDLE_STATE:
+
+        break;
+
+    case LINE_MEASUREMENT_STATE:
+    {
+        m_line_measurement_tool.removeMeasurement(m_measurement_geode, _meas_index);
+    }
+        break;
+
+    case SURFACE_MEASUREMENT_STATE:
+    {
+        m_surface_measurement_tool.removeMeasurement(m_measurement_geode, _meas_index);
+    }
+        break;
+
+    case INTEREST_POINT_STATE:
+    {
+        m_interest_point_tool.removeMeasurement(m_measurement_geode, _meas_index);
+    }
+        break;
+
+    case CUT_AREA_TOOL_STATE:
+
+        break;
+
+    case ZOOM_IN_TOOL_STATE:
+
+        break;
+
+    case ZOOM_OUT_TOOL_STATE:
+
+        break;
+
+    case  FULL_SCREEN_TOOL_STATE:
+
+        break;
+
+    case CROP_TOOL_STATE:
+
+        break;
+    }
+
+    m_group->removeChild(m_measurement_geode);
+    m_group->addChild(m_measurement_geode);
+}
+
+
+// hide/show measurement method
+void OSGWidget::hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible)
+{
+    switch( _meas_type )
+    {
+    case IDLE_STATE:
+
+        break;
+
+    case LINE_MEASUREMENT_STATE:
+    {
+        m_line_measurement_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
+    }
+        break;
+
+    case SURFACE_MEASUREMENT_STATE:
+    {
+        m_surface_measurement_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
+    }
+        break;
+
+    case INTEREST_POINT_STATE:
+    {
+        m_interest_point_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
+    }
+        break;
+
+    case CUT_AREA_TOOL_STATE:
+
+        break;
+
+    case ZOOM_IN_TOOL_STATE:
+
+        break;
+
+    case ZOOM_OUT_TOOL_STATE:
+
+        break;
+
+    case  FULL_SCREEN_TOOL_STATE:
+
+        break;
+
+    case CROP_TOOL_STATE:
+
+        break;
+    }
+
+    m_group->removeChild(m_measurement_geode);
+    m_group->addChild(m_measurement_geode);
+}
+
+
+
+
+QMap<int, osg::ref_ptr<osg::Vec3dArray> > OSGWidget::getPointsCoordinates(QString _measur_type)
+{
+    if(_measur_type == "Distance measurement")
+    {
+        return m_line_measurement_tool.getMeasurementsHistoryQmap();
+    }
+    else if(_measur_type == "Surface measurement")
+    {
+        return m_surface_measurement_tool.getMeasurementsHistoryQmap();
+    }
+    else if(_measur_type == "Interest Point measurement")
+    {
+        return m_interest_point_tool.getMeasurementsHistoryQmap();
+    }
+}
+
+
+
+QMap<int,int> OSGWidget::getMeasurPtsNumber(QString _measur_type)
+{
+    if(_measur_type == "Distance measurement")
+    {
+        return m_line_measurement_tool.getMeasurPtsNumber();
+    }
+    else if(_measur_type == "Surface measurement")
+    {
+        return m_surface_measurement_tool.getMeasurPtsNumber();
+    }
+    else if(_measur_type == "Interest Point measurement")
+    {
+        return m_interest_point_tool.getMeasurPtsNumber();
+    }
+}
+
+
+
+QMap<int,int> OSGWidget::getMeasurLinesNumber(QString _measur_type)
+{
+    if(_measur_type == "Distance measurement")
+    {
+        return m_line_measurement_tool.getMeasurLinesNumber();
+    }
+    else if(_measur_type == "Surface measurement")
+    {
+        return m_surface_measurement_tool.getMeasurLinesNumber();
+    }
+    else if(_measur_type == "Interest Point measurement")
+    {
+        return m_interest_point_tool.getMeasurLinesNumber();
+    }
+}
+
+
 void OSGWidget::wheelEvent( QWheelEvent* event )
 {
     // Ignore wheel events as long as the selection is active.
@@ -986,7 +966,7 @@ void OSGWidget::wheelEvent( QWheelEvent* event )
 
 bool OSGWidget::event( QEvent* event )
 {
-    bool handled = QGLWidget::event( event );
+    bool handled = QOpenGLWidget::event( event );
 
     // This ensures that the OSG widget is always going to be repainted after the
     // user performed some interaction. Doing this in the event handler ensures
@@ -1136,18 +1116,3 @@ void OSGWidget::sl_resetMeasur()
 
 }
 
-
-
-#else
-OSGWidget::OSGWidget( QWidget* parent,
-                      const QGLWidget* shareWidget,
-                      Qt::WindowFlags f){
-    Q_UNUSED(parent)
-    Q_UNUSED(shareWidget)
-    Q_UNUSED(f)
-    qCritical("You cannot use OSG as your version is compiled without WITH_OSG\n");
-}
-
-OSGWidget::~OSGWidget(){}
-
-#endif

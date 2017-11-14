@@ -33,19 +33,15 @@ enum ToolState
     CROP_TOOL_STATE
 };
 
-class OSGWidget : public QGLWidget
+class OSGWidget : public QOpenGLWidget
 {
     Q_OBJECT
 
 public:
-    OSGWidget( QWidget* parent = 0,
-               const QGLWidget* shareWidget = 0,
-               Qt::WindowFlags f = 0 );
+    OSGWidget( QWidget* parent = 0);
 
     virtual ~OSGWidget();
 
-
-#ifdef WITH_OSG
     ///
     /// \brief setSceneFromFile load a scene from a 3D file
     /// \param sceneFile_p path to any 3D file supported by osg
@@ -111,7 +107,6 @@ signals:
 
 protected:
 
-    virtual void paintEvent( QPaintEvent* paintEvent );
     virtual void paintGL();
     virtual void resizeGL( int width, int height );
 
@@ -125,6 +120,8 @@ protected:
 
     virtual bool event( QEvent* event );
 
+    virtual void initializeGL();
+    QTimer m_timer;
 
 
 
@@ -162,11 +159,6 @@ private:
     InterestPointTool m_interest_point_tool;
 
     QWidget m_distance_meas_form_pop;
-
-protected:
-    QTimer m_timer;
-
-#endif // WITH_OSG
 
 
 };

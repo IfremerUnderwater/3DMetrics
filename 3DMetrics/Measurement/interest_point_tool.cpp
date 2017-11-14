@@ -25,7 +25,7 @@ void InterestPointTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
         // point
         QString point_name = QString("measurement_%1").arg(m_measurement_counter);
 
-        osg::Vec4 color(1.0f,0.0f,0.0f,1.0f);
+        osg::Vec4 color(0.0f,0.0f,1.0f,1.0f);
         drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
 
     }

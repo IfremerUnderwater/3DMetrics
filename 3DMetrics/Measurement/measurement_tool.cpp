@@ -80,7 +80,7 @@ void MeasurementTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
     {
         m_lines_counter++;
 
-        // lines
+        // lines (to be modified with line function)
 
         int current_point = (int) m_measurement_pt->size();
 
@@ -96,7 +96,7 @@ void MeasurementTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
         geoPoints->addPrimitiveSet(line);
 
         osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
-        tabCouleur->push_back(osg::Vec4d(1.0f, 0.0f, 0.0f, 1.0f)); //red
+        tabCouleur->push_back(osg::Vec4d(0.0f, 1.0f, 0.0f, 1.0f)); //red
         geoPoints->setColorArray(tabCouleur);
 
         geoPoints->setColorBinding(osg::Geometry::BIND_OVERALL);
@@ -200,8 +200,14 @@ void MeasurementTool::drawJunctionLineWithLastPoint(osg::ref_ptr<osg::Geode> &_m
 
 
     osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
-    tabCouleur->push_back(osg::Vec4d(1.0f, 0.0f, 0.0f, 1.0f)); //red
+    tabCouleur->push_back(osg::Vec4d(0.0f, 1.0f, 0.0f, 0.7f)); //green
     geoPoints->setColorArray(tabCouleur,osg::Array::BIND_OVERALL);
+
+    // set the normal in the same way color.
+    osg::Vec3Array* normals = new osg::Vec3Array;
+    normals->push_back(osg::Vec3(0.0f,-1.0f,0.0f));
+    geoPoints->setNormalArray(normals, osg::Array::BIND_OVERALL);
+
 
     _measurement_geode->addDrawable(geoPoints);
 
