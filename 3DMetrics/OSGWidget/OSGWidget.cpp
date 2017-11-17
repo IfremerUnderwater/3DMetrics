@@ -304,11 +304,7 @@ void OSGWidget::clearSceneData()
     m_interest_point_tool.resetModelData();
     m_interest_point_tool.resetInterestPointData();
 
-
-
-    // Allocate group and measurement for next model
-    m_group = new osg::Group;
-    m_measurement_geode = new osg::Geode;
+    this->initializeGL();
 }
 
 
