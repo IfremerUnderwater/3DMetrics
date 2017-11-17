@@ -40,7 +40,6 @@ void SurfaceMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
 
 
         // lines
-
         m_lines_counter++;
 
         QString line_name = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size()-1);

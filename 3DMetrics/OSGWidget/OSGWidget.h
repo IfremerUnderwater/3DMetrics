@@ -127,7 +127,6 @@ protected:
 
 private:
 
-    virtual void onHome();
     virtual void onResize( int width, int height );
 
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
@@ -138,21 +137,13 @@ private:
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
     osg::Vec3d m_intersection_point;
 
-
-    QPoint m_selectionStart;
-    QPoint m_selectionEnd;
-
-    bool m_selectionActive;
-    bool m_selectionFinished;
-    bool m_stereoActive;
-
     osgUtil::LineSegmentIntersector::Intersections::iterator m_hitr;
 
     osg::ref_ptr<osg::Node> m_loadedModel;
     osg::ref_ptr<osg::Group> m_group;
     osg::ref_ptr<osg::Geode> m_measurement_geode;
 
-    // Measurements tools variables
+    // Measurements tools
     ToolState m_tool_state;
     LineMeasurementTool m_line_measurement_tool;
     SurfaceMeasurementTool m_surface_measurement_tool;
