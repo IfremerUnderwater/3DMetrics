@@ -139,7 +139,7 @@ private:
 
     osgUtil::LineSegmentIntersector::Intersections::iterator m_hitr;
 
-    osg::ref_ptr<osg::Node> m_loadedModel;
+    std::vector<osg::ref_ptr<osg::Node>> m_models;
     osg::ref_ptr<osg::Group> m_group;
     osg::ref_ptr<osg::Geode> m_measurement_geode;
 

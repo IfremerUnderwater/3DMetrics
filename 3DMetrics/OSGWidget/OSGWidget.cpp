@@ -227,11 +227,11 @@ bool OSGWidget::setSceneFromFile(std::string sceneFile_p)
     // load the data
     setlocale(LC_ALL, "C");
 
-    m_loadedModel = osgDB::readRefNodeFile(sceneFile_p);
-    osg::StateSet* stateSet = m_loadedModel->getOrCreateStateSet();
+    m_models.push_back(osgDB::readRefNodeFile(sceneFile_p));
+    osg::StateSet* stateSet = m_models.back()->getOrCreateStateSet();
     stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    m_group->addChild(m_loadedModel.get());
+    m_group->addChild(m_models.back().get());
 
     if (!m_group)
     {
@@ -259,12 +259,12 @@ bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> sceneData_p)
         return false;
     }
 
-    m_loadedModel = sceneData_p;
+    m_models.push_back(sceneData_p);
 
 
     osgViewer::View *view = m_viewer->getView(0);
 
-    view->setSceneData( m_loadedModel.get() );
+    view->setSceneData( m_models.back().get() );
 
 
     return true;
@@ -285,13 +285,15 @@ void OSGWidget::clearSceneData()
 {
 
     osgViewer::View *view = m_viewer->getView(0);
-    //view->getDatabasePager()->cancel();
-    //view->getDatabasePager()->clear();
     view->setSceneData( 0 );
+    view->getDatabasePager()->cancel();
+    view->getDatabasePager()->clear();
 
-    m_group->removeChild(m_loadedModel);
+    for (unsigned int i=0; i<m_models.size(); i++){
+      m_group->removeChild(m_models[i]);
+      m_models[i] = NULL;
+    }
 
-    m_loadedModel = NULL;
     m_group = NULL;
     m_measurement_geode = NULL;
 
