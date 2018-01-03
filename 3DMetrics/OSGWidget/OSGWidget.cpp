@@ -8,7 +8,7 @@
 #include <QDir>
 
 #include <osg/Camera>
-
+#include <osg/MatrixTransform>
 #include <osg/DisplaySettings>
 #include <osg/Geode>
 #include <osg/Material>
@@ -41,6 +41,7 @@
 #include <osg/Geometry>
 #include <osg/Point>
 #include <osg/LineWidth>
+
 
 
 
@@ -168,6 +169,10 @@ OSGWidget::OSGWidget(QWidget* parent)
 
 {
 
+    m_ref_lat_lon.setX(INVALID_VALUE);
+    m_ref_lat_lon.setY(INVALID_VALUE);
+    m_ref_depth = INVALID_VALUE;
+
     //Initialize widget tool state
     m_tool_state = IDLE_STATE;
 
@@ -224,24 +229,32 @@ OSGWidget::~OSGWidget()
 {
 }
 
-bool OSGWidget::setSceneFromFile(std::string sceneFile_p)
+bool OSGWidget::setSceneFromFile(std::string _sceneFile)
 {
     // load the data
     setlocale(LC_ALL, "C");
 
-    QFileInfo sceneInfo(QString::fromStdString(sceneFile_p));
+    QFileInfo sceneInfo(QString::fromStdString(_sceneFile));
     std::string sceneFile;
 
+    QPointF local_lat_lon;
+    double local_depth;
 
     if (sceneInfo.suffix()==QString("kml")){
-        m_kml_handler.readFile(sceneFile_p);
+        m_kml_handler.readFile(_sceneFile);
         sceneFile = sceneInfo.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
+        local_lat_lon.setX(m_kml_handler.getModelLat());
+        local_lat_lon.setY(m_kml_handler.getModelLon());
+        local_depth = m_kml_handler.getModelAlt();
     }else{
-        sceneFile = sceneFile_p;
+        sceneFile = _sceneFile;
+        local_lat_lon.setX(0);
+        local_lat_lon.setY(0);
+        local_depth = 0;
     }
 
-    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile);
 
+    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile);
 
     if (!model_node)
     {
@@ -249,15 +262,51 @@ bool OSGWidget::setSceneFromFile(std::string sceneFile_p)
         return false;
     }
 
-    m_models.push_back(model_node);
-    osg::StateSet* stateSet = model_node->getOrCreateStateSet();
+    // Transform model
+    osg::ref_ptr<osg::MatrixTransform> model_transform = new osg::MatrixTransform;
+    if (m_ref_depth == INVALID_VALUE){
+        m_ref_lat_lon = local_lat_lon;
+        m_ref_depth = local_depth;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y());
+
+
+        model_transform->setMatrix(osg::Matrix::translate(0,0,0));
+        model_transform->addChild(model_node);
+    }else{
+        double N,E,U;
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), -m_ref_depth, N, E, U);
+
+        model_transform->setMatrix(osg::Matrix::translate(N,U,E)); //Check order
+        model_transform->addChild(model_node);
+    }
+
+
+    //    osg::ref_ptr<osg::MatrixTransform> model_transform2 = new osg::MatrixTransform;
+    //    model_transform2->setMatrix(osg::Matrix::translate(0,0,0));
+    //    model_transform2->addChild(model_node);
+
+    // Add model
+    m_models.push_back(model_transform);
+    osg::StateSet* stateSet = model_transform->getOrCreateStateSet();
     stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    m_group->addChild(model_node.get());
+    m_group->addChild(model_transform.get());
+
+    //    m_models.push_back(model_transform2);
+    //    osg::StateSet* stateSet2 = model_transform2->getOrCreateStateSet();
+    //    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    //    m_group->addChild(model_transform2.get());
+
+    //    m_models.push_back(model_node);
+    //    osg::StateSet* stateSet = model_node->getOrCreateStateSet();
+    //    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    //    m_group->addChild(model_node.get());
 
     // optimize the scene graph, remove redundant nodes and state etc.
-    osgUtil::Optimizer optimizer;
-    optimizer.optimize(m_group.get());
+    /*osgUtil::Optimizer optimizer;
+    optimizer.optimize(m_group.get());*/
 
     osgViewer::View *view = m_viewer->getView(0);
 
@@ -267,15 +316,15 @@ bool OSGWidget::setSceneFromFile(std::string sceneFile_p)
 
 }
 
-bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> sceneData_p)
+bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> _sceneData)
 {
-    if (!sceneData_p)
+    if (!_sceneData)
     {
         std::cout << "No data loaded" << std::endl;
         return false;
     }
 
-    m_models.push_back(sceneData_p);
+    m_models.push_back(_sceneData);
 
 
     osgViewer::View *view = m_viewer->getView(0);
@@ -286,13 +335,13 @@ bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> sceneData_p)
     return true;
 }
 
-void OSGWidget::setClearColor(double r_p, double g_p, double b_p, double alpha_p)
+void OSGWidget::setClearColor(double _r, double _g, double _b, double _alpha)
 {
     std::vector<osg::Camera*> cameras;
     m_viewer->getCameras( cameras );
 
     for (unsigned int i=0; i<cameras.size(); i++){
-        cameras[i]->setClearColor( osg::Vec4( r_p, g_p, b_p, alpha_p ));
+        cameras[i]->setClearColor( osg::Vec4( _r, _g, _b, _alpha ));
     }
 
 }
@@ -306,8 +355,8 @@ void OSGWidget::clearSceneData()
     view->getDatabasePager()->clear();
 
     for (unsigned int i=0; i<m_models.size(); i++){
-      m_group->removeChild(m_models[i]);
-      m_models[i] = NULL;
+        m_group->removeChild(m_models[i]);
+        m_models[i] = NULL;
     }
 
     m_group = NULL;
@@ -321,6 +370,11 @@ void OSGWidget::clearSceneData()
 
     m_interest_point_tool.resetModelData();
     m_interest_point_tool.resetInterestPointData();
+
+    // reinit georef
+    m_ref_lat_lon.setX(INVALID_VALUE);
+    m_ref_lat_lon.setY(INVALID_VALUE);
+    m_ref_depth = INVALID_VALUE;
 
     this->initializeGL();
 }
@@ -393,8 +447,8 @@ void OSGWidget::keyReleaseEvent( QKeyEvent* event )
 
 void OSGWidget::mouseMoveEvent( QMouseEvent* event )
 {
-        this->getEventQueue()->mouseMotion( static_cast<float>( event->x() ),
-                                            static_cast<float>( event->y() ) );
+    this->getEventQueue()->mouseMotion( static_cast<float>( event->x() ),
+                                        static_cast<float>( event->y() ) );
 }
 
 
@@ -668,7 +722,7 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
 
 
         // we get the intersections in a osg::Vec3d
-        _inter_point = hitr->getLocalIntersectPoint();
+        _inter_point = hitr->getWorldIntersectPoint();
 
     }else{
         _inter_exists = false;

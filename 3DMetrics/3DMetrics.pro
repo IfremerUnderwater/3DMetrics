@@ -31,7 +31,7 @@ CONFIG(release, debug|release) {
 INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
 include(../Scripts/BasicProcessing.pri)
 
-LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lkmlbase -lkmldom
+LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lkmlbase -lkmldom -lGeographic
 INCLUDEPATH += Measurement
 
 SOURCES += main.cpp \

@@ -5,11 +5,9 @@
 #include <QtOpenGL>
 #include <QTimer>
 #include <QFileDialog>
-
-#ifdef WITH_OSG
+#include <QPointF>
 
 #include <osg/ref_ptr>
-
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 #include "line_measurement_tool.h"
@@ -17,8 +15,9 @@
 #include "interest_point_tool.h"
 #include "kml_handler.h"
 
-#endif
+#include <GeographicLib/LocalCartesian.hpp>
 
+#define INVALID_VALUE -1000
 
 // Various states according to the action clicked
 enum ToolState
@@ -45,17 +44,17 @@ public:
 
     ///
     /// \brief setSceneFromFile load a scene from a 3D file
-    /// \param sceneFile_p path to any 3D file supported by osg
+    /// \param _sceneFile path to any 3D file supported by osg
     /// \return true if loading succeded
     ///
-    bool setSceneFromFile(std::string sceneFile_p);
+    bool setSceneFromFile(std::string _sceneFile);
 
     ///
     /// \brief setSceneData load a scene from a osg::ref_ptr<osg::Node>
-    /// \param sceneData_p pointer to scene data
+    /// \param _sceneData pointer to scene data
     /// \return true if loading succeded
     ///
-    bool setSceneData(osg::ref_ptr<osg::Node> sceneData_p);
+    bool setSceneData(osg::ref_ptr<osg::Node> _sceneData);
 
     ///
     /// \brief setClearColor set the clear color for all cameras
@@ -64,7 +63,7 @@ public:
     /// \param b_p blue [0..1]
     /// \param alpha_p transparency [0..1]
     ///
-    void setClearColor(double r_p, double g_p, double b_p, double alpha_p=1.0);
+    void setClearColor(double _r, double _g, double _b, double _alpha=1.0);
 
     ///
     /// \brief clearSceneData removes scene data
@@ -152,7 +151,11 @@ private:
 
     QWidget m_distance_meas_form_pop;
 
+    // Georef objects
     KMLHandler m_kml_handler;
+    QPointF m_ref_lat_lon;
+    double m_ref_depth;
+    GeographicLib::LocalCartesian m_ltp_proj;
 
 
 };
