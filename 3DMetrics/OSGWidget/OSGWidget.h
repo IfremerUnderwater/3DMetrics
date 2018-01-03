@@ -15,6 +15,7 @@
 #include "line_measurement_tool.h"
 #include "surface_measurement_tool.h"
 #include "interest_point_tool.h"
+#include "kml_handler.h"
 
 #endif
 
@@ -150,6 +151,8 @@ private:
     InterestPointTool m_interest_point_tool;
 
     QWidget m_distance_meas_form_pop;
+
+    KMLHandler m_kml_handler;
 
 
 };

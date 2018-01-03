@@ -3,7 +3,9 @@
 #include <QDebug>
 #include <QKeyEvent>
 #include <QWheelEvent>
-
+#include <QFileInfo>
+#include <QString>
+#include <QDir>
 
 #include <osg/Camera>
 
@@ -227,17 +229,31 @@ bool OSGWidget::setSceneFromFile(std::string sceneFile_p)
     // load the data
     setlocale(LC_ALL, "C");
 
-    m_models.push_back(osgDB::readRefNodeFile(sceneFile_p));
-    osg::StateSet* stateSet = m_models.back()->getOrCreateStateSet();
-    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    QFileInfo sceneInfo(QString::fromStdString(sceneFile_p));
+    std::string sceneFile;
 
-    m_group->addChild(m_models.back().get());
 
-    if (!m_group)
+    if (sceneInfo.suffix()==QString("kml")){
+        m_kml_handler.readFile(sceneFile_p);
+        sceneFile = sceneInfo.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
+    }else{
+        sceneFile = sceneFile_p;
+    }
+
+    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile);
+
+
+    if (!model_node)
     {
         std::cout << "No data loaded" << std::endl;
         return false;
     }
+
+    m_models.push_back(model_node);
+    osg::StateSet* stateSet = model_node->getOrCreateStateSet();
+    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    m_group->addChild(model_node.get());
 
     // optimize the scene graph, remove redundant nodes and state etc.
     osgUtil::Optimizer optimizer;

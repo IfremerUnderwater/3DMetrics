@@ -31,7 +31,7 @@ CONFIG(release, debug|release) {
 INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
 include(../Scripts/BasicProcessing.pri)
 
-LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg
+LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lkmlbase -lkmldom
 INCLUDEPATH += Measurement
 
 SOURCES += main.cpp \
@@ -41,7 +41,8 @@ SOURCES += main.cpp \
     Measurement/measurement_tool.cpp \
     measurement_saving_dialog.cpp \
     Measurement/surface_measurement_tool.cpp \
-    Measurement/interest_point_tool.cpp
+    Measurement/interest_point_tool.cpp \
+    OSGWidget/kml_handler.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -49,7 +50,8 @@ HEADERS  += mainwindow.h \
     Measurement/measurement_tool.h \
     measurement_saving_dialog.h \
     Measurement/surface_measurement_tool.h \
-    Measurement/interest_point_tool.h
+    Measurement/interest_point_tool.h \
+    OSGWidget/kml_handler.h
 
 FORMS    += \
     mainwindow.ui \
