@@ -32,25 +32,25 @@ INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
 include(../Scripts/BasicProcessing.pri)
 
 LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lkmlbase -lkmldom -lGeographic
-INCLUDEPATH += Measurement
+INCLUDEPATH += Tools
 
 SOURCES += main.cpp \
     mainwindow.cpp \
     OSGWidget/OSGWidget.cpp \
-    Measurement/line_measurement_tool.cpp \
-    Measurement/measurement_tool.cpp \
+    Tools/line_measurement_tool.cpp \
+    Tools/measurement_tool.cpp \
     measurement_saving_dialog.cpp \
-    Measurement/surface_measurement_tool.cpp \
-    Measurement/interest_point_tool.cpp \
+    Tools/surface_measurement_tool.cpp \
+    Tools/interest_point_tool.cpp \
     OSGWidget/kml_handler.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
-    Measurement/line_measurement_tool.h \
-    Measurement/measurement_tool.h \
+    Tools/line_measurement_tool.h \
+    Tools/measurement_tool.h \
     measurement_saving_dialog.h \
-    Measurement/surface_measurement_tool.h \
-    Measurement/interest_point_tool.h \
+    Tools/surface_measurement_tool.h \
+    Tools/interest_point_tool.h \
     OSGWidget/kml_handler.h
 
 FORMS    += \
