@@ -8,14 +8,14 @@ class InterestPointTool : public MeasurementTool
 public:
     InterestPointTool();
     ~InterestPointTool();
-    void draw(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index);
+    void draw();
+    void removeLastMeasurement();
+    void removeMeasurement(int _meas_index);
     QString interestPointCoordinates();
     QString getTypeOfMeasur();
     int getMeasurementCounter() const;
-    void hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index, bool _visible);
-    void closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode);
+    void hideShowMeasurement( int _meas_index, bool _visible);
+    void closeLoop();
     void resetInterestPointData();
 
 

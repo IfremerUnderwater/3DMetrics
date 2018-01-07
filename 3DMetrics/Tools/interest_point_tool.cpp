@@ -13,7 +13,7 @@ InterestPointTool::~InterestPointTool()
 }
 
 
-void InterestPointTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void InterestPointTool::draw()
 {
 
     if(m_measurement_pt->size() >= 1)
@@ -26,7 +26,7 @@ void InterestPointTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
         QString point_name = QString("measurement_%1").arg(m_measurement_counter);
 
         osg::Vec4 color(0.0f,0.0f,1.0f,1.0f);
-        drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
+        drawPoint(m_measurement_pt->back(),color,point_name);
 
     }
 
@@ -58,17 +58,17 @@ QString InterestPointTool::interestPointCoordinates()
 }
 
 
-void InterestPointTool::removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void InterestPointTool::removeLastMeasurement()
 {
-    removeMeasurement(_measurement_geode, m_measurement_counter);
+    removeMeasurement(m_measurement_counter);
 }
 
 
-void InterestPointTool::removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index)
+void InterestPointTool::removeMeasurement(int _meas_index)
 {
     QString point_number = QString("measurement_%1").arg(_meas_index);
 
-    _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+    m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
     m_geo_drawable_map.remove(point_number);
 
     m_measurements_history_qmap.remove(_meas_index);
@@ -90,16 +90,16 @@ int InterestPointTool::getMeasurementCounter() const
 }
 
 
-void InterestPointTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index, bool _visible)
+void InterestPointTool::hideShowMeasurement(int _meas_index, bool _visible)
 {
 
     if (_visible)
     {
         QString point_number = QString("measurement_%1").arg(_meas_index);
 
-        if(!_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+        if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
         {
-            _measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
+            m_measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
             qDebug() << "Add measur";
         }
     }
@@ -107,9 +107,9 @@ void InterestPointTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measureme
     {
         QString point_number = QString("measurement_%1").arg(_meas_index);
 
-        if(_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+        if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
         {
-            _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+            m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
             qDebug() << "Remove measur";
         }
     }
@@ -117,7 +117,7 @@ void InterestPointTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measureme
 
 
 
-void InterestPointTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void InterestPointTool::closeLoop()
 {
     // this method is not used in this class
 }

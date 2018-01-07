@@ -923,60 +923,6 @@ void OSGWidget::hideShowMeasurementOfType(ToolState _meas_type, int _meas_index,
 
 
 
-
-QMap<int, osg::ref_ptr<osg::Vec3dArray> > OSGWidget::getPointsCoordinates(QString _measur_type)
-{
-    if(_measur_type == "Distance measurement")
-    {
-        return m_line_measurement_tool.getMeasurementsHistoryQmap();
-    }
-    else if(_measur_type == "Surface measurement")
-    {
-        return m_surface_measurement_tool.getMeasurementsHistoryQmap();
-    }
-    else if(_measur_type == "Interest Point measurement")
-    {
-        return m_interest_point_tool.getMeasurementsHistoryQmap();
-    }
-}
-
-
-
-QMap<int,int> OSGWidget::getMeasurPtsNumber(QString _measur_type)
-{
-    if(_measur_type == "Distance measurement")
-    {
-        return m_line_measurement_tool.getMeasurPtsNumber();
-    }
-    else if(_measur_type == "Surface measurement")
-    {
-        return m_surface_measurement_tool.getMeasurPtsNumber();
-    }
-    else if(_measur_type == "Interest Point measurement")
-    {
-        return m_interest_point_tool.getMeasurPtsNumber();
-    }
-}
-
-
-
-QMap<int,int> OSGWidget::getMeasurLinesNumber(QString _measur_type)
-{
-    if(_measur_type == "Distance measurement")
-    {
-        return m_line_measurement_tool.getMeasurLinesNumber();
-    }
-    else if(_measur_type == "Surface measurement")
-    {
-        return m_surface_measurement_tool.getMeasurLinesNumber();
-    }
-    else if(_measur_type == "Interest Point measurement")
-    {
-        return m_interest_point_tool.getMeasurLinesNumber();
-    }
-}
-
-
 void OSGWidget::wheelEvent( QWheelEvent* event )
 {
 

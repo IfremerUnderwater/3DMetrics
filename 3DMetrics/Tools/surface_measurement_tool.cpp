@@ -14,7 +14,7 @@ SurfaceMeasurementTool::~SurfaceMeasurementTool()
 
 
 
-void SurfaceMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void SurfaceMeasurementTool::draw()
 {
     m_measur_type = "Surface measurement";
 
@@ -25,7 +25,7 @@ void SurfaceMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
         // point
         QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
         osg::Vec4 color(1.0f,1.0f,0.0f,1.0f);
-        drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
+        drawPoint(m_measurement_pt->back(),color,point_name);
 
     }
 
@@ -36,14 +36,14 @@ void SurfaceMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
         // points
         QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
         osg::Vec4 color(1.0f,1.0f,0.0f,1.0f);
-        drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
+        drawPoint(m_measurement_pt->back(),color,point_name);
 
 
         // lines
         m_lines_counter++;
 
         QString line_name = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size()-1);
-        drawJunctionLineWithLastPoint(_measurement_geode, line_name);
+        drawJunctionLineWithLastPoint(line_name);
 
     }
 
@@ -55,27 +55,27 @@ void SurfaceMeasurementTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
 
 
 
-void SurfaceMeasurementTool::removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void SurfaceMeasurementTool::removeLastMeasurement()
 {
-    removeMeasurement(_measurement_geode, m_measurement_counter);
+    removeMeasurement(m_measurement_counter);
 }
 
 
 
-void SurfaceMeasurementTool::removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index)
+void SurfaceMeasurementTool::removeMeasurement(int _meas_index)
 {
 
     for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
     {
         QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
-        _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
         m_geo_drawable_map.remove(point_number);
     }
 
     for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
     {
         QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-        _measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
         m_geo_drawable_map.remove(line_number);
     }
 

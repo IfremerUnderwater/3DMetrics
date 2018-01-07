@@ -11,9 +11,9 @@ class SurfaceMeasurementTool : public MeasurementTool
 public:
     SurfaceMeasurementTool();
     ~SurfaceMeasurementTool();
-    void draw(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index);
+    void draw();
+    void removeLastMeasurement();
+    void removeMeasurement(int _meas_index);
     QString getTypeOfMeasur();
     int getMeasurementCounter() const;
     double getArea();

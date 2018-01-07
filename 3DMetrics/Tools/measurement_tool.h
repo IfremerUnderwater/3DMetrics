@@ -51,16 +51,16 @@ class MeasurementTool
 public:
     MeasurementTool();
     virtual ~MeasurementTool();
-    void pushNewPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, osg::Vec3d _point);
-    virtual void draw(osg::ref_ptr<osg::Geode> &_measurement_geode)=0;
-    virtual void removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode)=0;
+    void pushNewPoint(osg::Vec3d _point);
+    virtual void draw()=0;
+    virtual void removeLastMeasurement()=0;
     virtual QString getTypeOfMeasur()=0;
-    virtual void removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index)=0;
-    void closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode);
+    virtual void removeMeasurement(int _meas_index)=0;
+    void closeLoop();
     int getNumberOfPoints();
 
     // hide/show measurement method
-    void hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index, bool _visible);
+    void hideShowMeasurement(int _meas_index, bool _visible);
     void resetModelData();
     void endMeasurement();
 
@@ -74,9 +74,11 @@ public:
     QMap<int,int> getMeasurLinesNumber();
 
     // draw a point with given color in the provided geode
-    void drawPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
+    void drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
     // Join last picked point with the previous one
-    void drawJunctionLineWithLastPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, QString &line_name);
+    void drawJunctionLineWithLastPoint(QString &line_name);
+
+    void setMeasurementGeode(osg::ref_ptr<osg::Geode> *_measurement_geode);
 
 protected:
     osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;
@@ -94,6 +96,8 @@ protected:
     int m_lines_counter;
 
     QString m_measur_type;
+
+    osg::ref_ptr<osg::Geode> *m_measurement_geode;
 
 
 };

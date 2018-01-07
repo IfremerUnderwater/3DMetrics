@@ -14,24 +14,12 @@
 #include "surface_measurement_tool.h"
 #include "interest_point_tool.h"
 #include "kml_handler.h"
-
+#include "tool_handler.h"
 #include <GeographicLib/LocalCartesian.hpp>
 
 #define INVALID_VALUE -1000
 
-// Various states according to the action clicked
-enum ToolState
-{
-    IDLE_STATE,
-    LINE_MEASUREMENT_STATE,
-    SURFACE_MEASUREMENT_STATE,
-    INTEREST_POINT_STATE,
-    CUT_AREA_TOOL_STATE,
-    ZOOM_IN_TOOL_STATE,
-    ZOOM_OUT_TOOL_STATE,
-    FULL_SCREEN_TOOL_STATE,
-    CROP_TOOL_STATE
-};
+
 
 class OSGWidget : public QOpenGLWidget
 {
@@ -58,10 +46,10 @@ public:
 
     ///
     /// \brief setClearColor set the clear color for all cameras
-    /// \param r_p red [0..1]
-    /// \param g_p green [0..1]
-    /// \param b_p blue [0..1]
-    /// \param alpha_p transparency [0..1]
+    /// \param _r red [0..1]
+    /// \param _g green [0..1]
+    /// \param _b blue [0..1]
+    /// \param _alpha transparency [0..1]
     ///
     void setClearColor(double _r, double _g, double _b, double _alpha=1.0);
 
@@ -71,19 +59,13 @@ public:
     void clearSceneData();
 
     void removeLastMeasurementOfType(ToolState _meas_type);
+
     void removeMeasurementOfType(ToolState _meas_type, int _meas_index);
 
     // hide/show measurement method
     void hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible);
 
-    // method to get points and lines coordinates when user save a measures file
-    QMap<int, osg::ref_ptr<osg::Vec3dArray> > getPointsCoordinates(QString _measur_type);
-
-    // method to get points counter of each measur (qmap)
-    QMap<int,int> getMeasurPtsNumber(QString _measur_type);
-
-    // method to get lines counter of each measur (qmap)
-    QMap<int,int> getMeasurLinesNumber(QString _measur_type);
+    void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
 
 public slots:
@@ -124,12 +106,9 @@ protected:
     QTimer m_timer;
 
 
-
 private:
 
     virtual void onResize( int width, int height );
-
-    void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
     osgGA::EventQueue* getEventQueue() const;
 

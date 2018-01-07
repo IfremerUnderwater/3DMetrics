@@ -9,9 +9,9 @@ class LineMeasurementTool : public MeasurementTool
 public:
     LineMeasurementTool();
     ~LineMeasurementTool();
-    void draw(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index);
+    void draw();
+    void removeLastMeasurement();
+    void removeMeasurement(int _meas_index);
     double lineLength();
     double closedLineLength();
     QString getTypeOfMeasur();
