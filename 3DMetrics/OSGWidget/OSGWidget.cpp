@@ -267,16 +267,16 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
     if (m_ref_depth == INVALID_VALUE){
         m_ref_lat_lon = local_lat_lon;
         m_ref_depth = local_depth;
-        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y());
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
 
 
         model_transform->setMatrix(osg::Matrix::translate(0,0,0));
         model_transform->addChild(model_node);
     }else{
         double N,E,U;
-        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), -m_ref_depth, N, E, U);
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_depth, N, E, U);
 
-        model_transform->setMatrix(osg::Matrix::translate(N,U,E)); //Check order
+        model_transform->setMatrix(osg::Matrix::translate(E,-U,N));
         model_transform->addChild(model_node);
     }
 
