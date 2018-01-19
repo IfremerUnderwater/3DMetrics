@@ -215,7 +215,7 @@ void MeasurementTool::drawJunctionLineWithLastPoint(QString &line_name)
     m_geo_drawable_map[line_name] = geoPoints;
 }
 
-void MeasurementTool::setMeasurementGeode(osg::ref_ptr<osg::Geode> *_measurement_geode)
+void MeasurementTool::setMeasurementGeode(osg::ref_ptr<osg::Geode> _measurement_geode)
 {
     m_measurement_geode = _measurement_geode;
 }

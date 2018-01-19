@@ -78,7 +78,7 @@ public:
     // Join last picked point with the previous one
     void drawJunctionLineWithLastPoint(QString &line_name);
 
-    void setMeasurementGeode(osg::ref_ptr<osg::Geode> *_measurement_geode);
+    void setMeasurementGeode(osg::ref_ptr<osg::Geode> _measurement_geode);
 
 protected:
     osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;
@@ -97,7 +97,7 @@ protected:
 
     QString m_measur_type;
 
-    osg::ref_ptr<osg::Geode> *m_measurement_geode;
+    osg::ref_ptr<osg::Geode> m_measurement_geode;
 
 
 };
