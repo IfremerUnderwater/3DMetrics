@@ -9,6 +9,7 @@
 #include <QAction>
 #include <cstring>
 #include "measurement_saving_dialog.h"
+#include "tool_handler.h"
 
 namespace Ui {
 class MainWindow;
@@ -72,9 +73,11 @@ private:
     QMap<int,QString> m_qmap_of_names;
     QMap<QString,int> m_qmap_measur_counter;
     int m_true_counter;
+
+    ToolHandler m_tool_handler;
     ToolState m_tool_state;
 
-    QMap<QString,QPair<QString,int> > m_qmap_measurement;
+    QMap<QString,QPair<ToolState,int> > m_qmap_measurement;
 
     // delete button
     QMap<int,QString> m_qmap_checked_row_counter;

@@ -14,7 +14,6 @@
 #include "surface_measurement_tool.h"
 #include "interest_point_tool.h"
 #include "kml_handler.h"
-#include "tool_handler.h"
 #include <GeographicLib/LocalCartesian.hpp>
 
 #define INVALID_VALUE -1000
@@ -58,34 +57,22 @@ public:
     ///
     void clearSceneData();
 
-    void removeLastMeasurementOfType(ToolState _meas_type);
-
-    void removeMeasurementOfType(ToolState _meas_type, int _meas_index);
-
-    // hide/show measurement method
-    void hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible);
-
+    ///
+    /// \brief getIntersectionPoint ray trace (x,y) point on display to 3D point
+    /// \param _x x coord on display
+    /// \param _y y coord on display
+    /// \param _inter_point 3D intersection point on scene
+    /// \param _inter_exists true if intersection exists
+    ///
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
 
 public slots:
-    void slot_setInIdleState();
-    void slot_setInLineMeasurementState();
-    void slot_setInSurfaceMeasurementState();
-    void slot_setInInterestPointState();
-    void slot_setInCutAreaState();
-    void slot_setInZoomInState();
-    void slot_setInZoomOutState();
-    void slot_setInFullScreenState();
-    void slot_setInCropState();
-    void sl_resetMeasur();
+
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
-    void si_showInterestPointMeasurementSavingPopup(QString _coordinates, QString _measurement_type, int _measurement_index);
-    void si_endMeasur();
-    void si_returnIdleState();
-
+    void sig_onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 protected:
 
@@ -121,14 +108,6 @@ private:
     std::vector<osg::ref_ptr<osg::Node>> m_models;
     osg::ref_ptr<osg::Group> m_group;
     osg::ref_ptr<osg::Geode> m_measurement_geode;
-
-    // Measurements tools
-    ToolState m_tool_state;
-    LineMeasurementTool m_line_measurement_tool;
-    SurfaceMeasurementTool m_surface_measurement_tool;
-    InterestPointTool m_interest_point_tool;
-
-    QWidget m_distance_meas_form_pop;
 
     // Georef objects
     KMLHandler m_kml_handler;

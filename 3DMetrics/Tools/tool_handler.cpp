@@ -31,7 +31,7 @@ void ToolHandler::setCurrentToolState(ToolState _tool_state)
     }
 }
 
-void ToolHandler::cancelLastMeasurement()
+void ToolHandler::cancelMeasurement()
 {
     m_current_tool->removeLastMeasurement();
 }
@@ -70,7 +70,7 @@ void ToolHandler::hideShowMeasurementOfType(ToolState _meas_type, int _meas_inde
     }
 }
 
-void ToolHandler::onMousePress(Qt::MouseButton _button, int _x, int _y)
+void ToolHandler::slot_onMousePress(Qt::MouseButton _button, int _x, int _y)
 {
     m_current_tool->onMousePress(_button,_x,_y);
 }

@@ -81,9 +81,9 @@ public:
 
     void setMeasurementGeode(osg::ref_ptr<osg::Geode> _measurement_geode);
 
-protected:
-
     virtual void onMousePress(Qt::MouseButton _button, int _x, int _y){Q_UNUSED(_button);Q_UNUSED(_x);Q_UNUSED(_y);}
+
+protected:
 
     // Measurement points (used to draw points and lines)
     osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;

@@ -21,28 +21,11 @@ MainWindow::MainWindow(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    // Init tool handler
+    m_tool_handler.setOsgWidget(ui->display_widget);
+
     ui->measurements_table->resizeColumnsToContents();
-    m_measurement_form.setWindowTitle("Measurement form");
-
-    m_state_names[IDLE_STATE]="No selected tool";
-    m_state_names[LINE_MEASUREMENT_STATE]="Distance measurement";
-    m_state_names[SURFACE_MEASUREMENT_STATE]="Surface measurement";
-    m_state_names[INTEREST_POINT_STATE]="Interest point measurement";
-    m_state_names[CUT_AREA_TOOL_STATE]="Cut area tool";
-    m_state_names[ZOOM_IN_TOOL_STATE]="Zoom in tool";
-    m_state_names[ZOOM_OUT_TOOL_STATE]="Zoom out tool";
-    m_state_names[FULL_SCREEN_TOOL_STATE]="Full screen tool";
-    m_state_names[CROP_TOOL_STATE]="Crop tool";
-
-    m_qmap_convert_state_names["No selected tool"]=IDLE_STATE;
-    m_qmap_convert_state_names["Distance measurement"]=LINE_MEASUREMENT_STATE;
-    m_qmap_convert_state_names["Surface measurement"]=SURFACE_MEASUREMENT_STATE;
-    m_qmap_convert_state_names["Interest point measurement"]=INTEREST_POINT_STATE;
-    m_qmap_convert_state_names["Cut area tool"]=CUT_AREA_TOOL_STATE;
-    m_qmap_convert_state_names["Zoom in tool"]=ZOOM_IN_TOOL_STATE;
-    m_qmap_convert_state_names["Zoom out tool"]=ZOOM_OUT_TOOL_STATE;
-    m_qmap_convert_state_names["Full screen tool"]=FULL_SCREEN_TOOL_STATE;
-    m_qmap_convert_state_names["Crop tool"]=CROP_TOOL_STATE;  
+    m_measurement_form.setWindowTitle("Measurement form"); 
 
     m_delete_menu = new QMenu(ui->measurements_table);
     m_delete_measurement_action = new QAction("Delete measurement", this);
@@ -56,9 +39,10 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(ui->close_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_close3dModel()));
     QObject::connect(ui->save_measure_file_action, SIGNAL(triggered()), this, SLOT(sl_saveMeasurFile()));
 
-    QObject::connect(ui->display_widget, SIGNAL(sig_showMeasurementSavingPopup(double,QString,int)), this, SLOT(slot_openDistanceSurfaceMeasFromPopup(double,QString,int)));
+    //QObject::connect(ui->display_widget, SIGNAL(sig_showMeasurementSavingPopup(double,QString,int)), this, SLOT(slot_openDistanceSurfaceMeasFromPopup(double,QString,int)));
 
-    QObject::connect(ui->display_widget, SIGNAL(si_showInterestPointMeasurementSavingPopup(QString,QString,int)), this, SLOT(sl_openInterestPointMeasFromPopup(QString,QString,int)));
+    //QObject::connect(ui->display_widget, SIGNAL(si_showInterestPointMeasurementSavingPopup(QString,QString,int)), this, SLOT(sl_openInterestPointMeasFromPopup(QString,QString,int)));
+
     QObject::connect(&m_measurement_form, SIGNAL(sig_getMeasFormValues(QString,QString,QString,QString,QString,int,QString)), this, SLOT(slot_saveMeasFormValues(QString, QString,QString,QString,QString,int,QString)));
 
     QObject::connect(&m_measurement_form, SIGNAL(si_distanceMeasurementFormCanceled()), this, SLOT(sl_distanceMeasurementFormCanceled()));
@@ -71,14 +55,14 @@ MainWindow::MainWindow(QWidget *parent) :
 
 
     // mainToolBar
-    QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInLineMeasurementState()));
-    QObject::connect(ui->draw_area_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInSurfaceMeasurementState()));
-    QObject::connect(ui->draw_interest_point_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInInterestPointState()));
-    QObject::connect(ui->cut_area_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInCutAreaState()));
-    QObject::connect(ui->zoom_in_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInZoomInState()));
-    QObject::connect(ui->zoom_out_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInZoomOutState()));
-    QObject::connect(ui->resize_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInFullScreenState()));
-    QObject::connect(ui->crop_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInCropState()));
+    //QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInLineMeasurementState()));
+    //QObject::connect(ui->draw_area_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInSurfaceMeasurementState()));
+    //QObject::connect(ui->draw_interest_point_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInInterestPointState()));
+    //QObject::connect(ui->cut_area_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInCutAreaState()));
+    //QObject::connect(ui->zoom_in_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInZoomInState()));
+    //QObject::connect(ui->zoom_out_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInZoomOutState()));
+    //QObject::connect(ui->resize_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInFullScreenState()));
+    //QObject::connect(ui->crop_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInCropState()));
 
 
     QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), this, SLOT(sl_lineToolActivated()));
@@ -93,6 +77,7 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // hide/show measurement slot
     QObject::connect(ui->measurements_table, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(sl_show_hide_measurement(QTableWidgetItem*)));
+
     // delete measurement
     ui->measurements_table->setContextMenuPolicy(Qt::CustomContextMenu);
     //setContextMenuPolicy(Qt::ActionsContextMenu);
@@ -117,10 +102,7 @@ void MainWindow::slot_open3dModel()
                 tr("Select one 3d Model to open"),
                 "All files (*.*)");
 
-
-    bool model_file = m_model_file.isNull();
-
-    if(model_file)
+    if(m_model_file.isNull())
         QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a 3d model"));
 
     else
@@ -259,11 +241,11 @@ void MainWindow::slot_openMeasureFile()
 void MainWindow::slot_close3dModel()
 {
 
-    int row_counter = ui->measurements_table->rowCount();
+    int rows_nb = ui->measurements_table->rowCount();
 
-    for(int i=0; i < row_counter; ++i)
+    for(int i=0; i < rows_nb; ++i)
     {
-        ui->measurements_table->removeRow((row_counter-1)-i);
+        ui->measurements_table->removeRow((rows_nb-1)-i);
     }
 
     ui->display_widget->clearSceneData();
@@ -599,17 +581,17 @@ void MainWindow::add_measur_to_table(QString _measur_name, QString _measur_type,
 
 void MainWindow::sl_distanceMeasurementFormCanceled()
 {
-    ui->display_widget->removeLastMeasurementOfType(LINE_MEASUREMENT_STATE);
+    m_tool_handler.cancelMeasurement();
 }
 
 void MainWindow::sl_surfaceMeasurementFormCanceled()
 {
-    ui->display_widget->removeLastMeasurementOfType(SURFACE_MEASUREMENT_STATE);
+    m_tool_handler.cancelMeasurement();
 }
 
 void MainWindow::sl_interestPointMeasurementFormCanceled()
 {
-    ui->display_widget->removeLastMeasurementOfType(INTEREST_POINT_STATE);
+    m_tool_handler.cancelMeasurement();
 }
 
 
@@ -694,13 +676,13 @@ void MainWindow::sl_show_hide_measurement(QTableWidgetItem *_item_clicked)
         // if item clicked is not checked
         if(_item_clicked->checkState() == Qt::Unchecked)
         {
-            ui->display_widget->hideShowMeasurementOfType(m_qmap_convert_state_names[m_qmap_measurement[item_name].first], m_qmap_measurement[item_name].second, false);
+            m_tool_handler.hideShowMeasurementOfType(m_qmap_convert_state_names[m_qmap_measurement[item_name].first], m_qmap_measurement[item_name].second, false);
         }
 
         // if item clicked is checked
         else if(_item_clicked->checkState() == Qt::Checked)
         {
-            ui->display_widget->hideShowMeasurementOfType(m_qmap_convert_state_names[m_qmap_measurement[item_name].first], m_qmap_measurement[item_name].second, true);
+            m_tool_handler.hideShowMeasurementOfType(m_qmap_convert_state_names[m_qmap_measurement[item_name].first], m_qmap_measurement[item_name].second, true);
         }
     }
 }
@@ -750,7 +732,7 @@ void MainWindow::sl_delete_measurement_action()
     int item_row = m_delete_measurement_item->row();
     QString item_name = ui->measurements_table->item(item_row,1)->text();
 
-    ui->display_widget->removeMeasurementOfType(m_qmap_convert_state_names[m_qmap_measurement[item_name].first], m_qmap_measurement[item_name].second);
+    m_tool_handler.removeMeasurementOfType(m_qmap_convert_state_names[m_qmap_measurement[item_name].first], m_qmap_measurement[item_name].second);
     ui->measurements_table->removeRow(item_row);
 }
 

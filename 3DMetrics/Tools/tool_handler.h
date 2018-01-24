@@ -22,14 +22,15 @@ enum ToolState
 
 class OSGWidget;
 
-class ToolHandler
+class ToolHandler:public QObject
 {
+    Q_OBJECT
 public:
     ToolHandler();
 
     void setCurrentToolState(ToolState _tool_state);
 
-    void cancelLastMeasurement();
+    void cancelMeasurement();
     void removeMeasurementOfType(ToolState _meas_type, int _meas_index);
 
     // hide/show measurement method
@@ -41,7 +42,7 @@ public:
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
 public slots:
-    void onMousePress(Qt::MouseButton _button ,int _x, int _y);
+    void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);
 
 private:
     MeasurementTool *m_current_tool;
