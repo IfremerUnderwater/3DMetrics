@@ -1,7 +1,9 @@
 #include "measurement_tool.h"
+#include "tool_handler.h"
 
-
-MeasurementTool::MeasurementTool():m_measurement_counter(0), m_lines_counter(0)
+MeasurementTool::MeasurementTool(ToolHandler *_tool_handler):m_tool_handler(_tool_handler),
+    m_measurement_counter(0),
+    m_lines_counter(0)
 {
     m_measurement_pt = NULL;
     m_measurement_geode = NULL;

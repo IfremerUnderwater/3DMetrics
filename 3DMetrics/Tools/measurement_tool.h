@@ -45,11 +45,12 @@
 #include <vector>
 #include <map>
 
+class ToolHandler;
 
 class MeasurementTool
 {
 public:
-    MeasurementTool();
+    MeasurementTool(ToolHandler *_tool_handler);
     virtual ~MeasurementTool();
     void pushNewPoint(osg::Vec3d _point);
     virtual void draw()=0;
@@ -82,7 +83,7 @@ public:
 
 protected:
 
-    void onMousePress(Qt::MouseButton _button, int _x, int _y)=0;
+    virtual void onMousePress(Qt::MouseButton _button, int _x, int _y){Q_UNUSED(_button);Q_UNUSED(_x);Q_UNUSED(_y);}
 
     // Measurement points (used to draw points and lines)
     osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;
@@ -105,6 +106,9 @@ protected:
 
     // Geode that stores all measurement drawables
     osg::ref_ptr<osg::Geode> m_measurement_geode;
+
+    // Tool handler is in interaction with display widget
+    ToolHandler *m_tool_handler;
 
 
 };

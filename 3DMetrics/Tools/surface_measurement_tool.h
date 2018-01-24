@@ -9,7 +9,7 @@ class SurfaceMeasurementTool : public MeasurementTool
 {
 
 public:
-    SurfaceMeasurementTool();
+    SurfaceMeasurementTool(ToolHandler *_tool_handler);
     ~SurfaceMeasurementTool();
     void draw();
     void removeLastMeasurement();

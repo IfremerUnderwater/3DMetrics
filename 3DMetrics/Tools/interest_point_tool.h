@@ -6,7 +6,7 @@
 class InterestPointTool : public MeasurementTool
 {
 public:
-    InterestPointTool();
+    InterestPointTool(ToolHandler *_tool_handler);
     ~InterestPointTool();
     void draw();
     void removeLastMeasurement();

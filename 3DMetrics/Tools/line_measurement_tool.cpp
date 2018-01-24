@@ -1,7 +1,7 @@
 #include "line_measurement_tool.h"
 #include <math.h>
 
-LineMeasurementTool::LineMeasurementTool():MeasurementTool()
+LineMeasurementTool::LineMeasurementTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler)
 {
     m_point_size = 0.5;
 }

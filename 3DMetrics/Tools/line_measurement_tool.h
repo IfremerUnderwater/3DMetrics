@@ -7,7 +7,7 @@
 class LineMeasurementTool : public MeasurementTool
 {
 public:
-    LineMeasurementTool();
+    LineMeasurementTool(ToolHandler *_tool_handler);
     ~LineMeasurementTool();
     void draw();
     void removeLastMeasurement();

@@ -2,7 +2,7 @@
 #include <math.h>
 #include "Polygon.h"
 
-SurfaceMeasurementTool::SurfaceMeasurementTool():MeasurementTool(),m_area(-10)
+SurfaceMeasurementTool::SurfaceMeasurementTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler),m_area(-10)
 {
 
 }

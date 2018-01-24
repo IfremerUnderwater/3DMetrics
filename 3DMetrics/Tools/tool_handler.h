@@ -20,6 +20,8 @@ enum ToolState
     CROP_TOOL_STATE
 };
 
+class OSGWidget;
+
 class ToolHandler
 {
 public:
@@ -33,6 +35,12 @@ public:
     // hide/show measurement method
     void hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible);
 
+    void setOsgWidget(OSGWidget *_osg_widget);
+
+    // getIntersectionPoint from OSGWidget
+    void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
+
+public slots:
     void onMousePress(Qt::MouseButton _button ,int _x, int _y);
 
 private:
@@ -43,6 +51,8 @@ private:
     InterestPointTool m_interest_point_tool;
 
     ToolState m_current_toolstate;
+
+    OSGWidget *m_osg_widget;
 };
 
 #endif // TOOLHANDLER_H

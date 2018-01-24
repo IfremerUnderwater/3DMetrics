@@ -1,7 +1,7 @@
 #include "interest_point_tool.h"
 #include <math.h>
 
-InterestPointTool::InterestPointTool()
+InterestPointTool::InterestPointTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler)
 {
 
 }
