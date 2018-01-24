@@ -79,7 +79,7 @@ void SurfaceMeasurementTool::removeMeasurement(int _meas_index)
         m_geo_drawable_map.remove(line_number);
     }
 
-    m_measurements_history_qmap.remove(_meas_index);
+    m_measurements_pt_qmap.remove(_meas_index);
 
     m_measurement_counter--;
 

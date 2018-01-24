@@ -71,7 +71,7 @@ void InterestPointTool::removeMeasurement(int _meas_index)
     m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
     m_geo_drawable_map.remove(point_number);
 
-    m_measurements_history_qmap.remove(_meas_index);
+    m_measurements_pt_qmap.remove(_meas_index);
 
     m_measurement_counter--;
 

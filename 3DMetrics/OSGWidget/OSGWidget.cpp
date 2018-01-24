@@ -218,10 +218,6 @@ OSGWidget::OSGWidget(QWidget* parent)
     connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
     m_timer.start( 10 );
 
-    //    // Create group that will contain measurement geode and 3D model
-    //    m_group = new osg::Group;
-    //    m_measurement_geode = new osg::Geode;
-    //    m_group->addChild(m_measurement_geode);
 
 }
 
@@ -386,6 +382,10 @@ void OSGWidget::initializeGL(){
     m_measurement_geode = new osg::Geode;
     m_group->addChild(m_measurement_geode);
 
+    m_line_measurement_tool.setMeasurementGeode(m_measurement_geode);
+    m_surface_measurement_tool.setMeasurementGeode(m_measurement_geode);
+    m_interest_point_tool.setMeasurementGeode(m_measurement_geode);
+
     // Init properties
     osg::StateSet* stateSet = m_group->getOrCreateStateSet();
     osg::Material* material = new osg::Material;
@@ -483,7 +483,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
             getIntersectionPoint(event->x(), event->y(), inter_point, inter_exists);
             if(inter_exists){
 
-                m_line_measurement_tool.pushNewPoint(m_measurement_geode,inter_point);
+                m_line_measurement_tool.pushNewPoint(inter_point);
                 m_group->removeChild(m_measurement_geode);
                 m_group->addChild(m_measurement_geode);
 
@@ -500,7 +500,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
             getIntersectionPoint(event->x(), event->y(), inter_point, inter_exists);
             if(inter_exists){
 
-                m_surface_measurement_tool.pushNewPoint(m_measurement_geode,inter_point);
+                m_surface_measurement_tool.pushNewPoint(inter_point);
                 m_group->removeChild(m_measurement_geode);
                 m_group->addChild(m_measurement_geode);
 
@@ -517,7 +517,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
             getIntersectionPoint(event->x(), event->y(), inter_point, inter_exists);
             if(inter_exists){
 
-                m_interest_point_tool.pushNewPoint(m_measurement_geode,inter_point);
+                m_interest_point_tool.pushNewPoint(inter_point);
                 m_group->removeChild(m_measurement_geode);
                 m_group->addChild(m_measurement_geode);
 
@@ -571,7 +571,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
         {
             if(m_line_measurement_tool.getNumberOfPoints() >= 3)
             {
-                m_line_measurement_tool.closeLoop(m_measurement_geode);
+                m_line_measurement_tool.closeLoop();
                 emit sig_showMeasurementSavingPopup(m_line_measurement_tool.closedLineLength(),
                                                     m_line_measurement_tool.getTypeOfMeasur(),
                                                     m_line_measurement_tool.getMeasurementCounter());
@@ -641,7 +641,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
         {
             if(m_surface_measurement_tool.getNumberOfPoints() >= 3)
             {
-                m_surface_measurement_tool.closeLoop(m_measurement_geode);
+                m_surface_measurement_tool.closeLoop();
                 emit sig_showMeasurementSavingPopup(m_surface_measurement_tool.getArea(),
                                                     m_surface_measurement_tool.getTypeOfMeasur(),
                                                     m_surface_measurement_tool.getMeasurementCounter());
@@ -774,19 +774,19 @@ void OSGWidget::removeLastMeasurementOfType(ToolState _meas_type)
 
     case LINE_MEASUREMENT_STATE:
     {
-        m_line_measurement_tool.removeLastMeasurement(m_measurement_geode);
+        m_line_measurement_tool.removeLastMeasurement();
     }
         break;
 
     case SURFACE_MEASUREMENT_STATE:
     {
-        m_surface_measurement_tool.removeLastMeasurement(m_measurement_geode);
+        m_surface_measurement_tool.removeLastMeasurement();
     }
         break;
 
     case INTEREST_POINT_STATE:
     {
-        m_interest_point_tool.removeLastMeasurement(m_measurement_geode);
+        m_interest_point_tool.removeLastMeasurement();
     }
         break;
 
@@ -827,19 +827,19 @@ void OSGWidget::removeMeasurementOfType(ToolState _meas_type, int _meas_index)
 
     case LINE_MEASUREMENT_STATE:
     {
-        m_line_measurement_tool.removeMeasurement(m_measurement_geode, _meas_index);
+        m_line_measurement_tool.removeMeasurement(_meas_index);
     }
         break;
 
     case SURFACE_MEASUREMENT_STATE:
     {
-        m_surface_measurement_tool.removeMeasurement(m_measurement_geode, _meas_index);
+        m_surface_measurement_tool.removeMeasurement(_meas_index);
     }
         break;
 
     case INTEREST_POINT_STATE:
     {
-        m_interest_point_tool.removeMeasurement(m_measurement_geode, _meas_index);
+        m_interest_point_tool.removeMeasurement(_meas_index);
     }
         break;
 
@@ -880,19 +880,19 @@ void OSGWidget::hideShowMeasurementOfType(ToolState _meas_type, int _meas_index,
 
     case LINE_MEASUREMENT_STATE:
     {
-        m_line_measurement_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
+        m_line_measurement_tool.hideShowMeasurement(_meas_index, _visible);
     }
         break;
 
     case SURFACE_MEASUREMENT_STATE:
     {
-        m_surface_measurement_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
+        m_surface_measurement_tool.hideShowMeasurement(_meas_index, _visible);
     }
         break;
 
     case INTEREST_POINT_STATE:
     {
-        m_interest_point_tool.hideShowMeasurement(m_measurement_geode, _meas_index, _visible);
+        m_interest_point_tool.hideShowMeasurement(_meas_index, _visible);
     }
         break;
 
@@ -1055,19 +1055,19 @@ void OSGWidget::sl_resetMeasur()
     if(m_tool_state == LINE_MEASUREMENT_STATE)
     {
         m_line_measurement_tool.endMeasurement();
-        m_line_measurement_tool.removeLastMeasurement(m_measurement_geode);
+        m_line_measurement_tool.removeLastMeasurement();
     }
 
     else if(m_tool_state == SURFACE_MEASUREMENT_STATE)
     {
         m_surface_measurement_tool.endMeasurement();
-        m_surface_measurement_tool.removeLastMeasurement(m_measurement_geode);
+        m_surface_measurement_tool.removeLastMeasurement();
     }
 
     else if(m_tool_state == INTEREST_POINT_STATE)
     {
         m_interest_point_tool.endMeasurement();
-        m_interest_point_tool.removeLastMeasurement(m_measurement_geode);
+        m_interest_point_tool.removeLastMeasurement();
     }
 
     emit si_returnIdleState();

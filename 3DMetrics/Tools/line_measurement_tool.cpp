@@ -79,7 +79,7 @@ void LineMeasurementTool::removeMeasurement(int _meas_index)
     }
 
 
-    m_measurements_history_qmap.remove(_meas_index);
+    m_measurements_pt_qmap.remove(_meas_index);
 
     m_measurement_counter--;
 

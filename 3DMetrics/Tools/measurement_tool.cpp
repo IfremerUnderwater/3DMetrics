@@ -122,7 +122,7 @@ void MeasurementTool::resetModelData()
     m_measurement_counter=0;
     m_measur_type.clear();
     m_measurement_pt = NULL;
-    m_measurements_history_qmap.clear();
+    m_measurements_pt_qmap.clear();
     m_lines_counter=0;
     m_meas_lines_number.clear();
 }
@@ -133,7 +133,7 @@ void MeasurementTool::endMeasurement()
 {
     qDebug() << "Test m_lines_counter : " << m_lines_counter;
     qDebug() << "Test m_meas_lines_number : " << m_meas_lines_number[m_measurement_counter];
-    m_measurements_history_qmap[m_measurement_counter] = m_measurement_pt;
+    m_measurements_pt_qmap[m_measurement_counter] = m_measurement_pt;
     m_measurement_pt = NULL;
     m_lines_counter=0;
 }
@@ -142,7 +142,7 @@ void MeasurementTool::endMeasurement()
 
 QMap<int, osg::ref_ptr<osg::Vec3dArray> > MeasurementTool::getMeasurementsHistoryQmap()
 {
-    return m_measurements_history_qmap;
+    return m_measurements_pt_qmap;
 }
 
 

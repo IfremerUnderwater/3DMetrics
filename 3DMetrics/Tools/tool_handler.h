@@ -27,7 +27,7 @@ public:
 
     void setCurrentToolState(ToolState _tool_state);
 
-    void removeLastMeasurementOfType(ToolState _meas_type);
+    void cancelLastMeasurement();
     void removeMeasurementOfType(ToolState _meas_type, int _meas_index);
 
     // hide/show measurement method

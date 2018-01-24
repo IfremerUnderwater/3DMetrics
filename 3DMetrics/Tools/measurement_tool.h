@@ -81,22 +81,29 @@ public:
     void setMeasurementGeode(osg::ref_ptr<osg::Geode> _measurement_geode);
 
 protected:
-    osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;
-    QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_history_qmap;
-    int m_measurement_counter;
 
-    // contains points and lines
+    void onMousePress(Qt::MouseButton _button, int _x, int _y)=0;
+
+    // Measurement points (used to draw points and lines)
+    osg::ref_ptr<osg::Vec3dArray> m_measurement_pt;
+
+    // Map to keep a trace of drawable (in order to be able to remove or hide them)
     QMap<QString, osg::ref_ptr<osg::Drawable> > m_geo_drawable_map;
 
-    //use to delete or create measurements
-    QMap<int,QString> m_measur_qmap;
+    // Map to keep history of measurements pt
+    QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_pt_qmap;
 
+    // Map that stores pts & lines number in each measurement
     QMap<int,int> m_meas_points_number;
     QMap<int,int> m_meas_lines_number;
+
+    int m_measurement_counter;
+
     int m_lines_counter;
 
     QString m_measur_type;
 
+    // Geode that stores all measurement drawables
     osg::ref_ptr<osg::Geode> m_measurement_geode;
 
 
