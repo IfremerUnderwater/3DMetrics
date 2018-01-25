@@ -34,6 +34,9 @@ public:
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);
 
+signals:
+    void measurementEnded();
+
 private:
     MeasurementTool *m_current_tool;
 

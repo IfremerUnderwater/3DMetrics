@@ -40,16 +40,11 @@ void LineMeasurementTool::draw()
 
         // lines
 
-        m_lines_counter++;
-
         QString line_name = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size()-1);
         drawJunctionLineWithLastPoint(line_name);
 
     }
 
-    m_meas_points_number[m_measurement_counter] = m_measurement_pt->size();
-
-    m_meas_lines_number[m_measurement_counter] = m_lines_counter;
 
     lineLength();
 }
@@ -66,18 +61,18 @@ void LineMeasurementTool::removeLastMeasurement()
 void LineMeasurementTool::removeMeasurement(int _meas_index)
 {
 
-    for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
+    for(unsigned int i=1; i<=m_measurements_pt_qmap[_meas_index]->size(); ++i)
     {
-        QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
-        m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
-        m_geo_drawable_map.remove(point_number);
+        QString point_key = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+        m_geo_drawable_map.remove(point_key);
     }
 
-    for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
+    for(unsigned int j=1; j<=m_measurements_pt_qmap[_meas_index]->size(); ++j)
     {
-        QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-        m_measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
-        m_geo_drawable_map.remove(line_number);
+        QString line_key = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[line_key]);
+        m_geo_drawable_map.remove(line_key);
     }
 
 

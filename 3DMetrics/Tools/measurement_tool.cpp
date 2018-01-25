@@ -2,8 +2,7 @@
 #include "tool_handler.h"
 
 MeasurementTool::MeasurementTool(ToolHandler *_tool_handler):m_tool_handler(_tool_handler),
-    m_measurement_counter(0),
-    m_lines_counter(0)
+    m_measurement_counter(0)
 {
     m_measurement_pt = NULL;
     m_measurement_geode = NULL;
@@ -35,50 +34,42 @@ ToolState MeasurementTool::getMeasType()
     return m_meas_type;
 }
 
-int MeasurementTool::getNumberOfPoints()
-{
-    return m_measurement_pt->size();
-}
-
 
 void MeasurementTool::hideShowMeasurement(int _meas_index, bool _visible)
 {
-    if (_visible == true)
+
+    for(unsigned int i=1; i<=m_measurements_pt_qmap[_meas_index]->size(); ++i)
     {
-        for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
-        {
-            QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
+        QString point_key = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
 
-            if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
-                m_measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
+        if (_visible == true)
+        {
+            if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
+                m_measurement_geode->addDrawable(m_geo_drawable_map[point_key]);
         }
-
-        for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
+        else
         {
-            QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-
-            if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[line_number]))
-                m_measurement_geode->addDrawable(m_geo_drawable_map[line_number]);
+            if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
+                m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
         }
     }
-    else
+
+    for(unsigned int j=1; j<=m_measurements_pt_qmap[_meas_index]->size(); ++j)
     {
-        for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
-        {
-            QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
+        QString line_key = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
 
-            if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
-                m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+        if (_visible == true)
+        {
+            if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[line_key]))
+                m_measurement_geode->addDrawable(m_geo_drawable_map[line_key]);
         }
-
-        for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
+        else
         {
-            QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-
-            if(m_measurement_geode->containsDrawable(m_geo_drawable_map[line_number]))
-                m_measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
+            if(m_measurement_geode->containsDrawable(m_geo_drawable_map[line_key]))
+                m_measurement_geode->removeDrawable(m_geo_drawable_map[line_key]);
         }
     }
+
 }
 
 
@@ -89,15 +80,12 @@ void MeasurementTool::closeLoop()
 
 
 
-void MeasurementTool::resetModelData()
+void MeasurementTool::resetMeasData()
 {
     m_geo_drawable_map.clear();
-    m_meas_points_number.clear();
     m_measurement_counter=0;
     m_measurement_pt = NULL;
     m_measurements_pt_qmap.clear();
-    m_lines_counter=0;
-    m_meas_lines_number.clear();
 }
 
 
@@ -106,27 +94,8 @@ void MeasurementTool::endMeasurement()
 {
     m_measurements_pt_qmap[m_measurement_counter] = m_measurement_pt;
     m_measurement_pt = NULL;
-    m_lines_counter=0;
 }
 
-
-
-QMap<int, osg::ref_ptr<osg::Vec3dArray> > MeasurementTool::getMeasurementsHistoryQmap()
-{
-    return m_measurements_pt_qmap;
-}
-
-
-QMap<int,int> MeasurementTool::getMeasurPtsNumber()
-{
-    return m_meas_points_number;
-}
-
-
-QMap<int,int> MeasurementTool::getMeasurLinesNumber()
-{
-    return m_meas_lines_number;
-}
 
 void MeasurementTool::drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name)
 {

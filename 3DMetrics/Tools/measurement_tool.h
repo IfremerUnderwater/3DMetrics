@@ -54,27 +54,48 @@ class MeasurementTool
 public:
     MeasurementTool(ToolHandler *_tool_handler);
     virtual ~MeasurementTool();
+
+    ///
+    /// \brief pushNewPoint add a new point draw the measurement
+    /// \param _point 3D point to add
+    ///
     void pushNewPoint(osg::Vec3d _point);
+
+    ///
+    /// \brief draw measurement drawing
+    ///
     virtual void draw()=0;
+
+
+    ///
+    /// \brief removeLastMeasurement cancel last measurement
+    ///
     virtual void removeLastMeasurement()=0;
-    ToolState getMeasType();
+
+    ///
+    /// \brief removeMeasurement remove measurement of index _meas_index
+    /// \param _meas_index
+    ///
     virtual void removeMeasurement(int _meas_index)=0;
+
+    ///
+    /// \brief getMeasType
+    /// \return measurement type
+    ///
+    ToolState getMeasType();
+
+    ///
+    /// \brief closeLoop add first point as the last point to close the loop
+    ///
     void closeLoop();
-    int getNumberOfPoints();
+
 
     // hide/show measurement method
     void hideShowMeasurement(int _meas_index, bool _visible);
-    void resetModelData();
+
+    void resetMeasData();
+
     void endMeasurement();
-
-    // get points and lines coordinates
-    QMap<int, osg::ref_ptr<osg::Vec3dArray> > getMeasurementsHistoryQmap();
-
-    // get informations about points and lines
-    QMap<QString, osg::ref_ptr<osg::Drawable> > getPointQmap() const;
-
-    QMap<int,int> getMeasurPtsNumber();
-    QMap<int,int> getMeasurLinesNumber();
 
     // draw a point with given color in the provided geode
     void drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
@@ -96,13 +117,8 @@ protected:
     // Map to keep history of measurements pt
     QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_pt_qmap;
 
-    // Map that stores pts & lines number in each measurement
-    QMap<int,int> m_meas_points_number;
-    QMap<int,int> m_meas_lines_number;
 
     int m_measurement_counter;
-
-    int m_lines_counter;
 
     ToolState m_meas_type;
 

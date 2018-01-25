@@ -29,8 +29,6 @@ void InterestPointTool::draw()
 
     }
 
-    m_meas_points_number[m_measurement_counter] = m_measurement_pt->size();
-
 }
 
 QString InterestPointTool::interestPointCoordinates()
@@ -65,10 +63,10 @@ void InterestPointTool::removeLastMeasurement()
 
 void InterestPointTool::removeMeasurement(int _meas_index)
 {
-    QString point_number = QString("measurement_%1").arg(_meas_index);
+    QString point_key = QString("measurement_%1").arg(_meas_index);
 
-    m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
-    m_geo_drawable_map.remove(point_number);
+    m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+    m_geo_drawable_map.remove(point_key);
 
     m_measurements_pt_qmap.remove(_meas_index);
 
@@ -88,21 +86,21 @@ void InterestPointTool::hideShowMeasurement(int _meas_index, bool _visible)
 
     if (_visible)
     {
-        QString point_number = QString("measurement_%1").arg(_meas_index);
+        QString point_key = QString("measurement_%1").arg(_meas_index);
 
-        if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+        if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
         {
-            m_measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
+            m_measurement_geode->addDrawable(m_geo_drawable_map[point_key]);
             qDebug() << "Add measur";
         }
     }
     else
     {
-        QString point_number = QString("measurement_%1").arg(_meas_index);
+        QString point_key = QString("measurement_%1").arg(_meas_index);
 
-        if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+        if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
         {
-            m_measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+            m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
             qDebug() << "Remove measur";
         }
     }

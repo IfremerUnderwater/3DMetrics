@@ -7,8 +7,7 @@
 MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::MeasurementSavingDialog),
-    m_measur_counter(0),
-    m_size_qmap_category(13)
+    m_measur_counter(0)
 
 {
     ui->setupUi(this);

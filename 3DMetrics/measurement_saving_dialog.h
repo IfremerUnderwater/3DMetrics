@@ -54,7 +54,6 @@ private:
     Ui::MeasurementSavingDialog *ui;
     int m_measur_counter;
     QMap<int,QString> m_category_names;
-    int m_size_qmap_category;
 
     int m_measurement_index;
 
