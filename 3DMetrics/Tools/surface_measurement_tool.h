@@ -14,7 +14,7 @@ public:
     void draw();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
-    QString getTypeOfMeasur();
+
     int getMeasurementCounter() const;
     double getArea();
     void resetSurfaceData();

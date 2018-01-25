@@ -1,8 +1,10 @@
 #include "line_measurement_tool.h"
 #include <math.h>
+#include "tool_handler.h"
 
 LineMeasurementTool::LineMeasurementTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler)
 {
+    m_meas_type = LINE_MEASUREMENT_STATE;
     m_point_size = 0.5;
 }
 
@@ -14,7 +16,7 @@ LineMeasurementTool::~LineMeasurementTool()
 
 void LineMeasurementTool::draw()
 {
-    m_measur_type = "Distance measurement";
+
 
     if(m_measurement_pt->size() == 1)
     {
@@ -123,32 +125,6 @@ double LineMeasurementTool::lineLength()
     }
 }
 
-double LineMeasurementTool::closedLineLength()
-{
-    double open_loop_norm = lineLength();
-
-    double x;
-    double y;
-    double z;
-
-    x = fabs(m_measurement_pt->at(m_measurement_pt->size()-1)[0] - m_measurement_pt->at(0)[0]);
-    y = fabs(m_measurement_pt->at(m_measurement_pt->size()-1)[1] - m_measurement_pt->at(0)[1]);
-    z = fabs(m_measurement_pt->at(m_measurement_pt->size()-1)[2] - m_measurement_pt->at(0)[2]);
-
-    m_lastNorm = sqrt(x*x + y*y + z*z);
-    m_norm = m_lastNorm + open_loop_norm;
-
-    return m_norm;
-
-}
-
-
-
-QString LineMeasurementTool::getTypeOfMeasur()
-{
-    return m_measur_type;
-}
-
 
 int LineMeasurementTool::getMeasurementCounter() const
 {
@@ -170,6 +146,33 @@ double LineMeasurementTool::getPointSize() const
 void LineMeasurementTool::setPointSize(double point_size)
 {
     m_point_size = point_size;
+}
+
+void LineMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
+{
+    switch (_button) {
+    case Qt::LeftButton:
+    {
+        osg::Vec3d inter_point;
+        bool inter_exists;
+        m_tool_handler->getIntersectionPoint(_x, _y, inter_point, inter_exists);
+        if(inter_exists){
+            pushNewPoint(inter_point);
+            m_tool_handler->forceGeodeUpdate();
+        }
+    }
+        break;
+    case Qt::MiddleButton:
+    {
+        closeLoop();
+    }
+        break;
+    case Qt::RightButton:
+
+        break;
+    default:
+        break;
+    }
 }
 
 

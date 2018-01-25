@@ -8,11 +8,13 @@ class InterestPointTool : public MeasurementTool
 public:
     InterestPointTool(ToolHandler *_tool_handler);
     ~InterestPointTool();
+
     void draw();
+
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
+
     QString interestPointCoordinates();
-    QString getTypeOfMeasur();
     int getMeasurementCounter() const;
     void hideShowMeasurement( int _meas_index, bool _visible);
     void closeLoop();

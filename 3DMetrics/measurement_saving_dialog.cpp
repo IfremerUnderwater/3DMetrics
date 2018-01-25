@@ -60,20 +60,20 @@ MeasurementSavingDialog::~MeasurementSavingDialog()
     delete ui;
 }
 
-void MeasurementSavingDialog::setDistanceSurfaceMeasValueAndType(double _measurement, QString _measurement_type, int _measurement_index)
+void MeasurementSavingDialog::setDistanceSurfaceMeasValueAndType(double _measurement, ToolState _measurement_type, int _measurement_index)
 {
     QString measurementText;
     measurementText = QString::number(_measurement);
 
-    ui->typeOfMeasurEdit->setText(_measurement_type);
+    ui->typeOfMeasurEdit->setText(QString(_measurement_type));
     ui->measurResultLabel->setText(measurementText);
 
     m_measurement_index = _measurement_index;
 }
 
-void MeasurementSavingDialog::setInterestPointMeasValueAndType(QString _coordinates, QString _measurement_type, int _measurement_index)
+void MeasurementSavingDialog::setInterestPointMeasValueAndType(QString _coordinates, ToolState _measurement_type, int _measurement_index)
 {
-    ui->typeOfMeasurEdit->setText(_measurement_type);
+    ui->typeOfMeasurEdit->setText(QString(_measurement_type));
     ui->measurResultLabel->setText(_coordinates);
 
     m_measurement_index = _measurement_index;
@@ -87,8 +87,9 @@ void MeasurementSavingDialog::slot_addMeasFormValues()
     QString _measur_name = ui->nameOfMeasurementLineEdit->text();
 
     QString _category = ui->categoryComboBox->currentText();
-
-    QString _measur_type = ui->typeOfMeasurEdit->text();
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //QString _measur_type = ui->typeOfMeasurEdit->text();
+    ToolState _measur_type = LINE_MEASUREMENT_STATE;
 
     QString _measur_result = ui->measurResultLabel->text();
 

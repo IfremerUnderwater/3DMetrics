@@ -5,20 +5,8 @@
 #include "line_measurement_tool.h"
 #include "surface_measurement_tool.h"
 #include "interest_point_tool.h"
+#include "tool_types.h"
 
-// Various states according to the action clicked
-enum ToolState
-{
-    IDLE_STATE,
-    LINE_MEASUREMENT_STATE,
-    SURFACE_MEASUREMENT_STATE,
-    INTEREST_POINT_STATE,
-    CUT_AREA_TOOL_STATE,
-    ZOOM_IN_TOOL_STATE,
-    ZOOM_OUT_TOOL_STATE,
-    FULL_SCREEN_TOOL_STATE,
-    CROP_TOOL_STATE
-};
 
 class OSGWidget;
 
@@ -40,6 +28,8 @@ public:
 
     // getIntersectionPoint from OSGWidget
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
+
+    void forceGeodeUpdate();
 
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);

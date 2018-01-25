@@ -30,6 +30,11 @@ void MeasurementTool::pushNewPoint(osg::Vec3d _point )
 
 }
 
+ToolState MeasurementTool::getMeasType()
+{
+    return m_meas_type;
+}
+
 int MeasurementTool::getNumberOfPoints()
 {
     return m_measurement_pt->size();
@@ -79,40 +84,7 @@ void MeasurementTool::hideShowMeasurement(int _meas_index, bool _visible)
 
 void MeasurementTool::closeLoop()
 {
-    if(m_measurement_pt->size() >= 3)
-    {
-        m_lines_counter++;
-
-        // lines (to be modified with line function)
-
-        int current_point = (int) m_measurement_pt->size();
-
-        QString line_number = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
-
-        osg::DrawElementsUInt* line =
-                new osg::DrawElementsUInt( osg::PrimitiveSet::LINES, 0 );
-        line->push_back(0);
-        line->push_back(current_point-1);
-
-        osg::Geometry* geoPoints = new osg::Geometry;
-        geoPoints->setVertexArray(m_measurement_pt);
-        geoPoints->addPrimitiveSet(line);
-
-        osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
-        tabCouleur->push_back(osg::Vec4d(0.0f, 1.0f, 0.0f, 1.0f)); //red
-        geoPoints->setColorArray(tabCouleur);
-
-        geoPoints->setColorBinding(osg::Geometry::BIND_OVERALL);
-
-        m_measurement_geode->addDrawable(geoPoints);
-
-        m_geo_drawable_map[line_number] = geoPoints;
-
-        m_meas_points_number[m_measurement_counter] = m_measurement_pt->size();
-
-        m_meas_lines_number[m_measurement_counter] = m_lines_counter;
-
-    }
+    pushNewPoint(m_measurement_pt->at(0));
 }
 
 
@@ -122,7 +94,6 @@ void MeasurementTool::resetModelData()
     m_geo_drawable_map.clear();
     m_meas_points_number.clear();
     m_measurement_counter=0;
-    m_measur_type.clear();
     m_measurement_pt = NULL;
     m_measurements_pt_qmap.clear();
     m_lines_counter=0;
@@ -133,8 +104,6 @@ void MeasurementTool::resetModelData()
 
 void MeasurementTool::endMeasurement()
 {
-    qDebug() << "Test m_lines_counter : " << m_lines_counter;
-    qDebug() << "Test m_meas_lines_number : " << m_meas_lines_number[m_measurement_counter];
     m_measurements_pt_qmap[m_measurement_counter] = m_measurement_pt;
     m_measurement_pt = NULL;
     m_lines_counter=0;

@@ -45,6 +45,8 @@
 #include <vector>
 #include <map>
 
+#include "tool_types.h"
+
 class ToolHandler;
 
 class MeasurementTool
@@ -55,7 +57,7 @@ public:
     void pushNewPoint(osg::Vec3d _point);
     virtual void draw()=0;
     virtual void removeLastMeasurement()=0;
-    virtual QString getTypeOfMeasur()=0;
+    ToolState getMeasType();
     virtual void removeMeasurement(int _meas_index)=0;
     void closeLoop();
     int getNumberOfPoints();
@@ -102,7 +104,7 @@ protected:
 
     int m_lines_counter;
 
-    QString m_measur_type;
+    ToolState m_meas_type;
 
     // Geode that stores all measurement drawables
     osg::ref_ptr<osg::Geode> m_measurement_geode;

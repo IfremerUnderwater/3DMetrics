@@ -7,6 +7,7 @@ ToolHandler::ToolHandler():m_line_meas_tool(this),
 {
     m_current_toolstate = IDLE_STATE;
     m_current_tool = NULL;
+
 }
 
 void ToolHandler::setCurrentToolState(ToolState _tool_state)
@@ -72,16 +73,26 @@ void ToolHandler::hideShowMeasurementOfType(ToolState _meas_type, int _meas_inde
 
 void ToolHandler::slot_onMousePress(Qt::MouseButton _button, int _x, int _y)
 {
-    m_current_tool->onMousePress(_button,_x,_y);
+    if(m_current_tool)
+        m_current_tool->onMousePress(_button,_x,_y);
 }
 
 void ToolHandler::setOsgWidget(OSGWidget *_osg_widget)
 {
     m_osg_widget = _osg_widget;
+
+    m_line_meas_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
+    m_surf_meas_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
+    m_interest_point_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
 }
 
 void ToolHandler::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists)
 {
     m_osg_widget->getIntersectionPoint(_x, _y, _inter_point, _inter_exists);
+}
+
+void ToolHandler::forceGeodeUpdate()
+{
+    m_osg_widget->forceGeodeUpdate();
 }
 

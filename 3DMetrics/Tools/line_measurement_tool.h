@@ -13,13 +13,13 @@ public:
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
     double lineLength();
-    double closedLineLength();
-    QString getTypeOfMeasur();
     int getMeasurementCounter() const;
     void resetLineData();
 
     double getPointSize() const;
     void setPointSize(double point_size);
+
+    virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 private:
     double m_lastNorm;

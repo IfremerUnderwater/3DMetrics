@@ -1,10 +1,11 @@
 #include "surface_measurement_tool.h"
 #include <math.h>
 #include "Polygon.h"
+#include "tool_handler.h"
 
 SurfaceMeasurementTool::SurfaceMeasurementTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler),m_area(-10)
 {
-
+    m_meas_type = SURFACE_MEASUREMENT_STATE;
 }
 
 SurfaceMeasurementTool::~SurfaceMeasurementTool()
@@ -16,7 +17,6 @@ SurfaceMeasurementTool::~SurfaceMeasurementTool()
 
 void SurfaceMeasurementTool::draw()
 {
-    m_measur_type = "Surface measurement";
 
     if(m_measurement_pt->size() == 1)
     {
@@ -85,11 +85,6 @@ void SurfaceMeasurementTool::removeMeasurement(int _meas_index)
 
 }
 
-
-QString SurfaceMeasurementTool::getTypeOfMeasur()
-{
-    return m_measur_type;
-}
 
 
 int SurfaceMeasurementTool::getMeasurementCounter() const

@@ -1,0 +1,19 @@
+#ifndef TOOL_TYPES_H
+#define TOOL_TYPES_H
+
+// Various states according to the action clicked
+enum ToolState
+{
+    IDLE_STATE,
+    LINE_MEASUREMENT_STATE,
+    SURFACE_MEASUREMENT_STATE,
+    INTEREST_POINT_STATE,
+    CUT_AREA_TOOL_STATE,
+    ZOOM_IN_TOOL_STATE,
+    ZOOM_OUT_TOOL_STATE,
+    FULL_SCREEN_TOOL_STATE,
+    CROP_TOOL_STATE
+};
+
+#endif // TOOL_TYPES_H
+

@@ -53,7 +53,8 @@ HEADERS  += mainwindow.h \
     Tools/surface_measurement_tool.h \
     Tools/interest_point_tool.h \
     OSGWidget/kml_handler.h \
-    Tools/tool_handler.h
+    Tools/tool_handler.h \
+    Tools/tool_types.h
 
 FORMS    += \
     mainwindow.ui \

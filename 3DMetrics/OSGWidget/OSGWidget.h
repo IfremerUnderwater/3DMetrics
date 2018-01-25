@@ -66,6 +66,16 @@ public:
     ///
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
+    ///
+    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
+    /// \return measurement geode
+    ///
+    osg::ref_ptr<osg::Geode> getMeasurementGeode();
+
+    ///
+    /// \brief forceGeodeUpdate force geode data to redraw
+    ///
+    void forceGeodeUpdate();
 
 public slots:
 

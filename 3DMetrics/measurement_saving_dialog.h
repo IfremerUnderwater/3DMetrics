@@ -2,7 +2,7 @@
 #define MEASUREMENT_SAVING_DIALOG_H
 #include <QDialog>
 #include "OSGWidget/OSGWidget.h"
-
+#include "tool_handler.h"
 
 namespace Ui {
 class MeasurementSavingDialog;
@@ -32,8 +32,8 @@ public:
         GASTEROPODES
     };
 
-    void setDistanceSurfaceMeasValueAndType(double _measurement, QString _measurement_type, int _measurement_index);
-    void setInterestPointMeasValueAndType(QString _coordinates, QString _measurement_type, int _measurement_index);
+    void setDistanceSurfaceMeasValueAndType(double _measurement, ToolState _measurement_type, int _measurement_index);
+    void setInterestPointMeasValueAndType(QString _coordinates, ToolState _measurement_type, int _measurement_index);
 
 
 
@@ -43,7 +43,7 @@ public slots:
     void sl_clearPreviousMeasFormValues();
 
 signals:
-    void sig_getMeasFormValues(QString _measur_name, QString _measur_type, QString _category, QString _temperature, QString _measur_result, int _measur_counter, QString comments);
+    void sig_getMeasFormValues(QString _measur_name, ToolState _measur_type, QString _category, QString _temperature, QString _measur_result, int _measur_counter, QString comments);
 
     void si_distanceMeasurementFormCanceled();
     void si_surfaceMeasurementFormCanceled();

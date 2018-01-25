@@ -216,6 +216,11 @@ OSGWidget::OSGWidget(QWidget* parent)
     connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
     m_timer.start( 10 );
 
+    // Create group that will contain measurement geode and 3D model
+    m_group = new osg::Group;
+    m_measurement_geode = new osg::Geode;
+    m_group->addChild(m_measurement_geode);
+
 
 }
 
@@ -348,13 +353,14 @@ void OSGWidget::clearSceneData()
     view->getDatabasePager()->cancel();
     view->getDatabasePager()->clear();
 
+    // remove all nodes from group
     for (unsigned int i=0; i<m_models.size(); i++){
         m_group->removeChild(m_models[i]);
         m_models[i] = NULL;
     }
 
-    m_group = NULL;
-    m_measurement_geode = NULL;
+    // remove all drawables
+    m_measurement_geode->removeDrawables(0,m_measurement_geode->getNumDrawables());
 
     // reinit georef
     m_ref_lat_lon.setX(INVALID_VALUE);
@@ -366,13 +372,6 @@ void OSGWidget::clearSceneData()
 
 
 void OSGWidget::initializeGL(){
-    // Create group that will contain measurement geode and 3D model
-    m_group = new osg::Group;
-    m_measurement_geode = new osg::Geode;
-    m_group->addChild(m_measurement_geode);
-
-    // Emit geode has changed ...............................................................
-    // ......................................................................................
 
     // Init properties
     osg::StateSet* stateSet = m_group->getOrCreateStateSet();
@@ -834,6 +833,17 @@ osgGA::EventQueue* OSGWidget::getEventQueue() const
         return eventQueue;
     else
         throw std::runtime_error( "Unable to obtain valid event queue");
+}
+
+osg::ref_ptr<osg::Geode> OSGWidget::getMeasurementGeode()
+{
+    return m_measurement_geode;
+}
+
+void OSGWidget::forceGeodeUpdate()
+{
+    m_group->removeChild(m_measurement_geode);
+    m_group->addChild(m_measurement_geode);
 }
 
 

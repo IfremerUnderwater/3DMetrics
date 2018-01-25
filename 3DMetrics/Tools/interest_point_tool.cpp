@@ -1,9 +1,10 @@
 #include "interest_point_tool.h"
 #include <math.h>
+#include "tool_handler.h"
 
 InterestPointTool::InterestPointTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler)
 {
-
+    m_meas_type = INTEREST_POINT_STATE;
 }
 
 
@@ -19,8 +20,6 @@ void InterestPointTool::draw()
     if(m_measurement_pt->size() >= 1)
     {
         m_measurement_counter++;
-
-        m_measur_type = "Interest point measurement";
 
         // point
         QString point_name = QString("measurement_%1").arg(m_measurement_counter);
@@ -75,12 +74,6 @@ void InterestPointTool::removeMeasurement(int _meas_index)
 
     m_measurement_counter--;
 
-}
-
-
-QString InterestPointTool::getTypeOfMeasur()
-{
-    return m_measur_type;
 }
 
 
