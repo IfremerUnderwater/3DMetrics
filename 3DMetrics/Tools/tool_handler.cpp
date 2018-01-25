@@ -34,6 +34,11 @@ void ToolHandler::setCurrentToolState(ToolState _tool_state)
 
 void ToolHandler::cancelMeasurement()
 {
+    m_current_tool->cancelMeasurement();
+}
+
+void ToolHandler::removeLastMeasurement()
+{
     m_current_tool->removeLastMeasurement();
 }
 
@@ -77,6 +82,24 @@ void ToolHandler::slot_onMousePress(Qt::MouseButton _button, int _x, int _y)
         m_current_tool->onMousePress(_button,_x,_y);
 }
 
+ToolState ToolHandler::getCurrentState() const
+{
+    return m_current_toolstate;
+}
+
+QString ToolHandler::getTextFormattedResult()
+{
+    if(m_current_toolstate!=IDLE_STATE)
+        return m_current_tool->getTextFormattedResult();
+    else
+        return QString("");
+}
+
+QPair<ToolState, int> ToolHandler::getMeasTypeAndIndex()
+{
+    return m_current_tool->getMeasTypeAndIndex();
+}
+
 void ToolHandler::setOsgWidget(OSGWidget *_osg_widget)
 {
     m_osg_widget = _osg_widget;
@@ -94,5 +117,10 @@ void ToolHandler::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point,
 void ToolHandler::forceGeodeUpdate()
 {
     m_osg_widget->forceGeodeUpdate();
+}
+
+void ToolHandler::emitMeasurementEnded()
+{
+    emit measurementEnded();
 }
 

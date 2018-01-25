@@ -2,7 +2,7 @@
 #include "tool_handler.h"
 
 MeasurementTool::MeasurementTool(ToolHandler *_tool_handler):m_tool_handler(_tool_handler),
-    m_measurement_counter(0)
+    m_last_meas_idx(0)
 {
     m_measurement_pt = NULL;
     m_measurement_geode = NULL;
@@ -32,6 +32,15 @@ void MeasurementTool::pushNewPoint(osg::Vec3d _point )
 ToolState MeasurementTool::getMeasType()
 {
     return m_meas_type;
+}
+
+QPair<ToolState, int> MeasurementTool::getMeasTypeAndIndex()
+{
+    QPair<ToolState, int> pair;
+    pair.first = m_meas_type;
+    pair.second = m_last_meas_idx;
+
+    return pair;
 }
 
 
@@ -83,7 +92,7 @@ void MeasurementTool::closeLoop()
 void MeasurementTool::resetMeasData()
 {
     m_geo_drawable_map.clear();
-    m_measurement_counter=0;
+    m_last_meas_idx=0;
     m_measurement_pt = NULL;
     m_measurements_pt_qmap.clear();
 }
@@ -92,8 +101,9 @@ void MeasurementTool::resetMeasData()
 
 void MeasurementTool::endMeasurement()
 {
-    m_measurements_pt_qmap[m_measurement_counter] = m_measurement_pt;
+    m_measurements_pt_qmap[m_last_meas_idx] = m_measurement_pt;
     m_measurement_pt = NULL;
+    m_tool_handler->emitMeasurementEnded();
 }
 
 

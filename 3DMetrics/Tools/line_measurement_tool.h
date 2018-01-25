@@ -10,22 +10,23 @@ public:
     LineMeasurementTool(ToolHandler *_tool_handler);
     ~LineMeasurementTool();
     void draw();
+
+    void cancelMeasurement();
+    void endMeasurement();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
+
     double lineLength();
     int getMeasurementCounter() const;
-    void resetLineData();
-
-    double getPointSize() const;
-    void setPointSize(double point_size);
+    QString getTextFormattedResult();
 
     virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 private:
-    double m_lastNorm;
     double m_norm;
-    double m_point_size;
 
+    // Map to keep history of measurements results
+    QMap<int, double > m_measurements_length;
 
 };
 

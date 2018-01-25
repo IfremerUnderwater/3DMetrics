@@ -12,12 +12,14 @@ public:
     SurfaceMeasurementTool(ToolHandler *_tool_handler);
     ~SurfaceMeasurementTool();
     void draw();
+
+    void cancelMeasurement();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
 
     int getMeasurementCounter() const;
     double getArea();
-    void resetSurfaceData();
+    QString getTextFormattedResult();
 
 
 protected:

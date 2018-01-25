@@ -19,6 +19,7 @@ public:
     void setCurrentToolState(ToolState _tool_state);
 
     void cancelMeasurement();
+    void removeLastMeasurement();
     void removeMeasurementOfType(ToolState _meas_type, int _meas_index);
 
     // hide/show measurement method
@@ -29,7 +30,14 @@ public:
     // getIntersectionPoint from OSGWidget
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
+    // update Geode drawing after modification
     void forceGeodeUpdate();
+
+    void emitMeasurementEnded();
+
+    ToolState getCurrentState() const;
+    QString getTextFormattedResult();
+    QPair<ToolState, int> getMeasTypeAndIndex();
 
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);

@@ -13,10 +13,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::MainWindow),
-    m_last_meas_index(-1),
-    m_true_counter(0),
-    m_measurement_index(0)
+    ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
 
@@ -25,7 +22,6 @@ MainWindow::MainWindow(QWidget *parent) :
     m_tool_handler->setOsgWidget(ui->display_widget);
 
     ui->measurements_table->resizeColumnsToContents();
-    m_measurement_form.setWindowTitle("Measurement form"); 
 
     m_delete_menu = new QMenu(ui->measurements_table);
     m_delete_measurement_action = new QAction("Delete measurement", this);
@@ -34,43 +30,23 @@ MainWindow::MainWindow(QWidget *parent) :
     // connect ToolHandler to OSGWidget
     QObject::connect(ui->display_widget, SIGNAL(sig_onMousePress(Qt::MouseButton,int,int)), m_tool_handler, SLOT(slot_onMousePress(Qt::MouseButton,int,int)));
 
-    // menuBar
+    // top menu bar
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
     QObject::connect(ui->open_measure_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasureFile()));
     QObject::connect(ui->close_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_close3dModel()));
     QObject::connect(ui->save_measure_file_action, SIGNAL(triggered()), this, SLOT(sl_saveMeasurFile()));
 
-    //QObject::connect(ui->display_widget, SIGNAL(sig_showMeasurementSavingPopup(double,QString,int)), this, SLOT(slot_openDistanceSurfaceMeasFromPopup(double,QString,int)));
-
-    //QObject::connect(ui->display_widget, SIGNAL(si_showInterestPointMeasurementSavingPopup(QString,QString,int)), this, SLOT(sl_openInterestPointMeasFromPopup(QString,QString,int)));
-
+    // saving popup signals slots
+    QObject::connect(m_tool_handler,SIGNAL(measurementEnded()),this,SLOT(slot_openMeasSavingPopup()));
     QObject::connect(&m_measurement_form, SIGNAL(sig_getMeasFormValues(QString,ToolState,QString,QString,QString,int,QString)), this, SLOT(slot_saveMeasFormValues(QString, ToolState,QString,QString,QString,int,QString)));
-
-    QObject::connect(&m_measurement_form, SIGNAL(si_distanceMeasurementFormCanceled()), this, SLOT(sl_distanceMeasurementFormCanceled()));
-    QObject::connect(&m_measurement_form, SIGNAL(si_surfaceMeasurementFormCanceled()), this, SLOT(sl_surfaceMeasurementFormCanceled()));
-    QObject::connect(&m_measurement_form, SIGNAL(si_interestPointMeasurementFormCanceled()), this, SLOT(sl_interestPointMeasurementFormCanceled()));
+    QObject::connect(&m_measurement_form, SIGNAL(si_formSavingCanceled()), this, SLOT(sl_formSavingCanceled()));
 
     // mainToolBar
-    //QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInLineMeasurementState()));
-    //QObject::connect(ui->draw_area_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInSurfaceMeasurementState()));
-    //QObject::connect(ui->draw_interest_point_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInInterestPointState()));
-    //QObject::connect(ui->cut_area_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInCutAreaState()));
-    //QObject::connect(ui->zoom_in_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInZoomInState()));
-    //QObject::connect(ui->zoom_out_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInZoomOutState()));
-    //QObject::connect(ui->resize_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInFullScreenState()));
-    //QObject::connect(ui->crop_action, SIGNAL(triggered()), ui->display_widget, SLOT(slot_setInCropState()));
-
-
     QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), this, SLOT(sl_lineToolActivated()));
     QObject::connect(ui->draw_area_action, SIGNAL(triggered()), this, SLOT(sl_surfaceToolActivated()));
     QObject::connect(ui->draw_interest_point_action, SIGNAL(triggered()), this, SLOT(sl_interestPointToolActivated()));
-
-    QObject::connect(ui->cancel_button, SIGNAL(triggered()), this, SLOT(sl_deactivateTool()));
-    //QObject::connect(ui->cancel_button, SIGNAL(triggered()), ui->display_widget, SLOT(sl_resetMeasur()));
-    //QObject::connect(ui->display_widget, SIGNAL(si_endMeasur()), this, SLOT(sl_deactivateTool()));
-    //QObject::connect(ui->display_widget, SIGNAL(si_returnIdleState()), this, SLOT(sl_returnIdleState()));
-    //QObject::connect(ui->display_widget, SIGNAL(si_returnIdleState()), ui->display_widget, SLOT(slot_setInIdleState()));
+    QObject::connect(ui->cancel_button, SIGNAL(triggered()), this, SLOT(sl_cancelMeasurement()));
 
     // hide/show measurement slot
     QObject::connect(ui->measurements_table, SIGNAL(itemClicked(QTableWidgetItem*)), this, SLOT(sl_show_hide_measurement(QTableWidgetItem*)));
@@ -80,6 +56,11 @@ MainWindow::MainWindow(QWidget *parent) :
     //setContextMenuPolicy(Qt::ActionsContextMenu);
     QObject::connect(ui->measurements_table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(sl_contextMenuDeleteMeasurement(QPoint)));
     QObject::connect(m_delete_measurement_action, SIGNAL(triggered()), this, SLOT(sl_delete_measurement_action()));
+
+    // Correspondance table init
+    m_toolstate_to_qstring[LINE_MEASUREMENT_STATE]="Line measurement";
+    m_toolstate_to_qstring[SURFACE_MEASUREMENT_STATE]="Surface measurement";
+    m_toolstate_to_qstring[INTEREST_POINT_STATE]="Interest point";
 
 }
 
@@ -110,8 +91,6 @@ void MainWindow::slot_open3dModel()
 }
 
 
-
-
 void MainWindow::slot_close3dModel()
 {
 
@@ -124,139 +103,90 @@ void MainWindow::slot_close3dModel()
 
     ui->display_widget->clearSceneData();
 
-    m_true_counter=0;
 }
 
 
-
-
-
-
-void MainWindow::slot_openDistanceSurfaceMeasFromPopup(double _measurement, ToolState _measurement_type, int _measurement_index)
+void MainWindow::slot_openMeasSavingPopup()
 {
     //m_last_meas_index = _measurement_index;
-    m_measurement_form.setDistanceSurfaceMeasValueAndType(_measurement, _measurement_type, _measurement_index);
+    m_measurement_form.setMeasFields(m_tool_handler->getTextFormattedResult(),m_toolstate_to_qstring[m_tool_handler->getCurrentState()]);
     m_measurement_form.show();
 }
 
 
-void MainWindow::sl_openInterestPointMeasFromPopup(QString _coordinates, ToolState _measurement_type, int _measurement_index)
-{
-    //m_last_meas_index = _measurement_index;
-    m_measurement_form.setInterestPointMeasValueAndType(_coordinates, _measurement_type, _measurement_index);
-    m_measurement_form.show();
-}
 
-
-void MainWindow::slot_saveMeasFormValues(QString _measur_name, ToolState _measur_type, QString _category, QString _temperature, QString _measur_result, int _measur_counter, QString _comments)
+void MainWindow::slot_saveMeasFormValuesToTable()
 {
-    m_true_counter++;
-    m_measurement_index = _measur_counter;
+
+    QString meas_name = m_measurement_form.getMeasName();
+    QString meas_temp = m_measurement_form.getMeasTemp();
+    QString meas_comment = m_measurement_form.getMeasComment();
+    QString meas_category = m_measurement_form.getMeasCategory();
 
     bool name_is_unique = true;
     bool name_is_empty = false;
 
-
     // Check measurement name is not empty and unique and ask again if necessary
-    name_is_empty = _measur_name.isEmpty();
-
-    for(int i=1; i < m_true_counter; ++i)
-    {
-        if(_measur_name == m_qmap_of_names[(m_true_counter-1)-i])
-            name_is_unique = false;
-    }
+    name_is_empty = meas_name.isEmpty();
+    if( !ui->measurements_table->findItems(meas_name,Qt::MatchContains).isEmpty())
+        name_is_unique = false;
 
     if(name_is_empty || !name_is_unique)
     {
         bool ok;
-        if(name_is_empty){
-            _measur_name = QInputDialog::getText(this, "Error no entry for measurement name",
-                                                 "Sorry, you have not given a name for the measurement, please set one.", QLineEdit::Normal,
-                                                 QString(), &ok);
-        }
-        if(!name_is_unique){
-            _measur_name = QInputDialog::getText(this, "Error : non unique name",
-                                                 "Sorry, the name you choose for this measurement already exists, please choose another one.", QLineEdit::Normal,
-                                                 QString(), &ok);
-        }
+        meas_name = QInputDialog::getText(this, "Error name empty or not unique",
+                                          "Please set another name.", QLineEdit::Normal,
+                                          QString(), &ok);
 
         // Check again new name
-        name_is_empty = _measur_name.isEmpty();
-        bool name_is_unique = true;
-        for(int i=1; i < m_true_counter; ++i)
-        {
-            if(_measur_name == m_qmap_of_names[(m_true_counter-1)-i])
-                name_is_unique = false;
-        }
+        name_is_empty = meas_name.isEmpty();
+        if( !ui->measurements_table->findItems(meas_name,Qt::MatchContains).isEmpty())
+            name_is_unique = false;
 
-        if(ok && !name_is_empty && name_is_unique)
+        if(!ok || name_is_empty || !name_is_unique)
         {
-            m_qmap_of_names[m_true_counter-1] = _measur_name;
-        }
-        else
-        {
-            m_tool_handler->cancelMeasurement();
+            m_tool_handler->removeLastMeasurement();
             if(name_is_empty)
                 QMessageBox::critical(this, "Error : measurement name", "Empty measurement name so this measurement won't be saved.");
             if(!name_is_unique)
                 QMessageBox::critical(this, "Error : measurement name", "Measurement name already exist so this measurement won't be saved.");
-            m_true_counter--;
             return;
         }
     }
-    else
-    {
-        m_qmap_of_names[m_true_counter-1] = _measur_name;
-    }
 
     // Add measurement to table
-    add_meas_to_table(_measur_name, _measur_type, _category, _temperature, _measur_result, _comments);
+    addMeasToTable(meas_name, m_toolstate_to_qstring[m_tool_handler->getCurrentState()],
+            meas_category, meas_temp, m_tool_handler->getTextFormattedResult(), meas_comment);
 
     ui->measurements_table->resizeColumnsToContents();
 }
 
 
-void MainWindow::add_meas_to_table(QString _measur_name, ToolState _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments)
+void MainWindow::addMeasToTable(QString _meas_name, QString _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments)
 {
-
-    QPair<ToolState,int> qpair_name_indice_measur;
-    qpair_name_indice_measur.first = _measur_type;
-    qpair_name_indice_measur.second = m_measurement_index;
 
     QTableWidgetItem *checkbox = new QTableWidgetItem();
     checkbox->setCheckState(Qt::Checked);
 
-    ui->measurements_table->setRowCount(m_true_counter);
+    int row_count = ui->measurements_table->rowCount();
+    ui->measurements_table->setRowCount(row_count+1);
 
-    ui->measurements_table->setItem(m_true_counter-1, 0, checkbox);
-    ui->measurements_table->setItem(m_true_counter-1, 1, new QTableWidgetItem(_measur_name));
-    ui->measurements_table->setItem(m_true_counter-1, 2, new QTableWidgetItem(QString(_measur_type))); // //////////////////
-    ui->measurements_table->setItem(m_true_counter-1, 3, new QTableWidgetItem(_category));
-    ui->measurements_table->setItem(m_true_counter-1, 4, new QTableWidgetItem(_temperature));
-    ui->measurements_table->setItem(m_true_counter-1, 5, new QTableWidgetItem(_measur_result));
-    ui->measurements_table->setItem(m_true_counter-1, 6, new QTableWidgetItem(_comments));
+    ui->measurements_table->setItem(row_count, 0, checkbox);
+    ui->measurements_table->setItem(row_count, 1, new QTableWidgetItem(_meas_name));
+    ui->measurements_table->setItem(row_count, 2, new QTableWidgetItem(QString(_measur_type))); // //////////////////
+    ui->measurements_table->setItem(row_count, 3, new QTableWidgetItem(_category));
+    ui->measurements_table->setItem(row_count, 4, new QTableWidgetItem(_temperature));
+    ui->measurements_table->setItem(row_count, 5, new QTableWidgetItem(_measur_result));
+    ui->measurements_table->setItem(row_count, 6, new QTableWidgetItem(_comments));
 
-    m_qmap_measur_counter[_measur_name] = m_true_counter-1;
-
-    m_qmap_measurement[_measur_name] = qpair_name_indice_measur;
+    m_qmap_measurement[_meas_name] = m_tool_handler->getMeasTypeAndIndex();
 }
 
 
-void MainWindow::sl_distanceMeasurementFormCanceled()
+void MainWindow::sl_formSavingCanceled()
 {
-    m_tool_handler->cancelMeasurement();
+    m_tool_handler->removeLastMeasurement();
 }
-
-void MainWindow::sl_surfaceMeasurementFormCanceled()
-{
-    m_tool_handler->cancelMeasurement();
-}
-
-void MainWindow::sl_interestPointMeasurementFormCanceled()
-{
-    m_tool_handler->cancelMeasurement();
-}
-
 
 
 void MainWindow::sl_lineToolActivated()
@@ -301,8 +231,10 @@ void MainWindow::sl_interestPointToolActivated()
     ui->crop_action->setEnabled(false);
 }
 
-void MainWindow::sl_deactivateTool()
+void MainWindow::sl_cancelMeasurement()
 {
+    m_tool_handler->cancelMeasurement();
+
     m_tool_handler->setCurrentToolState(IDLE_STATE);
     // /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -368,7 +300,6 @@ void MainWindow::sl_contextMenuDeleteMeasurement(const QPoint & pos)
 
 void MainWindow::sl_delete_measurement_action()
 {
-    m_true_counter--;
 
     int item_row = m_delete_measurement_item->row();
     QString item_name = ui->measurements_table->item(item_row,1)->text();
@@ -380,338 +311,338 @@ void MainWindow::sl_delete_measurement_action()
 
 void MainWindow::slot_openMeasureFile()
 {
-//    m_measures_file = QFileDialog::getOpenFileName(
-//                this,
-//                tr("Select Measures file to open"),
-//                tr("Text files (*.txt *.csv)"));
+    //    m_measures_file = QFileDialog::getOpenFileName(
+    //                this,
+    //                tr("Select Measures file to open"),
+    //                tr("Text files (*.txt *.csv)"));
 
-//    QFile file(m_measures_file);
+    //    QFile file(m_measures_file);
 
-//    bool measur_file_is_null = m_measures_file.isNull();
+    //    bool measur_file_is_null = m_measures_file.isNull();
 
-//    std::string new_measur_file_name = m_measures_file.toStdString();
-//    std::size_t position = new_measur_file_name.find_last_of(".\\");
-//    std::string file_name = new_measur_file_name.substr(position+1);
+    //    std::string new_measur_file_name = m_measures_file.toStdString();
+    //    std::size_t position = new_measur_file_name.find_last_of(".\\");
+    //    std::string file_name = new_measur_file_name.substr(position+1);
 
-//    if(measur_file_is_null)
-//        QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a measurements file"));
+    //    if(measur_file_is_null)
+    //        QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a measurements file"));
 
-//    else
-//    {
-//        if((file_name != "txt") && (file_name != "csv"))
-//            QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a correct name to the measurement file"));
+    //    else
+    //    {
+    //        if((file_name != "txt") && (file_name != "csv"))
+    //            QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a correct name to the measurement file"));
 
-//        else
-//        {
-//            if((!file.open(QIODevice::ReadOnly | QIODevice::Text)))
-//                QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a correct name to the measurement file"));
+    //        else
+    //        {
+    //            if((!file.open(QIODevice::ReadOnly | QIODevice::Text)))
+    //                QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a correct name to the measurement file"));
 
-//            else
-//            {
-//                QTextStream in(&file);
-//                while (!in.atEnd())
-//                {
-//                    QString line = in.readLine();
+    //            else
+    //            {
+    //                QTextStream in(&file);
+    //                while (!in.atEnd())
+    //                {
+    //                    QString line = in.readLine();
 
-//                    if((line.isEmpty()) || line.startsWith("#"))
-//                        qDebug() << "error";
+    //                    if((line.isEmpty()) || line.startsWith("#"))
+    //                        qDebug() << "error";
 
-//                    else
-//                    {
+    //                    else
+    //                    {
 
-//                        if(line == "begin_measurements_table")
-//                            m_position_measur_file = "begin_measur_table";
+    //                        if(line == "begin_measurements_table")
+    //                            m_position_measur_file = "begin_measur_table";
 
-//                        else if(line == "end_measurements_table")
-//                            m_position_measur_file = "end_measur_table";
+    //                        else if(line == "end_measurements_table")
+    //                            m_position_measur_file = "end_measur_table";
 
-//                        else if(line == "begin_line_measurement")
-//                            m_position_measur_file = "begin_line_measur";
+    //                        else if(line == "begin_line_measurement")
+    //                            m_position_measur_file = "begin_line_measur";
 
-//                        else if(line == "end_line_measurement")
-//                            m_position_measur_file = "end_line_measur";
+    //                        else if(line == "end_line_measurement")
+    //                            m_position_measur_file = "end_line_measur";
 
-//                        else if(line == "begin_surface_measurement")
-//                            m_position_measur_file = "begin_surface_measur";
+    //                        else if(line == "begin_surface_measurement")
+    //                            m_position_measur_file = "begin_surface_measur";
 
-//                        else if(line == "end_surface_measurement")
-//                            m_position_measur_file = "end_surface_measur";
+    //                        else if(line == "end_surface_measurement")
+    //                            m_position_measur_file = "end_surface_measur";
 
-//                        else if(line == "begin_interest_point_measurement")
-//                            m_position_measur_file = "begin_interest_pt_measur";
+    //                        else if(line == "begin_interest_point_measurement")
+    //                            m_position_measur_file = "begin_interest_pt_measur";
 
-//                        else if(line == "end_interest_point_measurement")
-//                            m_position_measur_file = "end_interest_pt_measur";
+    //                        else if(line == "end_interest_point_measurement")
+    //                            m_position_measur_file = "end_interest_pt_measur";
 
-//                        else if(line == "begin_QMap_measurements")
-//                            m_position_measur_file = "begin_qmap_measur";
+    //                        else if(line == "begin_QMap_measurements")
+    //                            m_position_measur_file = "begin_qmap_measur";
 
-//                        else if(line == "end_QMap_measurements")
-//                            m_position_measur_file = "end_qmap_measur";
+    //                        else if(line == "end_QMap_measurements")
+    //                            m_position_measur_file = "end_qmap_measur";
 
-//                        else
-//                        {
+    //                        else
+    //                        {
 
-//                            if(m_position_measur_file == "begin_measur_table")
-//                            {
-//                                m_true_counter++;
-//                                qDebug() << m_true_counter;
+    //                            if(m_position_measur_file == "begin_measur_table")
+    //                            {
+    //                                m_true_counter++;
+    //                                qDebug() << m_true_counter;
 
-//                                QStringList fields_list = line.split(';');
+    //                                QStringList fields_list = line.split(';');
 
-//                                add_measur_to_table(fields_list.at(0), fields_list.at(1),
-//                                                    fields_list.at(2), fields_list.at(3),
-//                                                    fields_list.at(4), fields_list.at(5));
+    //                                add_measur_to_table(fields_list.at(0), fields_list.at(1),
+    //                                                    fields_list.at(2), fields_list.at(3),
+    //                                                    fields_list.at(4), fields_list.at(5));
 
-//                                qDebug() << fields_list;
+    //                                qDebug() << fields_list;
 
-//                                ui->measurements_table->resizeColumnsToContents();
-//                            }
+    //                                ui->measurements_table->resizeColumnsToContents();
+    //                            }
 
-//                            else if(m_position_measur_file == "begin_line_measur")
-//                            {
+    //                            else if(m_position_measur_file == "begin_line_measur")
+    //                            {
 
-//                            }
+    //                            }
 
-//                            else if(m_position_measur_file == "begin_surface_measur")
-//                            {
+    //                            else if(m_position_measur_file == "begin_surface_measur")
+    //                            {
 
-//                            }
+    //                            }
 
-//                            else if(m_position_measur_file == "begin_interest_pt_measur")
-//                            {
+    //                            else if(m_position_measur_file == "begin_interest_pt_measur")
+    //                            {
 
-//                            }
+    //                            }
 
-//                            else if(m_position_measur_file == "begin_qmap_measur")
-//                            {
-//                                QStringList fields_list = line.split(';');
-//                                bool ok;
+    //                            else if(m_position_measur_file == "begin_qmap_measur")
+    //                            {
+    //                                QStringList fields_list = line.split(';');
+    //                                bool ok;
 
-//                                QPair<QString,int> qpair_name_indice_measur;
-//                                qpair_name_indice_measur.first = fields_list.at(1);
-//                                qpair_name_indice_measur.second = fields_list.at(2).toInt(&ok, 10);
+    //                                QPair<QString,int> qpair_name_indice_measur;
+    //                                qpair_name_indice_measur.first = fields_list.at(1);
+    //                                qpair_name_indice_measur.second = fields_list.at(2).toInt(&ok, 10);
 
-//                                m_qmap_measurement[fields_list.at(0)] = qpair_name_indice_measur;
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
+    //                                m_qmap_measurement[fields_list.at(0)] = qpair_name_indice_measur;
+    //                            }
+    //                        }
+    //                    }
+    //                }
+    //            }
+    //        }
+    //    }
 }
 
 
 
 void MainWindow::sl_saveMeasurFile()
 {
-//    QString measur_file_name = QFileDialog::getSaveFileName(
-//                this,
-//                tr("Save measurement file"),
-//                tr("Text files (*.txt *.csv)"));
+    //    QString measur_file_name = QFileDialog::getSaveFileName(
+    //                this,
+    //                tr("Save measurement file"),
+    //                tr("Text files (*.txt *.csv)"));
 
-//    bool _measur_file_is_null = measur_file_name.isNull();
+    //    bool _measur_file_is_null = measur_file_name.isNull();
 
-//    std::string new_measur_file_name = measur_file_name.toStdString();
+    //    std::string new_measur_file_name = measur_file_name.toStdString();
 
-//    std::size_t position = new_measur_file_name.find_last_of(".\\");
-//    std::string file_name = new_measur_file_name.substr(position+1);
+    //    std::size_t position = new_measur_file_name.find_last_of(".\\");
+    //    std::string file_name = new_measur_file_name.substr(position+1);
 
-//    QString test = QString::fromStdString(file_name);
-//    qDebug() << "TEST : " << test;
+    //    QString test = QString::fromStdString(file_name);
+    //    qDebug() << "TEST : " << test;
 
-//    if(_measur_file_is_null)
-//        QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a name to the measurement file"));
+    //    if(_measur_file_is_null)
+    //        QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a name to the measurement file"));
 
-//    else
-//    {
-//        if((file_name != "txt") && (file_name != "csv"))
-//            QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a correct name to the measurement file"));
+    //    else
+    //    {
+    //        if((file_name != "txt") && (file_name != "csv"))
+    //            QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a correct name to the measurement file"));
 
-//        else
-//        {
-//            int row_counter = ui->measurements_table->rowCount();
-//            int column_counter = ui->measurements_table->columnCount();
+    //        else
+    //        {
+    //            int row_counter = ui->measurements_table->rowCount();
+    //            int column_counter = ui->measurements_table->columnCount();
 
-//            if ((row_counter && column_counter) != 0)
-//            {
-//                std::ofstream fichier(new_measur_file_name, std::ios::out | std::ios::trunc);
+    //            if ((row_counter && column_counter) != 0)
+    //            {
+    //                std::ofstream fichier(new_measur_file_name, std::ios::out | std::ios::trunc);
 
-//                if(fichier)
-//                {
-//                    fichier << "begin_measurements_table" << std::endl << std::endl;
-//                    fichier << "#Name;Type;Category;Temperature;Result;Comments" << std::endl;
-
-
-//                    for(int i=0; i < row_counter; ++i)
-//                    {
-//                        for(int j=1; j < column_counter; ++j)
-//                        {
-//                            std::string text = ui->measurements_table->item(i,j)->text().toStdString();
-//                            fichier << text << ";";
-//                        }
-//                        fichier << std::endl;
-//                    }
-
-//                    fichier << std::endl;
-//                    fichier << "end_measurements_table" << std::endl << std::endl;
+    //                if(fichier)
+    //                {
+    //                    fichier << "begin_measurements_table" << std::endl << std::endl;
+    //                    fichier << "#Name;Type;Category;Temperature;Result;Comments" << std::endl;
 
 
-//                    /*
-//                    QMap<int, osg::ref_ptr<osg::Vec3dArray> > measur_history_distance_qmap = ui->display_widget->getPointsCoordinates("Distance measurement");
-//                    QMap<int,int> measur_pts_distance_qmap = ui->display_widget->getMeasurPtsNumber("Distance measurement");
-//                    QMap<int,int> measur_lines_distance_qmap = ui->display_widget->getMeasurLinesNumber("Distance measurement");
+    //                    for(int i=0; i < row_counter; ++i)
+    //                    {
+    //                        for(int j=1; j < column_counter; ++j)
+    //                        {
+    //                            std::string text = ui->measurements_table->item(i,j)->text().toStdString();
+    //                            fichier << text << ";";
+    //                        }
+    //                        fichier << std::endl;
+    //                    }
+
+    //                    fichier << std::endl;
+    //                    fichier << "end_measurements_table" << std::endl << std::endl;
 
 
-//                    QMap<int, osg::ref_ptr<osg::Vec3dArray> > measur_history_surface_qmap = ui->display_widget->getPointsCoordinates("Surface measurement");
-//                    QMap<int,int> measur_pts_surface_qmap = ui->display_widget->getMeasurPtsNumber("Surface measurement");
-//                    QMap<int,int> measur_lines_surface_qmap = ui->display_widget->getMeasurLinesNumber("Surface measurement");
+    //                    /*
+    //                    QMap<int, osg::ref_ptr<osg::Vec3dArray> > measur_history_distance_qmap = ui->display_widget->getPointsCoordinates("Distance measurement");
+    //                    QMap<int,int> measur_pts_distance_qmap = ui->display_widget->getMeasurPtsNumber("Distance measurement");
+    //                    QMap<int,int> measur_lines_distance_qmap = ui->display_widget->getMeasurLinesNumber("Distance measurement");
 
 
-//                    QMap<int, osg::ref_ptr<osg::Vec3dArray> > measur_history_interest_pt_qmap = ui->display_widget->getPointsCoordinates("Interest Point measurement");
-//                    QMap<int,int> measur_pts_interest_qmap = ui->display_widget->getMeasurPtsNumber("Interest Point measurement");
-//                    */
+    //                    QMap<int, osg::ref_ptr<osg::Vec3dArray> > measur_history_surface_qmap = ui->display_widget->getPointsCoordinates("Surface measurement");
+    //                    QMap<int,int> measur_pts_surface_qmap = ui->display_widget->getMeasurPtsNumber("Surface measurement");
+    //                    QMap<int,int> measur_lines_surface_qmap = ui->display_widget->getMeasurLinesNumber("Surface measurement");
 
 
-//                    fichier << "begin_line_measurement" << std::endl << std::endl;
-//                    fichier << "#distance measurement counter" << std::endl;
-//                    /*
-//                    fichier << QString::number(measur_history_distance_qmap.size()).toStdString() << std::endl << std::endl;
-
-//                    fichier << "#points counter for each measurement" << std::endl;
-//                    for(int i=0; i < measur_pts_distance_qmap.size(); ++i)
-//                    {
-//                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_pts_distance_qmap[i] << std::endl;
-//                    }
-//                    */
-//                    fichier << std::endl;
+    //                    QMap<int, osg::ref_ptr<osg::Vec3dArray> > measur_history_interest_pt_qmap = ui->display_widget->getPointsCoordinates("Interest Point measurement");
+    //                    QMap<int,int> measur_pts_interest_qmap = ui->display_widget->getMeasurPtsNumber("Interest Point measurement");
+    //                    */
 
 
-//                    fichier << "#lines number for each measurement" << std::endl;
-//                    /*
-//                    for(int i=0; i < measur_lines_distance_qmap.size(); ++i)
-//                    {
-//                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_lines_distance_qmap[i] << std::endl;
-//                    }
-//                    */
-//                    fichier << std::endl;
+    //                    fichier << "begin_line_measurement" << std::endl << std::endl;
+    //                    fichier << "#distance measurement counter" << std::endl;
+    //                    /*
+    //                    fichier << QString::number(measur_history_distance_qmap.size()).toStdString() << std::endl << std::endl;
 
-//                    fichier << "#coordinates points" << std::endl << std::endl;
-//                    /*
-//                    for(int i=0; i < measur_history_distance_qmap.size(); ++i)
-//                    {
-//                        for(int j=0; j < measur_history_distance_qmap[i]->size(); ++j)
-//                        {
-//                            fichier << QString::number(measur_history_distance_qmap[i]->at(j)[0]).toStdString() << ","
-//                                                                                 <<QString::number(measur_history_distance_qmap[i]->at(j)[1]).toStdString()
-//                                                                                 << ","
-//                                                                                 << QString::number(measur_history_distance_qmap[i]->at(j)[2]).toStdString()
-//                                                                                 << std::endl;
-//                        }
-//                        fichier << std::endl;
-//                    }
-//                    */
+    //                    fichier << "#points counter for each measurement" << std::endl;
+    //                    for(int i=0; i < measur_pts_distance_qmap.size(); ++i)
+    //                    {
+    //                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_pts_distance_qmap[i] << std::endl;
+    //                    }
+    //                    */
+    //                    fichier << std::endl;
 
 
-//                    fichier << std::endl;
-//                    fichier << "end_line_measurement" << std::endl << std::endl;
+    //                    fichier << "#lines number for each measurement" << std::endl;
+    //                    /*
+    //                    for(int i=0; i < measur_lines_distance_qmap.size(); ++i)
+    //                    {
+    //                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_lines_distance_qmap[i] << std::endl;
+    //                    }
+    //                    */
+    //                    fichier << std::endl;
+
+    //                    fichier << "#coordinates points" << std::endl << std::endl;
+    //                    /*
+    //                    for(int i=0; i < measur_history_distance_qmap.size(); ++i)
+    //                    {
+    //                        for(int j=0; j < measur_history_distance_qmap[i]->size(); ++j)
+    //                        {
+    //                            fichier << QString::number(measur_history_distance_qmap[i]->at(j)[0]).toStdString() << ","
+    //                                                                                 <<QString::number(measur_history_distance_qmap[i]->at(j)[1]).toStdString()
+    //                                                                                 << ","
+    //                                                                                 << QString::number(measur_history_distance_qmap[i]->at(j)[2]).toStdString()
+    //                                                                                 << std::endl;
+    //                        }
+    //                        fichier << std::endl;
+    //                    }
+    //                    */
 
 
-
-
-//                    fichier << "begin_surface_measurement" << std::endl << std::endl;
-//                    fichier << "#surface measurement counter" << std::endl;
-//                    /*
-//                    fichier << QString::number(measur_history_surface_qmap.size()).toStdString() << std::endl << std::endl;
-
-//                    fichier << "#points counter for each measurement" << std::endl;
-//                    for(int i=0; i < measur_pts_surface_qmap.size(); ++i)
-//                    {
-//                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_pts_surface_qmap[i] << std::endl;
-//                    }
-//                    */
-//                    fichier << std::endl;
-
-
-//                    fichier << "#lines number for each measurement" << std::endl;
-//                    /*
-//                    for(int i=0; i < measur_lines_surface_qmap.size(); ++i)
-//                    {
-//                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_lines_surface_qmap[i] << std::endl;
-//                    }
-//                    */
-//                    fichier << std::endl;
-
-
-//                    fichier << "#coordinates points" << std::endl << std::endl;
-//                    /*
-//                    for(int i=0; i < measur_history_surface_qmap.size(); ++i)
-//                    {
-//                        for(int j=0; j < measur_history_surface_qmap[i]->size(); ++j)
-//                        {
-//                            fichier << QString::number(measur_history_surface_qmap[i]->at(j)[0]).toStdString() << ","
-//                                                                                 <<QString::number(measur_history_surface_qmap[i]->at(j)[1]).toStdString()
-//                                                                                 << ","
-//                                                                                 << QString::number(measur_history_surface_qmap[i]->at(j)[2]).toStdString()
-//                                                                                 << std::endl;
-//                        }
-//                        fichier << std::endl;
-//                    }
-//                    */
-
-//                    fichier << std::endl;
-//                    fichier << "end_surface_measurement" << std::endl << std::endl;
+    //                    fichier << std::endl;
+    //                    fichier << "end_line_measurement" << std::endl << std::endl;
 
 
 
 
-//                    fichier << "begin_interest_point_measurement" << std::endl << std::endl;
-//                    fichier << "#interest points measurement counter" << std::endl;
-//                    /*
-//                    fichier << QString::number(measur_history_interest_pt_qmap.size()).toStdString() << std::endl << std::endl;
-//                    */
+    //                    fichier << "begin_surface_measurement" << std::endl << std::endl;
+    //                    fichier << "#surface measurement counter" << std::endl;
+    //                    /*
+    //                    fichier << QString::number(measur_history_surface_qmap.size()).toStdString() << std::endl << std::endl;
 
-//                    fichier << "#coordinates points" << std::endl << std::endl;
-//                    /*
-//                    for(int i=0; i < measur_history_interest_pt_qmap.size(); ++i)
-//                    {
-//                        for(int j=0; j < measur_history_interest_pt_qmap[i]->size(); ++j)
-//                        {
-//                            fichier << QString::number(measur_history_interest_pt_qmap[i]->at(j)[0]).toStdString() << ","
-//                                                                                 <<QString::number(measur_history_interest_pt_qmap[i]->at(j)[1]).toStdString()
-//                                                                                 << ","
-//                                                                                 << QString::number(measur_history_interest_pt_qmap[i]->at(j)[2]).toStdString()
-//                                                                                 << std::endl;
-//                        }
-//                        fichier << std::endl;
-//                    }
-//                    */
+    //                    fichier << "#points counter for each measurement" << std::endl;
+    //                    for(int i=0; i < measur_pts_surface_qmap.size(); ++i)
+    //                    {
+    //                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_pts_surface_qmap[i] << std::endl;
+    //                    }
+    //                    */
+    //                    fichier << std::endl;
 
 
-//                    fichier << std::endl;
-//                    fichier << "End_interest_point_measurement" << std::endl << std::endl;
+    //                    fichier << "#lines number for each measurement" << std::endl;
+    //                    /*
+    //                    for(int i=0; i < measur_lines_surface_qmap.size(); ++i)
+    //                    {
+    //                        fichier << "Measurement " << QString::number(i+1).toStdString() << " : " << measur_lines_surface_qmap[i] << std::endl;
+    //                    }
+    //                    */
+    //                    fichier << std::endl;
 
-//                    fichier << "begin_QMap_measurements" << std::endl << std::endl << std::endl;
-//                    fichier << "#Measurement_name;Measurement_type;Measurement_index" << std::endl;
 
-//                    int measurement_qmap_size = m_qmap_measurement.count();
+    //                    fichier << "#coordinates points" << std::endl << std::endl;
+    //                    /*
+    //                    for(int i=0; i < measur_history_surface_qmap.size(); ++i)
+    //                    {
+    //                        for(int j=0; j < measur_history_surface_qmap[i]->size(); ++j)
+    //                        {
+    //                            fichier << QString::number(measur_history_surface_qmap[i]->at(j)[0]).toStdString() << ","
+    //                                                                                 <<QString::number(measur_history_surface_qmap[i]->at(j)[1]).toStdString()
+    //                                                                                 << ","
+    //                                                                                 << QString::number(measur_history_surface_qmap[i]->at(j)[2]).toStdString()
+    //                                                                                 << std::endl;
+    //                        }
+    //                        fichier << std::endl;
+    //                    }
+    //                    */
 
-//                    for(int i=0; i < measurement_qmap_size; ++i)
-//                    {
-//                        std::string measurement_name = ui->measurements_table->item(i,1)->text().toStdString();
-//                        std::string measurement_type = m_qmap_measurement[ui->measurements_table->item(i,1)->text()].first.toStdString();
-//                        int measurement_index = m_qmap_measurement[ui->measurements_table->item(i,1)->text()].second;
+    //                    fichier << std::endl;
+    //                    fichier << "end_surface_measurement" << std::endl << std::endl;
 
-//                        fichier << measurement_name << ";" << measurement_type << ";" << measurement_index << std::endl;
-//                    }
 
-//                    fichier << std::endl;
-//                    fichier << "end_QMap_measurements" << std::endl << std::endl;
 
-//                    fichier.close();
-//                }
-//            }
-//        }
-//    }
+
+    //                    fichier << "begin_interest_point_measurement" << std::endl << std::endl;
+    //                    fichier << "#interest points measurement counter" << std::endl;
+    //                    /*
+    //                    fichier << QString::number(measur_history_interest_pt_qmap.size()).toStdString() << std::endl << std::endl;
+    //                    */
+
+    //                    fichier << "#coordinates points" << std::endl << std::endl;
+    //                    /*
+    //                    for(int i=0; i < measur_history_interest_pt_qmap.size(); ++i)
+    //                    {
+    //                        for(int j=0; j < measur_history_interest_pt_qmap[i]->size(); ++j)
+    //                        {
+    //                            fichier << QString::number(measur_history_interest_pt_qmap[i]->at(j)[0]).toStdString() << ","
+    //                                                                                 <<QString::number(measur_history_interest_pt_qmap[i]->at(j)[1]).toStdString()
+    //                                                                                 << ","
+    //                                                                                 << QString::number(measur_history_interest_pt_qmap[i]->at(j)[2]).toStdString()
+    //                                                                                 << std::endl;
+    //                        }
+    //                        fichier << std::endl;
+    //                    }
+    //                    */
+
+
+    //                    fichier << std::endl;
+    //                    fichier << "End_interest_point_measurement" << std::endl << std::endl;
+
+    //                    fichier << "begin_QMap_measurements" << std::endl << std::endl << std::endl;
+    //                    fichier << "#Measurement_name;Measurement_type;Measurement_index" << std::endl;
+
+    //                    int measurement_qmap_size = m_qmap_measurement.count();
+
+    //                    for(int i=0; i < measurement_qmap_size; ++i)
+    //                    {
+    //                        std::string measurement_name = ui->measurements_table->item(i,1)->text().toStdString();
+    //                        std::string measurement_type = m_qmap_measurement[ui->measurements_table->item(i,1)->text()].first.toStdString();
+    //                        int measurement_index = m_qmap_measurement[ui->measurements_table->item(i,1)->text()].second;
+
+    //                        fichier << measurement_name << ";" << measurement_type << ";" << measurement_index << std::endl;
+    //                    }
+
+    //                    fichier << std::endl;
+    //                    fichier << "end_QMap_measurements" << std::endl << std::endl;
+
+    //                    fichier.close();
+    //                }
+    //            }
+    //        }
+    //    }
 }

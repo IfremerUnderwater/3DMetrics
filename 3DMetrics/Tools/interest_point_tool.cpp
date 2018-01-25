@@ -19,10 +19,10 @@ void InterestPointTool::draw()
 
     if(m_measurement_pt->size() >= 1)
     {
-        m_measurement_counter++;
+        m_last_meas_idx++;
 
         // point
-        QString point_name = QString("measurement_%1").arg(m_measurement_counter);
+        QString point_name = QString("measurement_%1").arg(m_last_meas_idx);
 
         osg::Vec4 color(0.0f,0.0f,1.0f,1.0f);
         drawPoint(m_measurement_pt->back(),color,point_name);
@@ -55,9 +55,24 @@ QString InterestPointTool::interestPointCoordinates()
 }
 
 
+void InterestPointTool::cancelMeasurement()
+{
+    for(unsigned int i=1; i<=m_measurement_pt->size(); ++i)
+    {
+        QString point_key = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(i);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+        m_geo_drawable_map.remove(point_key);
+    }
+
+    m_last_meas_idx--;
+    m_measurement_pt = NULL;
+
+}
+
+
 void InterestPointTool::removeLastMeasurement()
 {
-    removeMeasurement(m_measurement_counter);
+    removeMeasurement(m_last_meas_idx);
 }
 
 
@@ -70,14 +85,14 @@ void InterestPointTool::removeMeasurement(int _meas_index)
 
     m_measurements_pt_qmap.remove(_meas_index);
 
-    m_measurement_counter--;
+    m_last_meas_idx--;
 
 }
 
 
 int InterestPointTool::getMeasurementCounter() const
 {
-    return m_measurement_counter;
+    return m_last_meas_idx;
 }
 
 
@@ -91,7 +106,6 @@ void InterestPointTool::hideShowMeasurement(int _meas_index, bool _visible)
         if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
         {
             m_measurement_geode->addDrawable(m_geo_drawable_map[point_key]);
-            qDebug() << "Add measur";
         }
     }
     else
@@ -101,7 +115,6 @@ void InterestPointTool::hideShowMeasurement(int _meas_index, bool _visible)
         if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
         {
             m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
-            qDebug() << "Remove measur";
         }
     }
 }
@@ -113,10 +126,9 @@ void InterestPointTool::closeLoop()
     // this method is not used in this class
 }
 
-
-
-void InterestPointTool::resetInterestPointData()
+QString InterestPointTool::getTextFormattedResult()
 {
-    m_coordinates.clear();
+
 }
+
 

@@ -11,6 +11,7 @@ public:
 
     void draw();
 
+    void cancelMeasurement();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
 
@@ -18,8 +19,8 @@ public:
     int getMeasurementCounter() const;
     void hideShowMeasurement( int _meas_index, bool _visible);
     void closeLoop();
-    void resetInterestPointData();
 
+    QString getTextFormattedResult();
 
 private:
     QString m_coordinates;

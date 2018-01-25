@@ -20,10 +20,10 @@ void SurfaceMeasurementTool::draw()
 
     if(m_measurement_pt->size() == 1)
     {
-        m_measurement_counter++;
+        m_last_meas_idx++;
 
         // point
-        QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
+        QString point_name = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(m_measurement_pt->size());
         osg::Vec4 color(1.0f,1.0f,0.0f,1.0f);
         drawPoint(m_measurement_pt->back(),color,point_name);
 
@@ -34,12 +34,12 @@ void SurfaceMeasurementTool::draw()
 
 
         // points
-        QString point_name = QString("measurement_%1point_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
+        QString point_name = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(m_measurement_pt->size());
         osg::Vec4 color(1.0f,1.0f,0.0f,1.0f);
         drawPoint(m_measurement_pt->back(),color,point_name);
 
 
-        QString line_name = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size()-1);
+        QString line_name = QString("measurement_%1line_%2").arg(m_last_meas_idx).arg(m_measurement_pt->size()-1);
         drawJunctionLineWithLastPoint(line_name);
 
     }
@@ -47,11 +47,30 @@ void SurfaceMeasurementTool::draw()
 
 }
 
+void SurfaceMeasurementTool::cancelMeasurement()
+{
+    for(unsigned int i=1; i<=m_measurement_pt->size(); ++i)
+    {
+        QString point_key = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(i);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+        m_geo_drawable_map.remove(point_key);
+    }
+
+    for(unsigned int j=1; j<=m_measurement_pt->size()-1; ++j)
+    {
+        QString line_key = QString("measurement_%1line_%2").arg(m_last_meas_idx).arg(j);
+        m_measurement_geode->removeDrawable(m_geo_drawable_map[line_key]);
+        m_geo_drawable_map.remove(line_key);
+    }
+
+    m_last_meas_idx--;
+    m_measurement_pt = NULL;
+}
 
 
 void SurfaceMeasurementTool::removeLastMeasurement()
 {
-    removeMeasurement(m_measurement_counter);
+    removeMeasurement(m_last_meas_idx);
 }
 
 
@@ -66,7 +85,7 @@ void SurfaceMeasurementTool::removeMeasurement(int _meas_index)
         m_geo_drawable_map.remove(point_key);
     }
 
-    for(unsigned int j=1; j<=m_measurements_pt_qmap[_meas_index]->size(); ++j)
+    for(unsigned int j=1; j<=m_measurements_pt_qmap[_meas_index]->size()-1; ++j)
     {
         QString line_key = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
         m_measurement_geode->removeDrawable(m_geo_drawable_map[line_key]);
@@ -75,7 +94,7 @@ void SurfaceMeasurementTool::removeMeasurement(int _meas_index)
 
     m_measurements_pt_qmap.remove(_meas_index);
 
-    m_measurement_counter--;
+    m_last_meas_idx--;
 
 }
 
@@ -83,7 +102,7 @@ void SurfaceMeasurementTool::removeMeasurement(int _meas_index)
 
 int SurfaceMeasurementTool::getMeasurementCounter() const
 {
-    return m_measurement_counter;
+    return m_last_meas_idx;
 }
 
 
@@ -114,12 +133,11 @@ double SurfaceMeasurementTool::getArea()
     return m_area;
 }
 
-
-void SurfaceMeasurementTool::resetSurfaceData()
+QString SurfaceMeasurementTool::getTextFormattedResult()
 {
-    m_lastNorm = 0;
-    m_area = 0;
+
 }
+
 
 //template<class Vector3>
 std::pair<Eigen::Vector3f, Eigen::Vector3f> SurfaceMeasurementTool::bestPlaneFromPoints(std::vector<Eigen::Vector3f> & _points)

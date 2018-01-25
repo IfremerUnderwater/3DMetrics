@@ -24,7 +24,7 @@ public:
     ~MainWindow();
 
     // add measur to table
-    void add_meas_to_table(QString _measur_name, ToolState _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments);
+    void addMeasToTable(QString _measur_name, QString _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments);
 
 public slots:
     void slot_open3dModel();
@@ -32,25 +32,23 @@ public slots:
     void slot_close3dModel();
     void sl_saveMeasurFile();
 
-    void slot_openDistanceSurfaceMeasFromPopup(double _measurement, ToolState _measurement_type, int _measurement_index);
-    void sl_openInterestPointMeasFromPopup(QString _coordinates, ToolState _measurement_type, int _measurement_index);
-    void slot_saveMeasFormValues(QString _measur_name, ToolState _measur_type, QString _category, QString _temperature, QString _measur_result, int _measur_counter, QString _comments);
-    void sl_distanceMeasurementFormCanceled();
-    void sl_surfaceMeasurementFormCanceled();
-    void sl_interestPointMeasurementFormCanceled();
+    void slot_openMeasSavingPopup();
+    void sl_formSavingCanceled();
 
+    //
     void sl_lineToolActivated();
     void sl_surfaceToolActivated();
     void sl_interestPointToolActivated();
-    void sl_deactivateTool();
+    void sl_cancelMeasurement();
 
-    // slot for show/hide measurement
+    // slot for showing/hiding measurement
     void sl_show_hide_measurement(QTableWidgetItem* _item_clicked);
     void sl_contextMenuDeleteMeasurement(const QPoint &pos);
 
     void sl_delete_measurement_action();
 
-
+    // slot for reading and saving form values
+    void slot_saveMeasFormValuesToTable();
 signals:
 
 
@@ -58,23 +56,21 @@ private:
     Ui::MainWindow *ui;
     QString m_model_file;
     QString m_measures_file;
-    int m_last_meas_index;
+
     MeasurementSavingDialog m_measurement_form;
     QMap<int,QString> m_state_names;
     QMap<int,QString> m_qmap_of_names;
     QMap<QString,int> m_qmap_measur_counter;
-    int m_true_counter;
+
 
     ToolHandler *m_tool_handler;
-    ToolState m_tool_state;
+    QMap<ToolState,QString> m_toolstate_to_qstring;
 
     QMap<QString,QPair<ToolState,int> > m_qmap_measurement;
 
     // delete button
     QMap<int,QString> m_qmap_checked_row_counter;
     QMap<QString,ToolState> m_qmap_convert_state_names;
-
-    int m_measurement_index;
 
     QMenu* m_delete_menu;
     QAction* m_delete_measurement_action;

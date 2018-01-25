@@ -32,30 +32,25 @@ public:
         GASTEROPODES
     };
 
-    void setDistanceSurfaceMeasValueAndType(double _measurement, ToolState _measurement_type, int _measurement_index);
-    void setInterestPointMeasValueAndType(QString _coordinates, ToolState _measurement_type, int _measurement_index);
+    void setMeasFields(QString _measurement_formatted, QString _measurement_type);
 
+    void cleanMeasFormValues();
 
+    QString getMeasName();
+    QString getMeasTemp();
+    QString getMeasComment();
+    QString getMeasCategory();
 
 public slots:
-    void slot_addMeasFormValues();
-    void sl_clearMeasForm();
-    void sl_clearPreviousMeasFormValues();
+    void sl_cancelSaving();
 
 signals:
-    void sig_getMeasFormValues(QString _measur_name, ToolState _measur_type, QString _category, QString _temperature, QString _measur_result, int _measur_counter, QString comments);
-
-    void si_distanceMeasurementFormCanceled();
-    void si_surfaceMeasurementFormCanceled();
-    void si_interestPointMeasurementFormCanceled();
-
+    void si_formSavingCanceled();
 
 private:
     Ui::MeasurementSavingDialog *ui;
-    int m_measur_counter;
-    QMap<int,QString> m_category_names;
 
-    int m_measurement_index;
+    QMap<int,QString> m_category_names;
 
 };
 

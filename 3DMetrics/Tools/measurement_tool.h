@@ -6,6 +6,7 @@
 #include <QDebug>
 #include <QKeyEvent>
 #include <QWheelEvent>
+#include <QPair>
 
 #include <osg/Camera>
 
@@ -68,9 +69,14 @@ public:
 
 
     ///
-    /// \brief removeLastMeasurement cancel last measurement
+    /// \brief removeLastMeasurement remove last measurement
     ///
     virtual void removeLastMeasurement()=0;
+
+    ///
+    /// \brief removeLastMeasurement cancel current measurement
+    ///
+    virtual void cancelMeasurement()=0;
 
     ///
     /// \brief removeMeasurement remove measurement of index _meas_index
@@ -85,9 +91,21 @@ public:
     ToolState getMeasType();
 
     ///
+    /// \brief getMeasTypeAndIndex
+    /// \return
+    ///
+    QPair<ToolState,int> getMeasTypeAndIndex();
+
+    ///
     /// \brief closeLoop add first point as the last point to close the loop
     ///
     void closeLoop();
+
+    ///
+    /// \brief getTextFormattedResult
+    /// \return formatted result as a qstring
+    ///
+    virtual QString getTextFormattedResult()=0;
 
 
     // hide/show measurement method
@@ -95,7 +113,7 @@ public:
 
     void resetMeasData();
 
-    void endMeasurement();
+    virtual void endMeasurement();
 
     // draw a point with given color in the provided geode
     void drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
@@ -117,16 +135,18 @@ protected:
     // Map to keep history of measurements pt
     QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_pt_qmap;
 
+    // Tool handler is in interaction with display widget
+    ToolHandler *m_tool_handler;
 
-    int m_measurement_counter;
+    // Incremental measurement index
+    int m_last_meas_idx;
 
     ToolState m_meas_type;
 
     // Geode that stores all measurement drawables
     osg::ref_ptr<osg::Geode> m_measurement_geode;
 
-    // Tool handler is in interaction with display widget
-    ToolHandler *m_tool_handler;
+
 
 
 };
