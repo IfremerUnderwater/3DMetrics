@@ -57,15 +57,17 @@ QString InterestPointTool::interestPointCoordinates()
 
 void InterestPointTool::cancelMeasurement()
 {
-    for(unsigned int i=1; i<=m_measurement_pt->size(); ++i)
-    {
-        QString point_key = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(i);
-        m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
-        m_geo_drawable_map.remove(point_key);
-    }
+    if(m_measurement_pt){
+        for(unsigned int i=1; i<=m_measurement_pt->size(); ++i)
+        {
+            QString point_key = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(i);
+            m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+            m_geo_drawable_map.remove(point_key);
+        }
 
-    m_last_meas_idx--;
-    m_measurement_pt = NULL;
+        m_last_meas_idx--;
+        m_measurement_pt = NULL;
+    }
 
 }
 
@@ -84,8 +86,6 @@ void InterestPointTool::removeMeasurement(int _meas_index)
     m_geo_drawable_map.remove(point_key);
 
     m_measurements_pt_qmap.remove(_meas_index);
-
-    m_last_meas_idx--;
 
 }
 

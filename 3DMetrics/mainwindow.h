@@ -26,6 +26,8 @@ public:
     // add measur to table
     void addMeasToTable(QString _measur_name, QString _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments);
 
+    void goBackToIdle();
+
 public slots:
     void slot_open3dModel();
     void slot_openMeasureFile();

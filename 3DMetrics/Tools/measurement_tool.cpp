@@ -101,9 +101,11 @@ void MeasurementTool::resetMeasData()
 
 void MeasurementTool::endMeasurement()
 {
-    m_measurements_pt_qmap[m_last_meas_idx] = m_measurement_pt;
-    m_measurement_pt = NULL;
-    m_tool_handler->emitMeasurementEnded();
+    if(m_measurement_pt){
+        m_measurements_pt_qmap[m_last_meas_idx] = m_measurement_pt;
+        m_measurement_pt = NULL;
+        m_tool_handler->emitMeasurementEnded();
+    }
 }
 
 

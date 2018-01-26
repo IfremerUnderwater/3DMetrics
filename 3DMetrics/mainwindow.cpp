@@ -39,8 +39,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     // saving popup signals slots
     QObject::connect(m_tool_handler,SIGNAL(measurementEnded()),this,SLOT(slot_openMeasSavingPopup()));
-    QObject::connect(&m_measurement_form, SIGNAL(sig_getMeasFormValues(QString,ToolState,QString,QString,QString,int,QString)), this, SLOT(slot_saveMeasFormValues(QString, ToolState,QString,QString,QString,int,QString)));
-    QObject::connect(&m_measurement_form, SIGNAL(si_formSavingCanceled()), this, SLOT(sl_formSavingCanceled()));
+    QObject::connect(&m_measurement_form, SIGNAL(si_measFormAccepted()), this, SLOT(slot_saveMeasFormValuesToTable()));
+    QObject::connect(&m_measurement_form, SIGNAL(si_measFormCanceled()), this, SLOT(sl_formSavingCanceled()));
 
     // mainToolBar
     QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), this, SLOT(sl_lineToolActivated()));
@@ -159,6 +159,8 @@ void MainWindow::slot_saveMeasFormValuesToTable()
             meas_category, meas_temp, m_tool_handler->getTextFormattedResult(), meas_comment);
 
     ui->measurements_table->resizeColumnsToContents();
+
+    goBackToIdle();
 }
 
 
@@ -182,10 +184,26 @@ void MainWindow::addMeasToTable(QString _meas_name, QString _measur_type, QStrin
     m_qmap_measurement[_meas_name] = m_tool_handler->getMeasTypeAndIndex();
 }
 
+void MainWindow::goBackToIdle()
+{
+    m_tool_handler->setCurrentToolState(IDLE_STATE);
+
+    ui->draw_segment_action->setEnabled(true);
+    ui->draw_area_action->setEnabled(true);
+    ui->draw_interest_point_action->setEnabled(true);
+    ui->cut_area_action->setEnabled(true);
+    ui->draw_interest_point_action->setEnabled(true);
+    ui->zoom_in_action->setEnabled(true);
+    ui->zoom_out_action->setEnabled(true);
+    ui->resize_action->setEnabled(true);
+    ui->crop_action->setEnabled(true);
+}
+
 
 void MainWindow::sl_formSavingCanceled()
 {
     m_tool_handler->removeLastMeasurement();
+    goBackToIdle();
 }
 
 
@@ -234,19 +252,7 @@ void MainWindow::sl_interestPointToolActivated()
 void MainWindow::sl_cancelMeasurement()
 {
     m_tool_handler->cancelMeasurement();
-
-    m_tool_handler->setCurrentToolState(IDLE_STATE);
-    // /////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    ui->draw_segment_action->setEnabled(true);
-    ui->draw_area_action->setEnabled(true);
-    ui->draw_interest_point_action->setEnabled(true);
-    ui->cut_area_action->setEnabled(true);
-    ui->draw_interest_point_action->setEnabled(true);
-    ui->zoom_in_action->setEnabled(true);
-    ui->zoom_out_action->setEnabled(true);
-    ui->resize_action->setEnabled(true);
-    ui->crop_action->setEnabled(true);
+    goBackToIdle();
 }
 
 

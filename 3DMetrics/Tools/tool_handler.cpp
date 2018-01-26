@@ -34,12 +34,14 @@ void ToolHandler::setCurrentToolState(ToolState _tool_state)
 
 void ToolHandler::cancelMeasurement()
 {
-    m_current_tool->cancelMeasurement();
+    if(m_current_tool)
+        m_current_tool->cancelMeasurement();
 }
 
 void ToolHandler::removeLastMeasurement()
 {
-    m_current_tool->removeLastMeasurement();
+    if(m_current_tool)
+        m_current_tool->removeLastMeasurement();
 }
 
 void ToolHandler::removeMeasurementOfType(ToolState _meas_type, int _meas_index)

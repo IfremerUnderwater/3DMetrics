@@ -43,9 +43,11 @@ public:
 
 public slots:
     void sl_cancelSaving();
+    void sl_acceptSaving();
 
 signals:
-    void si_formSavingCanceled();
+    void si_measFormCanceled();
+    void si_measFormAccepted();
 
 private:
     Ui::MeasurementSavingDialog *ui;

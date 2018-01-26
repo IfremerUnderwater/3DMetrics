@@ -43,6 +43,7 @@ MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
     ui->categoryComboBox->insertItem(12, m_category_names[12]);
 
 
+    QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(sl_acceptSaving()));
     QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(hide()));
     QObject::connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(hide()));
     QObject::connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(sl_cancelSaving()));
@@ -64,7 +65,12 @@ void MeasurementSavingDialog::setMeasFields(QString _measurement_formatted, QStr
 void MeasurementSavingDialog::sl_cancelSaving()
 {
     cleanMeasFormValues();
-    emit si_formSavingCanceled();
+    emit si_measFormCanceled();
+}
+
+void MeasurementSavingDialog::sl_acceptSaving()
+{
+    emit si_measFormAccepted();
 }
 
 void MeasurementSavingDialog::cleanMeasFormValues()
