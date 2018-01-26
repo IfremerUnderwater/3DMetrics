@@ -135,9 +135,48 @@ double SurfaceMeasurementTool::getArea()
 
 QString SurfaceMeasurementTool::getTextFormattedResult()
 {
-
+    return (QString::number(m_area,'f',3) + " m²");
 }
 
+void SurfaceMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
+{
+    switch (_button) {
+    case Qt::LeftButton:
+    {
+        osg::Vec3d inter_point;
+        bool inter_exists;
+        m_tool_handler->getIntersectionPoint(_x, _y, inter_point, inter_exists);
+        if(inter_exists){
+            pushNewPoint(inter_point);
+            m_tool_handler->forceGeodeUpdate();
+        }
+    }
+        break;
+    case Qt::MiddleButton:
+    {
+        closeLoop();
+        endMeasurement();
+    }
+        break;
+    case Qt::RightButton:
+        closeLoop();
+        endMeasurement();
+        break;
+    default:
+        break;
+    }
+}
+
+
+void SurfaceMeasurementTool::endMeasurement()
+{
+    // Compute lineLength and affect it in history map
+    if(m_measurement_pt)
+        m_measurements_area[m_last_meas_idx] = getArea();
+
+    // Call parent method
+    MeasurementTool::endMeasurement();
+}
 
 //template<class Vector3>
 std::pair<Eigen::Vector3f, Eigen::Vector3f> SurfaceMeasurementTool::bestPlaneFromPoints(std::vector<Eigen::Vector3f> & _points)

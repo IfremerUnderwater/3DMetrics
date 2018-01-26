@@ -11,6 +11,7 @@ public:
 
     void draw();
 
+    void endMeasurement();
     void cancelMeasurement();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
@@ -21,6 +22,9 @@ public:
     void closeLoop();
 
     QString getTextFormattedResult();
+
+    virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
+
 
 private:
     QString m_coordinates;

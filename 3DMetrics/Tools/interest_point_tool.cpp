@@ -17,7 +17,7 @@ InterestPointTool::~InterestPointTool()
 void InterestPointTool::draw()
 {
 
-    if(m_measurement_pt->size() >= 1)
+    if(m_measurement_pt)
     {
         m_last_meas_idx++;
 
@@ -128,7 +128,40 @@ void InterestPointTool::closeLoop()
 
 QString InterestPointTool::getTextFormattedResult()
 {
-
+    return m_coordinates;
 }
 
+void InterestPointTool::endMeasurement()
+{
+    // Compute lineLength and affect it in history map
+    if(m_measurement_pt)
+        interestPointCoordinates();
+
+    // Call parent method
+    MeasurementTool::endMeasurement();
+}
+
+void InterestPointTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
+{
+    switch (_button) {
+    case Qt::LeftButton:
+    {
+        osg::Vec3d inter_point;
+        bool inter_exists;
+        m_tool_handler->getIntersectionPoint(_x, _y, inter_point, inter_exists);
+        if(inter_exists){
+            pushNewPoint(inter_point);
+              m_tool_handler->forceGeodeUpdate();
+        }
+        endMeasurement();
+    }
+        break;
+    case Qt::MiddleButton:
+        break;
+    case Qt::RightButton:
+        break;
+    default:
+        break;
+    }
+}
 

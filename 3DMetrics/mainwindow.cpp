@@ -139,6 +139,7 @@ void MainWindow::slot_saveMeasFormValuesToTable()
                                           QString(), &ok);
 
         // Check again new name
+        name_is_unique = true;
         name_is_empty = meas_name.isEmpty();
         if( !ui->measurements_table->findItems(meas_name,Qt::MatchContains).isEmpty())
             name_is_unique = false;
@@ -150,6 +151,8 @@ void MainWindow::slot_saveMeasFormValuesToTable()
                 QMessageBox::critical(this, "Error : measurement name", "Empty measurement name so this measurement won't be saved.");
             if(!name_is_unique)
                 QMessageBox::critical(this, "Error : measurement name", "Measurement name already exist so this measurement won't be saved.");
+            m_measurement_form.cleanMeasFormValues();
+            goBackToIdle();
             return;
         }
     }
@@ -160,6 +163,7 @@ void MainWindow::slot_saveMeasFormValuesToTable()
 
     ui->measurements_table->resizeColumnsToContents();
 
+    m_measurement_form.cleanMeasFormValues();
     goBackToIdle();
 }
 

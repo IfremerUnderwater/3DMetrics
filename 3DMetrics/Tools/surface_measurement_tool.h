@@ -13,6 +13,7 @@ public:
     ~SurfaceMeasurementTool();
     void draw();
 
+    void endMeasurement();
     void cancelMeasurement();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
@@ -20,6 +21,8 @@ public:
     int getMeasurementCounter() const;
     double getArea();
     QString getTextFormattedResult();
+
+    virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 
 protected:
@@ -29,8 +32,11 @@ protected:
     double projPointToArea(std::pair<Eigen::Vector3f, Eigen::Vector3f> &_plane_coeffs, std::vector<Eigen::Vector3f> &_projected_points);
 
 private:
-    double m_lastNorm;
     double m_area;
+
+    // Map to keep history of measurements results
+    QMap<int, double > m_measurements_area;
+
 
 };
 
