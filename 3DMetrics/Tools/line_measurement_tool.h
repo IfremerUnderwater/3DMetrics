@@ -20,7 +20,8 @@ public:
     int getMeasurementCounter() const;
     QString getTextFormattedResult();
 
-    virtual void encodeToJSON(QJsonObject & _root_obj);
+    void encodeToJSON(QJsonObject & _root_obj);
+    void decodeJSON(QJsonObject & _root_obj);
 
     virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 

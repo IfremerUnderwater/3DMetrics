@@ -280,7 +280,7 @@
      <normaloff>:/icons/ressources/icon_save.png</normaloff>:/icons/ressources/icon_save.png</iconset>
    </property>
    <property name="text">
-    <string>Save Measure file </string>
+    <string>Save Measurement file</string>
    </property>
    <property name="shortcut">
     <string>Backspace</string>
@@ -292,7 +292,7 @@
      <normaloff>:/icons/ressources/icon_close.jpg</normaloff>:/icons/ressources/icon_close.jpg</iconset>
    </property>
    <property name="text">
-    <string>Close 3d Model</string>
+    <string>Close all</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+C</string>
@@ -420,7 +420,7 @@
      <normaloff>:/icons/ressources/icon_file.png</normaloff>:/icons/ressources/icon_file.png</iconset>
    </property>
    <property name="text">
-    <string>Open a Measure file</string>
+    <string>Open a Measurement file</string>
    </property>
    <property name="shortcut">
     <string>Ctrl+F</string>

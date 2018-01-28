@@ -165,6 +165,11 @@ void SurfaceMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
     _root_obj.insert("area_measurements",meas_list);
 }
 
+void SurfaceMeasurementTool::decodeJSON(QJsonObject &_root_obj)
+{
+
+}
+
 void SurfaceMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
 {
     switch (_button) {

@@ -312,22 +312,51 @@ void MainWindow::sl_delete_measurement_action()
 
 void MainWindow::slot_openMeasureFile()
 {
-    //    m_measures_file = QFileDialog::getOpenFileName(
-    //                this,
-    //                tr("Select Measures file to open"),
-    //                tr("Text files (*.txt *.csv)"));
+        QString meas_filename = QFileDialog::getOpenFileName(
+                    this,
+                    tr("Select measurements file to open"),
+                    "*.json");
 
-    //    QFile file(m_measures_file);
+        QFileInfo meas_file_info(meas_filename);
 
-    //    bool measur_file_is_null = m_measures_file.isNull();
+        // check filename is not empty
+        if(meas_file_info.fileName().isEmpty()){
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Error : file opening canceled !"));
+            return;
+        }
 
-    //    std::string new_measur_file_name = m_measures_file.toStdString();
-    //    std::size_t position = new_measur_file_name.find_last_of(".\\");
-    //    std::string file_name = new_measur_file_name.substr(position+1);
+        QFile meas_file(meas_filename);
+        if(!meas_file.open(QIODevice::ReadOnly)){
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Error trying to open file !"));
+            return;
+        }
 
-    //    if(measur_file_is_null)
-    //        QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a measurements file"));
+        QTextStream meas_file_text(&meas_file);
+        QString json_string;
+        json_string = meas_file_text.readAll();
+        meas_file.close();
+        QByteArray json_bytes = json_string.toLocal8Bit();
 
+        QJsonDocument json_doc=QJsonDocument::fromJson(json_bytes);
+
+        if(json_doc.isNull()){
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Failed to create Json"));
+            return;
+        }
+        if(!json_doc.isObject()){
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Not containing Json object"));
+            return;
+        }
+
+        QJsonObject json_obj=json_doc.object();
+
+        if(json_obj.isEmpty()){
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Json object is empty"));
+            return;
+        }
+
+        // decode Json
+        m_tool_handler->decodeJSON(json_obj);
 
 }
 
@@ -353,8 +382,8 @@ void MainWindow::sl_saveMeasurFile()
         meas_filename += ".json";
     }
 
-    QFile save_file(meas_filename);
-    if(!save_file.open(QIODevice::WriteOnly)){
+    QFile meas_file(meas_filename);
+    if(!meas_file.open(QIODevice::WriteOnly)){
         QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
     }
@@ -365,7 +394,7 @@ void MainWindow::sl_saveMeasurFile()
 
     QJsonDocument json_doc(root_obj);
     QString json_string = json_doc.toJson();
-    save_file.write(json_string.toUtf8());
-    save_file.close();
+    meas_file.write(json_string.toUtf8());
+    meas_file.close();
 
 }

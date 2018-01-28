@@ -113,9 +113,13 @@ public:
 
     ///
     /// \brief encodeToJSON method to encode object to JSON then save it
-    /// \return JSON description of measurements
     ///
     virtual void encodeToJSON(QJsonObject & _root_obj)=0;
+
+    ///
+    /// \brief decodeJSON method to decode JSON measurement object and add measurements
+    ///
+    virtual void decodeJSON(QJsonObject & _root_obj)=0;
 
     // hide/show measurement method
     void hideShowMeasurement(int _meas_index, bool _visible);

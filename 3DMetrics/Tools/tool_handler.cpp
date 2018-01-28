@@ -104,11 +104,16 @@ QPair<ToolState, int> ToolHandler::getMeasTypeAndIndex()
 
 void ToolHandler::encodeToJSON(QJsonObject & _root_obj)
 {
-    QString endOfLine("\n");
-
     m_line_meas_tool.encodeToJSON(_root_obj);
     m_surf_meas_tool.encodeToJSON(_root_obj);
     m_interest_point_tool.encodeToJSON(_root_obj);
+}
+
+void ToolHandler::decodeJSON(QJsonObject & _root_obj)
+{
+    m_line_meas_tool.decodeJSON(_root_obj);
+    m_surf_meas_tool.decodeJSON(_root_obj);
+    m_interest_point_tool.decodeJSON(_root_obj);
 }
 
 void ToolHandler::setCurrentMeasName(QString _name)

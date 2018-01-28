@@ -157,6 +157,11 @@ void InterestPointTool::encodeToJSON(QJsonObject & _root_obj)
     _root_obj.insert("interest_points",meas_list);
 }
 
+void InterestPointTool::decodeJSON(QJsonObject &_root_obj)
+{
+
+}
+
 void InterestPointTool::endMeasurement()
 {
     // Compute lineLength and affect it in history map

@@ -42,6 +42,7 @@ public:
     QPair<ToolState, int> getMeasTypeAndIndex();
 
     void encodeToJSON(QJsonObject & _root_obj);
+    void decodeJSON(QJsonObject & _root_obj);
 
     void setCurrentMeasName(QString _name);
 

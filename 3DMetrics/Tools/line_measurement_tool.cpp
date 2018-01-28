@@ -179,6 +179,11 @@ void LineMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
 
 }
 
+void LineMeasurementTool::decodeJSON(QJsonObject &_root_obj)
+{
+
+}
+
 void LineMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
 {
     switch (_button) {

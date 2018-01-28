@@ -57,7 +57,6 @@ signals:
 private:
     Ui::MainWindow *ui;
     QString m_model_file;
-    QString m_measures_file;
 
     MeasurementSavingDialog m_measurement_form;
     QMap<int,QString> m_state_names;
