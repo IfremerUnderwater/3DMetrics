@@ -108,6 +108,12 @@ void MeasurementTool::endMeasurement()
     }
 }
 
+void MeasurementTool::setCurrentMeasName(QString _name)
+{
+    if(m_measurements_pt_qmap.size()>0)
+        m_measurements_name_qmap[m_last_meas_idx]=_name;
+}
+
 
 void MeasurementTool::drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name)
 {

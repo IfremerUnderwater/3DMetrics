@@ -49,7 +49,7 @@ public slots:
 
     void sl_delete_measurement_action();
 
-    // slot for reading and saving form values
+    // slot for saving form values
     void slot_saveMeasFormValuesToTable();
 signals:
 

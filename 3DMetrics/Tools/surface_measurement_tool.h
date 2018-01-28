@@ -22,6 +22,8 @@ public:
     double getArea();
     QString getTextFormattedResult();
 
+    virtual void encodeToJSON(QJsonObject & _root_obj);
+
     virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 

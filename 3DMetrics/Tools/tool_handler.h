@@ -36,8 +36,14 @@ public:
     void emitMeasurementEnded();
 
     ToolState getCurrentState() const;
+
     QString getTextFormattedResult();
+
     QPair<ToolState, int> getMeasTypeAndIndex();
+
+    void encodeToJSON(QJsonObject & _root_obj);
+
+    void setCurrentMeasName(QString _name);
 
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);

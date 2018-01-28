@@ -131,6 +131,32 @@ QString InterestPointTool::getTextFormattedResult()
     return m_coordinates;
 }
 
+void InterestPointTool::encodeToJSON(QJsonObject & _root_obj)
+{
+    QJsonArray meas_list;
+
+    for( QMap<int, osg::ref_ptr<osg::Vec3dArray>>::iterator it = m_measurements_pt_qmap.begin(); it != m_measurements_pt_qmap.end(); it++ )
+    {
+        QJsonObject points_object;
+        QJsonArray points_vector;
+
+        osg::ref_ptr<osg::Vec3dArray> meas = it.value();
+
+        for (unsigned int i=0; i<meas->size(); i++){
+            QJsonArray xyz;
+            xyz << (double)meas->at(i)[0] << (double)meas->at(i)[1] << (double)meas->at(i)[2];
+            points_vector << xyz;
+        }
+
+        points_object["name"]=m_measurements_name_qmap[it.key()];
+        points_object["points"]=points_vector;
+
+        meas_list << points_object;
+    }
+
+    _root_obj.insert("interest_points",meas_list);
+}
+
 void InterestPointTool::endMeasurement()
 {
     // Compute lineLength and affect it in history map

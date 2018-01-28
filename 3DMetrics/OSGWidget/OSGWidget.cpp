@@ -280,28 +280,12 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
     }
 
 
-    //    osg::ref_ptr<osg::MatrixTransform> model_transform2 = new osg::MatrixTransform;
-    //    model_transform2->setMatrix(osg::Matrix::translate(0,0,0));
-    //    model_transform2->addChild(model_node);
-
     // Add model
     m_models.push_back(model_transform);
     osg::StateSet* stateSet = model_transform->getOrCreateStateSet();
     stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     m_group->addChild(model_transform.get());
-
-    //    m_models.push_back(model_transform2);
-    //    osg::StateSet* stateSet2 = model_transform2->getOrCreateStateSet();
-    //    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
-
-    //    m_group->addChild(model_transform2.get());
-
-    //    m_models.push_back(model_node);
-    //    osg::StateSet* stateSet = model_node->getOrCreateStateSet();
-    //    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
-
-    //    m_group->addChild(model_node.get());
 
     // optimize the scene graph, remove redundant nodes and state etc.
     /*osgUtil::Optimizer optimizer;
@@ -345,6 +329,7 @@ void OSGWidget::setClearColor(double _r, double _g, double _b, double _alpha)
 
 }
 
+// To rewrite /////////////////////////////////////////////////////////////////////////////////////
 void OSGWidget::clearSceneData()
 {
 
@@ -442,7 +427,7 @@ void OSGWidget::mouseMoveEvent( QMouseEvent* event )
 void OSGWidget::mousePressEvent( QMouseEvent* event )
 {
 
-
+    // for tools
     emit sig_onMousePress(event->button(), event->x(), event->y());
 
     // 1 = left mouse button
@@ -474,229 +459,6 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
     default:
         break;
     }
-
-    //    switch( event->button() )
-    //    {
-    //    case Qt::LeftButton:
-    //    {
-    //        button = 1;
-
-
-    //        switch( m_tool_state )
-    //        {
-    //        case IDLE_STATE:
-
-    //            break;
-
-    //        case LINE_MEASUREMENT_STATE:
-    //        {
-
-    //            bool inter_exists;
-    //            osg::Vec3d inter_point;
-    //            getIntersectionPoint(event->x(), event->y(), inter_point, inter_exists);
-    //            if(inter_exists){
-
-    //                m_line_measurement_tool.pushNewPoint(inter_point);
-    //                m_group->removeChild(m_measurement_geode);
-    //                m_group->addChild(m_measurement_geode);
-
-    //            }
-
-    //        }
-    //            break;
-
-    //        case SURFACE_MEASUREMENT_STATE:
-    //        {
-
-    //            bool inter_exists;
-    //            osg::Vec3d inter_point;
-    //            getIntersectionPoint(event->x(), event->y(), inter_point, inter_exists);
-    //            if(inter_exists){
-
-    //                m_surface_measurement_tool.pushNewPoint(inter_point);
-    //                m_group->removeChild(m_measurement_geode);
-    //                m_group->addChild(m_measurement_geode);
-
-    //            }
-
-    //        }
-    //            break;
-
-    //        case INTEREST_POINT_STATE:
-    //        {
-
-    //            bool inter_exists;
-    //            osg::Vec3d inter_point;
-    //            getIntersectionPoint(event->x(), event->y(), inter_point, inter_exists);
-    //            if(inter_exists){
-
-    //                m_interest_point_tool.pushNewPoint(inter_point);
-    //                m_group->removeChild(m_measurement_geode);
-    //                m_group->addChild(m_measurement_geode);
-
-    //            }
-
-    //            emit si_showInterestPointMeasurementSavingPopup(m_interest_point_tool.interestPointCoordinates(),
-    //                                                            m_interest_point_tool.getTypeOfMeasur(),
-    //                                                            m_interest_point_tool.getMeasurementCounter());
-    //            m_interest_point_tool.endMeasurement();
-    //            emit si_endMeasur();
-    //            slot_setInIdleState();
-
-    //        }
-
-    //            break;
-
-    //        case CUT_AREA_TOOL_STATE:
-
-    //            break;
-
-    //        case ZOOM_IN_TOOL_STATE:
-
-    //            break;
-
-    //        case ZOOM_OUT_TOOL_STATE:
-
-    //            break;
-
-    //        case  FULL_SCREEN_TOOL_STATE:
-
-    //            break;
-
-    //        case CROP_TOOL_STATE:
-
-    //            break;
-    //        }
-    //    }
-    //        break;
-
-    //    case Qt::MiddleButton:
-    //    {
-    //        button = 2;
-
-    //        switch( m_tool_state )
-    //        {
-    //        case IDLE_STATE:
-
-    //            break;
-
-    //        case LINE_MEASUREMENT_STATE:
-    //        {
-    //            if(m_line_measurement_tool.getNumberOfPoints() >= 3)
-    //            {
-    //                m_line_measurement_tool.closeLoop();
-    //                emit sig_showMeasurementSavingPopup(m_line_measurement_tool.closedLineLength(),
-    //                                                    m_line_measurement_tool.getTypeOfMeasur(),
-    //                                                    m_line_measurement_tool.getMeasurementCounter());
-    //                m_line_measurement_tool.endMeasurement();
-    //                emit si_endMeasur();
-    //                slot_setInIdleState();
-    //            }
-    //        }
-    //            break;
-
-    //        case SURFACE_MEASUREMENT_STATE:
-
-    //            break;
-
-    //        case INTEREST_POINT_STATE:
-
-    //            break;
-
-    //        case CUT_AREA_TOOL_STATE:
-
-    //            break;
-
-    //        case ZOOM_IN_TOOL_STATE:
-
-    //            break;
-
-    //        case ZOOM_OUT_TOOL_STATE:
-
-    //            break;
-
-    //        case  FULL_SCREEN_TOOL_STATE:
-
-    //            break;
-
-    //        case CROP_TOOL_STATE:
-
-    //            break;
-    //        }
-    //    }
-    //        break;
-
-    //    case Qt::RightButton:
-    //    {
-    //        button = 3;
-
-    //        switch( m_tool_state )
-    //        {
-    //        case IDLE_STATE:
-
-    //            break;
-
-    //        case LINE_MEASUREMENT_STATE:
-    //        {
-    //            if(m_line_measurement_tool.getNumberOfPoints() >= 2)
-    //            {
-    //                emit sig_showMeasurementSavingPopup(m_line_measurement_tool.lineLength(),
-    //                                                    m_line_measurement_tool.getTypeOfMeasur(),
-    //                                                    m_line_measurement_tool.getMeasurementCounter());
-    //                m_line_measurement_tool.endMeasurement();
-    //                emit si_endMeasur();
-    //                slot_setInIdleState();
-    //            }
-    //        }
-    //            break;
-
-    //        case SURFACE_MEASUREMENT_STATE:
-    //        {
-    //            if(m_surface_measurement_tool.getNumberOfPoints() >= 3)
-    //            {
-    //                m_surface_measurement_tool.closeLoop();
-    //                emit sig_showMeasurementSavingPopup(m_surface_measurement_tool.getArea(),
-    //                                                    m_surface_measurement_tool.getTypeOfMeasur(),
-    //                                                    m_surface_measurement_tool.getMeasurementCounter());
-    //                m_surface_measurement_tool.endMeasurement();
-    //                emit si_endMeasur();
-    //                slot_setInIdleState();
-    //            }
-    //        }
-
-    //            break;
-
-    //        case INTEREST_POINT_STATE:
-
-    //            break;
-
-    //        case CUT_AREA_TOOL_STATE:
-
-    //            break;
-
-    //        case ZOOM_IN_TOOL_STATE:
-
-    //            break;
-
-    //        case ZOOM_OUT_TOOL_STATE:
-
-    //            break;
-
-    //        case  FULL_SCREEN_TOOL_STATE:
-
-    //            break;
-
-    //        case CROP_TOOL_STATE:
-
-    //            break;
-    //        }
-    //    }
-    //        break;
-
-    //    default:
-    //        break;
-    //    }
-
 
     this->getEventQueue()->mouseButtonPress( static_cast<float>( event->x() ),
                                              static_cast<float>( event->y() ),

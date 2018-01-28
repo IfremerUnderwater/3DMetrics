@@ -16,7 +16,7 @@
 #include "kml_handler.h"
 #include <GeographicLib/LocalCartesian.hpp>
 
-#define INVALID_VALUE -1000
+#define INVALID_VALUE 100000
 
 
 

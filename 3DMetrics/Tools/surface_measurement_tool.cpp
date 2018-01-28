@@ -138,6 +138,33 @@ QString SurfaceMeasurementTool::getTextFormattedResult()
     return (QString::number(m_area,'f',3) + " m²");
 }
 
+void SurfaceMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
+{
+    QJsonArray meas_list;
+
+    for( QMap<int, osg::ref_ptr<osg::Vec3dArray>>::iterator it = m_measurements_pt_qmap.begin(); it != m_measurements_pt_qmap.end(); it++ )
+    {
+        QJsonObject points_object;
+        QJsonArray points_vector;
+
+        osg::ref_ptr<osg::Vec3dArray> meas = it.value();
+
+        for (unsigned int i=0; i<meas->size(); i++){
+            QJsonArray xyz;
+            xyz << (double)meas->at(i)[0] << (double)meas->at(i)[1] << (double)meas->at(i)[2];
+            points_vector << xyz;
+        }
+
+        points_object["name"]=m_measurements_name_qmap[it.key()];
+        points_object["points"]=points_vector;
+        points_object["area"]=m_measurements_area[it.key()];
+
+        meas_list << points_object;
+    }
+
+    _root_obj.insert("area_measurements",meas_list);
+}
+
 void SurfaceMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
 {
     switch (_button) {

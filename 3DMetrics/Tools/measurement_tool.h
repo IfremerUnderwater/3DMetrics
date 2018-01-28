@@ -1,15 +1,20 @@
 #ifndef MEASUREMENTTOOL_H
 #define MEASUREMENTTOOL_H
 
-#include <osg/Vec3d>
-
+// qt
 #include <QDebug>
 #include <QKeyEvent>
 #include <QWheelEvent>
 #include <QPair>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QJsonValue>
+#include <QJsonDocument>
+#include <QString>
 
+// osg
 #include <osg/Camera>
-
+#include <osg/Vec3d>
 #include <osg/DisplaySettings>
 #include <osg/Geode>
 #include <osg/Material>
@@ -31,12 +36,11 @@
 #include <osgViewer/ViewerEventHandlers>
 #include <osgGA/GUIEventAdapter>
 
+// std
 #include <cassert>
-
 #include <stdexcept>
 #include <vector>
 
-#include <QDebug>
 
 
 #include <osg/Referenced>
@@ -107,13 +111,28 @@ public:
     ///
     virtual QString getTextFormattedResult()=0;
 
+    ///
+    /// \brief encodeToJSON method to encode object to JSON then save it
+    /// \return JSON description of measurements
+    ///
+    virtual void encodeToJSON(QJsonObject & _root_obj)=0;
 
     // hide/show measurement method
     void hideShowMeasurement(int _meas_index, bool _visible);
 
+    // ///////////////////////////////////////// To review ///////////////////////////////////////////////
     void resetMeasData();
 
+    ///
+    /// \brief endMeasurement function to execute to end the current measurement
+    ///
     virtual void endMeasurement();
+
+    ///
+    /// \brief setCurrentMeasName give a name to current measurement
+    /// \param _name measurement name
+    ///
+    void setCurrentMeasName(QString _name);
 
     // draw a point with given color in the provided geode
     void drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
@@ -134,6 +153,9 @@ protected:
 
     // Map to keep history of measurements pt
     QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_pt_qmap;
+
+    // Map to keep history of measurements name
+    QMap<int, QString> m_measurements_name_qmap;
 
     // Tool handler is in interaction with display widget
     ToolHandler *m_tool_handler;
