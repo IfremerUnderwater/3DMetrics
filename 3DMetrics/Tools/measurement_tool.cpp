@@ -26,6 +26,9 @@ void MeasurementTool::pushNewPoint(osg::Vec3d _point )
     // drawing
     draw();
 
+    // update geode
+    m_tool_handler->forceGeodeUpdate();
+
 
 }
 
@@ -99,12 +102,27 @@ void MeasurementTool::resetMeasData()
 
 
 
-void MeasurementTool::endMeasurement()
+void MeasurementTool::endMeasurement(bool _meas_info_is_set)
 {
     if(m_measurement_pt){
         m_measurements_pt_qmap[m_last_meas_idx] = m_measurement_pt;
         m_measurement_pt = NULL;
-        m_tool_handler->emitMeasurementEnded();
+
+        if(!_meas_info_is_set)
+            m_tool_handler->emitMeasurementEnded();
+        else
+        {
+            MeasInfo meas_info;
+            meas_info.name = m_measurements_name_qmap[m_last_meas_idx];
+            meas_info.category = "category";
+            meas_info.comments = "comments";
+            meas_info.index = m_last_meas_idx;
+            meas_info.temperature = "temp";
+            meas_info.type = m_meas_type;
+            meas_info.formatted_result = getTextFormattedResult();
+
+            m_tool_handler->newMeasEndedWithInfo(meas_info);
+        }
     }
 }
 

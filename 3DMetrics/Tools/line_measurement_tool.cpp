@@ -70,14 +70,14 @@ void LineMeasurementTool::cancelMeasurement()
     }
 }
 
-void LineMeasurementTool::endMeasurement()
+void LineMeasurementTool::endMeasurement(bool _meas_info_is_set)
 {
     // Compute lineLength and affect it in history map
     if(m_measurement_pt)
         m_measurements_length[m_last_meas_idx] = lineLength();
 
     // Call parent method
-    MeasurementTool::endMeasurement();
+    MeasurementTool::endMeasurement(_meas_info_is_set);
 }
 
 
@@ -162,7 +162,8 @@ void LineMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
 
         osg::ref_ptr<osg::Vec3dArray> meas = it.value();
 
-        for (unsigned int i=0; i<meas->size(); i++){
+        for (unsigned int i=0; i<meas->size(); i++)
+        {
             QJsonArray xyz;
             xyz << (double)meas->at(i)[0] << (double)meas->at(i)[1] << (double)meas->at(i)[2];
             points_vector << xyz;
@@ -181,6 +182,36 @@ void LineMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
 
 void LineMeasurementTool::decodeJSON(QJsonObject &_root_obj)
 {
+    QJsonArray meas_list;
+
+    meas_list = _root_obj["line_measurements"].toArray();
+
+    if(meas_list.isEmpty())
+        return;
+
+    // Cancel current measurment (in case it is needed)
+    cancelMeasurement();
+
+    for (int i=0; i<meas_list.size(); i++)
+    {
+        QJsonObject points_object = meas_list.at(i).toObject();
+
+        QString meas_name = points_object["name"].toString();
+        //double meas_length = points_object["length"].toDouble();
+        QJsonArray points_vector = points_object["points"].toArray();
+
+        for (int j=0; j<points_vector.size(); j++)
+        {
+            QJsonArray xyz_json=points_vector.at(j).toArray();
+            osg::Vec3d xyz_osg(xyz_json.at(0).toDouble(),xyz_json.at(1).toDouble(),xyz_json.at(2).toDouble());
+            pushNewPoint(xyz_osg);
+        }
+
+        //m_norm = meas_length;
+        setCurrentMeasName(meas_name);
+        endMeasurement(true);
+
+    }
 
 }
 

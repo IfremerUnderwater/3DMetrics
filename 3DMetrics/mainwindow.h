@@ -23,11 +23,6 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
-    // add measur to table
-    void addMeasToTable(QString _measur_name, QString _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments);
-
-    void goBackToIdle();
-
 public slots:
     void slot_open3dModel();
     void slot_openMeasureFile();
@@ -54,7 +49,13 @@ public slots:
 signals:
 
 
+private slots:
+    // add measur to table
+    void slot_addMeasToTable(MeasInfo _meas_info);
+
 private:
+    void goBackToIdle();
+
     Ui::MainWindow *ui;
     QString m_model_file;
 

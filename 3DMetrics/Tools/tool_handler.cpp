@@ -145,3 +145,8 @@ void ToolHandler::emitMeasurementEnded()
     emit measurementEnded();
 }
 
+void ToolHandler::newMeasEndedWithInfo(MeasInfo _meas_info)
+{
+    emit sig_newMeasEndedWithInfo(_meas_info);
+}
+

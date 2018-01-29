@@ -129,8 +129,9 @@ public:
 
     ///
     /// \brief endMeasurement function to execute to end the current measurement
+    /// \param _attributes_are_set set to true if you've set name, length and comments (eg: reading meas from file)
     ///
-    virtual void endMeasurement();
+    virtual void endMeasurement(bool _meas_info_is_set=false);
 
     ///
     /// \brief setCurrentMeasName give a name to current measurement

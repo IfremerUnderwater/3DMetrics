@@ -11,7 +11,7 @@ public:
 
     void draw();
 
-    void endMeasurement();
+    void endMeasurement(bool _meas_info_is_set=false);
     void cancelMeasurement();
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);

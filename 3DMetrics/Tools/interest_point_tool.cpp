@@ -159,17 +159,44 @@ void InterestPointTool::encodeToJSON(QJsonObject & _root_obj)
 
 void InterestPointTool::decodeJSON(QJsonObject &_root_obj)
 {
+    QJsonArray meas_list;
 
+    meas_list = _root_obj["interest_points"].toArray();
+
+    if(meas_list.isEmpty())
+        return;
+
+    // Cancel current measurment (in case it is needed)
+    cancelMeasurement();
+
+    for (int i=0; i<meas_list.size(); i++)
+    {
+        QJsonObject points_object = meas_list.at(i).toObject();
+
+        QString meas_name = points_object["name"].toString();
+        QJsonArray points_vector = points_object["points"].toArray();
+
+        for (int j=0; j<points_vector.size(); j++)
+        {
+            QJsonArray xyz_json=points_vector.at(j).toArray();
+            osg::Vec3d xyz_osg(xyz_json.at(0).toDouble(),xyz_json.at(1).toDouble(),xyz_json.at(2).toDouble());
+            pushNewPoint(xyz_osg);
+        }
+
+        setCurrentMeasName(meas_name);
+        endMeasurement(true);
+
+    }
 }
 
-void InterestPointTool::endMeasurement()
+void InterestPointTool::endMeasurement(bool _meas_info_is_set)
 {
     // Compute lineLength and affect it in history map
     if(m_measurement_pt)
         interestPointCoordinates();
 
     // Call parent method
-    MeasurementTool::endMeasurement();
+    MeasurementTool::endMeasurement(_meas_info_is_set);
 }
 
 void InterestPointTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
@@ -182,7 +209,6 @@ void InterestPointTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
         m_tool_handler->getIntersectionPoint(_x, _y, inter_point, inter_exists);
         if(inter_exists){
             pushNewPoint(inter_point);
-              m_tool_handler->forceGeodeUpdate();
         }
         endMeasurement();
     }

@@ -35,6 +35,8 @@ public:
 
     void emitMeasurementEnded();
 
+    void newMeasEndedWithInfo(MeasInfo _meas_info);
+
     ToolState getCurrentState() const;
 
     QString getTextFormattedResult();
@@ -51,6 +53,7 @@ public slots:
 
 signals:
     void measurementEnded();
+    void sig_newMeasEndedWithInfo(MeasInfo _meas_info);
 
 private:
     MeasurementTool *m_current_tool;

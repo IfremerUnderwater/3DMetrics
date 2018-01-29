@@ -44,6 +44,8 @@ MainWindow::MainWindow(QWidget *parent) :
     QObject::connect(&m_measurement_form, SIGNAL(si_measFormAccepted()), this, SLOT(slot_saveMeasFormValuesToTable()));
     QObject::connect(&m_measurement_form, SIGNAL(si_measFormCanceled()), this, SLOT(sl_formSavingCanceled()));
 
+    QObject::connect(m_tool_handler,SIGNAL(sig_newMeasEndedWithInfo(MeasInfo)),this,SLOT(slot_addMeasToTable(MeasInfo)));
+
     // mainToolBar
     QObject::connect(ui->draw_segment_action, SIGNAL(triggered()), this, SLOT(sl_lineToolActivated()));
     QObject::connect(ui->draw_area_action, SIGNAL(triggered()), this, SLOT(sl_surfaceToolActivated()));
@@ -120,10 +122,9 @@ void MainWindow::slot_openMeasSavingPopup()
 void MainWindow::slot_saveMeasFormValuesToTable()
 {
 
+
+    // check name
     QString meas_name = m_measurement_form.getMeasName();
-    QString meas_temp = m_measurement_form.getMeasTemp();
-    QString meas_comment = m_measurement_form.getMeasComment();
-    QString meas_category = m_measurement_form.getMeasCategory();
 
     bool name_is_unique = true;
     bool name_is_empty = false;
@@ -159,10 +160,19 @@ void MainWindow::slot_saveMeasFormValuesToTable()
         }
     }
 
+    // create meas info
+    MeasInfo meas_info;
+
+    meas_info.name = meas_name;
+    meas_info.type = m_tool_handler->getCurrentState();
+    meas_info.index = m_tool_handler->getMeasTypeAndIndex().second;
+    meas_info.category = m_measurement_form.getMeasCategory();
+    meas_info.temperature = m_measurement_form.getMeasTemp();
+    meas_info.formatted_result = m_tool_handler->getTextFormattedResult();
+    meas_info.comments = m_measurement_form.getMeasComment();
+
     // Add measurement to table
-    addMeasToTable(meas_name, m_toolstate_to_qstring[m_tool_handler->getCurrentState()],
-            meas_category, meas_temp, m_tool_handler->getTextFormattedResult(), meas_comment);
-    ui->measurements_table->resizeColumnsToContents();
+    slot_addMeasToTable(meas_info);
 
     // Set measurement name
     m_tool_handler->setCurrentMeasName(meas_name);
@@ -173,7 +183,7 @@ void MainWindow::slot_saveMeasFormValuesToTable()
 }
 
 
-void MainWindow::addMeasToTable(QString _meas_name, QString _measur_type, QString _category, QString _temperature, QString _measur_result, QString _comments)
+void MainWindow::slot_addMeasToTable(MeasInfo _meas_info)
 {
 
     QTableWidgetItem *checkbox = new QTableWidgetItem();
@@ -183,14 +193,19 @@ void MainWindow::addMeasToTable(QString _meas_name, QString _measur_type, QStrin
     ui->measurements_table->setRowCount(row_count+1);
 
     ui->measurements_table->setItem(row_count, 0, checkbox);
-    ui->measurements_table->setItem(row_count, 1, new QTableWidgetItem(_meas_name));
-    ui->measurements_table->setItem(row_count, 2, new QTableWidgetItem(QString(_measur_type))); // //////////////////
-    ui->measurements_table->setItem(row_count, 3, new QTableWidgetItem(_category));
-    ui->measurements_table->setItem(row_count, 4, new QTableWidgetItem(_temperature));
-    ui->measurements_table->setItem(row_count, 5, new QTableWidgetItem(_measur_result));
-    ui->measurements_table->setItem(row_count, 6, new QTableWidgetItem(_comments));
+    ui->measurements_table->setItem(row_count, 1, new QTableWidgetItem(_meas_info.name));
+    ui->measurements_table->setItem(row_count, 2, new QTableWidgetItem(m_toolstate_to_qstring[_meas_info.type])); // //////////////////
+    ui->measurements_table->setItem(row_count, 3, new QTableWidgetItem(_meas_info.category));
+    ui->measurements_table->setItem(row_count, 4, new QTableWidgetItem(_meas_info.temperature));
+    ui->measurements_table->setItem(row_count, 5, new QTableWidgetItem(_meas_info.formatted_result));
+    ui->measurements_table->setItem(row_count, 6, new QTableWidgetItem(_meas_info.comments));
 
-    m_qmap_measurement[_meas_name] = m_tool_handler->getMeasTypeAndIndex();
+    QPair<ToolState,int> type_idx_pair;
+    type_idx_pair.first = _meas_info.type;
+    type_idx_pair.second = _meas_info.index;
+    m_qmap_measurement[_meas_info.name] = type_idx_pair;
+
+    ui->measurements_table->resizeColumnsToContents();
 }
 
 void MainWindow::goBackToIdle()
@@ -312,51 +327,51 @@ void MainWindow::sl_delete_measurement_action()
 
 void MainWindow::slot_openMeasureFile()
 {
-        QString meas_filename = QFileDialog::getOpenFileName(
-                    this,
-                    tr("Select measurements file to open"),
-                    "*.json");
+    QString meas_filename = QFileDialog::getOpenFileName(
+                this,
+                tr("Select measurements file to open"),
+                "*.json");
 
-        QFileInfo meas_file_info(meas_filename);
+    QFileInfo meas_file_info(meas_filename);
 
-        // check filename is not empty
-        if(meas_file_info.fileName().isEmpty()){
-            QMessageBox::information(this, tr("Reading measurement file"), tr("Error : file opening canceled !"));
-            return;
-        }
+    // check filename is not empty
+    if(meas_file_info.fileName().isEmpty()){
+        QMessageBox::information(this, tr("Reading measurement file"), tr("Error : file opening canceled !"));
+        return;
+    }
 
-        QFile meas_file(meas_filename);
-        if(!meas_file.open(QIODevice::ReadOnly)){
-            QMessageBox::information(this, tr("Reading measurement file"), tr("Error trying to open file !"));
-            return;
-        }
+    QFile meas_file(meas_filename);
+    if(!meas_file.open(QIODevice::ReadOnly)){
+        QMessageBox::information(this, tr("Reading measurement file"), tr("Error trying to open file !"));
+        return;
+    }
 
-        QTextStream meas_file_text(&meas_file);
-        QString json_string;
-        json_string = meas_file_text.readAll();
-        meas_file.close();
-        QByteArray json_bytes = json_string.toLocal8Bit();
+    QTextStream meas_file_text(&meas_file);
+    QString json_string;
+    json_string = meas_file_text.readAll();
+    meas_file.close();
+    QByteArray json_bytes = json_string.toLocal8Bit();
 
-        QJsonDocument json_doc=QJsonDocument::fromJson(json_bytes);
+    QJsonDocument json_doc=QJsonDocument::fromJson(json_bytes);
 
-        if(json_doc.isNull()){
-            QMessageBox::information(this, tr("Reading measurement file"), tr("Failed to create Json"));
-            return;
-        }
-        if(!json_doc.isObject()){
-            QMessageBox::information(this, tr("Reading measurement file"), tr("Not containing Json object"));
-            return;
-        }
+    if(json_doc.isNull()){
+        QMessageBox::information(this, tr("Reading measurement file"), tr("Failed to create Json"));
+        return;
+    }
+    if(!json_doc.isObject()){
+        QMessageBox::information(this, tr("Reading measurement file"), tr("Not containing Json object"));
+        return;
+    }
 
-        QJsonObject json_obj=json_doc.object();
+    QJsonObject json_obj=json_doc.object();
 
-        if(json_obj.isEmpty()){
-            QMessageBox::information(this, tr("Reading measurement file"), tr("Json object is empty"));
-            return;
-        }
+    if(json_obj.isEmpty()){
+        QMessageBox::information(this, tr("Reading measurement file"), tr("Json object is empty"));
+        return;
+    }
 
-        // decode Json
-        m_tool_handler->decodeJSON(json_obj);
+    // decode Json
+    m_tool_handler->decodeJSON(json_obj);
 
 }
 

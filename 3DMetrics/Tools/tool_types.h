@@ -1,6 +1,8 @@
 #ifndef TOOL_TYPES_H
 #define TOOL_TYPES_H
 
+#include <QMetaType>
+
 // Various states according to the action clicked
 enum ToolState
 {
@@ -14,6 +16,18 @@ enum ToolState
     FULL_SCREEN_TOOL_STATE,
     CROP_TOOL_STATE
 };
+
+struct MeasInfo {
+  QString name;
+  ToolState type;
+  int index;
+  QString category;
+  QString temperature;
+  QString formatted_result;
+  QString comments;
+} ;
+
+Q_DECLARE_METATYPE(MeasInfo)
 
 #endif // TOOL_TYPES_H
 

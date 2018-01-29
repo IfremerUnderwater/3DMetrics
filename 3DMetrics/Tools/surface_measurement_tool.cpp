@@ -167,7 +167,36 @@ void SurfaceMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
 
 void SurfaceMeasurementTool::decodeJSON(QJsonObject &_root_obj)
 {
+    QJsonArray meas_list;
 
+    meas_list = _root_obj["area_measurements"].toArray();
+
+    if(meas_list.isEmpty())
+        return;
+
+    // Cancel current measurment (in case it is needed)
+    cancelMeasurement();
+
+    for (int i=0; i<meas_list.size(); i++)
+    {
+        QJsonObject points_object = meas_list.at(i).toObject();
+
+        QString meas_name = points_object["name"].toString();
+        //double meas_are = points_object["area"].toDouble();
+        QJsonArray points_vector = points_object["points"].toArray();
+
+        for (int j=0; j<points_vector.size(); j++)
+        {
+            QJsonArray xyz_json=points_vector.at(j).toArray();
+            osg::Vec3d xyz_osg(xyz_json.at(0).toDouble(),xyz_json.at(1).toDouble(),xyz_json.at(2).toDouble());
+            pushNewPoint(xyz_osg);
+        }
+
+        //m_area = meas_area;
+        setCurrentMeasName(meas_name);
+        endMeasurement(true);
+
+    }
 }
 
 void SurfaceMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
@@ -180,7 +209,6 @@ void SurfaceMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _
         m_tool_handler->getIntersectionPoint(_x, _y, inter_point, inter_exists);
         if(inter_exists){
             pushNewPoint(inter_point);
-            m_tool_handler->forceGeodeUpdate();
         }
     }
         break;
@@ -200,14 +228,14 @@ void SurfaceMeasurementTool::onMousePress(Qt::MouseButton _button, int _x, int _
 }
 
 
-void SurfaceMeasurementTool::endMeasurement()
+void SurfaceMeasurementTool::endMeasurement(bool _meas_info_is_set)
 {
     // Compute lineLength and affect it in history map
     if(m_measurement_pt)
         m_measurements_area[m_last_meas_idx] = getArea();
 
     // Call parent method
-    MeasurementTool::endMeasurement();
+    MeasurementTool::endMeasurement(_meas_info_is_set);
 }
 
 //template<class Vector3>
