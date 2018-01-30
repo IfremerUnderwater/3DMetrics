@@ -128,8 +128,7 @@ void MeasurementTool::endMeasurement(bool _meas_info_is_set)
 
 void MeasurementTool::setCurrentMeasName(QString _name)
 {
-    if(m_measurements_pt_qmap.size()>0)
-        m_measurements_name_qmap[m_last_meas_idx]=_name;
+    m_measurements_name_qmap[m_last_meas_idx]=_name;
 }
 
 
