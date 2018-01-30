@@ -6,14 +6,13 @@
 
 MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
     QDialog(parent),
-    ui(new Ui::MeasurementSavingDialog),
-    m_measur_counter(0),
-    m_size_qmap_category(13)
+    ui(new Ui::MeasurementSavingDialog)
 
 {
     ui->setupUi(this);
 
 
+    // Huuuuuuuuuurkkkkkkkkkkk cannot stay like that ...............................................
     m_category_names[BASALTE]="Basalte";
     m_category_names[SUBSTRAT_BRUN_ROUGE]="Substrat brun rouge";
     m_category_names[SUBSTRAT_BRUN_AVEC_FILAMENTS_BACTERIENS]="Substrat brun avec filaments bactériens";
@@ -44,14 +43,10 @@ MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
     ui->categoryComboBox->insertItem(12, m_category_names[12]);
 
 
-
-    QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(accept()));
-    QObject::connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(reject()));
-    QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(slot_addMeasFormValues()));
-    QObject::connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(sl_clearMeasForm()));
-    QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(sl_clearPreviousMeasFormValues()));
-
-    QObject::connect(this, SIGNAL(rejected()), this, SLOT(sl_clearMeasForm()));
+    QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(sl_acceptSaving()));
+    QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(hide()));
+    QObject::connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(hide()));
+    QObject::connect(ui->buttonBox, SIGNAL(rejected()), this, SLOT(sl_cancelSaving()));
 
 }
 
@@ -60,76 +55,49 @@ MeasurementSavingDialog::~MeasurementSavingDialog()
     delete ui;
 }
 
-void MeasurementSavingDialog::setDistanceSurfaceMeasValueAndType(double _measurement, QString _measurement_type, int _measurement_index)
-{
-    QString measurementText;
-    measurementText = QString::number(_measurement);
-
-    ui->typeOfMeasurEdit->setText(_measurement_type);
-    ui->measurResultLabel->setText(measurementText);
-
-    m_measurement_index = _measurement_index;
-}
-
-void MeasurementSavingDialog::setInterestPointMeasValueAndType(QString _coordinates, QString _measurement_type, int _measurement_index)
+void MeasurementSavingDialog::setMeasFields(QString _measurement_formatted, QString _measurement_type)
 {
     ui->typeOfMeasurEdit->setText(_measurement_type);
-    ui->measurResultLabel->setText(_coordinates);
-
-    m_measurement_index = _measurement_index;
+    ui->measurResultLabel->setText(_measurement_formatted);
 }
 
 
-void MeasurementSavingDialog::slot_addMeasFormValues()
+void MeasurementSavingDialog::sl_cancelSaving()
 {
-    m_measur_counter++;
-
-    QString _measur_name = ui->nameOfMeasurementLineEdit->text();
-
-    QString _category = ui->categoryComboBox->currentText();
-
-    QString _measur_type = ui->typeOfMeasurEdit->text();
-
-    QString _measur_result = ui->measurResultLabel->text();
-
-    QString _temperature = ui->temperatureLineEdit->text();
-
-    QString _comments = ui->commentsText->toPlainText();
-
-    emit sig_getMeasFormValues(_measur_name, _measur_type, _category, _temperature, _measur_result, m_measurement_index, _comments);
+    cleanMeasFormValues();
+    emit si_measFormCanceled();
 }
 
+void MeasurementSavingDialog::sl_acceptSaving()
+{
+    emit si_measFormAccepted();
+}
 
-
-void MeasurementSavingDialog::sl_clearMeasForm()
+void MeasurementSavingDialog::cleanMeasFormValues()
 {
     ui->nameOfMeasurementLineEdit->clear();
     ui->commentsText->clear();
     ui->temperatureLineEdit->clear();
 
-    if (ui->typeOfMeasurEdit->text() == "Distance measurement")
-    {
-        emit si_distanceMeasurementFormCanceled();
-    }
-
-    else if(ui->typeOfMeasurEdit->text() == "Surface measurement")
-    {
-        emit si_surfaceMeasurementFormCanceled();
-    }
-
-    else if(ui->typeOfMeasurEdit->text() == "Interest point measurement")
-    {
-        emit si_interestPointMeasurementFormCanceled();
-    }
-
-
 }
 
-void MeasurementSavingDialog::sl_clearPreviousMeasFormValues()
+QString MeasurementSavingDialog::getMeasName()
 {
-    ui->nameOfMeasurementLineEdit->clear();
-    ui->commentsText->clear();
-    ui->temperatureLineEdit->clear();
+    return ui->nameOfMeasurementLineEdit->text();
+}
 
+QString MeasurementSavingDialog::getMeasTemp()
+{
+    return ui->temperatureLineEdit->text();
+}
+
+QString MeasurementSavingDialog::getMeasComment()
+{
+    return ui->commentsText->toPlainText();
+}
+
+QString MeasurementSavingDialog::getMeasCategory()
+{
+    return ui->categoryComboBox->currentText();
 }
 

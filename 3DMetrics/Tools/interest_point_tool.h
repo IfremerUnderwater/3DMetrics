@@ -6,17 +6,27 @@
 class InterestPointTool : public MeasurementTool
 {
 public:
-    InterestPointTool();
+    InterestPointTool(ToolHandler *_tool_handler);
     ~InterestPointTool();
-    void draw(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index);
+
+    void draw();
+
+    void endMeasurement(bool _meas_info_is_set=false);
+    void cancelMeasurement();
+    void removeLastMeasurement();
+    void removeMeasurement(int _meas_index);
+
     QString interestPointCoordinates();
-    QString getTypeOfMeasur();
     int getMeasurementCounter() const;
-    void hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index, bool _visible);
-    void closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void resetInterestPointData();
+    void hideShowMeasurement( int _meas_index, bool _visible);
+    void closeLoop();
+
+    QString getTextFormattedResult();
+
+    void encodeToJSON(QJsonObject & _root_obj);
+    void decodeJSON(QJsonObject & _root_obj);
+
+    virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 
 private:

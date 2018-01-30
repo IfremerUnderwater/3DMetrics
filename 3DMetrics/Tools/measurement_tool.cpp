@@ -1,9 +1,11 @@
 #include "measurement_tool.h"
+#include "tool_handler.h"
 
-
-MeasurementTool::MeasurementTool():m_measurement_counter(0), m_lines_counter(0)
+MeasurementTool::MeasurementTool(ToolHandler *_tool_handler):m_tool_handler(_tool_handler),
+    m_last_meas_idx(0)
 {
     m_measurement_pt = NULL;
+    m_measurement_geode = NULL;
 }
 
 MeasurementTool::~MeasurementTool()
@@ -12,7 +14,7 @@ MeasurementTool::~MeasurementTool()
 }
 
 
-void MeasurementTool::pushNewPoint(osg::ref_ptr<osg::Geode> & _measurement_geode, osg::Vec3d _point )
+void MeasurementTool::pushNewPoint(osg::Vec3d _point )
 {
 
     // We insert the point into m_measurePoints vector.
@@ -22,141 +24,115 @@ void MeasurementTool::pushNewPoint(osg::ref_ptr<osg::Geode> & _measurement_geode
     m_measurement_pt->push_back(_point);
 
     // drawing
-    draw(_measurement_geode);
+    draw();
+
+    // update geode
+    m_tool_handler->forceGeodeUpdate();
 
 
 }
 
-int MeasurementTool::getNumberOfPoints()
+ToolState MeasurementTool::getMeasType()
 {
-    return m_measurement_pt->size();
+    return m_meas_type;
+}
+
+QPair<ToolState, int> MeasurementTool::getMeasTypeAndIndex()
+{
+    QPair<ToolState, int> pair;
+    pair.first = m_meas_type;
+    pair.second = m_last_meas_idx;
+
+    return pair;
 }
 
 
-void MeasurementTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index, bool _visible)
+void MeasurementTool::hideShowMeasurement(int _meas_index, bool _visible)
 {
-    if (_visible == true)
+
+    for(unsigned int i=1; i<=m_measurements_pt_qmap[_meas_index]->size(); ++i)
     {
-        for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
-        {
-            QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
+        QString point_key = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
 
-            if(!_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
-                _measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
+        if (_visible == true)
+        {
+            if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
+                m_measurement_geode->addDrawable(m_geo_drawable_map[point_key]);
         }
-
-        for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
+        else
         {
-            QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-
-            if(!_measurement_geode->containsDrawable(m_geo_drawable_map[line_number]))
-                _measurement_geode->addDrawable(m_geo_drawable_map[line_number]);
+            if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
+                m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
         }
     }
-    else
+
+    for(unsigned int j=1; j<=m_measurements_pt_qmap[_meas_index]->size(); ++j)
     {
-        for(int i=1; i<=m_meas_points_number[_meas_index]; ++i)
-        {
-            QString point_number = QString("measurement_%1point_%2").arg(_meas_index).arg(i);
+        QString line_key = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
 
-            if(_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
-                _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
+        if (_visible == true)
+        {
+            if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[line_key]))
+                m_measurement_geode->addDrawable(m_geo_drawable_map[line_key]);
         }
-
-        for(int j=1; j<=m_meas_points_number[_meas_index]; ++j)
+        else
         {
-            QString line_number = QString("measurement_%1line_%2").arg(_meas_index).arg(j);
-
-            if(_measurement_geode->containsDrawable(m_geo_drawable_map[line_number]))
-                _measurement_geode->removeDrawable(m_geo_drawable_map[line_number]);
+            if(m_measurement_geode->containsDrawable(m_geo_drawable_map[line_key]))
+                m_measurement_geode->removeDrawable(m_geo_drawable_map[line_key]);
         }
     }
+
 }
 
 
-void MeasurementTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void MeasurementTool::closeLoop()
 {
-    if(m_measurement_pt->size() >= 3)
-    {
-        m_lines_counter++;
-
-        // lines (to be modified with line function)
-
-        int current_point = (int) m_measurement_pt->size();
-
-        QString line_number = QString("measurement_%1line_%2").arg(m_measurement_counter).arg(m_measurement_pt->size());
-
-        osg::DrawElementsUInt* line =
-                new osg::DrawElementsUInt( osg::PrimitiveSet::LINES, 0 );
-        line->push_back(0);
-        line->push_back(current_point-1);
-
-        osg::Geometry* geoPoints = new osg::Geometry;
-        geoPoints->setVertexArray(m_measurement_pt);
-        geoPoints->addPrimitiveSet(line);
-
-        osg::Vec4dArray* tabCouleur = new osg::Vec4dArray;
-        tabCouleur->push_back(osg::Vec4d(0.0f, 1.0f, 0.0f, 1.0f)); //red
-        geoPoints->setColorArray(tabCouleur);
-
-        geoPoints->setColorBinding(osg::Geometry::BIND_OVERALL);
-
-        _measurement_geode->addDrawable(geoPoints);
-
-        m_geo_drawable_map[line_number] = geoPoints;
-
-        m_meas_points_number[m_measurement_counter] = m_measurement_pt->size();
-
-        m_meas_lines_number[m_measurement_counter] = m_lines_counter;
-
-    }
+    pushNewPoint(m_measurement_pt->at(0));
 }
 
 
 
-void MeasurementTool::resetModelData()
+void MeasurementTool::resetMeasData()
 {
     m_geo_drawable_map.clear();
-    m_meas_points_number.clear();
-    m_measurement_counter=0;
-    m_measur_type.clear();
+    m_last_meas_idx=0;
     m_measurement_pt = NULL;
-    m_measurements_history_qmap.clear();
-    m_lines_counter=0;
-    m_meas_lines_number.clear();
+    m_measurements_pt_qmap.clear();
 }
 
 
 
-void MeasurementTool::endMeasurement()
+void MeasurementTool::endMeasurement(bool _meas_info_is_set)
 {
-    qDebug() << "Test m_lines_counter : " << m_lines_counter;
-    qDebug() << "Test m_meas_lines_number : " << m_meas_lines_number[m_measurement_counter];
-    m_measurements_history_qmap[m_measurement_counter] = m_measurement_pt;
-    m_measurement_pt = NULL;
-    m_lines_counter=0;
+    if(m_measurement_pt){
+        m_measurements_pt_qmap[m_last_meas_idx] = m_measurement_pt;
+        m_measurement_pt = NULL;
+
+        if(!_meas_info_is_set)
+            m_tool_handler->emitMeasurementEnded();
+        else
+        {
+            MeasInfo meas_info;
+            meas_info.name = m_measurements_name_qmap[m_last_meas_idx];
+            meas_info.category = "category";
+            meas_info.comments = "comments";
+            meas_info.index = m_last_meas_idx;
+            meas_info.temperature = "temp";
+            meas_info.type = m_meas_type;
+            meas_info.formatted_result = getTextFormattedResult();
+
+            m_tool_handler->newMeasEndedWithInfo(meas_info);
+        }
+    }
 }
 
-
-
-QMap<int, osg::ref_ptr<osg::Vec3dArray> > MeasurementTool::getMeasurementsHistoryQmap()
+void MeasurementTool::setCurrentMeasName(QString _name)
 {
-    return m_measurements_history_qmap;
+    m_measurements_name_qmap[m_last_meas_idx]=_name;
 }
 
 
-QMap<int,int> MeasurementTool::getMeasurPtsNumber()
-{
-    return m_meas_points_number;
-}
-
-
-QMap<int,int> MeasurementTool::getMeasurLinesNumber()
-{
-    return m_meas_lines_number;
-}
-
-void MeasurementTool::drawPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name)
+void MeasurementTool::drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name)
 {
     // point
     osg::Geometry* shape_point_drawable = new osg::Geometry();
@@ -181,11 +157,11 @@ void MeasurementTool::drawPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, os
     // to draw, and the third parameter is the number of points to draw.
     shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
 
-    _measurement_geode->addDrawable(shape_point_drawable);
+    m_measurement_geode->addDrawable(shape_point_drawable);
     m_geo_drawable_map[_point_name] = shape_point_drawable;
 }
 
-void MeasurementTool::drawJunctionLineWithLastPoint(osg::ref_ptr<osg::Geode> &_measurement_geode, QString &line_name)
+void MeasurementTool::drawJunctionLineWithLastPoint(QString &line_name)
 {
     int current_point = (int) m_measurement_pt->size();
 
@@ -209,9 +185,14 @@ void MeasurementTool::drawJunctionLineWithLastPoint(osg::ref_ptr<osg::Geode> &_m
     geoPoints->setNormalArray(normals, osg::Array::BIND_OVERALL);
 
 
-    _measurement_geode->addDrawable(geoPoints);
+    m_measurement_geode->addDrawable(geoPoints);
 
     m_geo_drawable_map[line_name] = geoPoints;
+}
+
+void MeasurementTool::setMeasurementGeode(osg::ref_ptr<osg::Geode> _measurement_geode)
+{
+    m_measurement_geode = _measurement_geode;
 }
 
 

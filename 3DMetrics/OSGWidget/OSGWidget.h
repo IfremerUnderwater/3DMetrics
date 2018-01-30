@@ -14,24 +14,11 @@
 #include "surface_measurement_tool.h"
 #include "interest_point_tool.h"
 #include "kml_handler.h"
-
 #include <GeographicLib/LocalCartesian.hpp>
 
-#define INVALID_VALUE -1000
+#define INVALID_VALUE 100000
 
-// Various states according to the action clicked
-enum ToolState
-{
-    IDLE_STATE,
-    LINE_MEASUREMENT_STATE,
-    SURFACE_MEASUREMENT_STATE,
-    INTEREST_POINT_STATE,
-    CUT_AREA_TOOL_STATE,
-    ZOOM_IN_TOOL_STATE,
-    ZOOM_OUT_TOOL_STATE,
-    FULL_SCREEN_TOOL_STATE,
-    CROP_TOOL_STATE
-};
+
 
 class OSGWidget : public QOpenGLWidget
 {
@@ -58,10 +45,10 @@ public:
 
     ///
     /// \brief setClearColor set the clear color for all cameras
-    /// \param r_p red [0..1]
-    /// \param g_p green [0..1]
-    /// \param b_p blue [0..1]
-    /// \param alpha_p transparency [0..1]
+    /// \param _r red [0..1]
+    /// \param _g green [0..1]
+    /// \param _b blue [0..1]
+    /// \param _alpha transparency [0..1]
     ///
     void setClearColor(double _r, double _g, double _b, double _alpha=1.0);
 
@@ -70,40 +57,32 @@ public:
     ///
     void clearSceneData();
 
-    void removeLastMeasurementOfType(ToolState _meas_type);
-    void removeMeasurementOfType(ToolState _meas_type, int _meas_index);
+    ///
+    /// \brief getIntersectionPoint ray trace (x,y) point on display to 3D point
+    /// \param _x x coord on display
+    /// \param _y y coord on display
+    /// \param _inter_point 3D intersection point on scene
+    /// \param _inter_exists true if intersection exists
+    ///
+    void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
-    // hide/show measurement method
-    void hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible);
+    ///
+    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
+    /// \return measurement geode
+    ///
+    osg::ref_ptr<osg::Geode> getMeasurementGeode();
 
-    // method to get points and lines coordinates when user save a measures file
-    QMap<int, osg::ref_ptr<osg::Vec3dArray> > getPointsCoordinates(QString _measur_type);
-
-    // method to get points counter of each measur (qmap)
-    QMap<int,int> getMeasurPtsNumber(QString _measur_type);
-
-    // method to get lines counter of each measur (qmap)
-    QMap<int,int> getMeasurLinesNumber(QString _measur_type);
-
+    ///
+    /// \brief forceGeodeUpdate force geode data to redraw
+    ///
+    void forceGeodeUpdate();
 
 public slots:
-    void slot_setInIdleState();
-    void slot_setInLineMeasurementState();
-    void slot_setInSurfaceMeasurementState();
-    void slot_setInInterestPointState();
-    void slot_setInCutAreaState();
-    void slot_setInZoomInState();
-    void slot_setInZoomOutState();
-    void slot_setInFullScreenState();
-    void slot_setInCropState();
-    void sl_resetMeasur();
+
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
-    void si_showInterestPointMeasurementSavingPopup(QString _coordinates, QString _measurement_type, int _measurement_index);
-    void si_endMeasur();
-    void si_returnIdleState();
-
+    void sig_onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 protected:
 
@@ -124,12 +103,9 @@ protected:
     QTimer m_timer;
 
 
-
 private:
 
     virtual void onResize( int width, int height );
-
-    void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
     osgGA::EventQueue* getEventQueue() const;
 
@@ -142,14 +118,6 @@ private:
     std::vector<osg::ref_ptr<osg::Node>> m_models;
     osg::ref_ptr<osg::Group> m_group;
     osg::ref_ptr<osg::Geode> m_measurement_geode;
-
-    // Measurements tools
-    ToolState m_tool_state;
-    LineMeasurementTool m_line_measurement_tool;
-    SurfaceMeasurementTool m_surface_measurement_tool;
-    InterestPointTool m_interest_point_tool;
-
-    QWidget m_distance_meas_form_pop;
 
     // Georef objects
     KMLHandler m_kml_handler;

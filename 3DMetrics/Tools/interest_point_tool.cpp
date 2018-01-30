@@ -1,9 +1,10 @@
 #include "interest_point_tool.h"
 #include <math.h>
+#include "tool_handler.h"
 
-InterestPointTool::InterestPointTool()
+InterestPointTool::InterestPointTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler)
 {
-
+    m_meas_type = INTEREST_POINT_STATE;
 }
 
 
@@ -13,24 +14,20 @@ InterestPointTool::~InterestPointTool()
 }
 
 
-void InterestPointTool::draw(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void InterestPointTool::draw()
 {
 
-    if(m_measurement_pt->size() >= 1)
+    if(m_measurement_pt)
     {
-        m_measurement_counter++;
-
-        m_measur_type = "Interest point measurement";
+        m_last_meas_idx++;
 
         // point
-        QString point_name = QString("measurement_%1").arg(m_measurement_counter);
+        QString point_name = QString("measurement_%1").arg(m_last_meas_idx);
 
         osg::Vec4 color(0.0f,0.0f,1.0f,1.0f);
-        drawPoint(_measurement_geode,m_measurement_pt->back(),color,point_name);
+        drawPoint(m_measurement_pt->back(),color,point_name);
 
     }
-
-    m_meas_points_number[m_measurement_counter] = m_measurement_pt->size();
 
 }
 
@@ -58,74 +55,170 @@ QString InterestPointTool::interestPointCoordinates()
 }
 
 
-void InterestPointTool::removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void InterestPointTool::cancelMeasurement()
 {
-    removeMeasurement(_measurement_geode, m_measurement_counter);
+    if(m_measurement_pt){
+        for(unsigned int i=1; i<=m_measurement_pt->size(); ++i)
+        {
+            QString point_key = QString("measurement_%1point_%2").arg(m_last_meas_idx).arg(i);
+            m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+            m_geo_drawable_map.remove(point_key);
+        }
+
+        m_last_meas_idx--;
+        m_measurement_pt = NULL;
+    }
+
 }
 
 
-void InterestPointTool::removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index)
+void InterestPointTool::removeLastMeasurement()
 {
-    QString point_number = QString("measurement_%1").arg(_meas_index);
-
-    _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
-    m_geo_drawable_map.remove(point_number);
-
-    m_measurements_history_qmap.remove(_meas_index);
-
-    m_measurement_counter--;
-
+    removeMeasurement(m_last_meas_idx);
 }
 
 
-QString InterestPointTool::getTypeOfMeasur()
+void InterestPointTool::removeMeasurement(int _meas_index)
 {
-    return m_measur_type;
+    QString point_key = QString("measurement_%1").arg(_meas_index);
+
+    m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
+    m_geo_drawable_map.remove(point_key);
+
+    m_measurements_pt_qmap.remove(_meas_index);
+
 }
 
 
 int InterestPointTool::getMeasurementCounter() const
 {
-    return m_measurement_counter;
+    return m_last_meas_idx;
 }
 
 
-void InterestPointTool::hideShowMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index, bool _visible)
+void InterestPointTool::hideShowMeasurement(int _meas_index, bool _visible)
 {
 
     if (_visible)
     {
-        QString point_number = QString("measurement_%1").arg(_meas_index);
+        QString point_key = QString("measurement_%1").arg(_meas_index);
 
-        if(!_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+        if(!m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
         {
-            _measurement_geode->addDrawable(m_geo_drawable_map[point_number]);
-            qDebug() << "Add measur";
+            m_measurement_geode->addDrawable(m_geo_drawable_map[point_key]);
         }
     }
     else
     {
-        QString point_number = QString("measurement_%1").arg(_meas_index);
+        QString point_key = QString("measurement_%1").arg(_meas_index);
 
-        if(_measurement_geode->containsDrawable(m_geo_drawable_map[point_number]))
+        if(m_measurement_geode->containsDrawable(m_geo_drawable_map[point_key]))
         {
-            _measurement_geode->removeDrawable(m_geo_drawable_map[point_number]);
-            qDebug() << "Remove measur";
+            m_measurement_geode->removeDrawable(m_geo_drawable_map[point_key]);
         }
     }
 }
 
 
 
-void InterestPointTool::closeLoop(osg::ref_ptr<osg::Geode> &_measurement_geode)
+void InterestPointTool::closeLoop()
 {
     // this method is not used in this class
 }
 
-
-
-void InterestPointTool::resetInterestPointData()
+QString InterestPointTool::getTextFormattedResult()
 {
-    m_coordinates.clear();
+    return m_coordinates;
+}
+
+void InterestPointTool::encodeToJSON(QJsonObject & _root_obj)
+{
+    QJsonArray meas_list;
+
+    for( QMap<int, osg::ref_ptr<osg::Vec3dArray>>::iterator it = m_measurements_pt_qmap.begin(); it != m_measurements_pt_qmap.end(); it++ )
+    {
+        QJsonObject points_object;
+        QJsonArray points_vector;
+
+        osg::ref_ptr<osg::Vec3dArray> meas = it.value();
+
+        for (unsigned int i=0; i<meas->size(); i++){
+            QJsonArray xyz;
+            xyz << (double)meas->at(i)[0] << (double)meas->at(i)[1] << (double)meas->at(i)[2];
+            points_vector << xyz;
+        }
+
+        points_object["name"]=m_measurements_name_qmap[it.key()];
+        points_object["points"]=points_vector;
+
+        meas_list << points_object;
+    }
+
+    _root_obj.insert("interest_points",meas_list);
+}
+
+void InterestPointTool::decodeJSON(QJsonObject &_root_obj)
+{
+    QJsonArray meas_list;
+
+    meas_list = _root_obj["interest_points"].toArray();
+
+    if(meas_list.isEmpty())
+        return;
+
+    // Cancel current measurment (in case it is needed)
+    cancelMeasurement();
+
+    for (int i=0; i<meas_list.size(); i++)
+    {
+        QJsonObject points_object = meas_list.at(i).toObject();
+
+        QString meas_name = points_object["name"].toString();
+        QJsonArray points_vector = points_object["points"].toArray();
+
+        for (int j=0; j<points_vector.size(); j++)
+        {
+            QJsonArray xyz_json=points_vector.at(j).toArray();
+            osg::Vec3d xyz_osg(xyz_json.at(0).toDouble(),xyz_json.at(1).toDouble(),xyz_json.at(2).toDouble());
+            pushNewPoint(xyz_osg);
+        }
+
+        setCurrentMeasName(meas_name);
+        endMeasurement(true);
+
+    }
+}
+
+void InterestPointTool::endMeasurement(bool _meas_info_is_set)
+{
+    // Compute lineLength and affect it in history map
+    if(m_measurement_pt)
+        interestPointCoordinates();
+
+    // Call parent method
+    MeasurementTool::endMeasurement(_meas_info_is_set);
+}
+
+void InterestPointTool::onMousePress(Qt::MouseButton _button, int _x, int _y)
+{
+    switch (_button) {
+    case Qt::LeftButton:
+    {
+        osg::Vec3d inter_point;
+        bool inter_exists;
+        m_tool_handler->getIntersectionPoint(_x, _y, inter_point, inter_exists);
+        if(inter_exists){
+            pushNewPoint(inter_point);
+        }
+        endMeasurement();
+    }
+        break;
+    case Qt::MiddleButton:
+        break;
+    case Qt::RightButton:
+        break;
+    default:
+        break;
+    }
 }
 

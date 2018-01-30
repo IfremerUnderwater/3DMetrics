@@ -42,7 +42,8 @@ SOURCES += main.cpp \
     measurement_saving_dialog.cpp \
     Tools/surface_measurement_tool.cpp \
     Tools/interest_point_tool.cpp \
-    OSGWidget/kml_handler.cpp
+    OSGWidget/kml_handler.cpp \
+    Tools/tool_handler.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -51,7 +52,9 @@ HEADERS  += mainwindow.h \
     measurement_saving_dialog.h \
     Tools/surface_measurement_tool.h \
     Tools/interest_point_tool.h \
-    OSGWidget/kml_handler.h
+    OSGWidget/kml_handler.h \
+    Tools/tool_handler.h \
+    Tools/tool_types.h
 
 FORMS    += \
     mainwindow.ui \

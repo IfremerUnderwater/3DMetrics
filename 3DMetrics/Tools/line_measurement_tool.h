@@ -7,25 +7,29 @@
 class LineMeasurementTool : public MeasurementTool
 {
 public:
-    LineMeasurementTool();
+    LineMeasurementTool(ToolHandler *_tool_handler);
     ~LineMeasurementTool();
-    void draw(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeLastMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode);
-    void removeMeasurement(osg::ref_ptr<osg::Geode> &_measurement_geode, int _meas_index);
-    double lineLength();
-    double closedLineLength();
-    QString getTypeOfMeasur();
-    int getMeasurementCounter() const;
-    void resetLineData();
+    void draw();
 
-    double getPointSize() const;
-    void setPointSize(double point_size);
+    void cancelMeasurement();
+    void endMeasurement(bool _meas_info_is_set=false);
+    void removeLastMeasurement();
+    void removeMeasurement(int _meas_index);
+
+    double lineLength();
+    int getMeasurementCounter() const;
+    QString getTextFormattedResult();
+
+    void encodeToJSON(QJsonObject & _root_obj);
+    void decodeJSON(QJsonObject & _root_obj);
+
+    virtual void onMousePress(Qt::MouseButton _button, int _x, int _y);
 
 private:
-    double m_lastNorm;
     double m_norm;
-    double m_point_size;
 
+    // Map to keep history of measurements results
+    QMap<int, double > m_measurements_length;
 
 };
 
