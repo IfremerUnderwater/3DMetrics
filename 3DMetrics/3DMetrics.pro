@@ -28,7 +28,13 @@ CONFIG(release, debug|release) {
     RUN_DIR=$${SOURCE_DIR}../Run/Release
 }
 
+win32{
+INCLUDEPATH += C:\msys64\mingw64\include\eigen3
+}
+unix{
 INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
+}
+
 include(../Scripts/BasicProcessing.pri)
 
 LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lkmlbase -lkmldom -lGeographic

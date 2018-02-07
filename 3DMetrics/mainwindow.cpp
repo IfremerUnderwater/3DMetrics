@@ -60,6 +60,7 @@ MainWindow::MainWindow(QWidget *parent) :
     //setContextMenuPolicy(Qt::ActionsContextMenu);
     QObject::connect(ui->measurements_table, SIGNAL(customContextMenuRequested(QPoint)), this, SLOT(sl_contextMenuDeleteMeasurement(QPoint)));
     QObject::connect(m_delete_measurement_action, SIGNAL(triggered()), this, SLOT(sl_delete_measurement_action()));
+    QObject::connect(ui->data_export_action, SIGNAL(triggered()), this, SLOT(slot_exportMeasToCSV()));
 
     // Correspondance table init
     m_toolstate_to_qstring[LINE_MEASUREMENT_STATE]="Line measurement";
@@ -206,6 +207,52 @@ void MainWindow::slot_addMeasToTable(MeasInfo _meas_info)
     m_qmap_measurement[_meas_info.name] = type_idx_pair;
 
     ui->measurements_table->resizeColumnsToContents();
+}
+
+void MainWindow::slot_exportMeasToCSV()
+{
+
+    QString filters("CSV files (*.csv);;All files (*.*)");
+    QString defaultfilter("CSV files (*.csv)");
+    QString filename = QFileDialog::getSaveFileName(0, "Save file", QCoreApplication::applicationDirPath(),
+                                                    filters, &defaultfilter);
+
+    QFileInfo file_name_info(filename);
+
+    // check filename is not empty
+    if(file_name_info.fileName().isEmpty()){
+        QMessageBox::information(this, tr("Error : save measurement file"), tr("Error : you didn't give a name to the measurement file"));
+        return;
+    }
+
+    QFile file(filename);
+
+    QAbstractItemModel *model =  ui->measurements_table->model();
+    if (file.open(QFile::WriteOnly | QFile::Truncate)) {
+        QTextStream data(&file);
+        QStringList strList;
+        for (int i = 0; i < model->columnCount(); i++) {
+            if (model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString().length() > 0)
+                strList.append(model->headerData(i, Qt::Horizontal, Qt::DisplayRole).toString());
+            else
+                strList.append("");
+        }
+        data << strList.join(";") << "\n";
+        for (int i = 0; i < model->rowCount(); i++) {
+            strList.clear();
+            for (int j = 0; j < model->columnCount(); j++) {
+
+                if (model->data(model->index(i, j)).toString().length() > 0)
+                    strList.append(model->data(model->index(i, j)).toString());
+                else
+                    strList.append("");
+            }
+            data << strList.join(";") + "\n";
+        }
+        data << strList.join(";") << "\n";
+        file.close();
+    }
+
 }
 
 void MainWindow::goBackToIdle()

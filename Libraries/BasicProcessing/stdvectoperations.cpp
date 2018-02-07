@@ -1,6 +1,6 @@
 #include "stdvectoperations.h"
 #include <algorithm>
-
+#include <cmath>
 
 double doubleVectorMean(vector<double> & _v )
 {

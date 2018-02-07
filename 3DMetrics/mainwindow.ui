@@ -236,10 +236,6 @@
    <addaction name="draw_segment_action"/>
    <addaction name="draw_area_action"/>
    <addaction name="draw_interest_point_action"/>
-   <addaction name="cut_area_action"/>
-   <addaction name="zoom_in_action"/>
-   <addaction name="zoom_out_action"/>
-   <addaction name="resize_action"/>
    <addaction name="crop_action"/>
    <addaction name="cancel_button"/>
   </widget>
@@ -427,6 +423,9 @@
    </property>
   </action>
   <action name="open_project_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="ressources.qrc">
      <normaloff>:/icons/ressources/icon project.png</normaloff>:/icons/ressources/icon project.png</iconset>
@@ -487,6 +486,9 @@
    </property>
   </action>
   <action name="save_project_action">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="icon">
     <iconset resource="ressources.qrc">
      <normaloff>:/icons/ressources/icon_enregistrer_projet.png</normaloff>:/icons/ressources/icon_enregistrer_projet.png</iconset>

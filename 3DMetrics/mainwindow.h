@@ -53,6 +53,8 @@ private slots:
     // add measur to table
     void slot_addMeasToTable(MeasInfo _meas_info);
 
+    void slot_exportMeasToCSV();
+
 private:
     void goBackToIdle();
 
