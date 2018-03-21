@@ -37,7 +37,7 @@ INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
 
 include(../Scripts/BasicProcessing.pri)
 
-LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lkmlbase -lkmldom -lGeographic
+LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lopenthreads -lkmlbase -lkmldom -lGeographic
 INCLUDEPATH += Tools
 
 SOURCES += main.cpp \

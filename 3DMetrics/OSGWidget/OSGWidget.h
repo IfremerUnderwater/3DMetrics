@@ -77,6 +77,13 @@ public:
     ///
     void forceGeodeUpdate();
 
+    ///
+    /// \brief getGeoOrigin get geographic origin
+    /// \param _ref_lat_lon lat lon origin
+    /// \param _ref_depth depth origin
+    ///
+    void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
+
 public slots:
 
 

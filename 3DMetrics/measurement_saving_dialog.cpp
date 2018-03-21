@@ -13,6 +13,10 @@ MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
 
 
     // Huuuuuuuuuurkkkkkkkkkkk cannot stay like that ...............................................
+    //m_category_names[BASALTE]="Madrepora";
+    //m_category_names[SUBSTRAT_BRUN_ROUGE]="Callogorgia";
+    //m_category_names[SUBSTRAT_BRUN_AVEC_FILAMENTS_BACTERIENS]="Viminella";
+    //m_category_names[ANHYDRITE]="Leiopathes";
     m_category_names[BASALTE]="Basalte";
     m_category_names[SUBSTRAT_BRUN_ROUGE]="Substrat brun rouge";
     m_category_names[SUBSTRAT_BRUN_AVEC_FILAMENTS_BACTERIENS]="Substrat brun avec filaments bactériens";

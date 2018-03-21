@@ -48,6 +48,8 @@ public:
 
     void setCurrentMeasName(QString _name);
 
+    void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
+
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);
 
