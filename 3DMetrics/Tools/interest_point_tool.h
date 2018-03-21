@@ -16,7 +16,7 @@ public:
     void removeLastMeasurement();
     void removeMeasurement(int _meas_index);
 
-    QString interestPointCoordinates();
+    QString interestPointCoordinatesToText();
     int getMeasurementCounter() const;
     void hideShowMeasurement( int _meas_index, bool _visible);
     void closeLoop();

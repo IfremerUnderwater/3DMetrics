@@ -121,6 +121,11 @@ void ToolHandler::setCurrentMeasName(QString _name)
     m_current_tool->setCurrentMeasName(_name);
 }
 
+void ToolHandler::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
+{
+    m_osg_widget->getGeoOrigin(_ref_lat_lon,_ref_depth);
+}
+
 void ToolHandler::setOsgWidget(OSGWidget *_osg_widget)
 {
     m_osg_widget = _osg_widget;

@@ -18,6 +18,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    ui->menuBar->setNativeMenuBar(false);
 
     // Init tool handler
     m_tool_handler = new ToolHandler();
@@ -84,7 +85,7 @@ void MainWindow::slot_open3dModel()
     m_model_file = QFileDialog::getOpenFileName(
                 this,
                 tr("Select one 3d Model to open"),
-                "All files (*.*)");
+                "*.*");
 
     if(m_model_file.isNull())
         QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a 3d model"));

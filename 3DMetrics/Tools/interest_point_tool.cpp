@@ -1,6 +1,7 @@
 #include "interest_point_tool.h"
 #include <math.h>
 #include "tool_handler.h"
+#include <GeographicLib/LocalCartesian.hpp>
 
 InterestPointTool::InterestPointTool(ToolHandler *_tool_handler):MeasurementTool(_tool_handler)
 {
@@ -31,7 +32,7 @@ void InterestPointTool::draw()
 
 }
 
-QString InterestPointTool::interestPointCoordinates()
+QString InterestPointTool::interestPointCoordinatesToText()
 {
     double x=0;
     double y=0;
@@ -41,15 +42,21 @@ QString InterestPointTool::interestPointCoordinates()
     y = m_measurement_pt->at(0)[1];
     z = m_measurement_pt->at(0)[2];
 
-    QString xCoordinates;
-    QString yCoordinates;
-    QString zCoordinates;
+    double lat, lon, depth;
 
-    xCoordinates = QString::number(x);
-    yCoordinates = QString::number(y);
-    zCoordinates = QString::number(z);
+    // transform to lat/lon
+    QPointF _ref_lat_lon; double _ref_depth;
+    m_tool_handler->getGeoOrigin(_ref_lat_lon, _ref_depth);
+    GeographicLib::LocalCartesian ltp_proj;
+    ltp_proj.Reset(_ref_lat_lon.x(), _ref_lat_lon.y(),_ref_depth);
+    ltp_proj.Reverse(x, y, z, lat, lon, depth);
 
-    m_coordinates = xCoordinates + " , " + yCoordinates + " , " + zCoordinates;
+    QString lat_coordinates, lon_coordinates, depth_coordinates;
+    lat_coordinates = QString::number(lat,'g',13);
+    lon_coordinates = QString::number(lon,'g',13);
+    depth_coordinates = QString::number(depth,'g',5);
+
+    m_coordinates = lat_coordinates + " , " + lon_coordinates + " , " + depth_coordinates;
 
     return m_coordinates;
 }
@@ -193,7 +200,7 @@ void InterestPointTool::endMeasurement(bool _meas_info_is_set)
 {
     // Compute lineLength and affect it in history map
     if(m_measurement_pt)
-        interestPointCoordinates();
+        interestPointCoordinatesToText();
 
     // Call parent method
     MeasurementTool::endMeasurement(_meas_info_is_set);

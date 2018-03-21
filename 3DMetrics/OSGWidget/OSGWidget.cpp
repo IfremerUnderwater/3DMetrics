@@ -252,8 +252,7 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
         local_depth = 0;
     }
 
-
-    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile);
+    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile, new osgDB::Options("noRotation"));
 
     if (!model_node)
     {
@@ -273,9 +272,10 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
         model_transform->addChild(model_node);
     }else{
         double N,E,U;
-        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_depth, N, E, U);
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_depth, E, N, U);
 
-        model_transform->setMatrix(osg::Matrix::translate(E,-U,N));
+        model_transform->setMatrix(osg::Matrix::translate(E,N,U));
+        //model_transform->setMatrix(osg::Matrix::translate(N,-U,E));
         model_transform->addChild(model_node);
     }
 
@@ -606,6 +606,12 @@ void OSGWidget::forceGeodeUpdate()
 {
     m_group->removeChild(m_measurement_geode);
     m_group->addChild(m_measurement_geode);
+}
+
+void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
+{
+    _ref_lat_lon = m_ref_lat_lon;
+    _ref_depth = m_ref_depth;
 }
 
 
