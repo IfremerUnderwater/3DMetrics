@@ -177,7 +177,7 @@ void MainWindow::slot_saveMeasFormValuesToTable()
     slot_addMeasToTable(meas_info);
 
     // Set measurement name
-    m_tool_handler->setCurrentMeasName(meas_name);
+    m_tool_handler->setCurrentMeasInfo(meas_name, meas_info.comments, meas_info.temperature, meas_info.category);
 
     // reset
     m_measurement_form.cleanMeasFormValues();

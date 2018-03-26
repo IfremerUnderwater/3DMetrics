@@ -157,6 +157,9 @@ void InterestPointTool::encodeToJSON(QJsonObject & _root_obj)
 
         points_object["name"]=m_measurements_name_qmap[it.key()];
         points_object["points"]=points_vector;
+        points_object["comment"]=m_measurements_comment_qmap[it.key()];
+        points_object["temp"]=m_measurements_temp_qmap[it.key()];
+        points_object["category"]=m_measurements_category_qmap[it.key()];
 
         meas_list << points_object;
     }
@@ -182,6 +185,9 @@ void InterestPointTool::decodeJSON(QJsonObject &_root_obj)
 
         QString meas_name = points_object["name"].toString();
         QJsonArray points_vector = points_object["points"].toArray();
+        QString meas_comment = points_object["comment"].toString();
+        QString meas_temp = points_object["temp"].toString();
+        QString meas_category = points_object["category"].toString();
 
         for (int j=0; j<points_vector.size(); j++)
         {
@@ -190,7 +196,7 @@ void InterestPointTool::decodeJSON(QJsonObject &_root_obj)
             pushNewPoint(xyz_osg);
         }
 
-        setCurrentMeasName(meas_name);
+        setCurrentMeasInfo(meas_name, meas_comment, meas_temp, meas_category);
         endMeasurement(true);
 
     }

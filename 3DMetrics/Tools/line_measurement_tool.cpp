@@ -172,6 +172,9 @@ void LineMeasurementTool::encodeToJSON(QJsonObject & _root_obj)
         points_object["name"]=m_measurements_name_qmap[it.key()];
         points_object["points"]=points_vector;
         points_object["length"]=m_measurements_length[it.key()];
+        points_object["comment"]=m_measurements_comment_qmap[it.key()];
+        points_object["temp"]=m_measurements_temp_qmap[it.key()];
+        points_object["category"]=m_measurements_category_qmap[it.key()];
 
         meas_list << points_object;
     }
@@ -197,6 +200,10 @@ void LineMeasurementTool::decodeJSON(QJsonObject &_root_obj)
         QJsonObject points_object = meas_list.at(i).toObject();
 
         QString meas_name = points_object["name"].toString();
+        QString meas_comment = points_object["comment"].toString();
+        QString meas_temp = points_object["temp"].toString();
+        QString meas_category = points_object["category"].toString();
+
         //double meas_length = points_object["length"].toDouble();
         QJsonArray points_vector = points_object["points"].toArray();
 
@@ -208,7 +215,7 @@ void LineMeasurementTool::decodeJSON(QJsonObject &_root_obj)
         }
 
         //m_norm = meas_length;
-        setCurrentMeasName(meas_name);
+        setCurrentMeasInfo(meas_name, meas_comment, meas_temp, meas_category);
         endMeasurement(true);
 
     }

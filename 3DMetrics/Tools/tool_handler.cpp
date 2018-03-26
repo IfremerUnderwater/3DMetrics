@@ -116,9 +116,9 @@ void ToolHandler::decodeJSON(QJsonObject & _root_obj)
     m_interest_point_tool.decodeJSON(_root_obj);
 }
 
-void ToolHandler::setCurrentMeasName(QString _name)
+void ToolHandler::setCurrentMeasInfo(QString _name, QString _comment, QString _temp, QString _category)
 {
-    m_current_tool->setCurrentMeasName(_name);
+    m_current_tool->setCurrentMeasInfo(_name, _comment, _temp, _category);
 }
 
 void ToolHandler::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)

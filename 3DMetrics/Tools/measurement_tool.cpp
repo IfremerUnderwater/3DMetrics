@@ -114,10 +114,10 @@ void MeasurementTool::endMeasurement(bool _meas_info_is_set)
         {
             MeasInfo meas_info;
             meas_info.name = m_measurements_name_qmap[m_last_meas_idx];
-            meas_info.category = "category";
-            meas_info.comments = "comments";
+            meas_info.category = m_measurements_category_qmap[m_last_meas_idx];
+            meas_info.comments = m_measurements_comment_qmap[m_last_meas_idx];
             meas_info.index = m_last_meas_idx;
-            meas_info.temperature = "temp";
+            meas_info.temperature = m_measurements_temp_qmap[m_last_meas_idx];
             meas_info.type = m_meas_type;
             meas_info.formatted_result = getTextFormattedResult();
 
@@ -126,9 +126,12 @@ void MeasurementTool::endMeasurement(bool _meas_info_is_set)
     }
 }
 
-void MeasurementTool::setCurrentMeasName(QString _name)
+void MeasurementTool::setCurrentMeasInfo(QString _name, QString _comment, QString _temp, QString _category)
 {
     m_measurements_name_qmap[m_last_meas_idx]=_name;
+    m_measurements_comment_qmap[m_last_meas_idx]=_comment;
+    m_measurements_temp_qmap[m_last_meas_idx]=_temp;
+    m_measurements_category_qmap[m_last_meas_idx]=_category;
 }
 
 

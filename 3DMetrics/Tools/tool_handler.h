@@ -46,7 +46,7 @@ public:
     void encodeToJSON(QJsonObject & _root_obj);
     void decodeJSON(QJsonObject & _root_obj);
 
-    void setCurrentMeasName(QString _name);
+    void setCurrentMeasInfo(QString _name, QString _comment, QString _temp, QString _category);
 
     void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
 

@@ -137,7 +137,7 @@ public:
     /// \brief setCurrentMeasName give a name to current measurement
     /// \param _name measurement name
     ///
-    void setCurrentMeasName(QString _name);
+    void setCurrentMeasInfo(QString _name, QString _comment, QString _temp, QString _category);
 
     // draw a point with given color in the provided geode
     void drawPoint(osg::Vec3d &_point, osg::Vec4 &_color, QString _point_name);
@@ -162,7 +162,8 @@ protected:
     // Map to keep history of measurements name, comments, temp
     QMap<int, QString> m_measurements_name_qmap;
     QMap<int, QString> m_measurements_comment_qmap;
-    QMap<int, double> m_measurements_temp_qmap;
+    QMap<int, QString> m_measurements_temp_qmap;
+    QMap<int, QString> m_measurements_category_qmap;
 
     // Tool handler is in interaction with display widget
     ToolHandler *m_tool_handler;
