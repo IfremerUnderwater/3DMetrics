@@ -52,7 +52,7 @@ signals:
 private:
     Ui::MeasurementSavingDialog *ui;
 
-    QMap<int,QString> m_category_names;
+    QVector<QString> m_category_names;
 
 };
 

@@ -159,8 +159,10 @@ protected:
     // Map to keep history of measurements pt
     QMap<int, osg::ref_ptr<osg::Vec3dArray> > m_measurements_pt_qmap;
 
-    // Map to keep history of measurements name
+    // Map to keep history of measurements name, comments, temp
     QMap<int, QString> m_measurements_name_qmap;
+    QMap<int, QString> m_measurements_comment_qmap;
+    QMap<int, double> m_measurements_temp_qmap;
 
     // Tool handler is in interaction with display widget
     ToolHandler *m_tool_handler;

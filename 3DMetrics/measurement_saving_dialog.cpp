@@ -3,6 +3,7 @@
 #include "mainwindow.h"
 #include <QDebug>
 
+using namespace std;
 
 MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
     QDialog(parent),
@@ -11,41 +12,21 @@ MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
-
-    // Huuuuuuuuuurkkkkkkkkkkk cannot stay like that ...............................................
-    //m_category_names[BASALTE]="Madrepora";
-    //m_category_names[SUBSTRAT_BRUN_ROUGE]="Callogorgia";
-    //m_category_names[SUBSTRAT_BRUN_AVEC_FILAMENTS_BACTERIENS]="Viminella";
-    //m_category_names[ANHYDRITE]="Leiopathes";
-    m_category_names[BASALTE]="Basalte";
-    m_category_names[SUBSTRAT_BRUN_ROUGE]="Substrat brun rouge";
-    m_category_names[SUBSTRAT_BRUN_AVEC_FILAMENTS_BACTERIENS]="Substrat brun avec filaments bactériens";
-    m_category_names[ANHYDRITE]="anhydrite";
-    m_category_names[COUVERTURE_MICROBIENNE]="couverture microbienne";
-    m_category_names[MOULIERES_AVEC_MOULES_DE_GRANDE_TAILLE_AVEC_FILAMENTS_BACTERIENS]="moulières avec moules de grande taille avec filaments bactériens";
-    m_category_names[MOULIERES_AVEC_MOULES_DE_GRANDE_TAILLE_SANS_FILAMENTS_BACTERIENS]="moulières avec moules de grande taille sans filaments bactériens";
-    m_category_names[MOULIERES_AVEC_MOULES_DE_TAILLES_MOYENNES_AVEC_FILAMENTS_BACTERIENS]="Moulières avec moules de tailles moyennes avec filaments bactériens";
-    m_category_names[MOULIERES_AVEC_MOULES_DE_TAILLES_MOYENNES_SANS_FILAMENTS_BACTERIENS]="Moulières avec moules de tailles moyennes sans filaments bactériens";
-    m_category_names[PETITES_MOULES_EPARSES_AVEC_FILAMENTS_BACTERIENS]="Petites moules éparses avec filaments bactériens";
-    m_category_names[PETITES_MOULES_EPARSES_SANS_FILAMENTS_BACTERIENS]="Petites moules éparses sans filaments bactériens";
-    m_category_names[CREVETTES]="Crevettes";
-    m_category_names[GASTEROPODES]="Gastéropodes";
-
-
-    ui->categoryComboBox->insertItem(0, m_category_names[0]);
-    ui->categoryComboBox->insertItem(1, m_category_names[1]);
-    ui->categoryComboBox->insertItem(2, m_category_names[2]);
-    ui->categoryComboBox->insertItem(3, m_category_names[3]);
-    ui->categoryComboBox->insertItem(4, m_category_names[4]);
-    ui->categoryComboBox->insertItem(5, m_category_names[5]);
-    ui->categoryComboBox->insertItem(6, m_category_names[6]);
-    ui->categoryComboBox->insertItem(7, m_category_names[7]);
-    ui->categoryComboBox->insertItem(8, m_category_names[8]);
-    ui->categoryComboBox->insertItem(9, m_category_names[9]);
-    ui->categoryComboBox->insertItem(10, m_category_names[10]);
-    ui->categoryComboBox->insertItem(11, m_category_names[11]);
-    ui->categoryComboBox->insertItem(12, m_category_names[12]);
-
+    // read categories
+    string line;
+    ifstream cat_file ("categories.txt");
+    if (cat_file)
+    {
+        int i=0;
+        while (getline( cat_file, line ) )
+        {
+            m_category_names.push_back(QString::fromStdString(line));
+            ui->categoryComboBox->insertItem(i, m_category_names[i]);
+            i++;
+        }
+        cat_file.close();
+    }
+    else cout << "Unable to open file";
 
     QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(sl_acceptSaving()));
     QObject::connect(ui->buttonBox, SIGNAL(accepted()), this, SLOT(hide()));
