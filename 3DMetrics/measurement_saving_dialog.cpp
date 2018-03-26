@@ -12,6 +12,8 @@ MeasurementSavingDialog::MeasurementSavingDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    m_last_meas_name = QString("");
+
     // read categories
     string line;
     ifstream cat_file ("categories.txt");
@@ -60,6 +62,7 @@ void MeasurementSavingDialog::sl_acceptSaving()
 
 void MeasurementSavingDialog::cleanMeasFormValues()
 {
+    m_last_meas_name = ui->nameOfMeasurementLineEdit->text();
     ui->nameOfMeasurementLineEdit->clear();
     ui->commentsText->clear();
     ui->temperatureLineEdit->clear();
@@ -84,5 +87,30 @@ QString MeasurementSavingDialog::getMeasComment()
 QString MeasurementSavingDialog::getMeasCategory()
 {
     return ui->categoryComboBox->currentText();
+}
+
+void MeasurementSavingDialog::keyPressEvent(QKeyEvent *_e)
+{
+    switch ( _e->key() )
+    {
+    case Qt::Key_F10 :
+    {
+        QStringList underscore_split = m_last_meas_name.split("_");
+        if(underscore_split.size() == 2)
+        {
+            int num;
+            QString suffix = underscore_split[1];
+            if(sscanf(suffix.toStdString().c_str(),"%d",&num)>0)
+            {
+                ui->nameOfMeasurementLineEdit->setText(underscore_split[0] + QString("_%1").arg(num+1));
+                this->sl_acceptSaving();
+                this->hide();
+            }
+        }
+        break;
+    }
+    default :
+        break;
+    }
 }
 

@@ -41,6 +41,9 @@ public:
     QString getMeasComment();
     QString getMeasCategory();
 
+protected:
+    void keyPressEvent(QKeyEvent * _e);
+
 public slots:
     void sl_cancelSaving();
     void sl_acceptSaving();
@@ -53,6 +56,7 @@ private:
     Ui::MeasurementSavingDialog *ui;
 
     QVector<QString> m_category_names;
+    QString m_last_meas_name;
 
 };
 
