@@ -179,6 +179,11 @@ OSGWidget::OSGWidget(QWidget* parent)
     osg::Camera* camera = new osg::Camera;
     camera->setViewport( 0, 0, this->width() , this->height() );
 
+    // tweak unique point not drawing
+    osg::CullStack::CullingMode cullingMode = camera->getCullingMode();
+    cullingMode &= ~(osg::CullStack::SMALL_FEATURE_CULLING);
+    camera->setCullingMode(cullingMode);
+
     // Set clear color
     QColor clearColor = QColor(0,0,0);
     camera->setClearColor( osg::Vec4( clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF() ) );
@@ -193,7 +198,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     view->addEventHandler(new KeyboardEventHandler(view->getCamera()->getOrCreateStateSet()));
 
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
-    //manipulator->setAllowThrow( false );
+    manipulator->setAllowThrow( false );
 
     view->setCameraManipulator( manipulator );
 
