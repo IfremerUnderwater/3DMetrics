@@ -346,8 +346,10 @@ void OSGWidget::clearSceneData()
     // remove all nodes from group
     for (unsigned int i=0; i<m_models.size(); i++){
         m_group->removeChild(m_models[i]);
-        m_models[i] = NULL;
+        //m_models[i] = NULL; useless
     }
+
+    m_models.clear();
 
     // remove all drawables
     m_measurement_geode->removeDrawables(0,m_measurement_geode->getNumDrawables());

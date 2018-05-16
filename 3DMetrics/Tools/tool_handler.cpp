@@ -126,6 +126,13 @@ void ToolHandler::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
     m_osg_widget->getGeoOrigin(_ref_lat_lon,_ref_depth);
 }
 
+void ToolHandler::resetMeasData()
+{
+    m_line_meas_tool.resetMeasData();
+    m_surf_meas_tool.resetMeasData();
+    m_interest_point_tool.resetMeasData();
+}
+
 void ToolHandler::setOsgWidget(OSGWidget *_osg_widget)
 {
     m_osg_widget = _osg_widget;

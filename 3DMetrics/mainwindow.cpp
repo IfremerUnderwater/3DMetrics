@@ -107,6 +107,7 @@ void MainWindow::slot_close3dModel()
         ui->measurements_table->removeRow((rows_nb-1)-i);
     }
 
+    m_tool_handler->resetMeasData();
     ui->display_widget->clearSceneData();
 
 }

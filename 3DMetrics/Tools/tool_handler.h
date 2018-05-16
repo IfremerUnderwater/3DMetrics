@@ -50,6 +50,8 @@ public:
 
     void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
 
+    void resetMeasData();
+
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);
 

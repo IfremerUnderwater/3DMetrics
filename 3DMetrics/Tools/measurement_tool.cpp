@@ -94,10 +94,19 @@ void MeasurementTool::closeLoop()
 
 void MeasurementTool::resetMeasData()
 {
-    m_geo_drawable_map.clear();
     m_last_meas_idx=0;
+
+    m_measurement_pt.release();
     m_measurement_pt = NULL;
+
+    m_geo_drawable_map.clear();
     m_measurements_pt_qmap.clear();
+
+    m_measurements_name_qmap.clear();
+    m_measurements_comment_qmap.clear();
+    m_measurements_temp_qmap.clear();
+    m_measurements_category_qmap.clear();
+
 }
 
 
