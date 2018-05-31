@@ -357,7 +357,7 @@ void MainWindow::sl_show_hide_measurement(QTableWidgetItem *_item_clicked)
 
 void MainWindow::sl_contextMenuDeleteMeasurement(const QPoint & pos)
 {
-    m_delete_measurement_item = ui->measurements_table->itemAt(pos);
+    //m_delete_measurement_item = ui->measurements_table->itemAt(pos);
 
     m_delete_menu->popup(ui->measurements_table->viewport()->mapToGlobal(pos));
 }
@@ -366,11 +366,27 @@ void MainWindow::sl_contextMenuDeleteMeasurement(const QPoint & pos)
 void MainWindow::sl_delete_measurement_action()
 {
 
-    int item_row = m_delete_measurement_item->row();
-    QString item_name = ui->measurements_table->item(item_row,1)->text();
+    //int item_row = m_delete_measurement_item->row();
+    QList<QTableWidgetItem*> selected_indexes = ui->measurements_table->selectedItems();
+    //QString item_name = ui->measurements_table->item(item_row,1)->text();
+    QList<QString> meas_names_to_be_removed;
+    QVector<int> meas_rows_to_be_removed;
 
-    m_tool_handler->removeMeasurementOfType(m_qmap_measurement[item_name].first, m_qmap_measurement[item_name].second);
-    ui->measurements_table->removeRow(item_row);
+    foreach (QTableWidgetItem* selected_index, selected_indexes)
+    {
+        if(selected_index->column()==1)
+        {
+
+            meas_names_to_be_removed.push_back(selected_index->text());
+            meas_rows_to_be_removed.push_front(selected_index->row());
+        }
+    }
+
+    for (int i=0; i<meas_names_to_be_removed.size();i++)
+    {
+        m_tool_handler->removeMeasurementOfType(m_qmap_measurement[meas_names_to_be_removed[i]].first, m_qmap_measurement[meas_names_to_be_removed[i]].second);
+        ui->measurements_table->removeRow(meas_rows_to_be_removed[i]);
+    }
 }
 
 

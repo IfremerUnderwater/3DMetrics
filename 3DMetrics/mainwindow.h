@@ -78,7 +78,6 @@ private:
 
     QMenu* m_delete_menu;
     QAction* m_delete_measurement_action;
-    QTableWidgetItem* m_delete_measurement_item;
 
     QString m_position_measur_file;
 
