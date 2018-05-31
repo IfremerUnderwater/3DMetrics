@@ -251,7 +251,6 @@ void MainWindow::slot_exportMeasToCSV()
             }
             data << strList.join(";") + "\n";
         }
-        data << strList.join(";") << "\n";
         file.close();
     }
 
