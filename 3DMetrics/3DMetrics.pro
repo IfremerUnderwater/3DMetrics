@@ -50,7 +50,8 @@ SOURCES += main.cpp \
     Tools/surface_measurement_tool.cpp \
     Tools/interest_point_tool.cpp \
     OSGWidget/kml_handler.cpp \
-    Tools/tool_handler.cpp
+    Tools/tool_handler.cpp \
+    tdmgui.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -61,11 +62,13 @@ HEADERS  += mainwindow.h \
     Tools/interest_point_tool.h \
     OSGWidget/kml_handler.h \
     Tools/tool_handler.h \
-    Tools/tool_types.h
+    Tools/tool_types.h \
+    tdmgui.h
 
 FORMS    += \
     mainwindow.ui \
-    measurement_saving_dialog.ui
+    measurement_saving_dialog.ui \
+    tdmgui.ui
 
 RESOURCES += \
     ressources.qrc
