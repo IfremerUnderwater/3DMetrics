@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>663</height>
+    <width>1158</width>
+    <height>983</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,7 +19,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1158</width>
      <height>21</height>
     </rect>
    </property>
@@ -27,20 +27,36 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionOpen_a_3D_model"/>
+    <addaction name="actionOpen_a_measurement_file"/>
+    <addaction name="actionOpen_a_project"/>
+    <addaction name="actionSave_measurement_file"/>
+    <addaction name="actionSave_project"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
      <string>Data</string>
     </property>
+    <addaction name="actionExport_data_to_ASCII_csv_or_txt"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
+     <string>View</string>
+    </property>
+    <addaction name="actiontree_window"/>
+    <addaction name="actionattrib_table_window"/>
+   </widget>
+   <widget class="QMenu" name="menuHelp_2">
+    <property name="title">
      <string>Help</string>
     </property>
+    <addaction name="actionUser_manual"/>
+    <addaction name="actionAbout"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuData"/>
    <addaction name="menuHelp"/>
+   <addaction name="menuHelp_2"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="main_toolbar">
@@ -79,38 +95,45 @@
    </property>
    <property name="minimumSize">
     <size>
-     <width>100</width>
+     <width>300</width>
      <height>35</height>
     </size>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="OSGWidget" name="tree_widget"/>
+   <widget class="QWidget" name="tree_widget"/>
   </widget>
   <widget class="QDockWidget" name="display_widget_dock">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
      <horstretch>1</horstretch>
      <verstretch>0</verstretch>
     </sizepolicy>
    </property>
    <property name="minimumSize">
     <size>
-     <width>640</width>
-     <height>480</height>
+     <width>800</width>
+     <height>600</height>
     </size>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
-   <widget class="QWidget" name="display_widget"/>
+   <widget class="OSGWidget" name="display_widget">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="attrib_table_dock">
    <property name="minimumSize">
     <size>
      <width>58</width>
-     <height>100</height>
+     <height>300</height>
     </size>
    </property>
    <attribute name="dockWidgetArea">
@@ -176,6 +199,62 @@
    </property>
    <property name="toolTip">
     <string>Focus back on the scene</string>
+   </property>
+  </action>
+  <action name="actionOpen_a_3D_model">
+   <property name="text">
+    <string>Open 3D model</string>
+   </property>
+  </action>
+  <action name="actionOpen_a_measurement_file">
+   <property name="text">
+    <string>Open measurement file</string>
+   </property>
+  </action>
+  <action name="actionOpen_a_project">
+   <property name="text">
+    <string>Open project</string>
+   </property>
+  </action>
+  <action name="actionSave_measurement_file">
+   <property name="text">
+    <string>Save measurement file</string>
+   </property>
+  </action>
+  <action name="actionSave_project">
+   <property name="text">
+    <string>Save project</string>
+   </property>
+  </action>
+  <action name="actionExport_data_to_ASCII_csv_or_txt">
+   <property name="text">
+    <string>Export data to ASCII (.csv or .txt)</string>
+   </property>
+  </action>
+  <action name="actiontree_window">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>tree window</string>
+   </property>
+  </action>
+  <action name="actionattrib_table_window">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>attrib table window</string>
+   </property>
+  </action>
+  <action name="actionUser_manual">
+   <property name="text">
+    <string>User manual</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>About</string>
    </property>
   </action>
  </widget>
