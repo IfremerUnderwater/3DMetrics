@@ -51,6 +51,8 @@ SOURCES += main.cpp \
     Tools/interest_point_tool.cpp \
     OSGWidget/kml_handler.cpp \
     Tools/tool_handler.cpp \
+    TDMLayers/tdmlayer.cpp \
+    TDMLayers/tdmmaplayerregistry.cpp \
     tdmgui.cpp
 
 HEADERS  += mainwindow.h \
@@ -63,6 +65,8 @@ HEADERS  += mainwindow.h \
     OSGWidget/kml_handler.h \
     Tools/tool_handler.h \
     Tools/tool_types.h \
+    TDMLayers/tdmlayer.h \
+    TDMLayers/tdmmaplayerregistry.h \
     tdmgui.h
 
 FORMS    += \
