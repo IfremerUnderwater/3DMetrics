@@ -16,8 +16,8 @@ TDMLayerRegistry *TDMLayerRegistry::instance()
   return &sInstance;
 }
 
-TDMLayerRegistry::TDMLayerRegistry( QObject *parent )
-    : QObject( parent )
+TDMLayerRegistry::TDMLayerRegistry(QObject *_parent )
+    : QAbstractItemModel( _parent )
 {}
 
 TDMLayerRegistry::~TDMLayerRegistry()
@@ -27,20 +27,124 @@ TDMLayerRegistry::~TDMLayerRegistry()
 
 int TDMLayerRegistry::count() const
 {
-  return mMapLayers.size();
+  return m_map_layers.size();
 }
 
-TDMLayer * TDMLayerRegistry::mapLayer( const QString& theLayerId ) const
+//***************** Model members **************************************************
+
+QVariant TDMLayerRegistry::data(const QModelIndex &_index, int _role) const
 {
-  return mMapLayers.value( theLayerId );
+    /*if (!_index.isValid())
+        return QVariant();
+
+    SGDTTreeItem *item = static_cast<SGDTTreeItem*>(_index.internalPointer());
+
+    if (_role == Qt::DisplayRole){
+        return item->data(_index.column());
+
+    }
+
+    if ( _role == Qt::ForegroundRole )
+    {
+        return QVariant ( m_types_colors[item->type()] );
+    }
+
+    if ( _role == Qt::BackgroundRole )
+    {
+        if (item->type()=="Equipements" && !item->hasChildren()){
+            return QVariant(QColor( Qt::darkRed ));
+        }
+    }*/
+
+    return QVariant();
 }
 
-QList<TDMLayer *> TDMLayerRegistry::mapLayersByName( const QString& layerName ) const
+Qt::ItemFlags TDMLayerRegistry::flags(const QModelIndex &_index) const
+{
+    if (!_index.isValid())
+        return 0;
+
+    return QAbstractItemModel::flags(_index);
+}
+
+QVariant TDMLayerRegistry::headerData(int _section, Qt::Orientation orientation,
+                                   int _role) const
+{
+    /*if (orientation == Qt::Horizontal && _role == Qt::DisplayRole)
+        return m_root_item->data(_section);*/
+
+    return QVariant();
+}
+
+QModelIndex TDMLayerRegistry::index(int _row, int _column, const QModelIndex &_parent)
+const
+{
+    /*if (!hasIndex(_row, _column, _parent))
+        return QModelIndex();
+
+    SGDTTreeItem *parentItem;
+
+    if (!_parent.isValid())
+        parentItem = m_root_item;
+    else
+        parentItem = static_cast<SGDTTreeItem*>(_parent.internalPointer());
+
+    SGDTTreeItem *childItem = parentItem->child(_row);
+    if (childItem)
+        return createIndex(_row, _column, childItem);
+    else
+        return QModelIndex();*/
+}
+
+QModelIndex TDMLayerRegistry::parent(const QModelIndex &_index) const
+{
+    /*if (!_index.isValid())
+        return QModelIndex();
+
+    SGDTTreeItem *childItem = static_cast<SGDTTreeItem*>(_index.internalPointer());
+    SGDTTreeItem *parentItem = childItem->parentItem();
+
+    if (parentItem == m_root_item)
+        return QModelIndex();
+
+    return createIndex(parentItem->row(), 0, parentItem);*/
+}
+
+int TDMLayerRegistry::rowCount(const QModelIndex &_parent) const
+{
+    /*SGDTTreeItem *parentItem;
+    if (_parent.column() > 0)
+        return 0;
+
+    if (!_parent.isValid())
+        parentItem = m_root_item;
+    else
+        parentItem = static_cast<SGDTTreeItem*>(_parent.internalPointer());
+
+    return parentItem->childCount();*/
+}
+
+int TDMLayerRegistry::columnCount(const QModelIndex &_parent) const
+{
+    /*if (_parent.isValid())
+        return static_cast<SGDTTreeItem*>(_parent.internalPointer())->columnCount();
+    else
+        return m_root_item->columnCount();*/
+}
+
+//************************************************************************************
+
+TDMLayer * TDMLayerRegistry::mapLayer(const QString& _layer_id ) const
+{
+  return m_map_layers.value( _layer_id );
+}
+
+QList<TDMLayer *> TDMLayerRegistry::mapLayersByName(const QString& _layer_name ) const
 {
   QList<TDMLayer *> myResultList;
-  Q_FOREACH ( TDMLayer* layer, mMapLayers )
+  Q_FOREACH ( TDMLayer* layer, m_map_layers )
   {
-    if ( layer->name() == layerName )
+    if ( layer->_name() == _layer_name )
     {
       myResultList << layer;
     }
@@ -48,24 +152,23 @@ QList<TDMLayer *> TDMLayerRegistry::mapLayersByName( const QString& layerName ) 
   return myResultList;
 }
 
-QList<TDMLayer *> TDMLayerRegistry::addMapLayers(
-  const QList<TDMLayer *>& theMapLayers,
-  bool addToLegend,
-  bool takeOwnership )
+QList<TDMLayer *> TDMLayerRegistry::addMapLayers(const QList<TDMLayer *>& _the_map_layers,
+//  bool _add_to_legend,
+  bool _take_ownership )
 {
   QList<TDMLayer *> myResultList;
-  Q_FOREACH ( TDMLayer* myLayer, theMapLayers )
+  Q_FOREACH ( TDMLayer* myLayer, _the_map_layers )
   {
     if ( !myLayer )
     {
       continue;
     }
     //check the layer is not already registered!
-    if ( !mMapLayers.contains( myLayer->id() ) )
+    if ( !m_map_layers.contains( myLayer->id() ) )
     {
-      mMapLayers[myLayer->id()] = myLayer;
-      myResultList << mMapLayers[myLayer->id()];
-      if ( takeOwnership )
+      m_map_layers[myLayer->id()] = myLayer;
+      myResultList << m_map_layers[myLayer->id()];
+      if ( _take_ownership )
       {
         myLayer->setParent( this );
       }
@@ -77,45 +180,45 @@ QList<TDMLayer *> TDMLayerRegistry::addMapLayers(
   {
     emit layersAdded( myResultList );
 
-    if ( addToLegend )
-      emit legendLayersAdded( myResultList );
+//    if ( _add_to_legend )
+//      emit legendLayersAdded( myResultList );
   }
   return myResultList;
 }
 
 TDMLayer *
-TDMLayerRegistry::addMapLayer( TDMLayer* theMapLayer,
-                                  bool addToLegend,
-                                  bool takeOwnership )
+TDMLayerRegistry::addMapLayer(TDMLayer* _map_layer,
+//                                  bool _add_to_legend,
+                                  bool _take_ownership )
 {
   QList<TDMLayer *> addedLayers;
-  addedLayers = addMapLayers( QList<TDMLayer*>() << theMapLayer, addToLegend, takeOwnership );
+  addedLayers = addMapLayers( QList<TDMLayer*>() << _map_layer, /*_add_to_legend,*/ _take_ownership );
   return addedLayers.isEmpty() ? nullptr : addedLayers[0];
 }
 
-void TDMLayerRegistry::removeMapLayers( const QStringList& theLayerIds )
+void TDMLayerRegistry::removeMapLayers(const QStringList& _layer_ids )
 {
   QList<TDMLayer*> layers;
-  Q_FOREACH ( const QString &myId, theLayerIds )
+  Q_FOREACH ( const QString &myId, _layer_ids )
   {
-    layers << mMapLayers.value( myId );
+    layers << m_map_layers.value( myId );
   }
 
   removeMapLayers( layers );
 }
 
-void TDMLayerRegistry::removeMapLayers( const QList<TDMLayer*>& layers )
+void TDMLayerRegistry::removeMapLayers(const QList<TDMLayer*>& _layers )
 {
-  if ( layers.isEmpty() )
+  if ( _layers.isEmpty() )
     return;
 
   QStringList layerIds;
   QList<TDMLayer*> layerList;
 
-  Q_FOREACH ( TDMLayer* layer, layers )
+  Q_FOREACH ( TDMLayer* layer, _layers )
   {
     // check layer and the registry contains it
-    if ( layer && mMapLayers.contains( layer->id() ) )
+    if ( layer && m_map_layers.contains( layer->id() ) )
     {
       layerIds << layer->id();
       layerList << layer;
@@ -133,7 +236,7 @@ void TDMLayerRegistry::removeMapLayers( const QList<TDMLayer*>& layers )
     QString myId( lyr->id() );
     emit layerWillBeRemoved( myId );
     emit layerWillBeRemoved( lyr );
-    mMapLayers.remove( myId );
+    m_map_layers.remove( myId );
     if ( lyr->parent() == this )
     {
       delete lyr;
@@ -144,15 +247,15 @@ void TDMLayerRegistry::removeMapLayers( const QList<TDMLayer*>& layers )
   emit layersRemoved( layerIds );
 }
 
-void TDMLayerRegistry::removeMapLayer( const QString& theLayerId )
+void TDMLayerRegistry::removeMapLayer(const QString& _layer_id )
 {
-  removeMapLayers( QList<TDMLayer*>() << mMapLayers.value( theLayerId ) );
+  removeMapLayers( QList<TDMLayer*>() << m_map_layers.value( _layer_id ) );
 }
 
-void TDMLayerRegistry::removeMapLayer( TDMLayer* layer )
+void TDMLayerRegistry::removeMapLayer(TDMLayer* _layer )
 {
-  if ( layer )
-    removeMapLayers( QList<TDMLayer*>() << layer );
+  if ( _layer )
+    removeMapLayers( QList<TDMLayer*>() << _layer );
 }
 
 void TDMLayerRegistry::removeAllMapLayers()
@@ -160,25 +263,25 @@ void TDMLayerRegistry::removeAllMapLayers()
   emit removeAll();
   // now let all observers know to clear themselves,
   // and then consequently any of their map legends
-  removeMapLayers( mMapLayers.keys() );
-  mMapLayers.clear();
+  removeMapLayers( m_map_layers.keys() );
+  m_map_layers.clear();
 }
 
 
-void TDMLayerRegistry::onMapLayerDeleted( QObject* obj )
+void TDMLayerRegistry::onMapLayerDeleted(QObject* _obj )
 {
-  QString id = mMapLayers.key( static_cast<TDMLayer*>( obj ) );
+  QString id = m_map_layers.key( static_cast<TDMLayer*>( _obj ) );
 
   if ( !id.isNull() )
   {
     //TDMDebugMsg( QString( "Map layer deleted without unregistering! %1" ).arg( id ) );
-    mMapLayers.remove( id );
+    m_map_layers.remove( id );
   }
 }
 
 QMap<QString, TDMLayer*> TDMLayerRegistry::mapLayers() const
 {
-  return mMapLayers;
+  return m_map_layers;
 }
 
 

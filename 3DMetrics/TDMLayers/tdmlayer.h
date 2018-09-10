@@ -13,7 +13,7 @@ class TDMLayer : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY( QString name READ name WRITE setName NOTIFY nameChanged )
+    Q_PROPERTY( QString _name READ _name WRITE setName NOTIFY nameChanged )
 
   public:
     /** Layers enum defining the types of layers that can be added to 3D view */
@@ -29,7 +29,7 @@ class TDMLayer : public QObject
      * @param layername Display Name of the layer
      * @param source datasource of layer
      */
-    TDMLayer( TDMLayer::LayerType type = ModelLayer, const QString& layername = QString::null, const QString& source = QString::null );
+    TDMLayer( TDMLayer::LayerType _type = ModelLayer, const QString& _layername = QString::null, const QString& _source = QString::null );
 
     /** Destructor */
     virtual ~TDMLayer();
@@ -47,17 +47,17 @@ class TDMLayer : public QObject
      * @param name New name for the layer
 
      */
-    void setName( const QString& name );
+    void setName( const QString& _name );
 
     /** Get the display name of the layer
      * @return the layer name
      */
-    QString name() const;
+    QString _name() const;
 
     /** Get the original name of the layer
      * @return the original layer name
      */
-    QString originalName() const { return mLayerOrigName; }
+    QString originalName() const { return m_layer_orig_name; }
 
     /** Returns if this layer is read only. */
     bool readOnly() const { return isReadOnly(); }
@@ -79,7 +79,7 @@ class TDMLayer : public QObject
     //void setCrs( const QgsCoordinateReferenceSystem& srs, bool emitSignal = true );
 
     /** A convenience function to (un)capitalise the layer name */
-    static QString capitaliseLayerName( const QString& name );
+    static QString capitaliseLayerName( const QString& _name );
 
     bool isEditable() const;
 
@@ -112,16 +112,16 @@ signals:
     //QgsRectangle mExtent;
 
     /** Data source description string, varies by layer type */
-    QString mDataSource;
+    QString m_data_source;
 
     /** Name of the layer - used for display */
-    QString mLayerName;
+    QString m_layer_name;
 
     /** Original name of the layer
      */
-    QString mLayerOrigName;
+    QString m_layer_orig_name;
 
-    QString mTitle;
+    QString m_title;
 
   private:
     /**
@@ -141,10 +141,10 @@ signals:
     TDMLayer & operator=( TDMLayer const & );
 
     /** Unique ID of this layer - used to refer to this layer in map layer registry */
-    QString mID;
+    QString m_ID;
 
     /** Type of the layer (eg. vector, raster) */
-    TDMLayer::LayerType mLayerType;
+    TDMLayer::LayerType m_layer_type;
 
 };
 

@@ -6,27 +6,27 @@
 #include <QSettings> // TODO: get rid of it [MD]
 
 
-TDMLayer::TDMLayer( TDMLayer::LayerType type,
-                          const QString& layername,
-                          const QString& source )
-    : mDataSource( source )
-    , mLayerOrigName( layername ) // store the original name
-    , mID( "" )
-    , mLayerType( type )
+TDMLayer::TDMLayer( TDMLayer::LayerType _type,
+                          const QString& _layername,
+                          const QString& _source )
+    : m_data_source( _source )
+    , m_layer_orig_name( _layername ) // store the original name
+    , m_ID( "" )
+    , m_layer_type( _type )
 {
   // Set the display name = internal name
-  mLayerName = capitaliseLayerName( mLayerOrigName );
+  m_layer_name = capitaliseLayerName( m_layer_orig_name );
 
   // Generate the unique ID of this layer
   QDateTime dt = QDateTime::currentDateTime();
-  mID = layername + dt.toString( "yyyyMMddhhmmsszzz" );
+  m_ID = _layername + dt.toString( "yyyyMMddhhmmsszzz" );
   // Tidy the ID up to avoid characters that may cause problems
   // elsewhere (e.g in some parts of XML). Replaces every non-word
   // character (word characters are the alphabet, numbers and
   // underscore) with an underscore.
   // Note that the first backslashe in the regular expression is
   // there for the compiler, so the pattern is actually \W
-  mID.replace( QRegExp( "[\\W]" ), "_" );
+  m_ID.replace( QRegExp( "[\\W]" ), "_" );
 
 }
 
@@ -36,31 +36,31 @@ TDMLayer::~TDMLayer()
 
 TDMLayer::LayerType TDMLayer::type() const
 {
-  return mLayerType;
+  return m_layer_type;
 }
 
 /** Get this layer's unique ID */
 QString TDMLayer::id() const
 {
-  return mID;
+  return m_ID;
 }
 
 void TDMLayer::setName( const QString& name )
 {
   QString newName = capitaliseLayerName( name );
-  if ( name == mLayerOrigName && newName == mLayerName )
+  if ( name == m_layer_orig_name && newName == m_layer_name )
     return;
 
-  mLayerOrigName = name; // store the new original name
-  mLayerName = newName;
+  m_layer_orig_name = name; // store the new original name
+  m_layer_name = newName;
 
   emit nameChanged();
 }
 
 /** Read property of QString layerName. */
-QString TDMLayer::name() const
+QString TDMLayer::_name() const
 {
-  return mLayerName;
+  return m_layer_name;
 }
 
 
@@ -94,14 +94,14 @@ QStringList TDMLayer::subLayers() const
     emit layerCrsChanged();
 }*/
 
-QString TDMLayer::capitaliseLayerName( const QString& name )
+QString TDMLayer::capitaliseLayerName(const QString& _name )
 {
   // Capitalise the first letter of the layer name if requested
   QSettings settings;
   bool capitaliseLayerName =
     settings.value( "/qgis/capitaliseLayerName", QVariant( false ) ).toBool();
 
-  QString layerName( name );
+  QString layerName( _name );
 
   if ( capitaliseLayerName && !layerName.isEmpty() )
     layerName = layerName.at( 0 ).toUpper() + layerName.mid( 1 );

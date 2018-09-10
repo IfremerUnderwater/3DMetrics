@@ -27,7 +27,7 @@
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="actionOpen_a_3D_model"/>
+    <addaction name="action_open_a_3D_model"/>
     <addaction name="actionOpen_a_measurement_file"/>
     <addaction name="actionOpen_a_project"/>
     <addaction name="actionSave_measurement_file"/>
@@ -96,13 +96,13 @@
    <property name="minimumSize">
     <size>
      <width>300</width>
-     <height>35</height>
+     <height>89</height>
     </size>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="tree_widget"/>
+   <widget class="QTreeView" name="tree_widget"/>
   </widget>
   <widget class="QDockWidget" name="display_widget_dock">
    <property name="sizePolicy">
@@ -201,7 +201,7 @@
     <string>Focus back on the scene</string>
    </property>
   </action>
-  <action name="actionOpen_a_3D_model">
+  <action name="action_open_a_3D_model">
    <property name="text">
     <string>Open 3D model</string>
    </property>

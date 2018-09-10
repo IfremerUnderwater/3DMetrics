@@ -10,7 +10,7 @@
 #define TDMMAPLAYERREGISTRY_H
 
 #include <QMap>
-#include <QObject>
+#include <QAbstractItemModel>
 #include <QStringList>
 
 class QString;
@@ -21,7 +21,7 @@ class TDMLayer;
  * This class tracks map layers that are currently loaded and provides
  * various methods to retrieve matching layers from the registry.
  */
-class TDMLayerRegistry : public QObject
+class TDMLayerRegistry : public QAbstractItemModel
 {
     Q_OBJECT
 
@@ -32,24 +32,36 @@ class TDMLayerRegistry : public QObject
 
     ~TDMLayerRegistry();
 
+    // Pure QAbstractItemModel members ******************************************
+    QVariant data(const QModelIndex &_index, int _role) const override;
+    Qt::ItemFlags flags(const QModelIndex &_index) const override;
+    QVariant headerData(int _section, Qt::Orientation orientation,
+                        int _role = Qt::DisplayRole) const override;
+    QModelIndex index(int _row, int _column,
+                      const QModelIndex &_parent = QModelIndex()) const override;
+    QModelIndex parent(const QModelIndex &_index) const override;
+    int rowCount(const QModelIndex &_parent = QModelIndex()) const override;
+    int columnCount(const QModelIndex &_parent = QModelIndex()) const override;
+    // **************************************************************************
+
     //! Returns the number of registered layers.
     int count() const;
 
     /** Retrieve a pointer to a registered layer by layer ID.
-     * @param theLayerId ID of layer to retrieve
+     * @param _layer_id ID of layer to retrieve
      * @returns matching layer, or nullptr if no matching layer found
      * @see mapLayersByName()
      * @see mapLayers()
      */
-    TDMLayer* mapLayer( const QString& theLayerId ) const;
+    TDMLayer* mapLayer( const QString& _layer_id ) const;
 
     /** Retrieve a list of matching registered layers by layer name.
-     * @param layerName name of layers to match
+     * @param _layer_name name of layers to match
      * @returns list of matching layers
      * @see mapLayer()
      * @see mapLayers()
      */
-    QList<TDMLayer *> mapLayersByName( const QString& layerName ) const;
+    QList<TDMLayer *> mapLayersByName( const QString& _layer_name ) const;
 
     /** Returns a map of all registered layers by layer ID.
      * @see mapLayer()
@@ -70,8 +82,8 @@ class TDMLayerRegistry : public QObject
     QVector<T> layers() const
     {
       QVector<T> layers;
-      QMap<QString, TDMLayer*>::const_iterator layerIt = mMapLayers.constBegin();
-      for ( ; layerIt != mMapLayers.constEnd(); ++layerIt )
+      QMap<QString, TDMLayer*>::const_iterator layerIt = m_map_layers.constBegin();
+      for ( ; layerIt != m_map_layers.constEnd(); ++layerIt )
       {
         T tLayer = qobject_cast<T>( layerIt.value() );
         if ( tLayer )
@@ -89,11 +101,11 @@ class TDMLayerRegistry : public QObject
      * The layersAdded() and layerWasAdded() signals will always be emitted.
      * The legendLayersAdded() signal is emitted only if addToLegend is true.
      *
-     * @param theMapLayers  A list of layer which should be added to the registry
-     * @param addToLegend   If true (by default), the layers will be added to the
+     * @param _the_map_layers  A list of layer which should be added to the registry
+     * @param _add_to_legend   If true (by default), the layers will be added to the
      *                      legend and to the main canvas. If you have a private
      *                      layer you can set this parameter to false to hide it.
-     * @param takeOwnership Ownership will be transferred to the layer registry.
+     * @param _take_ownership Ownership will be transferred to the layer registry.
      *                      If you specify false here you have take care of deleting
      *                      the layers yourself. Not available in python.
      *
@@ -107,9 +119,9 @@ class TDMLayerRegistry : public QObject
      * @note added in QGIS 1.8
      * @see addMapLayer()
      */
-    QList<TDMLayer *> addMapLayers( const QList<TDMLayer*>& theMapLayers,
-                                       bool addToLegend = true,
-                                       bool takeOwnership = true );
+    QList<TDMLayer *> addMapLayers( const QList<TDMLayer*>& _the_map_layers,
+//                                       bool _add_to_legend = true,
+                                       bool _take_ownership = true );
 
     /**
      * @brief
@@ -120,11 +132,11 @@ class TDMLayerRegistry : public QObject
      * If you are adding multiple layers at once, you should use
      * addMapLayers() instead.
      *
-     * @param theMapLayer A layer to add to the registry
-     * @param addToLegend If true (by default), the layer will be added to the
+     * @param _map_layer A layer to add to the registry
+     * @param _add_to_legend If true (by default), the layer will be added to the
      *                    legend and to the main canvas. If you have a private
      *                    layer you can set this parameter to false to hide it.
-     * @param takeOwnership Ownership will be transferred to the layer registry.
+     * @param _take_ownership Ownership will be transferred to the layer registry.
      *                      If you specify false here you have take care of deleting
      *                      the layer yourself. Not available in python.
      *
@@ -135,7 +147,9 @@ class TDMLayerRegistry : public QObject
      * @note Use addMapLayers if adding more than one layer at a time
 
      */
-    TDMLayer* addMapLayer( TDMLayer * theMapLayer, bool addToLegend = true, bool takeOwnership = true );
+    TDMLayer* addMapLayer( TDMLayer * _map_layer,
+//                           bool _add_to_legend = true,
+                           bool _take_ownership = true );
 
     /**
      * @brief
@@ -144,7 +158,7 @@ class TDMLayerRegistry : public QObject
      * The specified layers will be removed from the registry. If the registry has ownership
      * of any layers these layers will also be deleted.
      *
-     * @param theLayerIds list of IDs of the layers to remove
+     * @param _layer_ids list of IDs of the layers to remove
      *
      * @note As a side-effect the TDMProject instance is marked dirty.
 
@@ -152,7 +166,7 @@ class TDMLayerRegistry : public QObject
      * @see removeAllMapLayers()
      */
     // TODO QGIS 3.0 - rename theLayerIds to layerIds
-    void removeMapLayers( const QStringList& theLayerIds );
+    void removeMapLayers( const QStringList& _layer_ids );
 
     /**
      * @brief
@@ -161,13 +175,13 @@ class TDMLayerRegistry : public QObject
      * The specified layers will be removed from the registry. If the registry has ownership
      * of any layers these layers will also be deleted.
      *
-     * @param layers A list of layers to remove. Null pointers are ignored.
+     * @param _layers A list of layers to remove. Null pointers are ignored.
      *
      * @note As a side-effect the TDMProject instance is marked dirty.
      * @see removeMapLayer()
      * @see removeAllMapLayers()
      */
-    void removeMapLayers( const QList<TDMLayer*>& layers );
+    void removeMapLayers( const QList<TDMLayer*>& _layers );
 
     /**
      * @brief
@@ -176,13 +190,13 @@ class TDMLayerRegistry : public QObject
      * The specified layer will be removed from the registry. If the registry has ownership
      * of the layer then it will also be deleted.
      *
-     * @param theLayerId ID of the layer to remove
+     * @param _layer_id ID of the layer to remove
      *
      * @note As a side-effect the TDMProject instance is marked dirty.
      * @see removeMapLayers()
      * @see removeAllMapLayers()
      */
-    void removeMapLayer( const QString& theLayerId );
+    void removeMapLayer( const QString& _layer_id );
 
     /**
      * @brief
@@ -191,13 +205,13 @@ class TDMLayerRegistry : public QObject
      * The specified layer will be removed from the registry. If the registry has ownership
      * of the layer then it will also be deleted.
      *
-     * @param layer The layer to remove. Null pointers are ignored.
+     * @param _layer The layer to remove. Null pointers are ignored.
      *
      * @note As a side-effect the TDMProject instance is marked dirty.
      * @see removeMapLayers()
      * @see removeAllMapLayers()
      */
-    void removeMapLayer( TDMLayer* layer );
+    void removeMapLayer( TDMLayer* _layer );
 
     /**
      * Removes all registered layers. If the registry has ownership
@@ -217,60 +231,60 @@ class TDMLayerRegistry : public QObject
     /**
      * Emitted when one or more layers are about to be removed from the registry.
      *
-     * @param theLayerIds A list of IDs for the layers which are to be removed.
+     * @param _layer_ids A list of IDs for the layers which are to be removed.
      * @see layerWillBeRemoved()
      * @see layersRemoved()
      */
-    void layersWillBeRemoved( const QStringList& theLayerIds );
+    void layersWillBeRemoved( const QStringList& _layer_ids );
 
     /**
      * Emitted when one or more layers are about to be removed from the registry.
      *
-     * @param layers A list of layers which are to be removed.
+     * @param _layers A list of layers which are to be removed.
      * @see layerWillBeRemoved()
      * @see layersRemoved()
      */
-    void layersWillBeRemoved( const QList<TDMLayer*>& layers );
+    void layersWillBeRemoved( const QList<TDMLayer*>& _layers );
 
     /**
      * Emitted when a layer is about to be removed from the registry.
      *
-     * @param theLayerId The ID of the layer to be removed.
+     * @param _layer_id The ID of the layer to be removed.
      *
      * @note Consider using {@link layersWillBeRemoved()} instead
      * @see layersWillBeRemoved()
      * @see layerRemoved()
      */
-    void layerWillBeRemoved( const QString& theLayerId );
+    void layerWillBeRemoved( const QString& _layer_id );
 
     /**
      * Emitted when a layer is about to be removed from the registry.
      *
-     * @param layer The layer to be removed.
+     * @param _layer The layer to be removed.
      *
      * @note Consider using {@link layersWillBeRemoved()} instead
      * @see layersWillBeRemoved()
      * @see layerRemoved()
      */
-    void layerWillBeRemoved( TDMLayer* layer );
+    void layerWillBeRemoved( TDMLayer* _layer );
 
     /**
      * Emitted after one or more layers were removed from the registry.
      *
-     * @param theLayerIds  A list of IDs of the layers which were removed.
+     * @param _layer_ids  A list of IDs of the layers which were removed.
      * @see layersWillBeRemoved()
      */
-    void layersRemoved( const QStringList& theLayerIds );
+    void layersRemoved( const QStringList& _layer_ids );
 
     /**
      * Emitted after a layer was removed from the registry.
      *
-     * @param theLayerId The ID of the layer removed.
+     * @param _layer_id The ID of the layer removed.
      *
      * @note Consider using {@link layersRemoved()} instead
      * @see layerWillBeRemoved()
      */
-    void layerRemoved( const QString& theLayerId );
+    void layerRemoved( const QString& _layer_id );
 
     /**
      * Emitted when all layers are removed, before {@link layersWillBeRemoved()} and
@@ -285,32 +299,32 @@ class TDMLayerRegistry : public QObject
      * This signal is also emitted for layers added to the registry,
      * but not to the legend.
      *
-     * @param theMapLayers List of layers which have been added.
+     * @param _map_layers List of layers which have been added.
      *
      * @see legendLayersAdded()
      * @see layerWasAdded()
      */
-    void layersAdded( const QList<TDMLayer *>& theMapLayers );
+    void layersAdded( const QList<TDMLayer *>& _map_layers );
 
     /**
      * Emitted when a layer was added to the registry.
      *
-     * @param theMapLayer The ID of the layer which has been added.
+     * @param _map_layer The ID of the layer which has been added.
      *
      * @note Consider using {@link layersAdded()} instead
      * @see layersAdded()
      */
-    void layerWasAdded( TDMLayer* theMapLayer );
+    void layerWasAdded( TDMLayer* _map_layer );
 
-    /**
-     * Emitted, when a layer was added to the registry and the legend.
-     * Layers can also be private layers, which are signalled by
-     * {@link layersAdded()} and {@link layerWasAdded()} but will not be
-     * advertised by this signal.
-     *
-     * @param theMapLayers List of {@link TDMLayer}s which were added to the legend.
-     */
-    void legendLayersAdded( const QList<TDMLayer*>& theMapLayers );
+//    /**
+//     * Emitted, when a layer was added to the registry and the legend.
+//     * Layers can also be private layers, which are signalled by
+//     * {@link layersAdded()} and {@link layerWasAdded()} but will not be
+//     * advertised by this signal.
+//     *
+//     * @param _map_layers List of {@link TDMLayer}s which were added to the legend.
+//     */
+//    void legendLayersAdded( const QList<TDMLayer*>& _map_layers );
 
   protected:
 #if 0
@@ -321,13 +335,13 @@ class TDMLayerRegistry : public QObject
 #endif
 
   private slots:
-    void onMapLayerDeleted( QObject* obj );
+    void onMapLayerDeleted( QObject* _obj );
 
   private:
     //! private singleton constructor
-    TDMLayerRegistry( QObject * parent = nullptr );
+    TDMLayerRegistry( QObject * _parent = nullptr );
 
-    QMap<QString, TDMLayer*> mMapLayers;
+    QMap<QString, TDMLayer*> m_map_layers;
 };
 
 #endif //TDMMAPLAYERREGISTRY_H
