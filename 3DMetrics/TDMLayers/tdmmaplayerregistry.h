@@ -25,7 +25,7 @@ class TDMLayerRegistry : public QAbstractItemModel
 {
     Q_OBJECT
 
-  public:
+public:
 
     //! Returns the instance pointer, creating the object on the first call
     static TDMLayerRegistry * instance();
@@ -81,17 +81,17 @@ class TDMLayerRegistry : public QAbstractItemModel
     template <typename T>
     QVector<T> layers() const
     {
-      QVector<T> layers;
-      QMap<QString, TDMLayer*>::const_iterator layerIt = m_map_layers.constBegin();
-      for ( ; layerIt != m_map_layers.constEnd(); ++layerIt )
-      {
-        T tLayer = qobject_cast<T>( layerIt.value() );
-        if ( tLayer )
+        QVector<T> layers;
+        QMap<QString, TDMLayer*>::const_iterator layerIt = m_map_layers.constBegin();
+        for ( ; layerIt != m_map_layers.constEnd(); ++layerIt )
         {
-          layers << tLayer;
+            T tLayer = qobject_cast<T>( layerIt.value() );
+            if ( tLayer )
+            {
+                layers << tLayer;
+            }
         }
-      }
-      return layers;
+        return layers;
     }
 
     /**
@@ -120,8 +120,8 @@ class TDMLayerRegistry : public QAbstractItemModel
      * @see addMapLayer()
      */
     QList<TDMLayer *> addMapLayers( const QList<TDMLayer*>& _the_map_layers,
-//                                       bool _add_to_legend = true,
-                                       bool _take_ownership = true );
+                                    //                                       bool _add_to_legend = true,
+                                    bool _take_ownership = true );
 
     /**
      * @brief
@@ -148,7 +148,7 @@ class TDMLayerRegistry : public QAbstractItemModel
 
      */
     TDMLayer* addMapLayer( TDMLayer * _map_layer,
-//                           bool _add_to_legend = true,
+                           //                           bool _add_to_legend = true,
                            bool _take_ownership = true );
 
     /**
@@ -226,7 +226,7 @@ class TDMLayerRegistry : public QAbstractItemModel
     void removeAllMapLayers();
 
 
-  signals:
+signals:
 
     /**
      * Emitted when one or more layers are about to be removed from the registry.
@@ -316,17 +316,17 @@ class TDMLayerRegistry : public QAbstractItemModel
      */
     void layerWasAdded( TDMLayer* _map_layer );
 
-//    /**
-//     * Emitted, when a layer was added to the registry and the legend.
-//     * Layers can also be private layers, which are signalled by
-//     * {@link layersAdded()} and {@link layerWasAdded()} but will not be
-//     * advertised by this signal.
-//     *
-//     * @param _map_layers List of {@link TDMLayer}s which were added to the legend.
-//     */
-//    void legendLayersAdded( const QList<TDMLayer*>& _map_layers );
+    //    /**
+    //     * Emitted, when a layer was added to the registry and the legend.
+    //     * Layers can also be private layers, which are signalled by
+    //     * {@link layersAdded()} and {@link layerWasAdded()} but will not be
+    //     * advertised by this signal.
+    //     *
+    //     * @param _map_layers List of {@link TDMLayer}s which were added to the legend.
+    //     */
+    //    void legendLayersAdded( const QList<TDMLayer*>& _map_layers );
 
-  protected:
+protected:
 #if 0
     /** Debugging member
      *  invoked when a connect() is made to this object
@@ -334,10 +334,10 @@ class TDMLayerRegistry : public QAbstractItemModel
     void connectNotify( const char * signal ) override;
 #endif
 
-  private slots:
+private slots:
     void onMapLayerDeleted( QObject* _obj );
 
-  private:
+private:
     //! private singleton constructor
     TDMLayerRegistry( QObject * _parent = nullptr );
 

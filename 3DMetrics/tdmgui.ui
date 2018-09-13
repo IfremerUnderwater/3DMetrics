@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1158</width>
-    <height>983</height>
+    <width>1164</width>
+    <height>988</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>3D Metrics v0.4.0</string>
   </property>
   <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
@@ -19,25 +19,26 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1158</width>
-     <height>21</height>
+     <width>1164</width>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>File</string>
     </property>
-    <addaction name="action_open_a_3D_model"/>
-    <addaction name="actionOpen_a_measurement_file"/>
-    <addaction name="actionOpen_a_project"/>
-    <addaction name="actionSave_measurement_file"/>
-    <addaction name="actionSave_project"/>
+    <addaction name="open_3d_model_action"/>
+    <addaction name="open_measurement_file_action"/>
+    <addaction name="open_project_action"/>
+    <addaction name="save_measurement_file_action"/>
+    <addaction name="save_project_action"/>
+    <addaction name="new_group_action"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
      <string>Data</string>
     </property>
-    <addaction name="actionExport_data_to_ASCII_csv_or_txt"/>
+    <addaction name="export_data_to_ASCII_csv_or_txt_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp">
     <property name="title">
@@ -96,13 +97,41 @@
    <property name="minimumSize">
     <size>
      <width>300</width>
-     <height>89</height>
+     <height>103</height>
     </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Layers</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QTreeView" name="tree_widget"/>
+   <widget class="QTreeView" name="tree_widget">
+    <property name="sizeAdjustPolicy">
+     <enum>QAbstractScrollArea::AdjustToContents</enum>
+    </property>
+    <property name="dragEnabled">
+     <bool>true</bool>
+    </property>
+    <property name="dragDropMode">
+     <enum>QAbstractItemView::InternalMove</enum>
+    </property>
+    <property name="defaultDropAction">
+     <enum>Qt::MoveAction</enum>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectItems</enum>
+    </property>
+    <property name="allColumnsShowFocus">
+     <bool>true</bool>
+    </property>
+    <property name="headerHidden">
+     <bool>true</bool>
+    </property>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="display_widget_dock">
    <property name="sizePolicy">
@@ -117,6 +146,12 @@
      <height>600</height>
     </size>
    </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Display</string>
+   </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
    </attribute>
@@ -130,14 +165,26 @@
    </widget>
   </widget>
   <widget class="QDockWidget" name="attrib_table_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
    <property name="minimumSize">
     <size>
-     <width>58</width>
+     <width>73</width>
      <height>300</height>
     </size>
    </property>
+   <property name="features">
+    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
+   </property>
+   <property name="windowTitle">
+    <string>Attributes</string>
+   </property>
    <attribute name="dockWidgetArea">
-    <number>8</number>
+    <number>1</number>
    </attribute>
    <widget class="QWidget" name="attrib_table"/>
   </widget>
@@ -201,32 +248,39 @@
     <string>Focus back on the scene</string>
    </property>
   </action>
-  <action name="action_open_a_3D_model">
+  <action name="open_3d_model_action">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/icon_open.png</normaloff>:/icons/ressources/icon_open.png</iconset>
+   </property>
    <property name="text">
     <string>Open 3D model</string>
    </property>
   </action>
-  <action name="actionOpen_a_measurement_file">
+  <action name="open_measurement_file_action">
    <property name="text">
     <string>Open measurement file</string>
    </property>
   </action>
-  <action name="actionOpen_a_project">
+  <action name="open_project_action">
    <property name="text">
     <string>Open project</string>
    </property>
   </action>
-  <action name="actionSave_measurement_file">
+  <action name="save_measurement_file_action">
    <property name="text">
     <string>Save measurement file</string>
    </property>
   </action>
-  <action name="actionSave_project">
+  <action name="save_project_action">
    <property name="text">
     <string>Save project</string>
    </property>
   </action>
-  <action name="actionExport_data_to_ASCII_csv_or_txt">
+  <action name="export_data_to_ASCII_csv_or_txt_action">
    <property name="text">
     <string>Export data to ASCII (.csv or .txt)</string>
    </property>
@@ -255,6 +309,11 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
+   </property>
+  </action>
+  <action name="new_group_action">
+   <property name="text">
+    <string>New Group</string>
    </property>
   </action>
  </widget>

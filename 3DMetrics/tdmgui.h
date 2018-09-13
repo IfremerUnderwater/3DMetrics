@@ -3,6 +3,8 @@
 
 #include <QMainWindow>
 
+class TreeItem;
+
 namespace Ui {
 class TDMGui;
 }
@@ -17,6 +19,13 @@ public:
 
 private:
     Ui::TDMGui *ui;
+
+public slots:
+    void slot_open3dModel();
+    void slot_openMeasureFile();
+    void slot_newGroup();
+
+    void slot_checkChanged(TreeItem*);
 };
 
 #endif // TDMGUI_H

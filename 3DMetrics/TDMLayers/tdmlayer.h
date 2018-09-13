@@ -13,15 +13,15 @@ class TDMLayer : public QObject
 {
     Q_OBJECT
 
-    Q_PROPERTY( QString _name READ _name WRITE setName NOTIFY nameChanged )
+    Q_PROPERTY( QString name READ name WRITE setName NOTIFY nameChanged )
 
-  public:
+public:
     /** Layers enum defining the types of layers that can be added to 3D view */
     enum LayerType
     {
-      ModelLayer,
-      MeasurementLayer,
-      PluginLayer
+        ModelLayer,
+        MeasurementLayer,
+        GroupLayer
     };
 
     /** Constructor
@@ -52,7 +52,7 @@ class TDMLayer : public QObject
     /** Get the display name of the layer
      * @return the layer name
      */
-    QString _name() const;
+    QString name() const;
 
     /** Get the original name of the layer
      * @return the original layer name
@@ -78,8 +78,8 @@ class TDMLayer : public QObject
     /** Sets layer's spatial reference system */
     //void setCrs( const QgsCoordinateReferenceSystem& srs, bool emitSignal = true );
 
-    /** A convenience function to (un)capitalise the layer name */
-    static QString capitaliseLayerName( const QString& _name );
+    //    /** A convenience function to (un)capitalise the layer name */
+    //    static QString capitaliseLayerName( const QString& _name );
 
     bool isEditable() const;
 
@@ -92,18 +92,18 @@ signals:
     void nameChanged();
 
     /** Emit a signal that layer's CRS has been reset */
-    void layerCrsChanged();
+    //void layerCrsChanged();
 
     /** Data of layer changed */
     void dataChanged();
 
-    /**
-     * Signal emitted when legend of the layer has changed
-     */
-    void legendChanged();
+    //    /**
+    //     * Signal emitted when legend of the layer has changed
+    //     */
+    //    void legendChanged();
 
 
-  protected:
+protected:
 
     /** Set the extent */
     //virtual void setExtent( const QgsRectangle &rect );
@@ -123,7 +123,7 @@ signals:
 
     QString m_title;
 
-  private:
+private:
     /**
      * This method returns true by default but can be overwritten to specify
      * that a certain layer is writable.

@@ -53,7 +53,9 @@ SOURCES += main.cpp \
     Tools/tool_handler.cpp \
     TDMLayers/tdmlayer.cpp \
     TDMLayers/tdmmaplayerregistry.cpp \
-    tdmgui.cpp
+    tdmgui.cpp \
+    TreeView/treeitem.cpp \
+    TreeView/treemodel.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -67,7 +69,9 @@ HEADERS  += mainwindow.h \
     Tools/tool_types.h \
     TDMLayers/tdmlayer.h \
     TDMLayers/tdmmaplayerregistry.h \
-    tdmgui.h
+    tdmgui.h \
+    TreeView/treeitem.h \
+    TreeView/treemodel.h
 
 FORMS    += \
     mainwindow.ui \

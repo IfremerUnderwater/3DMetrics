@@ -82,16 +82,33 @@ MainWindow::~MainWindow()
 void MainWindow::slot_open3dModel()
 {
 
-    m_model_file = QFileDialog::getOpenFileName(
-                this,
-                tr("Select one 3d Model to open"),
-                "*.*");
+    // Problem on Linux Ubuntu : to be replaced
+//    m_model_file = QFileDialog::getOpenFileName(
+//                this,
+//                tr("Select one 3d Model to open"),
+//                "/home",
+//                "*.*");
 
-    if(m_model_file.isNull())
+
+        QFileDialog fileDialog(this,tr("Select one 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
+        fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
+        fileDialog.setFileMode(QFileDialog::ExistingFiles);
+
+    #ifndef __MINGW32__
+        fileDialog.setOption(QFileDialog::DontUseNativeDialog,true);
+    #endif
+
+        if (QDialog::Accepted != fileDialog.exec())
+            return;
+
+
+    if(fileDialog.selectedFiles().count() == 0)
+    {
         QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a 3d model"));
-
+    }
     else
     {
+        m_model_file = fileDialog.selectedFiles().first();
         ui->display_widget->setSceneFromFile(m_model_file.toStdString());
     }
 }
