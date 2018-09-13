@@ -273,7 +273,7 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
         m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
 
 
-        model_transform->setMatrix(osg::Matrix::translate(0,0,0));
+        model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
         model_transform->addChild(model_node);
     }else{
         double N,E,U;

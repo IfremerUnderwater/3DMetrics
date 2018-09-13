@@ -44,12 +44,12 @@
     A container for items of data supplied by the simple tree model.
 */
 
-#include "treeitem.h"
+#include "tdmlayeritem.h"
 
 #include <QStringList>
 
 
-TreeItem::TreeItem(const LayerType _type, const QVector<QVariant> &data, TreeItem *parent)
+TdmLayerItem::TdmLayerItem(const LayerType _type, const QVector<QVariant> &data, TdmLayerItem *parent)
 {
     m_parent_item = parent;
     m_item_data = data;
@@ -58,59 +58,59 @@ TreeItem::TreeItem(const LayerType _type, const QVector<QVariant> &data, TreeIte
 }
 
 
-TreeItem::~TreeItem()
+TdmLayerItem::~TdmLayerItem()
 {
     qDeleteAll(m_child_items);
 }
 
-TreeItem *TreeItem::child(int number)
+TdmLayerItem *TdmLayerItem::child(int number)
 {
     return m_child_items.value(number);
 }
 
-int TreeItem::childCount() const
+int TdmLayerItem::childCount() const
 {
     return m_child_items.count();
 }
 
-int TreeItem::childNumber() const
+int TdmLayerItem::childNumber() const
 {
     if (m_parent_item)
-        return m_parent_item->m_child_items.indexOf(const_cast<TreeItem*>(this));
+        return m_parent_item->m_child_items.indexOf(const_cast<TdmLayerItem*>(this));
 
     return 0;
 }
 
-int TreeItem::columnCount() const
+int TdmLayerItem::columnCount() const
 {
     return m_item_data.count();
 }
 
-QVariant TreeItem::data(int column) const
+QVariant TdmLayerItem::data(int column) const
 {
     return m_item_data.value(column);
 }
 
-bool TreeItem::insertChildren(int position, int count, int columns)
+bool TdmLayerItem::insertChildren(int position, int count, int columns)
 {
     if (position < 0 || position > m_child_items.size())
         return false;
 
     for (int row = 0; row < count; ++row) {
         QVector<QVariant> data(columns);
-        TreeItem *item = new TreeItem(TreeItem::GroupLayer, data, this);
+        TdmLayerItem *item = new TdmLayerItem(TdmLayerItem::GroupLayer, data, this);
         m_child_items.insert(position, item);
     }
 
     return true;
 }
 
-TreeItem *TreeItem::parent()
+TdmLayerItem *TdmLayerItem::parent()
 {
     return m_parent_item;
 }
 
-bool TreeItem::removeChildren(int position, int count)
+bool TdmLayerItem::removeChildren(int position, int count)
 {
     if (position < 0 || position + count > m_child_items.size())
         return false;
@@ -121,7 +121,7 @@ bool TreeItem::removeChildren(int position, int count)
     return true;
 }
 
-bool TreeItem::setData(int column, const QVariant &value)
+bool TdmLayerItem::setData(int column, const QVariant &value)
 {
     if (column < 0 || column >= m_item_data.size())
         return false;
@@ -130,30 +130,30 @@ bool TreeItem::setData(int column, const QVariant &value)
     return true;
 }
 
-bool TreeItem::isEditable()
+bool TdmLayerItem::isEditable()
 {
     return true; //return m_parent_item->parent() != 0;
 }
 
-void TreeItem::removeChild(int row)
+void TdmLayerItem::removeChild(int row)
 {
     m_child_items.removeAt(row);
 }
 
-void TreeItem::appendChild(TreeItem *node)
+void TdmLayerItem::appendChild(TdmLayerItem *node)
 {
     m_child_items.append(node);
 }
 
-int TreeItem::row() const
+int TdmLayerItem::row() const
 {
     if (m_parent_item)
-        return m_parent_item->m_child_items.indexOf(const_cast<TreeItem*>(this));
+        return m_parent_item->m_child_items.indexOf(const_cast<TdmLayerItem*>(this));
 
     return 0;
 }
 
-void TreeItem::insertChild(int pos, TreeItem *child)
+void TdmLayerItem::insertChild(int pos, TdmLayerItem *child)
 {
     m_child_items.insert(pos, child);
     child->m_parent_item = this;

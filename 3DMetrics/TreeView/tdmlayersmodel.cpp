@@ -40,76 +40,57 @@
 
 #include <QtWidgets>
 
-#include "treeitem.h"
-#include "treemodel.h"
+#include "tdmlayeritem.h"
+#include "tdmlayersmodel.h"
 
-TreeModel *TreeModel::s_instance = new TreeModel();
+TdmLayersModel *TdmLayersModel::s_instance = new TdmLayersModel();
 
-TreeModel::TreeModel(QObject *parent)
+TdmLayersModel::TdmLayersModel(QObject *parent)
     : QAbstractItemModel(parent)
 {
     QVector<QVariant> rootData;
-    // Needed to create one column...
+    // Needed to create two column...
     rootData << "header";
     rootData << "data"; // not shown but to store informations
 
-    m_root_item = new TreeItem(TreeItem::GroupLayer, rootData);
-
-//    m_root_item->insertChildren(m_root_item->childCount(), 1, m_root_item->columnCount());
-//    m_models_item = m_root_item->child(m_root_item->childCount() - 1);
-//    QVariant qv1(tr("Models"));
-//    m_models_item->setData(0, qv1);
-
-//    m_root_item->insertChildren(m_root_item->childCount(), 1, m_root_item->columnCount());
-//    m_measures_item = m_root_item->child(m_root_item->childCount() - 1);
-//    QVariant qv2(tr("Measures"));
-//    m_measures_item->setData(0, qv2);
-
-//    m_root_item->insertChildren(m_root_item->childCount(), 1, m_root_item->columnCount());
-//    m_groups_item = m_root_item->child(m_root_item->childCount() - 1);
-//    QVariant qv3(tr("Groups"));
-//    m_groups_item->setData(0, qv3);
+    m_root_item = new TdmLayerItem(TdmLayerItem::GroupLayer, rootData);
 }
 
 
-TreeItem* TreeModel::addData(const TreeItem::LayerType _type, TreeItem *parent, QVariant &col0, QVariant &col1)
+TdmLayerItem* TdmLayersModel::addData(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData)
 {
     beginInsertRows(QModelIndex(),m_root_item->childCount(),m_root_item->childCount());
 
     QVector<QVariant> datas;
-    datas << col0;
-    datas << col1;
-    TreeItem *item = new TreeItem(_type, datas);
+    datas << displayedName;
+    datas << privateData;
+    TdmLayerItem *item = new TdmLayerItem(_type, datas);
     parent->insertChild(parent->childCount(),item);
 
-//    bool result = m_root_item->insertChildren(m_root_item->childCount(), 1, m_root_item->columnCount());
-//    TreeItem *item = m_root_item->child(m_root_item->childCount() - 1);
-//    item->setData(0, col0);
-//    item->setData(1, col1);
     endInsertRows();
 
     return item;
 }
 
-TreeModel::~TreeModel()
+TdmLayersModel::~TdmLayersModel()
 {
     delete m_root_item;
 }
 
-int TreeModel::columnCount(const QModelIndex & /* parent */) const
+int TdmLayersModel::columnCount(const QModelIndex & /* parent */) const
 {
+    // 2 colums (1 hidden used tor store datas)
     return m_root_item->columnCount();
-    //return 1; // 1 column for display
 }
 
-QVariant TreeModel::data(const QModelIndex &index, int role) const
+QVariant TdmLayersModel::data(const QModelIndex &index, int role) const
 {
     if (!index.isValid())
         return QVariant();
 
 
-    TreeItem *item1 = static_cast<TreeItem*>(index.internalPointer());
-    TreeItem *item = getItem(index);
+    TdmLayerItem *item1 = static_cast<TdmLayerItem*>(index.internalPointer());
+    TdmLayerItem *item = getItem(index);
 
     if ( role == Qt::CheckStateRole && index.column() == 0 && item->isEditable())
     {
@@ -121,13 +102,13 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
         QIcon icon; // = QIcon::fromTheme("edit-undo");
         switch(item1->type())
         {
-        case TreeItem::GroupLayer:
+        case TdmLayerItem::GroupLayer:
             icon = QIcon::fromTheme("folder-new");
             break;
-        case TreeItem::MeasurementLayer:
+        case TdmLayerItem::MeasurementLayer:
             icon = QIcon::fromTheme("document-properties");
             break;
-        case TreeItem::ModelLayer:
+        case TdmLayerItem::ModelLayer:
             icon = QIcon::fromTheme("document-open");
             break;
         }
@@ -143,32 +124,32 @@ QVariant TreeModel::data(const QModelIndex &index, int role) const
     return item->data(index.column());
 }
 
-Qt::ItemFlags TreeModel::flags(const QModelIndex &index) const
+Qt::ItemFlags TdmLayersModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
         return 0;
 
     Qt::ItemFlags flags = Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
 
-    TreeItem *item = getItem(index);
+    TdmLayerItem *item = getItem(index);
     if(item != 0)
     {
-        return (item->type() == TreeItem::GroupLayer ? Qt::ItemIsDropEnabled : Qt::NoItemFlags) | flags;
+        return (item->type() == TdmLayerItem::GroupLayer ? Qt::ItemIsDropEnabled : Qt::NoItemFlags) | flags;
     }
     return Qt::ItemIsEditable | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable | QAbstractItemModel::flags(index);
 }
 
-TreeItem *TreeModel::getItem(const QModelIndex &index) const
+TdmLayerItem *TdmLayersModel::getItem(const QModelIndex &index) const
 {
     if (index.isValid()) {
-        TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+        TdmLayerItem *item = static_cast<TdmLayerItem*>(index.internalPointer());
         if (item)
             return item;
     }
     return m_root_item;
 }
 
-QVariant TreeModel::headerData(int section, Qt::Orientation orientation,
+QVariant TdmLayersModel::headerData(int section, Qt::Orientation orientation,
                                int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
@@ -177,23 +158,23 @@ QVariant TreeModel::headerData(int section, Qt::Orientation orientation,
     return QVariant();
 }
 
-QModelIndex TreeModel::index(int row, int column, const QModelIndex &parent) const
+QModelIndex TdmLayersModel::index(int row, int column, const QModelIndex &parent) const
 {
     if (parent.isValid() && parent.column() != 0)
         return QModelIndex();
 
-    TreeItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getItem(parent);
 
-    TreeItem *childItem = parentItem->child(row);
+    TdmLayerItem *childItem = parentItem->child(row);
     if (childItem)
         return createIndex(row, column, childItem);
     else
         return QModelIndex();
 }
 
-bool TreeModel::insertRows(int position, int rows, const QModelIndex &parent)
+bool TdmLayersModel::insertRows(int position, int rows, const QModelIndex &parent)
 {
-    TreeItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getItem(parent);
     bool success;
 
     beginInsertRows(parent, position, position + rows - 1);
@@ -203,13 +184,13 @@ bool TreeModel::insertRows(int position, int rows, const QModelIndex &parent)
     return success;
 }
 
-QModelIndex TreeModel::parent(const QModelIndex &index) const
+QModelIndex TdmLayersModel::parent(const QModelIndex &index) const
 {
     if (!index.isValid())
         return QModelIndex();
 
-    TreeItem *childItem = getItem(index);
-    TreeItem *parentItem = childItem->parent();
+    TdmLayerItem *childItem = getItem(index);
+    TdmLayerItem *parentItem = childItem->parent();
 
     if (parentItem == m_root_item)
         return QModelIndex();
@@ -217,9 +198,9 @@ QModelIndex TreeModel::parent(const QModelIndex &index) const
     return createIndex(parentItem->childNumber(), 0, parentItem);
 }
 
-bool TreeModel::removeRows(int position, int rows, const QModelIndex &parent)
+bool TdmLayersModel::removeRows(int position, int rows, const QModelIndex &parent)
 {
-    TreeItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getItem(parent);
     bool success = true;
 
     beginRemoveRows(parent, position, position + rows - 1);
@@ -229,20 +210,19 @@ bool TreeModel::removeRows(int position, int rows, const QModelIndex &parent)
     return success;
 }
 
-int TreeModel::rowCount(const QModelIndex &parent) const
+int TdmLayersModel::rowCount(const QModelIndex &parent) const
 {
-    TreeItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getItem(parent);
 
     return parentItem->childCount();
 }
 
-bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int role)
+bool TdmLayersModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    TreeItem *item = getItem(index);
+    TdmLayerItem *item = getItem(index);
 
     if(role == Qt::CheckStateRole)
     {
-        //qDebug()<<"Ischecked"<<item->isChecked();
         if(!item->isEditable())
             return false;
 
@@ -268,7 +248,7 @@ bool TreeModel::setData(const QModelIndex &index, const QVariant &value, int rol
     return result;
 }
 
-bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
+bool TdmLayersModel::setHeaderData(int section, Qt::Orientation orientation,
                               const QVariant &value, int role)
 {
     if (role != Qt::EditRole || orientation != Qt::Horizontal)
@@ -282,20 +262,20 @@ bool TreeModel::setHeaderData(int section, Qt::Orientation orientation,
     return result;
 }
 
-Qt::DropActions TreeModel::supportedDropActions() const
+Qt::DropActions TdmLayersModel::supportedDropActions() const
 {
     return Qt::MoveAction;
 }
 
 static const char s_treeNodeMimeType[] = "application/x-treenode";
 //returns the mime type
-QStringList TreeModel::mimeTypes() const
+QStringList TdmLayersModel::mimeTypes() const
 {
     return QStringList() << s_treeNodeMimeType;
 }
 
 //receives a list of model indexes list
-QMimeData *TreeModel::mimeData(const QModelIndexList &indexes) const
+QMimeData *TdmLayersModel::mimeData(const QModelIndexList &indexes) const
 {
     QMimeData *mimeData = new QMimeData;
     QByteArray data; //a kind of RAW format for datas
@@ -305,24 +285,24 @@ QMimeData *TreeModel::mimeData(const QModelIndexList &indexes) const
     //Serialization of more complex data is accomplished
     //by breaking up the data into primitive units.
     QDataStream stream(&data, QIODevice::WriteOnly);
-    QList<TreeItem *> nodes;
+    QList<TdmLayerItem *> nodes;
 
     //
     foreach (const QModelIndex &index, indexes) {
-        TreeItem *node = getItem(index);
+        TdmLayerItem *node = getItem(index);
         if (!nodes.contains(node))
             nodes << node;
     }
     stream << QCoreApplication::applicationPid();
     stream << nodes.count();
-    foreach (TreeItem *node, nodes) {
+    foreach (TdmLayerItem *node, nodes) {
         stream << reinterpret_cast<qlonglong>(node);
     }
     mimeData->setData(s_treeNodeMimeType, data);
     return mimeData;
 }
 
-bool TreeModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+bool TdmLayersModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, int row, int column, const QModelIndex &parent)
 {
     Q_ASSERT(action == Qt::MoveAction);
     Q_UNUSED(column);
@@ -338,7 +318,7 @@ bool TreeModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, i
         // Let's not cast pointers that come from another process...
         return false;
     }
-    TreeItem *parentNode = getItem(parent);
+    TdmLayerItem *parentNode = getItem(parent);
     Q_ASSERT(parentNode);
     int count;
     stream >> count;
@@ -357,7 +337,7 @@ bool TreeModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, i
         // Decode data from the QMimeData
         qlonglong nodePtr;
         stream >> nodePtr;
-        TreeItem *node = reinterpret_cast<TreeItem *>(nodePtr);
+        TdmLayerItem *node = reinterpret_cast<TdmLayerItem *>(nodePtr);
 
         // Adjust destination row for the case of moving an item
         // within the same parent, to a position further down.
@@ -378,7 +358,7 @@ bool TreeModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, i
     return true;
 }
 
-void TreeModel::removeNode(TreeItem *node)
+void TdmLayersModel::removeNode(TdmLayerItem *node)
 {
     const int row = node->row();
     QModelIndex idx = createIndex(row, 0, node);

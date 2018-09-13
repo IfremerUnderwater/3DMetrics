@@ -3,7 +3,7 @@
 
 #include <QMainWindow>
 
-class TreeItem;
+class TdmLayerItem;
 
 namespace Ui {
 class TDMGui;
@@ -25,7 +25,9 @@ public slots:
     void slot_openMeasureFile();
     void slot_newGroup();
 
-    void slot_checkChanged(TreeItem*);
+    // from TreeView
+    void slot_selectionChanged();
+    void slot_checkChanged(TdmLayerItem*);
 };
 
 #endif // TDMGUI_H
