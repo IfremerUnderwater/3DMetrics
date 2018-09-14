@@ -13,6 +13,8 @@
 #include <iostream>
 #include "measurement_saving_dialog.h"
 
+#include "filedialog.h"
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -89,26 +91,15 @@ void MainWindow::slot_open3dModel()
 //                "/home",
 //                "*.*");
 
+    QString file = getOpenFileName(this,tr("Select one 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
 
-        QFileDialog fileDialog(this,tr("Select one 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
-        fileDialog.setAcceptMode(QFileDialog::AcceptOpen);
-        fileDialog.setFileMode(QFileDialog::ExistingFiles);
-
-    #ifndef __MINGW32__
-        fileDialog.setOption(QFileDialog::DontUseNativeDialog,true);
-    #endif
-
-        if (QDialog::Accepted != fileDialog.exec())
-            return;
-
-
-    if(fileDialog.selectedFiles().count() == 0)
+    if(file.length() == 0)
     {
         QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a 3d model"));
     }
     else
     {
-        m_model_file = fileDialog.selectedFiles().first();
+        m_model_file = file;
         ui->display_widget->setSceneFromFile(m_model_file.toStdString());
     }
 }
@@ -408,10 +399,11 @@ void MainWindow::sl_delete_measurement_action()
 
 void MainWindow::slot_openMeasureFile()
 {
-    QString meas_filename = QFileDialog::getOpenFileName(
-                this,
-                tr("Select measurements file to open"),
-                "*.json");
+    QString meas_filename = getOpenFileName(this,tr("Select measurements file to open"),"","*.json");
+//            QFileDialog::getOpenFileName(
+//                this,
+//                tr("Select measurements file to open"),
+//                "*.json");
 
     QFileInfo meas_file_info(meas_filename);
 
@@ -460,10 +452,14 @@ void MainWindow::slot_openMeasureFile()
 
 void MainWindow::sl_saveMeasurFile()
 {
-    QString meas_filename = QFileDialog::getSaveFileName(
-                this,
-                tr("Save measurement file in JSON"),
-                "*.json");
+    QString meas_filename = getSaveFileName(this,
+                                            tr("Save measurement file in JSON"),
+                                            "",
+                                            "*.json");
+//            QFileDialog::getSaveFileName(
+//                this,
+//                tr("Save measurement file in JSON"),
+//                "*.json");
 
     QFileInfo meas_file_info(meas_filename);
 

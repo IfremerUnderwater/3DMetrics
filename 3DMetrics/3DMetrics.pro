@@ -56,7 +56,8 @@ SOURCES += main.cpp \
     tdmgui.cpp \
     TreeView/tdmlayeritem.cpp \
     TreeView/tdmlayersmodel.cpp \
-    filedialog.cpp
+    filedialog.cpp \
+    TreeView/tdmmodellayerdata.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -73,7 +74,8 @@ HEADERS  += mainwindow.h \
     tdmgui.h \
     TreeView/tdmlayeritem.h \
     TreeView/tdmlayersmodel.h \
-    filedialog.h
+    filedialog.h \
+    TreeView/tdmmodellayerdata.h
 
 FORMS    += \
     mainwindow.ui \

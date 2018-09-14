@@ -235,7 +235,13 @@ OSGWidget::~OSGWidget()
 
 bool OSGWidget::setSceneFromFile(std::string _sceneFile)
 {
-    // load the data
+    osg::ref_ptr<osg::Node> node = createNodeFromFile(_sceneFile);
+    if(!node)
+        return false;
+
+    return addNodeToScene(node);
+
+/***    // load the data
     setlocale(LC_ALL, "C");
 
     QFileInfo sceneInfo(QString::fromStdString(_sceneFile));
@@ -284,13 +290,98 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
         model_transform->addChild(model_node);
     }
 
-
     // Add model
     m_models.push_back(model_transform);
     osg::StateSet* stateSet = model_transform->getOrCreateStateSet();
     stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     m_group->addChild(model_transform.get());
+
+    // optimize the scene graph, remove redundant nodes and state etc.
+    //osgUtil::Optimizer optimizer;
+    //optimizer.optimize(m_group.get());
+
+    osgViewer::View *view = m_viewer->getView(0);
+
+    view->setSceneData( m_group );
+
+    return true;
+***/
+}
+
+///
+/// \brief createNodeFromFile load a scene from a 3D file
+/// \param _sceneFile path to any 3D file supported by osg
+/// \return node if loading succeded
+///
+osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _sceneFile)
+{
+    osg::ref_ptr<osg::MatrixTransform> model_transform;
+    // load the data
+    setlocale(LC_ALL, "C");
+
+    QFileInfo sceneInfo(QString::fromStdString(_sceneFile));
+    std::string sceneFile;
+
+    QPointF local_lat_lon;
+    double local_depth;
+
+    if (sceneInfo.suffix()==QString("kml")){
+        m_kml_handler.readFile(_sceneFile);
+        sceneFile = sceneInfo.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
+        local_lat_lon.setX(m_kml_handler.getModelLat());
+        local_lat_lon.setY(m_kml_handler.getModelLon());
+        local_depth = m_kml_handler.getModelAlt();
+    }else{
+        sceneFile = _sceneFile;
+        local_lat_lon.setX(0);
+        local_lat_lon.setY(0);
+        local_depth = 0;
+    }
+
+    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile, new osgDB::Options("noRotation"));
+
+    if (!model_node)
+    {
+        std::cout << "No data loaded" << std::endl;
+        return model_transform;
+    }
+
+    // Transform model
+    model_transform = new osg::MatrixTransform;
+    if (m_ref_depth == INVALID_VALUE){
+        m_ref_lat_lon = local_lat_lon;
+        m_ref_depth = local_depth;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
+
+
+        model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
+        model_transform->addChild(model_node);
+    }else{
+        double N,E,U;
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_depth, E, N, U);
+
+        model_transform->setMatrix(osg::Matrix::translate(E,N,U));
+        //model_transform->setMatrix(osg::Matrix::translate(N,-U,E));
+        model_transform->addChild(model_node);
+    }
+
+    return model_transform;
+}
+
+///
+/// \brief addNodeToScene add a node to the scene
+/// \param _node node to be added
+/// \return true if loading succeded
+///
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
+{
+    // Add model
+    m_models.push_back(_node);
+    osg::StateSet* stateSet = _node->getOrCreateStateSet();
+    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    m_group->addChild(_node.get());
 
     // optimize the scene graph, remove redundant nodes and state etc.
     /*osgUtil::Optimizer optimizer;
@@ -301,7 +392,31 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
     view->setSceneData( m_group );
 
     return true;
+}
 
+///
+/// \brief removeNodeFromScene remove a node from the scene
+/// \param _node node to be removed
+/// \return true if remove succeded
+///
+bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
+{
+    // remove model
+    std::vector<osg::ref_ptr<osg::Node>>::iterator position = std::find(m_models.begin(), m_models.end(), _node);
+    if (position != m_models.end()) // == myVector.end() means the element was not found
+        m_models.erase(position);
+
+    m_group->removeChild(_node.get());
+
+    // optimize the scene graph, remove redundant nodes and state etc.
+    /*osgUtil::Optimizer optimizer;
+    optimizer.optimize(m_group.get());*/
+
+    osgViewer::View *view = m_viewer->getView(0);
+
+    view->setSceneData( m_group );
+
+    return true;
 }
 
 bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> _sceneData)

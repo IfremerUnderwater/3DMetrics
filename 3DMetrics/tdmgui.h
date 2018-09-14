@@ -20,14 +20,23 @@ public:
 private:
     Ui::TDMGui *ui;
 
+    void deleteTreeItemsData(TdmLayerItem *item);
+
 public slots:
     void slot_open3dModel();
     void slot_openMeasureFile();
-    void slot_newGroup();
+
+
 
     // from TreeView
     void slot_selectionChanged();
     void slot_checkChanged(TdmLayerItem*);
+    void slot_contextMenu(const QPoint &);
+    // TreeView context menu
+    void slot_deleteRow();
+    void slot_newGroup();
+    void slot_moveToToplevel();
+    void slot_unselect();
 };
 
 #endif // TDMGUI_H

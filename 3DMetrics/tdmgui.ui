@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1164</width>
+    <width>1200</width>
     <height>988</height>
    </rect>
   </property>
@@ -19,7 +19,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1164</width>
+     <width>1200</width>
      <height>29</height>
     </rect>
    </property>
@@ -32,7 +32,6 @@
     <addaction name="open_project_action"/>
     <addaction name="save_measurement_file_action"/>
     <addaction name="save_project_action"/>
-    <addaction name="new_group_action"/>
    </widget>
    <widget class="QMenu" name="menuData">
     <property name="title">
@@ -40,7 +39,7 @@
     </property>
     <addaction name="export_data_to_ASCII_csv_or_txt_action"/>
    </widget>
-   <widget class="QMenu" name="menuHelp">
+   <widget class="QMenu" name="menuView">
     <property name="title">
      <string>View</string>
     </property>
@@ -56,7 +55,7 @@
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuData"/>
-   <addaction name="menuHelp"/>
+   <addaction name="menuView"/>
    <addaction name="menuHelp_2"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
@@ -89,15 +88,15 @@
   </widget>
   <widget class="QDockWidget" name="tree_widget_dock">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>1</horstretch>
+     <verstretch>1</verstretch>
     </sizepolicy>
    </property>
    <property name="minimumSize">
     <size>
      <width>300</width>
-     <height>103</height>
+     <height>300</height>
     </size>
    </property>
    <property name="features">
@@ -110,6 +109,12 @@
     <number>1</number>
    </attribute>
    <widget class="QTreeView" name="tree_widget">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
     <property name="sizeAdjustPolicy">
      <enum>QAbstractScrollArea::AdjustToContents</enum>
     </property>
@@ -135,14 +140,14 @@
   </widget>
   <widget class="QDockWidget" name="display_widget_dock">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+    <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
      <horstretch>1</horstretch>
-     <verstretch>0</verstretch>
+     <verstretch>1</verstretch>
     </sizepolicy>
    </property>
    <property name="minimumSize">
     <size>
-     <width>800</width>
+     <width>850</width>
      <height>600</height>
     </size>
    </property>
@@ -167,14 +172,14 @@
   <widget class="QDockWidget" name="attrib_table_dock">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
+     <horstretch>1</horstretch>
+     <verstretch>1</verstretch>
     </sizepolicy>
    </property>
    <property name="minimumSize">
     <size>
-     <width>73</width>
-     <height>300</height>
+     <width>300</width>
+     <height>275</height>
     </size>
    </property>
    <property name="features">
@@ -184,7 +189,7 @@
     <string>Attributes</string>
    </property>
    <attribute name="dockWidgetArea">
-    <number>1</number>
+    <number>8</number>
    </attribute>
    <widget class="QWidget" name="attrib_table"/>
   </widget>
@@ -309,11 +314,6 @@
   <action name="actionAbout">
    <property name="text">
     <string>About</string>
-   </property>
-  </action>
-  <action name="new_group_action">
-   <property name="text">
-    <string>New Group</string>
    </property>
   </action>
  </widget>

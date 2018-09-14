@@ -37,6 +37,27 @@ public:
     bool setSceneFromFile(std::string _sceneFile);
 
     ///
+    /// \brief createNodeFromFile load a scene from a 3D file
+    /// \param _sceneFile path to any 3D file supported by osg
+    /// \return node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _sceneFile);
+
+    ///
+    /// \brief addNodeToScene add a node to the scene
+    /// \param _node node to be added
+    /// \return true if loading succeded
+    ///
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node);
+
+    ///
+    /// \brief removeNodeFromScene remove a node from the scene
+    /// \param _node node to be removed
+    /// \return true if remove succeded
+    ///
+    bool removeNodeFromScene(osg::ref_ptr<osg::Node> _node);
+
+    ///
     /// \brief setSceneData load a scene from a osg::ref_ptr<osg::Node>
     /// \param _sceneData pointer to scene data
     /// \return true if loading succeded
