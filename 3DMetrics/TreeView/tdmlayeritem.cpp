@@ -63,6 +63,20 @@ TdmLayerItem::~TdmLayerItem()
     qDeleteAll(m_child_items);
 }
 
+QString TdmLayerItem::typeName() const
+{
+    switch(m_layer_type)
+    {
+    case ModelLayer:
+        return "Model";
+    case MeasurementLayer:
+        return "Measurement";
+    case GroupLayer:
+        return "Group";
+    }
+    return QString();
+}
+
 TdmLayerItem *TdmLayerItem::child(int number)
 {
     return m_child_items.value(number);

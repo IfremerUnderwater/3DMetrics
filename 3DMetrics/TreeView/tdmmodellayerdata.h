@@ -22,6 +22,7 @@ private:
     osg::ref_ptr<osg::Node> m_node;
 };
 
+// needed for using with QVariant
 Q_DECLARE_METATYPE(TDMModelLayerData)
 
 #endif // TDMMODELLAYERDATA_H

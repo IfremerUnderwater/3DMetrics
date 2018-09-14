@@ -4,6 +4,7 @@
 #include <QMainWindow>
 
 class TdmLayerItem;
+class QCloseEvent;
 
 namespace Ui {
 class TDMGui;
@@ -17,6 +18,9 @@ public:
     explicit TDMGui(QWidget *parent = 0);
     ~TDMGui();
 
+    // ask on close
+    void closeEvent(QCloseEvent *event);
+
 private:
     Ui::TDMGui *ui;
 
@@ -27,11 +31,11 @@ public slots:
     void slot_openMeasureFile();
 
 
-
     // from TreeView
     void slot_selectionChanged();
     void slot_checkChanged(TdmLayerItem*);
     void slot_contextMenu(const QPoint &);
+
     // TreeView context menu
     void slot_deleteRow();
     void slot_newGroup();

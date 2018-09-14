@@ -45,6 +45,7 @@ public:
 
     //Get the type of the layer
     LayerType type() const { return m_layer_type; }
+    QString typeName() const;
 
     // additions for D&D
     void appendChild(TdmLayerItem *child);

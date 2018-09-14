@@ -1,3 +1,5 @@
+#include <QCloseEvent>
+
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
 
@@ -27,6 +29,7 @@ TDMGui::TDMGui(QWidget *parent) :
 
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
     QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasureFile()));
+    QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     // check state on e treeview item
     QObject::connect(TdmLayersModel::instance(),SIGNAL(signal_checkChanged(TdmLayerItem*)),this,SLOT(slot_checkChanged(TdmLayerItem*)));
@@ -47,7 +50,22 @@ TDMGui::~TDMGui()
     delete ui;
 }
 
-
+// ask on close
+void TDMGui::closeEvent(QCloseEvent *event)
+{
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Close 3DMetrics"),
+                                                                tr("Are you sure?\n"),
+                                                                QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                QMessageBox::Yes);
+    if (resBtn != QMessageBox::Yes)
+    {
+        event->ignore();
+    }
+    else
+    {
+        event->accept();
+    }
+}
 
 void TDMGui::slot_open3dModel()
 {
@@ -80,6 +98,10 @@ void TDMGui::slot_open3dModel()
         ui->display_widget->addNodeToScene(node);
 
         QApplication::restoreOverrideCursor();
+    }
+    else
+    {
+        QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a 3d model"));
     }
 }
 
@@ -124,10 +146,10 @@ void TDMGui::slot_selectionChanged()
 {
     QTreeView *view = ui->tree_widget;
 
-    //bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
 
-    if (hasCurrent) {
+    if (hasSelection && hasCurrent) {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
         TdmLayerItem *selected = TdmLayersModel::instance()->getItem(
                     view->selectionModel()->currentIndex());
@@ -150,6 +172,8 @@ void TDMGui::slot_selectionChanged()
         //            statusBar()->showMessage(tr("Position: (%1,%2) in top level").arg(row).arg(column));
         //        }
     }
+    else
+       statusBar()->showMessage("");
 }
 
 void TDMGui::slot_checkChanged(TdmLayerItem *item)
@@ -161,6 +185,10 @@ void TDMGui::slot_checkChanged(TdmLayerItem *item)
     {
         lda.node()->setNodeMask(checked ? 0xFFFFFFFF : 0);
     }
+
+    //*** TODO gerer les groupes de manière recursive...
+    // si checked : en fonction du check des enfants
+    // si unchecked : non affiché
 }
 
 void TDMGui::slot_contextMenu(const QPoint &)
@@ -203,7 +231,7 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *item)
     }
     if(item->type() == TdmLayerItem::MeasurementLayer)
     {
-        //*** todo
+        //*** TODO
     }
     if(item->type() == TdmLayerItem::GroupLayer)
     {
@@ -217,16 +245,27 @@ void TDMGui::slot_deleteRow()
 {
     QTreeView *view = ui->tree_widget;
 
-    //bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
 
-    if (hasCurrent)
+    if (hasSelection && hasCurrent)
     {
-        view->closePersistentEditor(view->selectionModel()->currentIndex());
-
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getItem(index);
+
+        QString msg = tr("Do you want to delete %1:\n%2").arg(item->typeName()).arg(item->data(0).toString());
+        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Delete Row Confirmation"),
+                                                                    msg,
+                                                                    QMessageBox::Cancel | QMessageBox::Ok,
+                                                                    QMessageBox::Cancel);
+        if (resBtn != QMessageBox::Ok)
+        {
+            return;
+        }
+
+        view->closePersistentEditor(view->selectionModel()->currentIndex());
+
         deleteTreeItemsData(item);
         // delete node in view
         model->removeRow(index.row(), index.parent());
@@ -237,9 +276,10 @@ void TDMGui::slot_moveToToplevel()
 {
     QTreeView *view = ui->tree_widget;
 
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
 
-    if (hasCurrent)
+    if (hasSelection && hasCurrent)
     {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
@@ -252,6 +292,7 @@ void TDMGui::slot_moveToToplevel()
         QMimeData *mime = model->mimeData(list);
         model->dropMimeData(mime, Qt::MoveAction, 0, 0, QModelIndex());
     }
+    slot_unselect();
 }
 
 void TDMGui::slot_unselect()
