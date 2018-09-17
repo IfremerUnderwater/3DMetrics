@@ -23,8 +23,8 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->menuBar->setNativeMenuBar(false);
 
     // Init tool handler
-    m_tool_handler = new ToolHandler();
-    m_tool_handler->setOsgWidget(ui->display_widget);
+    m_tool_handler = new ToolHandler(ui->display_widget);
+    //m_tool_handler->setOsgWidget(ui->display_widget);
 
     ui->measurements_table->resizeColumnsToContents();
 

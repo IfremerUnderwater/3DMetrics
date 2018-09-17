@@ -10,6 +10,7 @@
 #include "TreeView/tdmlayersmodel.h"
 
 #include "TreeView/tdmmodellayerdata.h"
+#include "TreeView/tdmmeasurelayerdata.h"
 
 #include "filedialog.h"
 
@@ -47,6 +48,12 @@ TDMGui::TDMGui(QWidget *parent) :
     // treeview contextuel menu
     ui->tree_widget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->tree_widget,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_contextMenu(const QPoint &)));
+
+    // tools
+    ui->line_tool->setEnabled(false);
+    ui->surface_tool->setEnabled(false);
+    ui->pick_point->setEnabled(false);
+    ui->cancel_measurement->setEnabled(false);
 }
 
 TDMGui::~TDMGui()
@@ -113,8 +120,12 @@ void TDMGui::slot_openMeasureFile()
 {
     TdmLayersModel *model = TdmLayersModel::instance();
     QVariant data("Dummy MeasureFile");
-    QVariant dummy("dummy");
-    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, dummy);
+    std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
+    QString dummy("dummy");
+    TDMMeasureLayerData modelData(dummy, th);
+    QVariant tool;
+    tool.setValue(modelData);
+    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, tool);
     added->setChecked(true);
 }
 
@@ -153,6 +164,11 @@ void TDMGui::slot_selectionChanged()
     bool hasSelection = !view->selectionModel()->selection().isEmpty();
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
 
+    ui->line_tool->setEnabled(false);
+    ui->surface_tool->setEnabled(false);
+    ui->pick_point->setEnabled(false);
+    ui->cancel_measurement->setEnabled(false);
+
     if (hasSelection && hasCurrent) {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
@@ -160,9 +176,23 @@ void TDMGui::slot_selectionChanged()
         if(selected != nullptr)
         {
             QVariant data1 = selected->data(1);
-            TDMModelLayerData lda = data1.value<TDMModelLayerData>();
-            if(lda.fileName().length())
-                data1 = lda.fileName();
+            if(selected->type() == TdmLayerItem::ModelLayer)
+            {
+                TDMModelLayerData lda = data1.value<TDMModelLayerData>();
+                if(lda.fileName().length())
+                    data1 = lda.fileName();
+            }
+            else if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+                TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+                if(lda.fileName().length())
+                    data1 = lda.fileName();
+                ui->line_tool->setEnabled(true);
+                ui->surface_tool->setEnabled(true);
+                ui->pick_point->setEnabled(true);
+                ui->cancel_measurement->setEnabled(true);
+            }
+
             statusBar()->showMessage(tr("%1 - %2").arg(selected->data(0).toString()).arg(data1.toString()));
         }
         //        int row = view->selectionModel()->currentIndex().row();
@@ -180,7 +210,7 @@ void TDMGui::slot_selectionChanged()
         statusBar()->showMessage("");
 }
 
-void TDMGui::manageSelectionForChildren(TdmLayerItem *item, bool checked)
+void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
 {
     if(item == nullptr)
         return;
@@ -189,20 +219,26 @@ void TDMGui::manageSelectionForChildren(TdmLayerItem *item, bool checked)
     if(item->type() == TdmLayerItem::ModelLayer)
     {
         QVariant data1 = item->data(1);
-        TDMModelLayerData lda = data1.value<TDMModelLayerData>();
-        if(lda.fileName().length() > 0)
+        if(data1.canConvert<TDMModelLayerData>())
         {
+            TDMModelLayerData lda = data1.value<TDMModelLayerData>();
             lda.node()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
         }
     }
     if(item->type() == TdmLayerItem::MeasurementLayer)
     {
-        //*** TODO
+        QVariant data1 = item->data(1);
+        if(data1.canConvert<TDMMeasureLayerData>())
+        {
+            // TODO : test
+            TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+            lda.tool()->getGeode()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+        }
     }
     if(item->type() == TdmLayerItem::GroupLayer)
     {
         for(int i=0; i<item->childCount(); i++)
-            manageSelectionForChildren(item->child(i), checked && itemChecked);
+            manageCheckStateForChildren(item->child(i), checked && itemChecked);
     }
 
 }
@@ -214,12 +250,12 @@ void TDMGui::slot_itemDropped(TdmLayerItem*item)
     if(item->parent() == nullptr)
         return;
 
-    manageSelectionForChildren(item->parent(), item->parent()->isChecked());
+    manageCheckStateForChildren(item->parent(), item->parent()->isChecked());
 }
 
 void TDMGui::slot_checkChanged(TdmLayerItem *item)
 {
-    manageSelectionForChildren(item, item->isChecked());
+    manageCheckStateForChildren(item, item->isChecked());
 }
 
 void TDMGui::slot_contextMenu(const QPoint &)
@@ -262,7 +298,14 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *item)
     }
     if(item->type() == TdmLayerItem::MeasurementLayer)
     {
-        //*** TODO
+        //*** TODO test
+        QVariant data1 = item->data(1);
+        if(data1.canConvert<TDMMeasureLayerData>())
+        {
+            // TODO : test
+            TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+            ui->display_widget->removeGeode(lda.tool()->getGeode());
+        }
     }
     if(item->type() == TdmLayerItem::GroupLayer)
     {

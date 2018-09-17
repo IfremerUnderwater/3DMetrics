@@ -1,13 +1,28 @@
 #include "tool_handler.h"
 #include "OSGWidget/OSGWidget.h"
 
-ToolHandler::ToolHandler():m_line_meas_tool(this),
+ToolHandler::ToolHandler(OSGWidget *_osg_widget) :
+    m_line_meas_tool(this),
     m_surf_meas_tool(this),
     m_interest_point_tool(this)
 {
     m_current_toolstate = IDLE_STATE;
     m_current_tool = NULL;
 
+    // connect to OSGWidget
+    m_osg_widget = _osg_widget;
+
+    // this is for dummy creation in QVariant when not the right type
+    if(_osg_widget != NULL)
+    {
+        m_geode = new osg::Geode;
+
+        m_line_meas_tool.setMeasurementGeode(m_geode);
+        m_surf_meas_tool.setMeasurementGeode(m_geode);
+        m_interest_point_tool.setMeasurementGeode(m_geode);
+
+        m_osg_widget->addGeode(m_geode);
+    }
 }
 
 void ToolHandler::setCurrentToolState(ToolState _tool_state)
@@ -133,14 +148,14 @@ void ToolHandler::resetMeasData()
     m_interest_point_tool.resetMeasData();
 }
 
-void ToolHandler::setOsgWidget(OSGWidget *_osg_widget)
-{
-    m_osg_widget = _osg_widget;
+//void ToolHandler::setOsgWidget(OSGWidget *_osg_widget)
+//{
+//    m_osg_widget = _osg_widget;
 
-    m_line_meas_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
-    m_surf_meas_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
-    m_interest_point_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
-}
+//    m_line_meas_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
+//    m_surf_meas_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
+//    m_interest_point_tool.setMeasurementGeode(m_osg_widget->getMeasurementGeode());
+//}
 
 void ToolHandler::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists)
 {
@@ -149,7 +164,9 @@ void ToolHandler::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point,
 
 void ToolHandler::forceGeodeUpdate()
 {
-    m_osg_widget->forceGeodeUpdate();
+    //*** TODO : comment faire mieux ????
+    m_osg_widget->removeGeode(m_geode);
+    m_osg_widget->addGeode(m_geode);
 }
 
 void ToolHandler::emitMeasurementEnded()

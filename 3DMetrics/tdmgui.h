@@ -26,7 +26,7 @@ private:
 
     void deleteTreeItemsData(TdmLayerItem *item);
 
-    void manageSelectionForChildren(TdmLayerItem *item, bool checked);
+    void manageCheckStateForChildren(TdmLayerItem *item, bool checked);
 
 public slots:
     void slot_open3dModel();

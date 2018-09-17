@@ -223,8 +223,8 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     // Create group that will contain measurement geode and 3D model
     m_group = new osg::Group;
-    m_measurement_geode = new osg::Geode;
-    m_group->addChild(m_measurement_geode);
+//    m_measurement_geode = new osg::Geode;
+//    m_group->addChild(m_measurement_geode);
 
 
 }
@@ -467,7 +467,14 @@ void OSGWidget::clearSceneData()
     m_models.clear();
 
     // remove all drawables
-    m_measurement_geode->removeDrawables(0,m_measurement_geode->getNumDrawables());
+    // m_measurement_geode->removeDrawables(0,m_measurement_geode->getNumDrawables());
+    for (unsigned int i=0; i<m_geodes.size(); i++)
+    {
+        m_geodes[i]->removeDrawables(0,m_geodes[i]->getNumDrawables());
+        m_group->removeChild(m_geodes[i]);
+        //m_models[i] = NULL; useless
+    }
+    m_geodes.clear();
 
     // reinit georef
     m_ref_lat_lon.setX(INVALID_VALUE);
@@ -659,15 +666,15 @@ void OSGWidget::mouseReleaseEvent(QMouseEvent* event)
 
 }
 
-
-
 void OSGWidget::wheelEvent( QWheelEvent* event )
 {
 
     event->accept();
     int delta = event->delta();
 
-    osgGA::GUIEventAdapter::ScrollingMotion motion = delta > 0 ?   osgGA::GUIEventAdapter::SCROLL_UP
+    // Inversion of wheel action : to be like in Google Maps
+    // (just change test)
+    osgGA::GUIEventAdapter::ScrollingMotion motion = delta < 0 ?   osgGA::GUIEventAdapter::SCROLL_UP
                                                                  : osgGA::GUIEventAdapter::SCROLL_DOWN;
 
     this->getEventQueue()->mouseScroll( motion );
@@ -719,16 +726,16 @@ osgGA::EventQueue* OSGWidget::getEventQueue() const
         throw std::runtime_error( "Unable to obtain valid event queue");
 }
 
-osg::ref_ptr<osg::Geode> OSGWidget::getMeasurementGeode()
-{
-    return m_measurement_geode;
-}
+//osg::ref_ptr<osg::Geode> OSGWidget::getMeasurementGeode()
+//{
+//    return m_measurement_geode;
+//}
 
-void OSGWidget::forceGeodeUpdate()
-{
-    m_group->removeChild(m_measurement_geode);
-    m_group->addChild(m_measurement_geode);
-}
+//void OSGWidget::forceGeodeUpdate()
+//{
+//    m_group->removeChild(m_measurement_geode);
+//    m_group->addChild(m_measurement_geode);
+//}
 
 void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
 {
@@ -736,4 +743,18 @@ void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
     _ref_depth = m_ref_depth;
 }
 
+void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
+{
+    m_group->insertChild(1,_geode);
+}
+
+void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
+{
+    // remove geode
+    std::vector<osg::ref_ptr<osg::Geode>>::iterator position = std::find(m_geodes.begin(), m_geodes.end(), _geode);
+    if (position != m_geodes.end()) // == myVector.end() means the element was not found
+        m_geodes.erase(position);
+
+    m_group->removeChild(_geode);
+}
 

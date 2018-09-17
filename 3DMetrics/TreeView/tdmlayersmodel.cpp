@@ -128,13 +128,16 @@ QVariant TdmLayersModel::data(const QModelIndex &index, int role) const
 Qt::ItemFlags TdmLayersModel::flags(const QModelIndex &index) const
 {
     if (!index.isValid())
-        return 0;
+        return Qt::ItemIsEnabled | Qt::ItemIsDropEnabled; // to allow drop in toplevel
 
     Qt::ItemFlags flags = Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
 
     TdmLayerItem *item = getLayerItem(index);
     if(item != 0)
     {
+        if(item == m_root_item)
+            return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDropEnabled;
+
         return (item->type() == TdmLayerItem::GroupLayer ? Qt::ItemIsDropEnabled : Qt::NoItemFlags) | flags;
     }
     return Qt::ItemIsEditable | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable | QAbstractItemModel::flags(index);

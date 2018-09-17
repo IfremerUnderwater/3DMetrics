@@ -43,7 +43,7 @@ public:
     bool isChecked() const { return m_checked; }
     void setChecked( bool set ) { m_checked = set; }
 
-    //Get the type of the layer
+    // Get the type of the layer
     LayerType type() const { return m_layer_type; }
     QString typeName() const;
 
@@ -60,7 +60,7 @@ private:
 
     bool m_checked;
 
-    /** Type of the layer (eg. vector, raster) */
+    // Type of the layer
     LayerType m_layer_type;
 
 };

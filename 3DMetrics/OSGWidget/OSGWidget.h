@@ -87,16 +87,18 @@ public:
     ///
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
-    ///
-    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
-    /// \return measurement geode
-    ///
-    osg::ref_ptr<osg::Geode> getMeasurementGeode();
+//    ///
+//    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
+//    /// \return measurement geode
+//    ///
+//    osg::ref_ptr<osg::Geode> getMeasurementGeode();
 
-    ///
-    /// \brief forceGeodeUpdate force geode data to redraw
-    ///
-    void forceGeodeUpdate();
+//    ///
+//    /// \brief forceGeodeUpdate force geode data to redraw
+//    ///
+//    void forceGeodeUpdate();
+    void addGeode(osg::ref_ptr<osg::Geode> _geode);
+    void removeGeode(osg::ref_ptr<osg::Geode> _geode);
 
     ///
     /// \brief getGeoOrigin get geographic origin
@@ -145,7 +147,8 @@ private:
 
     std::vector<osg::ref_ptr<osg::Node>> m_models;
     osg::ref_ptr<osg::Group> m_group;
-    osg::ref_ptr<osg::Geode> m_measurement_geode;
+    std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
+    //osg::ref_ptr<osg::Geode> m_measurement_geode;
 
     // Georef objects
     KMLHandler m_kml_handler;

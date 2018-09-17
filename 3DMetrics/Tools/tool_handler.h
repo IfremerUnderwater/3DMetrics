@@ -7,6 +7,8 @@
 #include "interest_point_tool.h"
 #include "tool_types.h"
 
+#include <osg/ref_ptr>
+#include <osg/Geode>
 
 class OSGWidget;
 
@@ -14,7 +16,7 @@ class ToolHandler:public QObject
 {
     Q_OBJECT
 public:
-    ToolHandler();
+    ToolHandler(OSGWidget *_osg_widget = NULL);
 
     void setCurrentToolState(ToolState _tool_state);
 
@@ -25,7 +27,7 @@ public:
     // hide/show measurement method
     void hideShowMeasurementOfType(ToolState _meas_type, int _meas_index, bool _visible);
 
-    void setOsgWidget(OSGWidget *_osg_widget);
+    //void setOsgWidget(OSGWidget *_osg_widget);
 
     // getIntersectionPoint from OSGWidget
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
@@ -52,6 +54,8 @@ public:
 
     void resetMeasData();
 
+    osg::ref_ptr<osg::Geode> getGeode() const { return m_geode; }
+
 public slots:
     void slot_onMousePress(Qt::MouseButton _button ,int _x, int _y);
 
@@ -69,6 +73,8 @@ private:
     ToolState m_current_toolstate;
 
     OSGWidget *m_osg_widget;
+
+    osg::ref_ptr<osg::Geode> m_geode;
 };
 
 #endif // TOOLHANDLER_H

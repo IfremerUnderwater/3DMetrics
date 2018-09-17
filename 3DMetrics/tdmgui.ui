@@ -193,7 +193,49 @@
    <attribute name="dockWidgetArea">
     <number>8</number>
    </attribute>
-   <widget class="QWidget" name="attrib_table"/>
+   <widget class="QTableWidget" name="attrib_table">
+    <property name="selectionMode">
+     <enum>QAbstractItemView::SingleSelection</enum>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectRows</enum>
+    </property>
+             <column>
+              <property name="text">
+               <string>Visibility</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Name</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Type</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Category</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Temperature</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Result</string>
+              </property>
+             </column>
+             <column>
+              <property name="text">
+               <string>Comments</string>
+              </property>
+             </column>
+   </widget>
   </widget>
   <action name="line_tool">
    <property name="icon">
