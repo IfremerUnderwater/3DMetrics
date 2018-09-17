@@ -40,6 +40,10 @@ TDMGui::TDMGui(QWidget *parent) :
                                              const QItemSelection &)),
                      this, SLOT(slot_selectionChanged()));
 
+    //item dropped in treeview - manage visibililty
+    QObject::connect(TdmLayersModel::instance(),SIGNAL(signal_itemDropped(TdmLayerItem*)),this,SLOT(slot_itemDropped(TdmLayerItem*)));
+
+
     // treeview contextuel menu
     ui->tree_widget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->tree_widget,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_contextMenu(const QPoint &)));
@@ -92,7 +96,7 @@ void TDMGui::slot_open3dModel()
         QVariant data;
         data.setValue(modelData);
 
-        TdmLayerItem *added = model->addData(TdmLayerItem::ModelLayer, model->rootItem(), name, data);
+        TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, model->rootItem(), name, data);
         added->setChecked(true);
 
         ui->display_widget->addNodeToScene(node);
@@ -110,7 +114,7 @@ void TDMGui::slot_openMeasureFile()
     TdmLayersModel *model = TdmLayersModel::instance();
     QVariant data("Dummy MeasureFile");
     QVariant dummy("dummy");
-    TdmLayerItem *added = model->addData(TdmLayerItem::MeasurementLayer, model->rootItem(), data, dummy);
+    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, dummy);
     added->setChecked(true);
 }
 
@@ -125,7 +129,7 @@ void TDMGui::slot_newGroup()
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
     if (hasSelection && hasCurrent)
     {
-        TdmLayerItem *selected = TdmLayersModel::instance()->getItem(
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
         if(selected != nullptr && selected->type() == TdmLayerItem::GroupLayer)
         {
@@ -135,8 +139,8 @@ void TDMGui::slot_newGroup()
 
     QVariant data("Group");
     QVariant dummy("group");
-    TdmLayerItem *added = model->addData(TdmLayerItem::GroupLayer, parent, data, dummy);
-    added->setChecked(false);
+    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::GroupLayer, parent, data, dummy);
+    added->setChecked(true);
 
     slot_unselect();
 }
@@ -151,7 +155,7 @@ void TDMGui::slot_selectionChanged()
 
     if (hasSelection && hasCurrent) {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
-        TdmLayerItem *selected = TdmLayersModel::instance()->getItem(
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
         if(selected != nullptr)
         {
@@ -173,22 +177,49 @@ void TDMGui::slot_selectionChanged()
         //        }
     }
     else
-       statusBar()->showMessage("");
+        statusBar()->showMessage("");
+}
+
+void TDMGui::manageSelectionForChildren(TdmLayerItem *item, bool checked)
+{
+    if(item == nullptr)
+        return;
+
+    bool itemChecked = item->isChecked();
+    if(item->type() == TdmLayerItem::ModelLayer)
+    {
+        QVariant data1 = item->data(1);
+        TDMModelLayerData lda = data1.value<TDMModelLayerData>();
+        if(lda.fileName().length() > 0)
+        {
+            lda.node()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+        }
+    }
+    if(item->type() == TdmLayerItem::MeasurementLayer)
+    {
+        //*** TODO
+    }
+    if(item->type() == TdmLayerItem::GroupLayer)
+    {
+        for(int i=0; i<item->childCount(); i++)
+            manageSelectionForChildren(item->child(i), checked && itemChecked);
+    }
+
+}
+
+void TDMGui::slot_itemDropped(TdmLayerItem*item)
+{
+    if(item == nullptr)
+        return;
+    if(item->parent() == nullptr)
+        return;
+
+    manageSelectionForChildren(item->parent(), item->parent()->isChecked());
 }
 
 void TDMGui::slot_checkChanged(TdmLayerItem *item)
 {
-    bool checked = item->isChecked();
-    QVariant data1 = item->data(1);
-    TDMModelLayerData lda = data1.value<TDMModelLayerData>();
-    if(lda.fileName().length() > 0)
-    {
-        lda.node()->setNodeMask(checked ? 0xFFFFFFFF : 0);
-    }
-
-    //*** TODO gerer les groupes de manière recursive...
-    // si checked : en fonction du check des enfants
-    // si unchecked : non affiché
+    manageSelectionForChildren(item, item->isChecked());
 }
 
 void TDMGui::slot_contextMenu(const QPoint &)
@@ -252,7 +283,7 @@ void TDMGui::slot_deleteRow()
     {
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
-        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getItem(index);
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
 
         QString msg = tr("Do you want to delete %1:\n%2").arg(item->typeName()).arg(item->data(0).toString());
         QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Delete Row Confirmation"),

@@ -51,13 +51,14 @@ TdmLayersModel::TdmLayersModel(QObject *parent)
     QVector<QVariant> rootData;
     // Needed to create two column...
     rootData << "header";
-    rootData << "data"; // not shown but to store informations
+    rootData << "data"; // not shown but used to store informations
 
     m_root_item = new TdmLayerItem(TdmLayerItem::GroupLayer, rootData);
+    m_root_item->setChecked(true);
 }
 
 
-TdmLayerItem* TdmLayersModel::addData(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData)
+TdmLayerItem* TdmLayersModel::addLayerItem(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData)
 {
     beginInsertRows(QModelIndex(),m_root_item->childCount(),m_root_item->childCount());
 
@@ -79,7 +80,7 @@ TdmLayersModel::~TdmLayersModel()
 
 int TdmLayersModel::columnCount(const QModelIndex & /* parent */) const
 {
-    // 2 colums (1 hidden used tor store datas)
+    // 2 colums (1 hidden used to store datas)
     return m_root_item->columnCount();
 }
 
@@ -90,7 +91,7 @@ QVariant TdmLayersModel::data(const QModelIndex &index, int role) const
 
 
     TdmLayerItem *item1 = static_cast<TdmLayerItem*>(index.internalPointer());
-    TdmLayerItem *item = getItem(index);
+    TdmLayerItem *item = getLayerItem(index);
 
     if ( role == Qt::CheckStateRole && index.column() == 0 && item->isEditable())
     {
@@ -131,7 +132,7 @@ Qt::ItemFlags TdmLayersModel::flags(const QModelIndex &index) const
 
     Qt::ItemFlags flags = Qt::ItemIsEditable | Qt::ItemIsUserCheckable | Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled;
 
-    TdmLayerItem *item = getItem(index);
+    TdmLayerItem *item = getLayerItem(index);
     if(item != 0)
     {
         return (item->type() == TdmLayerItem::GroupLayer ? Qt::ItemIsDropEnabled : Qt::NoItemFlags) | flags;
@@ -139,7 +140,7 @@ Qt::ItemFlags TdmLayersModel::flags(const QModelIndex &index) const
     return Qt::ItemIsEditable | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable | QAbstractItemModel::flags(index);
 }
 
-TdmLayerItem *TdmLayersModel::getItem(const QModelIndex &index) const
+TdmLayerItem *TdmLayersModel::getLayerItem(const QModelIndex &index) const
 {
     if (index.isValid()) {
         TdmLayerItem *item = static_cast<TdmLayerItem*>(index.internalPointer());
@@ -150,7 +151,7 @@ TdmLayerItem *TdmLayersModel::getItem(const QModelIndex &index) const
 }
 
 QVariant TdmLayersModel::headerData(int section, Qt::Orientation orientation,
-                               int role) const
+                                    int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
         return m_root_item->data(section);
@@ -163,7 +164,7 @@ QModelIndex TdmLayersModel::index(int row, int column, const QModelIndex &parent
     if (parent.isValid() && parent.column() != 0)
         return QModelIndex();
 
-    TdmLayerItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getLayerItem(parent);
 
     TdmLayerItem *childItem = parentItem->child(row);
     if (childItem)
@@ -174,7 +175,7 @@ QModelIndex TdmLayersModel::index(int row, int column, const QModelIndex &parent
 
 bool TdmLayersModel::insertRows(int position, int rows, const QModelIndex &parent)
 {
-    TdmLayerItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getLayerItem(parent);
     bool success;
 
     beginInsertRows(parent, position, position + rows - 1);
@@ -189,7 +190,7 @@ QModelIndex TdmLayersModel::parent(const QModelIndex &index) const
     if (!index.isValid())
         return QModelIndex();
 
-    TdmLayerItem *childItem = getItem(index);
+    TdmLayerItem *childItem = getLayerItem(index);
     TdmLayerItem *parentItem = childItem->parent();
 
     if (parentItem == m_root_item)
@@ -200,7 +201,7 @@ QModelIndex TdmLayersModel::parent(const QModelIndex &index) const
 
 bool TdmLayersModel::removeRows(int position, int rows, const QModelIndex &parent)
 {
-    TdmLayerItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getLayerItem(parent);
     bool success = true;
 
     beginRemoveRows(parent, position, position + rows - 1);
@@ -212,14 +213,14 @@ bool TdmLayersModel::removeRows(int position, int rows, const QModelIndex &paren
 
 int TdmLayersModel::rowCount(const QModelIndex &parent) const
 {
-    TdmLayerItem *parentItem = getItem(parent);
+    TdmLayerItem *parentItem = getLayerItem(parent);
 
     return parentItem->childCount();
 }
 
 bool TdmLayersModel::setData(const QModelIndex &index, const QVariant &value, int role)
 {
-    TdmLayerItem *item = getItem(index);
+    TdmLayerItem *item = getLayerItem(index);
 
     if(role == Qt::CheckStateRole)
     {
@@ -249,7 +250,7 @@ bool TdmLayersModel::setData(const QModelIndex &index, const QVariant &value, in
 }
 
 bool TdmLayersModel::setHeaderData(int section, Qt::Orientation orientation,
-                              const QVariant &value, int role)
+                                   const QVariant &value, int role)
 {
     if (role != Qt::EditRole || orientation != Qt::Horizontal)
         return false;
@@ -289,7 +290,7 @@ QMimeData *TdmLayersModel::mimeData(const QModelIndexList &indexes) const
 
     //
     foreach (const QModelIndex &index, indexes) {
-        TdmLayerItem *node = getItem(index);
+        TdmLayerItem *node = getLayerItem(index);
         if (!nodes.contains(node))
             nodes << node;
     }
@@ -318,7 +319,7 @@ bool TdmLayersModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction acti
         // Let's not cast pointers that come from another process...
         return false;
     }
-    TdmLayerItem *parentNode = getItem(parent);
+    TdmLayerItem *parentNode = getLayerItem(parent);
     Q_ASSERT(parentNode);
     int count;
     stream >> count;
@@ -353,6 +354,10 @@ bool TdmLayersModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction acti
         beginInsertRows(parent, row, row);
         parentNode->insertChild(row, node);
         endInsertRows();
+
+        // notify dropped item
+        emit signal_itemDropped(node);
+
         ++row;
     }
     return true;

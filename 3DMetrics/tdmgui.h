@@ -26,6 +26,8 @@ private:
 
     void deleteTreeItemsData(TdmLayerItem *item);
 
+    void manageSelectionForChildren(TdmLayerItem *item, bool checked);
+
 public slots:
     void slot_open3dModel();
     void slot_openMeasureFile();
@@ -34,6 +36,7 @@ public slots:
     // from TreeView
     void slot_selectionChanged();
     void slot_checkChanged(TdmLayerItem*);
+    void slot_itemDropped(TdmLayerItem*);
     void slot_contextMenu(const QPoint &);
 
     // TreeView context menu

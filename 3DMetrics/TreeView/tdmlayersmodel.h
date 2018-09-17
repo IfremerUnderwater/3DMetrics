@@ -40,7 +40,8 @@ public:
                     const QModelIndex &parent = QModelIndex()) Q_DECL_OVERRIDE;
 
     // append a new data in tree at specified level
-    TdmLayerItem* addData(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData);
+    TdmLayerItem* addLayerItem(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData);
+
     TdmLayerItem* rootItem() { return m_root_item; }
 
     // Drag & Drop
@@ -50,9 +51,11 @@ public:
 
     virtual Qt::DropActions supportedDropActions() const;
 
-    TdmLayerItem *getItem(const QModelIndex &index) const;
+    TdmLayerItem *getLayerItem(const QModelIndex &index) const;
+
 signals:
     void signal_checkChanged(TdmLayerItem*);
+    void signal_itemDropped(TdmLayerItem*);
 
 private:
     // singleton

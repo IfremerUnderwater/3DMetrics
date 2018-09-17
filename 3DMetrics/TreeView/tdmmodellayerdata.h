@@ -6,6 +6,10 @@
 #include <QString>
 #include <QMetaType>
 
+// private data used in Model Layer
+// usable in QVariant
+// stored in hidden colums in the treeitem
+//
 class TDMModelLayerData
 {
 public:
