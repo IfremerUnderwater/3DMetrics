@@ -23,20 +23,20 @@ public:
         GroupLayer
     };
 
-    explicit TdmLayerItem(const LayerType _type, const QVector<QVariant> &data, TdmLayerItem *parent = 0);
+    explicit TdmLayerItem(const LayerType _type, const QVector<QVariant> &_data, TdmLayerItem *_parent = 0);
     ~TdmLayerItem();
 
-    TdmLayerItem *child(int number);
+    TdmLayerItem *child(int _number);
     int childCount() const;
     int columnCount() const;
-    QVariant data(int column) const;
-    bool insertChildren(int position, int count, int columns);
+    QVariant data(int _column) const;
+    bool insertChildren(int _position, int _count, int _columns);
 
     TdmLayerItem *parent();
-    bool removeChildren(int position, int count);
+    bool removeChildren(int _position, int _count);
 
     int childNumber() const;
-    bool setData(int column, const QVariant &value);
+    bool setData(int _column, const QVariant &_value);
 
     bool isEditable();
 
@@ -48,9 +48,9 @@ public:
     QString typeName() const;
 
     // additions for D&D
-    void appendChild(TdmLayerItem *child);
-    void insertChild(int pos, TdmLayerItem *child);
-    void removeChild(int row);
+    void appendChild(TdmLayerItem *_child);
+    void insertChild(int _pos, TdmLayerItem *_child);
+    void removeChild(int _row);
     int row() const;
 
 private:

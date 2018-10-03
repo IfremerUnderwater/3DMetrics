@@ -32,7 +32,6 @@ public slots:
     void slot_open3dModel();
     void slot_openMeasureFile();
 
-
     // from TreeView
     void slot_selectionChanged();
     void slot_checkChanged(TdmLayerItem*);
@@ -42,6 +41,7 @@ public slots:
     // TreeView context menu
     void slot_deleteRow();
     void slot_newGroup();
+    void slot_newMeasurement();
     void slot_moveToToplevel();
     void slot_unselect();
 };

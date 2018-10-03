@@ -10,10 +10,10 @@ TDMMeasureLayerData::TDMMeasureLayerData(const QString _fileName, std::shared_pt
     m_tool = _tool;
 }
 
-TDMMeasureLayerData::TDMMeasureLayerData(const TDMMeasureLayerData &other)
+TDMMeasureLayerData::TDMMeasureLayerData(const TDMMeasureLayerData &_other)
 {
-    m_file_name = other.m_file_name;
-    m_tool = other.m_tool;
+    m_file_name = _other.m_file_name;
+    m_tool = _other.m_tool;
 }
 
 TDMMeasureLayerData::~TDMMeasureLayerData() {}

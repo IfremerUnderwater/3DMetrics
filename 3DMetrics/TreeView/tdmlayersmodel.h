@@ -40,18 +40,18 @@ public:
                     const QModelIndex &parent = QModelIndex()) Q_DECL_OVERRIDE;
 
     // append a new data in tree at specified level
-    TdmLayerItem* addLayerItem(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData);
+    TdmLayerItem* addLayerItem(const TdmLayerItem::LayerType _type, TdmLayerItem *_parent, QVariant &_displayedName, QVariant &_privateData);
 
     TdmLayerItem* rootItem() { return m_root_item; }
 
     // Drag & Drop
     QStringList mimeTypes() const Q_DECL_OVERRIDE;
     QMimeData *mimeData(const QModelIndexList &indexes) const Q_DECL_OVERRIDE;
-    bool dropMimeData(const QMimeData* data, Qt::DropAction action, int row, int column, const QModelIndex & parent);
+    bool dropMimeData(const QMimeData* _data, Qt::DropAction _action, int _row, int _column, const QModelIndex & _parent);
 
     virtual Qt::DropActions supportedDropActions() const;
 
-    TdmLayerItem *getLayerItem(const QModelIndex &index) const;
+    TdmLayerItem *getLayerItem(const QModelIndex &_index) const;
 
 signals:
     void signal_checkChanged(TdmLayerItem*);
@@ -59,7 +59,7 @@ signals:
 
 private:
     // singleton
-    TdmLayersModel(QObject *parent = 0);
+    TdmLayersModel(QObject *_parent = 0);
     static TdmLayersModel *s_instance;
 
     // for Drag & Drop

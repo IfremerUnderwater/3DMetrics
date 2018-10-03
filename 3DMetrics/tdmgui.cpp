@@ -54,6 +54,9 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
     ui->cancel_measurement->setEnabled(false);
+
+    // file menu
+    ui->save_measurement_file_action->setEnabled(false);
 }
 
 TDMGui::~TDMGui()
@@ -116,17 +119,32 @@ void TDMGui::slot_open3dModel()
     }
 }
 
-void TDMGui::slot_openMeasureFile()
+void TDMGui::slot_newMeasurement()
 {
     TdmLayersModel *model = TdmLayersModel::instance();
-    QVariant data("Dummy MeasureFile");
+    QVariant data("New Measurement");
     std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
-    QString dummy("dummy");
+    QString dummy("measure");
     TDMMeasureLayerData modelData(dummy, th);
     QVariant tool;
     tool.setValue(modelData);
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, tool);
     added->setChecked(true);
+}
+
+void TDMGui::slot_openMeasureFile()
+{
+    // TODO
+
+//    TdmLayersModel *model = TdmLayersModel::instance();
+//    QVariant data("Dummy MeasureFile");
+//    std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
+//    QString dummy("dummy");
+//    TDMMeasureLayerData modelData(dummy, th);
+//    QVariant tool;
+//    tool.setValue(modelData);
+//    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, tool);
+//    added->setChecked(true);
 }
 
 void TDMGui::slot_newGroup()
@@ -168,6 +186,7 @@ void TDMGui::slot_selectionChanged()
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
     ui->cancel_measurement->setEnabled(false);
+    //*** TODO disconnect actions
 
     if (hasSelection && hasCurrent) {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
@@ -175,6 +194,7 @@ void TDMGui::slot_selectionChanged()
                     view->selectionModel()->currentIndex());
         if(selected != nullptr)
         {
+            ui->save_measurement_file_action->setEnabled(false);
             QVariant data1 = selected->data(1);
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
@@ -191,6 +211,8 @@ void TDMGui::slot_selectionChanged()
                 ui->surface_tool->setEnabled(true);
                 ui->pick_point->setEnabled(true);
                 ui->cancel_measurement->setEnabled(true);
+                ui->save_measurement_file_action->setEnabled(true);
+                //*** TODO connect actions
             }
 
             statusBar()->showMessage(tr("%1 - %2").arg(selected->data(0).toString()).arg(data1.toString()));
@@ -267,6 +289,7 @@ void TDMGui::slot_contextMenu(const QPoint &)
     if(!hasCurrent)
     {
         menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
+        menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
         menu->exec(QCursor::pos());
         return;
     }
@@ -277,6 +300,8 @@ void TDMGui::slot_contextMenu(const QPoint &)
     menu->addAction(tr("Move item to toplevel"), this, SLOT(slot_moveToToplevel()));
     menu->addSeparator();
     menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
+    menu->addSeparator();
+    menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
     menu->addSeparator();
     menu->addAction(tr("Unselect"), this, SLOT(slot_unselect()));
 
@@ -377,4 +402,5 @@ void TDMGui::slot_unselect()
     view->selectionModel()->clear();
     view->selectionModel()->clearSelection();
 
+    ui->save_measurement_file_action->setEnabled(false);
 }

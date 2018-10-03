@@ -15,7 +15,7 @@ class TDMModelLayerData
 public:
     TDMModelLayerData();
     TDMModelLayerData(const QString _fileName, const osg::ref_ptr<osg::Node> _node);
-    TDMModelLayerData(const TDMModelLayerData &other);
+    TDMModelLayerData(const TDMModelLayerData &_other);
     ~TDMModelLayerData();
 
     osg::ref_ptr<osg::Node> node() const { return m_node; }

@@ -16,7 +16,7 @@ class TDMMeasureLayerData
 public:
     TDMMeasureLayerData();
     TDMMeasureLayerData(const QString _fileName, std::shared_ptr<ToolHandler> _tool);
-    TDMMeasureLayerData(const TDMMeasureLayerData &other);
+    TDMMeasureLayerData(const TDMMeasureLayerData &_other);
     ~TDMMeasureLayerData();
 
     QString fileName() const { return m_file_name; }

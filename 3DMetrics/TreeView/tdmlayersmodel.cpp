@@ -45,8 +45,8 @@
 
 TdmLayersModel *TdmLayersModel::s_instance = new TdmLayersModel();
 
-TdmLayersModel::TdmLayersModel(QObject *parent)
-    : QAbstractItemModel(parent)
+TdmLayersModel::TdmLayersModel(QObject *_parent)
+    : QAbstractItemModel(_parent)
 {
     QVector<QVariant> rootData;
     // Needed to create two column...
@@ -58,13 +58,13 @@ TdmLayersModel::TdmLayersModel(QObject *parent)
 }
 
 
-TdmLayerItem* TdmLayersModel::addLayerItem(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &displayedName, QVariant &privateData)
+TdmLayerItem* TdmLayersModel::addLayerItem(const TdmLayerItem::LayerType _type, TdmLayerItem *parent, QVariant &_displayedName, QVariant &_privateData)
 {
     beginInsertRows(QModelIndex(),m_root_item->childCount(),m_root_item->childCount());
 
     QVector<QVariant> datas;
-    datas << displayedName;
-    datas << privateData;
+    datas << _displayedName;
+    datas << _privateData;
     TdmLayerItem *item = new TdmLayerItem(_type, datas);
     parent->insertChild(parent->childCount(),item);
 
@@ -143,10 +143,10 @@ Qt::ItemFlags TdmLayersModel::flags(const QModelIndex &index) const
     return Qt::ItemIsEditable | Qt::ItemIsDropEnabled | Qt::ItemIsUserCheckable | QAbstractItemModel::flags(index);
 }
 
-TdmLayerItem *TdmLayersModel::getLayerItem(const QModelIndex &index) const
+TdmLayerItem *TdmLayersModel::getLayerItem(const QModelIndex &_index) const
 {
-    if (index.isValid()) {
-        TdmLayerItem *item = static_cast<TdmLayerItem*>(index.internalPointer());
+    if (_index.isValid()) {
+        TdmLayerItem *item = static_cast<TdmLayerItem*>(_index.internalPointer());
         if (item)
             return item;
     }
@@ -306,15 +306,15 @@ QMimeData *TdmLayersModel::mimeData(const QModelIndexList &indexes) const
     return mimeData;
 }
 
-bool TdmLayersModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction action, int row, int column, const QModelIndex &parent)
+bool TdmLayersModel::dropMimeData(const QMimeData *_data, Qt::DropAction _action, int _row, int _column, const QModelIndex &_parent)
 {
-    Q_ASSERT(action == Qt::MoveAction);
-    Q_UNUSED(column);
+    Q_ASSERT(_action == Qt::MoveAction);
+    Q_UNUSED(_column);
     //test if the data type is the good one
-    if (!mimeData->hasFormat(s_treeNodeMimeType)) {
+    if (!_data->hasFormat(s_treeNodeMimeType)) {
         return false;
     }
-    QByteArray data = mimeData->data(s_treeNodeMimeType);
+    QByteArray data = _data->data(s_treeNodeMimeType);
     QDataStream stream(&data, QIODevice::ReadOnly);
     qint64 senderPid;
     stream >> senderPid;
@@ -322,20 +322,20 @@ bool TdmLayersModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction acti
         // Let's not cast pointers that come from another process...
         return false;
     }
-    TdmLayerItem *parentNode = getLayerItem(parent);
+    TdmLayerItem *parentNode = getLayerItem(_parent);
     Q_ASSERT(parentNode);
     int count;
     stream >> count;
-    if (row == -1) {
+    if (_row == -1) {
         // valid index means: drop onto item. I chose that this should insert
         // a child item, because this is the only way to create the first child of an item...
         // This explains why Qt calls it parent: unless you just support replacing, this
         // is really the future parent of the dropped items.
-        if (parent.isValid())
-            row = 0;
+        if (_parent.isValid())
+            _row = 0;
         else
             // invalid index means: append at bottom, after last toplevel
-            row = rowCount(parent);
+            _row = rowCount(_parent);
     }
     for (int i = 0; i < count; ++i) {
         // Decode data from the QMimeData
@@ -346,22 +346,22 @@ bool TdmLayersModel::dropMimeData(const QMimeData *mimeData, Qt::DropAction acti
         // Adjust destination row for the case of moving an item
         // within the same parent, to a position further down.
         // Its own removal will reduce the final row number by one.
-        if (node->row() < row && parentNode == node->parent())
-            --row;
+        if (node->row() < _row && parentNode == node->parent())
+            --_row;
 
         // Remove from old position
         removeNode(node);
 
         // Insert at new position
         //qDebug() << "Inserting into" << parent << row;
-        beginInsertRows(parent, row, row);
-        parentNode->insertChild(row, node);
+        beginInsertRows(_parent, _row, _row);
+        parentNode->insertChild(_row, node);
         endInsertRows();
 
         // notify dropped item
         emit signal_itemDropped(node);
 
-        ++row;
+        ++_row;
     }
     return true;
 }

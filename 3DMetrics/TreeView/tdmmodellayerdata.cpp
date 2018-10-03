@@ -8,9 +8,9 @@ TDMModelLayerData::TDMModelLayerData(const QString _fileName, const osg::ref_ptr
     m_node = _node;
 }
 
-TDMModelLayerData::TDMModelLayerData(const TDMModelLayerData &other)
+TDMModelLayerData::TDMModelLayerData(const TDMModelLayerData &_other)
 {
-    m_file_name = other.m_file_name;
-    m_node = other.m_node;
+    m_file_name = _other.m_file_name;
+    m_node = _other.m_node;
 }
 TDMModelLayerData::~TDMModelLayerData() {}

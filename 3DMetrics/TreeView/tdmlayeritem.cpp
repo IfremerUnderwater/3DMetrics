@@ -49,10 +49,10 @@
 #include <QStringList>
 
 
-TdmLayerItem::TdmLayerItem(const LayerType _type, const QVector<QVariant> &data, TdmLayerItem *parent)
+TdmLayerItem::TdmLayerItem(const LayerType _type, const QVector<QVariant> &_data, TdmLayerItem *_parent)
 {
-    m_parent_item = parent;
-    m_item_data = data;
+    m_parent_item = _parent;
+    m_item_data = _data;
     m_checked = false;
     m_layer_type = _type;
 }
@@ -77,9 +77,9 @@ QString TdmLayerItem::typeName() const
     return QString();
 }
 
-TdmLayerItem *TdmLayerItem::child(int number)
+TdmLayerItem *TdmLayerItem::child(int _number)
 {
-    return m_child_items.value(number);
+    return m_child_items.value(_number);
 }
 
 int TdmLayerItem::childCount() const
@@ -100,20 +100,20 @@ int TdmLayerItem::columnCount() const
     return m_item_data.count();
 }
 
-QVariant TdmLayerItem::data(int column) const
+QVariant TdmLayerItem::data(int _column) const
 {
-    return m_item_data.value(column);
+    return m_item_data.value(_column);
 }
 
-bool TdmLayerItem::insertChildren(int position, int count, int columns)
+bool TdmLayerItem::insertChildren(int _position, int _count, int _columns)
 {
-    if (position < 0 || position > m_child_items.size())
+    if (_position < 0 || _position > m_child_items.size())
         return false;
 
-    for (int row = 0; row < count; ++row) {
-        QVector<QVariant> data(columns);
+    for (int row = 0; row < _count; ++row) {
+        QVector<QVariant> data(_columns);
         TdmLayerItem *item = new TdmLayerItem(TdmLayerItem::GroupLayer, data, this);
-        m_child_items.insert(position, item);
+        m_child_items.insert(_position, item);
     }
 
     return true;
@@ -124,23 +124,23 @@ TdmLayerItem *TdmLayerItem::parent()
     return m_parent_item;
 }
 
-bool TdmLayerItem::removeChildren(int position, int count)
+bool TdmLayerItem::removeChildren(int _position, int _count)
 {
-    if (position < 0 || position + count > m_child_items.size())
+    if (_position < 0 || _position + _count > m_child_items.size())
         return false;
 
-    for (int row = 0; row < count; ++row)
-        delete m_child_items.takeAt(position);
+    for (int row = 0; row < _count; ++row)
+        delete m_child_items.takeAt(_position);
 
     return true;
 }
 
-bool TdmLayerItem::setData(int column, const QVariant &value)
+bool TdmLayerItem::setData(int _column, const QVariant &_value)
 {
-    if (column < 0 || column >= m_item_data.size())
+    if (_column < 0 || _column >= m_item_data.size())
         return false;
 
-    m_item_data[column] = value;
+    m_item_data[_column] = _value;
     return true;
 }
 
@@ -149,14 +149,14 @@ bool TdmLayerItem::isEditable()
     return true; //return m_parent_item->parent() != 0;
 }
 
-void TdmLayerItem::removeChild(int row)
+void TdmLayerItem::removeChild(int _row)
 {
-    m_child_items.removeAt(row);
+    m_child_items.removeAt(_row);
 }
 
-void TdmLayerItem::appendChild(TdmLayerItem *node)
+void TdmLayerItem::appendChild(TdmLayerItem *_child)
 {
-    m_child_items.append(node);
+    m_child_items.append(_child);
 }
 
 int TdmLayerItem::row() const
@@ -167,8 +167,8 @@ int TdmLayerItem::row() const
     return 0;
 }
 
-void TdmLayerItem::insertChild(int pos, TdmLayerItem *child)
+void TdmLayerItem::insertChild(int _pos, TdmLayerItem *_child)
 {
-    m_child_items.insert(pos, child);
-    child->m_parent_item = this;
+    m_child_items.insert(_pos, _child);
+    _child->m_parent_item = this;
 }
