@@ -14,10 +14,14 @@
 
 #include "filedialog.h"
 
+#include "edit_measure_dialog.h"
+
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui)
 {
+    qRegisterMetaType<MeasurePattern>();
+
     ui->setupUi(this);
     //    TDMLayerRegistry *reg = TDMLayerRegistry::instance();
 
@@ -32,7 +36,7 @@ TDMGui::TDMGui(QWidget *parent) :
     QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasureFile()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
-    // check state on e treeview item
+    // check state on the treeview item
     QObject::connect(TdmLayersModel::instance(),SIGNAL(signal_checkChanged(TdmLayerItem*)),this,SLOT(slot_checkChanged(TdmLayerItem*)));
 
     // treeview selection changed
@@ -49,7 +53,10 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->tree_widget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->tree_widget,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_contextMenu(const QPoint &)));
 
-    // tools
+    // general tools
+    connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
+
+    // measurement tools
     ui->line_tool->setEnabled(false);
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
@@ -122,34 +129,6 @@ void TDMGui::slot_open3dModel()
 void TDMGui::slot_newMeasurement()
 {
     TdmLayersModel *model = TdmLayersModel::instance();
-    QVariant data("New Measurement");
-    std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
-    QString dummy("measure");
-    TDMMeasureLayerData modelData(dummy, th);
-    QVariant tool;
-    tool.setValue(modelData);
-    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, tool);
-    added->setChecked(true);
-}
-
-void TDMGui::slot_openMeasureFile()
-{
-    // TODO
-
-//    TdmLayersModel *model = TdmLayersModel::instance();
-//    QVariant data("Dummy MeasureFile");
-//    std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
-//    QString dummy("dummy");
-//    TDMMeasureLayerData modelData(dummy, th);
-//    QVariant tool;
-//    tool.setValue(modelData);
-//    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, tool);
-//    added->setChecked(true);
-}
-
-void TDMGui::slot_newGroup()
-{
-    TdmLayersModel *model = TdmLayersModel::instance();
     TdmLayerItem *parent = model->rootItem();
 
     QTreeView *view = ui->tree_widget;
@@ -163,15 +142,79 @@ void TDMGui::slot_newGroup()
         if(selected != nullptr && selected->type() == TdmLayerItem::GroupLayer)
         {
             parent = selected;
+            view->selectionModel()->currentIndex();
         }
     }
 
-    QVariant data("Group");
+    QVariant data(tr("New Measurement"));
+    //std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
+    MeasurePattern pattern;
+    QString dummy("measure");
+    TDMMeasureLayerData modelData(dummy, pattern);
+    QVariant tool;
+    tool.setValue(modelData);
+    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, parent, data, tool);
+    added->setChecked(true);
+
+    // select created item
+    view->selectionModel()->clear();
+    view->selectionModel()->clearSelection();
+    QModelIndex index = model->index(added);
+    view->setExpanded(index.parent(),true);
+    view->selectionModel()->select(index,QItemSelectionModel::ClearAndSelect);
+    view->edit(index);
+
+     ui->save_measurement_file_action->setEnabled(true);
+}
+
+void TDMGui::slot_openMeasureFile()
+{
+    // TODO
+
+    //    TdmLayersModel *model = TdmLayersModel::instance();
+    //    QVariant data("Dummy MeasureFile");
+    //    std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
+    //    QString dummy("dummy");
+    //    TDMMeasureLayerData modelData(dummy, th);
+    //    QVariant tool;
+    //    tool.setValue(modelData);
+    //    TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, model->rootItem(), data, tool);
+    //    added->setChecked(true);
+}
+
+void TDMGui::slot_newGroup()
+{
+    TdmLayersModel *model = TdmLayersModel::instance();
+    TdmLayerItem *parent = model->rootItem();
+
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    if (hasSelection && hasCurrent)
+    {
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr && selected->type() == TdmLayerItem::GroupLayer)
+        {
+            parent = selected;
+        }
+    }
+
+    QVariant data(tr("New Group"));
     QVariant dummy("group");
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::GroupLayer, parent, data, dummy);
     added->setChecked(true);
 
-    slot_unselect();
+    // select created item
+    view->selectionModel()->clear();
+    view->selectionModel()->clearSelection();
+    QModelIndex index = model->index(added);
+    view->setExpanded(index.parent(),true);
+    view->selectionModel()->select(index,QItemSelectionModel::ClearAndSelect);
+    view->edit(index);
+
+    ui->save_measurement_file_action->setEnabled(false);
 }
 
 
@@ -254,7 +297,7 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
         {
             // TODO : test
             TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
-            lda.tool()->getGeode()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+            //lda.tool()->getGeode()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
         }
     }
     if(item->type() == TdmLayerItem::GroupLayer)
@@ -294,8 +337,26 @@ void TDMGui::slot_contextMenu(const QPoint &)
         return;
     }
 
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
     view->closePersistentEditor(view->selectionModel()->currentIndex());
 
+
+    if (hasSelection && hasCurrent)
+    {
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+                menu->addAction(tr("Edit measure"), this, SLOT(slot_editMeasurement()));
+                menu->addSeparator();
+            }
+        }
+    }
+
+    menu->addAction(tr("Rename"), this, SLOT(slot_renameTreeItem()));
+    menu->addSeparator();
     menu->addAction(tr("Delete item"), this, SLOT(slot_deleteRow()));
     menu->addAction(tr("Move item to toplevel"), this, SLOT(slot_moveToToplevel()));
     menu->addSeparator();
@@ -329,7 +390,7 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *item)
         {
             // TODO : test
             TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
-            ui->display_widget->removeGeode(lda.tool()->getGeode());
+            //ui->display_widget->removeGeode(lda.tool()->getGeode());
         }
     }
     if(item->type() == TdmLayerItem::GroupLayer)
@@ -371,6 +432,22 @@ void TDMGui::slot_deleteRow()
     }
 }
 
+void TDMGui::slot_renameTreeItem()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+
+    if (hasSelection && hasCurrent)
+    {
+        view->closePersistentEditor(view->selectionModel()->currentIndex());
+
+        QModelIndex index = view->selectionModel()->currentIndex();
+        view->edit(index);
+    }
+}
+
 void TDMGui::slot_moveToToplevel()
 {
     QTreeView *view = ui->tree_widget;
@@ -403,4 +480,74 @@ void TDMGui::slot_unselect()
     view->selectionModel()->clearSelection();
 
     ui->save_measurement_file_action->setEnabled(false);
+}
+
+void TDMGui::slot_focussingTool()
+{
+    ui->display_widget->home();
+}
+
+void TDMGui::slot_editMeasurement()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+
+    if (hasSelection && hasCurrent)
+    {
+        view->closePersistentEditor(view->selectionModel()->currentIndex());
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+                QString name = selected->data(0).toString();
+                // Show dialog
+                edit_measure_dialog *dlg = new edit_measure_dialog(this);
+
+                QVariant data1 = selected->data(1);
+                TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+                qDebug() << "init dialog" << lda.pattern().getNbFields();
+                dlg->setPattern(lda.pattern());
+                dlg->setWindowTitle(name);
+                dlg->setModal(true);
+
+                QObject::connect(dlg,SIGNAL(signal_apply(MeasurePattern)),
+                                 this,SLOT(slot_patternChanged(MeasurePattern)));
+
+                dlg->show();
+            }
+        }
+    }
+}
+
+void TDMGui::slot_patternChanged(MeasurePattern pattern)
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+
+    if (hasSelection && hasCurrent)
+    {
+        view->closePersistentEditor(view->selectionModel()->currentIndex());
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+                QVariant data1 = selected->data(1);
+                TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+                lda.pattern().clear();
+                for(int i=0; i<pattern.getNbFields(); i++)
+                    lda.pattern().addField(pattern.fieldName(i), pattern.fieldType(i));
+                data1.setValue<TDMMeasureLayerData>(lda);
+                qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
+                selected->setData(1,data1);
+            }
+        }
+    }
 }

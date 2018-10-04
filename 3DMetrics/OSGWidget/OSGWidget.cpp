@@ -592,10 +592,6 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
     this->getEventQueue()->mouseButtonPress( static_cast<float>( event->x() ),
                                              static_cast<float>( event->y() ),
                                              button );
-
-
-
-
 }
 
 
@@ -758,3 +754,9 @@ void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
     m_group->removeChild(_geode);
 }
 
+// reset view to home
+void OSGWidget::home()
+{
+    osgViewer::View *view = m_viewer->getView(0);
+    view->home();
+}

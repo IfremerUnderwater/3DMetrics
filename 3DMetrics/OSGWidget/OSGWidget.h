@@ -107,6 +107,9 @@ public:
     ///
     void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
 
+    // reset to home position
+    void home();
+
 public slots:
 
 

@@ -58,7 +58,11 @@ SOURCES += main.cpp \
     TreeView/tdmlayersmodel.cpp \
     filedialog.cpp \
     TreeView/tdmmodellayerdata.cpp \
-    TreeView/tdmmeasurelayerdata.cpp
+    TreeView/tdmmeasurelayerdata.cpp \
+    edit_measure_dialog.cpp \
+    edit_measure_item.cpp \
+    Measure/measuretype.cpp \
+    Measure/measurepattern.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -77,12 +81,18 @@ HEADERS  += mainwindow.h \
     TreeView/tdmlayersmodel.h \
     filedialog.h \
     TreeView/tdmmodellayerdata.h \
-    TreeView/tdmmeasurelayerdata.h
+    TreeView/tdmmeasurelayerdata.h \
+    edit_measure_dialog.h \
+    edit_measure_item.h \
+    Measure/measuretype.h \
+    Measure/measurepattern.h
 
 FORMS    += \
     mainwindow.ui \
     measurement_saving_dialog.ui \
-    tdmgui.ui
+    tdmgui.ui \
+    edit_measure_dialog.ui \
+    edit_measure_item.ui
 
 RESOURCES += \
     ressources.qrc

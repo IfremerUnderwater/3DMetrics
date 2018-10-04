@@ -86,7 +86,7 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="focusing_tool"/>
+   <addaction name="focusing_tool_action"/>
   </widget>
   <widget class="QDockWidget" name="tree_widget_dock">
    <property name="sizePolicy">
@@ -200,41 +200,9 @@
     <property name="selectionBehavior">
      <enum>QAbstractItemView::SelectRows</enum>
     </property>
-             <column>
-              <property name="text">
-               <string>Visibility</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Name</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Type</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Category</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Temperature</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Result</string>
-              </property>
-             </column>
-             <column>
-              <property name="text">
-               <string>Comments</string>
-              </property>
-             </column>
+    <property name="columnCount">
+     <number>0</number>
+    </property>
    </widget>
   </widget>
   <action name="line_tool">
@@ -285,7 +253,7 @@
     <string>Cancel current measurement</string>
    </property>
   </action>
-  <action name="focusing_tool">
+  <action name="focusing_tool_action">
    <property name="icon">
     <iconset resource="ressources.qrc">
      <normaloff>:/icons/ressources/icon.jpeg</normaloff>:/icons/ressources/icon.jpeg</iconset>

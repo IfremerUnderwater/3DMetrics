@@ -25,6 +25,11 @@ public:
                       const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     QModelIndex parent(const QModelIndex &index) const Q_DECL_OVERRIDE;
 
+    QModelIndex index(TdmLayerItem *item)
+    {
+        return createIndex(item->childNumber(), 0, item);
+    }
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
     int columnCount(const QModelIndex &parent = QModelIndex()) const Q_DECL_OVERRIDE;
 
