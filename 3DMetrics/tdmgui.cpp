@@ -16,6 +16,10 @@
 
 #include "edit_measure_dialog.h"
 
+#include "attribpointwidget.h"
+#include "attriblinewidget.h"
+#include "attribareawidget.h"
+
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui)
@@ -48,10 +52,16 @@ TDMGui::TDMGui(QWidget *parent) :
     //item dropped in treeview - manage visibililty
     QObject::connect(TdmLayersModel::instance(),SIGNAL(signal_itemDropped(TdmLayerItem*)),this,SLOT(slot_itemDropped(TdmLayerItem*)));
 
-
-    // treeview contextuel menu
+    // treeview contextual menu
     ui->tree_widget->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(ui->tree_widget,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_contextMenu(const QPoint &)));
+    connect(ui->tree_widget,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_treeViewContextMenu(const QPoint &)));
+
+    // line numbers
+    ui->attrib_table->verticalHeader()->setVisible(true);
+
+    // tablewidget contextual menu
+    ui->attrib_table->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(ui->attrib_table,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_attribTableContextMenu(const QPoint &)));
 
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
@@ -64,6 +74,8 @@ TDMGui::TDMGui(QWidget *parent) :
 
     // file menu
     ui->save_measurement_file_action->setEnabled(false);
+
+    updateAttributeTable(0);
 }
 
 TDMGui::~TDMGui()
@@ -164,7 +176,9 @@ void TDMGui::slot_newMeasurement()
     view->selectionModel()->select(index,QItemSelectionModel::ClearAndSelect);
     view->edit(index);
 
-     ui->save_measurement_file_action->setEnabled(true);
+    ui->save_measurement_file_action->setEnabled(true);
+    updateAttributeTable(0);
+    slot_selectionChanged();
 }
 
 void TDMGui::slot_openMeasureFile()
@@ -205,6 +219,8 @@ void TDMGui::slot_newGroup()
     QVariant dummy("group");
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::GroupLayer, parent, data, dummy);
     added->setChecked(true);
+
+    slot_unselect();
 
     // select created item
     view->selectionModel()->clear();
@@ -250,6 +266,7 @@ void TDMGui::slot_selectionChanged()
                 TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
                 if(lda.fileName().length())
                     data1 = lda.fileName();
+
                 ui->line_tool->setEnabled(true);
                 ui->surface_tool->setEnabled(true);
                 ui->pick_point->setEnabled(true);
@@ -260,6 +277,9 @@ void TDMGui::slot_selectionChanged()
 
             statusBar()->showMessage(tr("%1 - %2").arg(selected->data(0).toString()).arg(data1.toString()));
         }
+
+        updateAttributeTable(selected);
+
         //        int row = view->selectionModel()->currentIndex().row();
         //        int column = view->selectionModel()->currentIndex().column();
         //        if (view->selectionModel()->currentIndex().parent().isValid())
@@ -323,7 +343,7 @@ void TDMGui::slot_checkChanged(TdmLayerItem *item)
     manageCheckStateForChildren(item, item->isChecked());
 }
 
-void TDMGui::slot_contextMenu(const QPoint &)
+void TDMGui::slot_treeViewContextMenu(const QPoint &)
 {
     QMenu *menu = new QMenu;
     QTreeView *view = ui->tree_widget;
@@ -430,6 +450,7 @@ void TDMGui::slot_deleteRow()
         // delete node in view
         model->removeRow(index.row(), index.parent());
     }
+    slot_unselect();
 }
 
 void TDMGui::slot_renameTreeItem()
@@ -480,6 +501,8 @@ void TDMGui::slot_unselect()
     view->selectionModel()->clearSelection();
 
     ui->save_measurement_file_action->setEnabled(false);
+
+    updateAttributeTable(0);
 }
 
 void TDMGui::slot_focussingTool()
@@ -547,7 +570,186 @@ void TDMGui::slot_patternChanged(MeasurePattern pattern)
                 data1.setValue<TDMMeasureLayerData>(lda);
                 qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
                 selected->setData(1,data1);
+                updateAttributeTable(selected);
             }
         }
     }
 }
+
+void TDMGui::updateAttributeTable(TdmLayerItem *item)
+{
+    QTableWidget *table = ui->attrib_table;
+    if(item != nullptr && item->type() == TdmLayerItem::MeasurementLayer)
+    {
+        QVariant data1 = item->data(1);
+        TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+        int nbfields = lda.pattern().getNbFields();
+
+        table->setColumnCount(nbfields+1);
+        QStringList headers;
+        headers << ""; //tr("[+]");
+
+        for(int i=0; i<lda.pattern().getNbFields(); i++)
+        {
+            QString head = lda.pattern().fieldName(i); // + "\n(" + lda.pattern().fieldTypeName(i) + ")";
+            headers << head;
+        }
+        table->setHorizontalHeaderLabels(headers);
+        table->verticalHeader()->setVisible(true);
+        table->setRowCount(0);
+        m_current = lda.pattern();
+    }
+    else
+    {
+        table->setColumnCount(1);
+        QStringList headers;
+        headers << ""; //tr("[+]");
+        table->setHorizontalHeaderLabels(headers);
+
+        table->setRowCount(0);
+        m_current.clear();
+    }
+    table->setColumnWidth(0,30);
+    QTableWidgetItem* headerItem = table->horizontalHeaderItem(0);
+    if (headerItem)
+        headerItem->setToolTip("Visibility");
+}
+
+void TDMGui::slot_attribTableContextMenu(const QPoint &)
+{
+    QMenu *menu = new QMenu;
+    QTableWidget *table = ui->attrib_table;
+
+    menu->addAction(tr("Add line"), this, SLOT(slot_addAttributeLine()));
+
+    bool hasCurrent = table->selectionModel()->currentIndex().isValid();
+    //    if(!hasCurrent)
+    //    {
+    //        menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
+    //        menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
+    //        menu->exec(QCursor::pos());
+    //        return;
+    //    }
+
+    bool hasSelection = !table->selectionModel()->selection().isEmpty();
+
+    if (hasSelection && hasCurrent)
+    {
+        menu->addAction(tr("Delete line"), this, SLOT(slot_deleteAttributeLine()));
+
+        //        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+        //                    view->selectionModel()->currentIndex());
+        //        if(selected != nullptr)
+        //        {
+        //            if(selected->type() == TdmLayerItem::MeasurementLayer)
+        //            {
+        //                menu->addAction(tr("Edit measure"), this, SLOT(slot_editMeasurement()));
+        //                menu->addSeparator();
+        //            }
+        //        }
+    }
+
+    //    menu->addAction(tr("Rename"), this, SLOT(slot_renameTreeItem()));
+    //    menu->addSeparator();
+    //    menu->addAction(tr("Delete item"), this, SLOT(slot_deleteRow()));
+    //    menu->addAction(tr("Move item to toplevel"), this, SLOT(slot_moveToToplevel()));
+    //    menu->addSeparator();
+    //    menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
+    //    menu->addSeparator();
+    //    menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
+    //    menu->addSeparator();
+    //    menu->addAction(tr("Unselect"), this, SLOT(slot_unselect()));
+
+    menu->exec(QCursor::pos());
+}
+
+void TDMGui::slot_addAttributeLine()
+{
+    QTableWidget *table = ui->attrib_table;
+    int nbrows = table->rowCount();
+    table->setRowCount(nbrows+1);
+
+    QTableWidgetItem *checkbox = new QTableWidgetItem();
+    checkbox->setCheckState(Qt::Checked);
+    checkbox->setSizeHint(QSize(20,20));
+    table->setItem(nbrows, 0, checkbox);
+
+    // process items in line
+    for(int i=1; i<table->columnCount(); i++)
+    {
+        MeasureType::type type = m_current.fieldType(i-1);
+        switch(type)
+        {
+        case MeasureType::Line:
+            // line edit widget
+        {
+            QTableWidgetItem *pwidget = new QTableWidgetItem();
+            table->setItem(nbrows, i, pwidget);
+            AttribLineWidget *line = new AttribLineWidget();
+            line->setNbval("");
+            line->setLengthval("");
+            table->setCellWidget(nbrows,i, line);
+            int height = table->rowHeight(nbrows);
+            int minheight = line->height() + 2;
+            if(minheight > height)
+                table->setRowHeight(nbrows,minheight);
+        }
+            break;
+
+        case MeasureType::Point:
+            // point edit widget
+        {
+            QTableWidgetItem *pwidget = new QTableWidgetItem();
+            table->setItem(nbrows, i, pwidget);
+            AttribPointWidget *point = new AttribPointWidget();
+            point->setXval("");
+            point->setYval("");
+            point->setZval("");
+            table->setCellWidget(nbrows,i, point);
+            int height = table->rowHeight(nbrows);
+            int minheight = point->height() + 2;
+            if(minheight > height)
+                table->setRowHeight(nbrows,minheight);
+        }
+            break;
+
+        case MeasureType::Perimeter:
+            // perimeter edit widget
+        {
+            QTableWidgetItem *pwidget = new QTableWidgetItem();
+            table->setItem(nbrows, i, pwidget);
+            AttribAreaWidget *area = new AttribAreaWidget();
+            area->setNbval("");
+            area->setAreaval("");
+            table->setCellWidget(nbrows,i, area);
+            int height = table->rowHeight(nbrows);
+            int minheight = area->height() + 2;
+            if(minheight > height)
+                table->setRowHeight(nbrows,minheight);
+        }
+            break;
+
+        default:
+            // string - default editable text line
+            //            QTableWidgetItem *str = new QTableWidgetItem();
+            //            QColor color(192,192,192);
+            //            str->setBackgroundColor(color);
+            //            table->setItem(nbrows, i, str);
+            break;
+        }
+    }
+}
+
+void TDMGui::slot_deleteAttributeLine()
+{
+    QTableWidget *table = ui->attrib_table;
+
+    bool hasCurrent = table->selectionModel()->currentIndex().isValid();
+    bool hasSelection = !table->selectionModel()->selection().isEmpty();
+    if (hasSelection && hasCurrent)
+    {
+        //*** TODO : remove actual data
+        table->removeRow(table->currentRow());
+    }
+}
+

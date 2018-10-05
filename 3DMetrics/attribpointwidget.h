@@ -15,6 +15,13 @@ public:
     explicit AttribPointWidget(QWidget *parent = 0);
     ~AttribPointWidget();
 
+    void setXval(QString _x);
+    void setYval(QString _y);
+    void setZval(QString _z);
+
+public slots:
+    void slot_clicked();
+
 private:
     Ui::AttribPointWidget *ui;
 };

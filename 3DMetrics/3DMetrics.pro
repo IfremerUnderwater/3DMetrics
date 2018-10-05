@@ -62,7 +62,10 @@ SOURCES += main.cpp \
     edit_measure_dialog.cpp \
     edit_measure_item.cpp \
     Measure/measuretype.cpp \
-    Measure/measurepattern.cpp
+    Measure/measurepattern.cpp \
+    attribpointwidget.cpp \
+    attriblinewidget.cpp \
+    attribareawidget.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -85,14 +88,20 @@ HEADERS  += mainwindow.h \
     edit_measure_dialog.h \
     edit_measure_item.h \
     Measure/measuretype.h \
-    Measure/measurepattern.h
+    Measure/measurepattern.h \
+    attribpointwidget.h \
+    attriblinewidget.h \
+    attribareawidget.h
 
 FORMS    += \
     mainwindow.ui \
     measurement_saving_dialog.ui \
     tdmgui.ui \
     edit_measure_dialog.ui \
-    edit_measure_item.ui
+    edit_measure_item.ui \
+    attribpointwidget.ui \
+    attriblinewidget.ui \
+    attribareawidget.ui
 
 RESOURCES += \
     ressources.qrc

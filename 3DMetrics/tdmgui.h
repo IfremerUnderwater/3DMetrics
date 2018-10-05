@@ -26,11 +26,16 @@ public:
 private:
     Ui::TDMGui *ui;
 
+    // Treeview
     void deleteTreeItemsData(TdmLayerItem *item);
-
     void manageCheckStateForChildren(TdmLayerItem *item, bool checked);
 
+    // attribute table
+    void updateAttributeTable(TdmLayerItem *item);
+    MeasurePattern m_current;
+
 public slots:
+
     void slot_open3dModel();
     void slot_openMeasureFile();
 
@@ -46,7 +51,7 @@ public slots:
     void slot_selectionChanged();
     void slot_checkChanged(TdmLayerItem*);
     void slot_itemDropped(TdmLayerItem*);
-    void slot_contextMenu(const QPoint &);
+    void slot_treeViewContextMenu(const QPoint &);
 
     // TreeView context menu
     void slot_renameTreeItem();
@@ -56,6 +61,13 @@ public slots:
     void slot_moveToToplevel();
     void slot_unselect();
     void slot_editMeasurement();
+
+    // Attributes Table widget
+    void slot_attribTableContextMenu(const QPoint &);
+    //
+    void slot_addAttributeLine();
+    void slot_deleteAttributeLine();
+
 };
 
 #endif // TDMGUI_H

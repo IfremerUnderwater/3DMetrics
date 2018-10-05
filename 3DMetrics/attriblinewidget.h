@@ -15,6 +15,12 @@ public:
     explicit AttribLineWidget(QWidget *parent = 0);
     ~AttribLineWidget();
 
+    void setNbval(QString _nb);
+    void setLengthval(QString _length);
+
+public slots:
+    void slot_clicked();
+
 private:
     Ui::AttribLineWidget *ui;
 };
