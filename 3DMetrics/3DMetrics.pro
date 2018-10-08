@@ -65,7 +65,14 @@ SOURCES += main.cpp \
     Measure/measurepattern.cpp \
     attribpointwidget.cpp \
     attriblinewidget.cpp \
-    attribareawidget.cpp
+    attribareawidget.cpp \
+    Measure/measurepoint.cpp \
+    Measure/measurestring.cpp \
+    Measure/measureitem.cpp \
+    Measure/point3d.cpp \
+    Measure/measureline.cpp \
+    Measure/measurearea.cpp \
+    measuretablewidgetitem.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -91,7 +98,14 @@ HEADERS  += mainwindow.h \
     Measure/measurepattern.h \
     attribpointwidget.h \
     attriblinewidget.h \
-    attribareawidget.h
+    attribareawidget.h \
+    Measure/measurepoint.h \
+    Measure/measurestring.h \
+    Measure/measureitem.h \
+    Measure/point3d.h \
+    Measure/measureline.h \
+    Measure/measurearea.h \
+    measuretablewidgetitem.h
 
 FORMS    += \
     mainwindow.ui \

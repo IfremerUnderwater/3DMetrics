@@ -2,6 +2,8 @@
 #include "ui_edit_measure_dialog.h"
 #include "edit_measure_item.h"
 
+#include <QSet>
+
 #include <QDebug>
 
 #include <QFileInfo>
@@ -63,7 +65,32 @@ void edit_measure_dialog::slot_apply()
 {
     MeasurePattern pattern = createPattern();
 
-    emit signal_apply(pattern);
+    // verify : all names different and not empty
+    QSet<QString> fields;
+
+    bool ok = true;
+    int nb = pattern.getNbFields();
+    for (int i=0; i<nb; i++)
+    {
+        if(pattern.fieldName(i).length() == 0)
+        {
+            QMessageBox::critical(this, tr("Measurement pattern"), tr("Empty field name not allowed"));
+            ok = false;
+            break;
+        }
+        if(fields.contains(pattern.fieldName(i)))
+        {
+            QMessageBox::critical(this, tr("Measurement pattern"), tr("Field names must be all different"));
+            ok = false;
+            break;
+        }
+        fields << pattern.fieldName(i);
+    }
+
+    if(ok)
+    {
+        emit signal_apply(pattern);
+    }
 }
 
 void edit_measure_dialog::slot_loadPattern()
@@ -81,7 +108,7 @@ void edit_measure_dialog::slot_loadPattern()
         bool res = pattern.loadFromJson(ba);
         if(!res)
         {
-            QMessageBox::information(this, tr("Error : measure pattern"), tr("Error : invalid file"));
+            QMessageBox::critical(this, tr("Error : measure pattern"), tr("Error : invalid file"));
             return;
         }
         // clear list
@@ -96,7 +123,7 @@ void edit_measure_dialog::slot_loadPattern()
     }
     else
     {
-        QMessageBox::information(this, tr("Error : measure pattern"), tr("Error : you didn't open measure pattern"));
+        QMessageBox::critical(this, tr("Error : measure pattern"), tr("Error : you didn't open measure pattern"));
     }
 }
 
@@ -109,7 +136,7 @@ void edit_measure_dialog::slot_savePattern()
 
     // check filename is not empty
     if(fileinfo.fileName().isEmpty()){
-        QMessageBox::information(this, tr("Error : save measurement pattern"), tr("Error : you didn't give a name to the pattern file"));
+        QMessageBox::critical(this, tr("Error : save measurement pattern"), tr("Error : you didn't give a name to the pattern file"));
         return;
     }
 
@@ -120,7 +147,7 @@ void edit_measure_dialog::slot_savePattern()
 
     QFile file(name);
     if(!file.open(QIODevice::WriteOnly)){
-        QMessageBox::information(this, tr("Error : save measurement pattern file"), tr("Error : cannot open file for saving, check path writing rights"));
+        QMessageBox::critical(this, tr("Error : save measurement pattern file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
     }
 

@@ -38,6 +38,7 @@ public slots:
 
     void slot_open3dModel();
     void slot_openMeasureFile();
+    void slot_saveMeasureFile();
 
     // general tools
     void slot_focussingTool();
@@ -64,6 +65,7 @@ public slots:
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
+    void slot_attribTableDoubleClick(int row, int column);
     //
     void slot_addAttributeLine();
     void slot_deleteAttributeLine();

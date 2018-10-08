@@ -30,8 +30,10 @@ public:
     bool loadFromJson(QByteArray ba);
 
     // json field names
+    // header
     static const QString JSONHEADER; // = "Measure pattern";
     static const QString JSONHEADERVALUE; // = "3DMetrics";
+    // fields
     static const QString JSONFIELD; // = "Fields";
     static const QString JSONFIELDNAME; // = "Name";
     static const QString JSONFIELDTYPE; // = "Type";

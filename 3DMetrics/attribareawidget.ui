@@ -19,23 +19,6 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="tool_btn">
-   <property name="geometry">
-    <rect>
-     <x>5</x>
-     <y>5</y>
-     <width>32</width>
-     <height>32</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string/>
-   </property>
-   <property name="icon">
-    <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/icon_polygon.png</normaloff>:/icons/ressources/icon_polygon.png</iconset>
-   </property>
-  </widget>
   <widget class="QLabel" name="pts_label">
    <property name="geometry">
     <rect>
@@ -92,6 +75,25 @@
    </property>
    <property name="text">
     <string>???</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="tool_label">
+   <property name="geometry">
+    <rect>
+     <x>5</x>
+     <y>5</y>
+     <width>21</width>
+     <height>21</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string/>
+   </property>
+   <property name="pixmap">
+    <pixmap resource="ressources.qrc">:/icons/ressources/icon_polygon.png</pixmap>
+   </property>
+   <property name="scaledContents">
+    <bool>true</bool>
    </property>
   </widget>
  </widget>

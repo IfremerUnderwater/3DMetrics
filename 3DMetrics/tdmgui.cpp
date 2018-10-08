@@ -20,6 +20,12 @@
 #include "attriblinewidget.h"
 #include "attribareawidget.h"
 
+#include "measuretablewidgetitem.h"
+#include "Measure/measurestring.h"
+#include "Measure/measurepoint.h"
+#include "Measure/measureline.h"
+#include "Measure/measurearea.h"
+
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui)
@@ -38,6 +44,7 @@ TDMGui::TDMGui(QWidget *parent) :
 
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
     QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasureFile()));
+    QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasureFile()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     // check state on the treeview item
@@ -58,10 +65,14 @@ TDMGui::TDMGui(QWidget *parent) :
 
     // line numbers
     ui->attrib_table->verticalHeader()->setVisible(true);
+    QHeaderView *verticalHeader = ui->attrib_table->verticalHeader();
+    verticalHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
+    verticalHeader->setDefaultSectionSize(60);
 
     // tablewidget contextual menu
     ui->attrib_table->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(ui->attrib_table,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_attribTableContextMenu(const QPoint &)));
+    connect(ui->attrib_table,SIGNAL(cellDoubleClicked(int, int)), this, SLOT(slot_attribTableDoubleClick(int, int)));
 
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
@@ -196,6 +207,72 @@ void TDMGui::slot_openMeasureFile()
     //    added->setChecked(true);
 }
 
+void TDMGui::slot_saveMeasureFile()
+{
+    // check measure selected
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool ok = false;
+
+    TDMMeasureLayerData lda;
+
+    if (hasSelection && hasCurrent) {
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            QVariant data1 = selected->data(1);
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+                lda = data1.value<TDMMeasureLayerData>();
+                ok = true;
+            }
+        }
+    }
+
+   if(!ok)
+       return;
+
+    // save in file
+    QString name = getSaveFileName(this, tr("Save measurement"), "",
+                                   "*.json");
+    QFileInfo fileinfo(name);
+
+    // check filename is not empty
+    if(fileinfo.fileName().isEmpty()){
+        QMessageBox::critical(this, tr("Error : save measurement"), tr("Error : you didn't give a name to the file"));
+        return;
+    }
+
+    // add suffix if needed
+    if (fileinfo.suffix() != "json"){
+        name += ".json";
+    }
+
+    QFile file(name);
+    if(!file.open(QIODevice::WriteOnly)){
+        QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
+        return;
+    }
+
+    // build json object
+    //
+    QJsonDocument json = lda.pattern().get();
+
+    // add data
+    //**** TODO
+    QTableWidget *table = ui->attrib_table;
+
+    // write
+    QString json_string = json.toJson();
+    file.write(json_string.toUtf8());
+    file.close();
+
+    //qDebug() << json.toJson();
+}
+
 void TDMGui::slot_newGroup()
 {
     TdmLayersModel *model = TdmLayersModel::instance();
@@ -271,6 +348,7 @@ void TDMGui::slot_selectionChanged()
                 ui->surface_tool->setEnabled(true);
                 ui->pick_point->setEnabled(true);
                 ui->cancel_measurement->setEnabled(true);
+
                 ui->save_measurement_file_action->setEnabled(true);
                 //*** TODO connect actions
             }
@@ -595,6 +673,13 @@ void TDMGui::updateAttributeTable(TdmLayerItem *item)
             headers << head;
         }
         table->setHorizontalHeaderLabels(headers);
+        for(int i=0; i<lda.pattern().getNbFields(); i++)
+        {
+            QString tt = "(" + lda.pattern().fieldTypeName(i) + ")";
+            QTableWidgetItem* headerItem = table->horizontalHeaderItem(i+1);
+            if (headerItem)
+                headerItem->setToolTip(tt);
+        }
         table->verticalHeader()->setVisible(true);
         table->setRowCount(0);
         m_current = lda.pattern();
@@ -623,42 +708,12 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
     menu->addAction(tr("Add line"), this, SLOT(slot_addAttributeLine()));
 
     bool hasCurrent = table->selectionModel()->currentIndex().isValid();
-    //    if(!hasCurrent)
-    //    {
-    //        menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
-    //        menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
-    //        menu->exec(QCursor::pos());
-    //        return;
-    //    }
-
     bool hasSelection = !table->selectionModel()->selection().isEmpty();
 
     if (hasSelection && hasCurrent)
     {
         menu->addAction(tr("Delete line"), this, SLOT(slot_deleteAttributeLine()));
-
-        //        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
-        //                    view->selectionModel()->currentIndex());
-        //        if(selected != nullptr)
-        //        {
-        //            if(selected->type() == TdmLayerItem::MeasurementLayer)
-        //            {
-        //                menu->addAction(tr("Edit measure"), this, SLOT(slot_editMeasurement()));
-        //                menu->addSeparator();
-        //            }
-        //        }
     }
-
-    //    menu->addAction(tr("Rename"), this, SLOT(slot_renameTreeItem()));
-    //    menu->addSeparator();
-    //    menu->addAction(tr("Delete item"), this, SLOT(slot_deleteRow()));
-    //    menu->addAction(tr("Move item to toplevel"), this, SLOT(slot_moveToToplevel()));
-    //    menu->addSeparator();
-    //    menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
-    //    menu->addSeparator();
-    //    menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
-    //    menu->addSeparator();
-    //    menu->addAction(tr("Unselect"), this, SLOT(slot_unselect()));
 
     menu->exec(QCursor::pos());
 }
@@ -666,13 +721,17 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
 void TDMGui::slot_addAttributeLine()
 {
     QTableWidget *table = ui->attrib_table;
-    int nbrows = table->rowCount();
-    table->setRowCount(nbrows+1);
+    // insert last position
+    int rowindex = table->rowCount();
+    table->setRowCount(rowindex+1);
+    // insert first position
+    //int rowindex = 0;
+    //table->insertRow(rowindex);
 
     QTableWidgetItem *checkbox = new QTableWidgetItem();
     checkbox->setCheckState(Qt::Checked);
     checkbox->setSizeHint(QSize(20,20));
-    table->setItem(nbrows, 0, checkbox);
+    table->setItem(rowindex, 0, checkbox);
 
     // process items in line
     for(int i=1; i<table->columnCount(); i++)
@@ -683,61 +742,67 @@ void TDMGui::slot_addAttributeLine()
         case MeasureType::Line:
             // line edit widget
         {
-            QTableWidgetItem *pwidget = new QTableWidgetItem();
-            table->setItem(nbrows, i, pwidget);
+            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+            MeasureLine *l = new MeasureLine(m_current.fieldName(i-1));
+            pwidget->setMeasureItem(l);
+            table->setItem(rowindex, i, pwidget);
             AttribLineWidget *line = new AttribLineWidget();
-            line->setNbval("");
-            line->setLengthval("");
-            table->setCellWidget(nbrows,i, line);
-            int height = table->rowHeight(nbrows);
+            line->setLine(l);
+            table->setCellWidget(rowindex,i, line);
+            int height = table->rowHeight(rowindex);
             int minheight = line->height() + 2;
             if(minheight > height)
-                table->setRowHeight(nbrows,minheight);
+                table->setRowHeight(rowindex,minheight);
         }
             break;
 
         case MeasureType::Point:
             // point edit widget
         {
-            QTableWidgetItem *pwidget = new QTableWidgetItem();
-            table->setItem(nbrows, i, pwidget);
+            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+            MeasurePoint *p = new MeasurePoint(m_current.fieldName(i-1));
+            pwidget->setMeasureItem(p);
+            table->setItem(rowindex, i, pwidget);
             AttribPointWidget *point = new AttribPointWidget();
-            point->setXval("");
-            point->setYval("");
-            point->setZval("");
-            table->setCellWidget(nbrows,i, point);
-            int height = table->rowHeight(nbrows);
+            point->setPoint(p);
+            table->setCellWidget(rowindex,i, point);
+            int height = table->rowHeight(rowindex);
             int minheight = point->height() + 2;
             if(minheight > height)
-                table->setRowHeight(nbrows,minheight);
+                table->setRowHeight(rowindex,minheight);
         }
             break;
 
         case MeasureType::Perimeter:
             // perimeter edit widget
         {
-            QTableWidgetItem *pwidget = new QTableWidgetItem();
-            table->setItem(nbrows, i, pwidget);
+            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+            MeasureArea *a = new MeasureArea(m_current.fieldName(i-1));
+            pwidget->setMeasureItem(a);
+            table->setItem(rowindex, i, pwidget);
             AttribAreaWidget *area = new AttribAreaWidget();
-            area->setNbval("");
-            area->setAreaval("");
-            table->setCellWidget(nbrows,i, area);
-            int height = table->rowHeight(nbrows);
+            area->setArea(a);
+//            area->setNbval("");
+//            area->setAreaval("");
+            table->setCellWidget(rowindex,i, area);
+            int height = table->rowHeight(rowindex);
             int minheight = area->height() + 2;
             if(minheight > height)
-                table->setRowHeight(nbrows,minheight);
+                table->setRowHeight(rowindex,minheight);
         }
             break;
 
         default:
             // string - default editable text line
-            //            QTableWidgetItem *str = new QTableWidgetItem();
-            //            QColor color(192,192,192);
-            //            str->setBackgroundColor(color);
-            //            table->setItem(nbrows, i, str);
+        {
+            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+            pwidget->setMeasureItem(new MeasureString(m_current.fieldName(i-1)));
+            table->setItem(rowindex, i, pwidget);
+        }
             break;
         }
     }
+    table->selectRow(rowindex);
 }
 
 void TDMGui::slot_deleteAttributeLine()
@@ -748,8 +813,47 @@ void TDMGui::slot_deleteAttributeLine()
     bool hasSelection = !table->selectionModel()->selection().isEmpty();
     if (hasSelection && hasCurrent)
     {
-        //*** TODO : remove actual data
+        //*** TODO : confirmation
+        // removal of data : done by destructor
         table->removeRow(table->currentRow());
     }
+}
+
+void TDMGui::slot_attribTableDoubleClick(int row, int column)
+{
+    QTableWidget *table = ui->attrib_table;
+    MeasureType::type type = m_current.fieldType(column-1);
+
+      switch(type)
+      {
+      case MeasureType::Line:
+          // line edit widget
+      {
+          AttribLineWidget *line = (AttribLineWidget *)table->cellWidget(row, column);
+          line->clicked();
+      }
+          break;
+
+      case MeasureType::Point:
+          // point edit widget
+      {
+          AttribPointWidget *point = (AttribPointWidget *)table->cellWidget(row, column);
+          point->clicked();
+      }
+          break;
+
+      case MeasureType::Perimeter:
+          // perimeter edit widget
+      {
+          AttribAreaWidget *area = (AttribAreaWidget *)table->cellWidget(row, column);
+          area->clicked();
+      }
+          break;
+
+      default:
+          // string - default editable text line
+          //table->editItem(table->item(row, column));
+          break;
+      }
 }
 
