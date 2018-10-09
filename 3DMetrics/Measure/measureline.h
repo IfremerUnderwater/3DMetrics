@@ -38,7 +38,7 @@ public:
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
 
-private:
+protected:
     QVector<Point3D> m_array;
     double m_length;
 };

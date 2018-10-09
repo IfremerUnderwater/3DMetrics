@@ -39,6 +39,7 @@ public:
     static const QString JSONFIELDTYPE; // = "Type";
 
     QJsonDocument get() { return m_doc; }
+    void set(QJsonDocument _doc) { m_doc = _doc; }
 
 private:
     QJsonDocument m_doc;

@@ -7,6 +7,7 @@
 
 class TdmLayerItem;
 class QCloseEvent;
+class QItemSelection;
 
 namespace Ui {
 class TDMGui;
@@ -48,8 +49,13 @@ public slots:
     // measurment pattern dialog
     void slot_patternChanged(MeasurePattern pattern);
 
+    // helper functions
+    void loadData(QJsonDocument &_doc);
+    void saveData(QJsonDocument &_doc);
+
     // from TreeView
-    void slot_selectionChanged();
+    void slot_selectionChanged(const QItemSelection &,
+                               const QItemSelection &);
     void slot_checkChanged(TdmLayerItem*);
     void slot_itemDropped(TdmLayerItem*);
     void slot_treeViewContextMenu(const QPoint &);
@@ -66,7 +72,9 @@ public slots:
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
     void slot_attribTableDoubleClick(int row, int column);
-    //
+    void slot_attribTableCellChanged(int row, int column);
+
+    // attribute table context menu
     void slot_addAttributeLine();
     void slot_deleteAttributeLine();
 

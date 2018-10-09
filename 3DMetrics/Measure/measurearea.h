@@ -2,6 +2,7 @@
 #define MEASUREAREA_H
 
 #include "Measure/measureitem.h"
+#include "Measure/measureline.h"
 #include "Measure/measuretype.h"
 #include "Measure/point3d.h"
 
@@ -15,7 +16,8 @@
 //    length: length_m,
 //    area: area_m2
 // }
-class MeasureArea : public MeasureItem
+// NB : subclass of MeasureLine
+class MeasureArea : public MeasureLine
 {
 public:
     MeasureArea(const QString _fieldName);
@@ -28,17 +30,11 @@ public:
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
 
-    int nbPts() const { return m_array.length(); }
-    QVector<Point3D> &getArray() { return m_array; }
-
-    double length() { return m_length; }
     double area() { return m_area; }
     void computeLengthAndArea();
 
 private:
-    double m_length;
     double m_area;
-    QVector<Point3D> m_array;
 };
 
 #endif // MEASUREAREA_H

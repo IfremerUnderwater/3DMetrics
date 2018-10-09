@@ -96,5 +96,4 @@ bool MeasurePattern::loadFromJson(QByteArray ba)
     m_doc = doc;
 
     return true;
-
 }
