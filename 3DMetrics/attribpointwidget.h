@@ -22,13 +22,7 @@ public:
     void setPoint(MeasurePoint *_p) {m_item = _p; update(); }
     // get via table attribute because m_item is a pointer
 
-//public slots:
-//    void slot_clicked();
-
 private:
-//    void setXval(QString _x);
-//    void setYval(QString _y);
-//    void setZval(QString _z);
 
     void update();
 

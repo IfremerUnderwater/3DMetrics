@@ -87,6 +87,12 @@ void MeasureArea::computeLengthAndArea()
     computeLength();
 
     // compute area
+    if(m_array.length() < 3)
+    {
+        m_area =0;
+        return;
+    }
+
     std::vector<Eigen::Vector3f> pt_area_data;
 
     for(int i=1; i<m_array.length(); i++)

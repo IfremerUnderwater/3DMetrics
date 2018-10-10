@@ -17,17 +17,10 @@ public:
     explicit AttribAreaWidget(QWidget *parent = 0);
     ~AttribAreaWidget();
 
-
-    //    void setNbval(QString _nb);
-    //    void setAreaval(QString _area);
-
     void clicked();
 
     void setArea(MeasureArea *_a) {m_item = _a; update(); }
     // get via table attribute because m_item is a pointer
-
-    //public slots:
-    //    void slot_clicked();
 
 private:
     void update();

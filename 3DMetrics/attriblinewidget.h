@@ -17,9 +17,6 @@ public:
     explicit AttribLineWidget(QWidget *parent = 0);
     ~AttribLineWidget();
 
-//    void setNbval(QString _nb);
-//    void setLengthval(QString _length);
-
     void clicked();
 
     void setLine(MeasureLine *_p) {m_item = _p; update(); }

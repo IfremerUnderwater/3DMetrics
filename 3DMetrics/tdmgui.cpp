@@ -90,6 +90,8 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->save_measurement_file_action->setEnabled(false);
 
     updateAttributeTable(0);
+
+    connect(ui->display_widget_dock, SIGNAL(topLevelChanged(bool)), this, SLOT(slot_displayToplevelChanged(bool)));
 }
 
 TDMGui::~TDMGui()
@@ -822,6 +824,8 @@ void TDMGui::slot_editMeasurement()
 
 void TDMGui::slot_patternChanged(MeasurePattern pattern)
 {
+    //*** TODO refactor data if nb rows > 0
+    //** + confirmation
     QTreeView *view = ui->tree_widget;
 
     bool hasSelection = !view->selectionModel()->selection().isEmpty();
@@ -842,7 +846,7 @@ void TDMGui::slot_patternChanged(MeasurePattern pattern)
                 for(int i=0; i<pattern.getNbFields(); i++)
                     lda.pattern().addField(pattern.fieldName(i), pattern.fieldType(i));
                 data1.setValue<TDMMeasureLayerData>(lda);
-                qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
+                //qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
                 selected->setData(1,data1);
                 updateAttributeTable(selected);
             }
@@ -1081,3 +1085,17 @@ void TDMGui::slot_attribTableCellChanged(int row, int column)
     }
 }
 
+
+void TDMGui::slot_displayToplevelChanged(bool floating)
+{
+       if(floating)
+       {
+           // *** TODO : afficher quelque chose
+           if(ui->display_widget_dock->isWindow())
+           {
+ //              ui->display_widget->setParent(ui->display_widget_dock->topLevelWidget());
+           }
+       }
+       else
+           ui->display_widget->setParent(ui->display_widget_dock);
+}
