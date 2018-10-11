@@ -72,7 +72,8 @@ SOURCES += main.cpp \
     Measure/point3d.cpp \
     Measure/measureline.cpp \
     Measure/measurearea.cpp \
-    measuretablewidgetitem.cpp
+    measuretablewidgetitem.cpp \
+    Measure/osgmeasurerow.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -105,7 +106,8 @@ HEADERS  += mainwindow.h \
     Measure/point3d.h \
     Measure/measureline.h \
     Measure/measurearea.h \
-    measuretablewidgetitem.h
+    measuretablewidgetitem.h \
+    Measure/osgmeasurerow.h
 
 FORMS    += \
     mainwindow.ui \

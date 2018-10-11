@@ -3,7 +3,9 @@
 #include <math.h>
 #include <QJsonArray>
 
-MeasureLine::MeasureLine(const QString _fieldName) : MeasureItem(_fieldName), m_length(0)
+MeasureLine::MeasureLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
+    : MeasureItem(_fieldName, _geode)
+    , m_length(0)
 {
 
 }

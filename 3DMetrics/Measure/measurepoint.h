@@ -10,7 +10,7 @@
 class MeasurePoint : public MeasureItem
 {
 public:
-    MeasurePoint(const QString _fieldName);
+    MeasurePoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
 
     virtual QString type() { return MeasureType::value(MeasureType::Point); }
 

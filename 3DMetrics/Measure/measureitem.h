@@ -4,10 +4,12 @@
 #include <QString>
 #include <QJsonObject>
 
+#include <osg/Geode>
+
 class MeasureItem
 {
 public:
-    MeasureItem(const QString _fieldName);
+    MeasureItem(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
     virtual ~MeasureItem();
 
     virtual QString type() = 0;
@@ -22,6 +24,7 @@ public:
 
 private:
     QString m_fieldName;
+    osg::ref_ptr<osg::Geode> m_geode;
 };
 
 #endif // MEASUREITEM_H

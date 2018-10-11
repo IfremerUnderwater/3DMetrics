@@ -61,7 +61,8 @@ double static projPointToArea(std::pair<Eigen::Vector3f, Eigen::Vector3f> &_plan
     return selection_polygon.area();
 }
 
-MeasureArea::MeasureArea(const QString _fieldName) : MeasureLine(_fieldName), m_area(0)
+MeasureArea::MeasureArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
+    : MeasureLine(_fieldName, _geode), m_area(0)
 {
 }
 

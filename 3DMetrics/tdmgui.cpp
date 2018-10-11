@@ -25,10 +25,12 @@
 #include "Measure/measurepoint.h"
 #include "Measure/measureline.h"
 #include "Measure/measurearea.h"
+#include "Measure/osgmeasurerow.h"
 
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
-    ui(new Ui::TDMGui)
+    ui(new Ui::TDMGui),
+    m_currentItem(0)
 {
     qRegisterMetaType<MeasurePattern>();
 
@@ -178,7 +180,9 @@ void TDMGui::slot_newMeasurement()
     //std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
     MeasurePattern pattern;
     QString dummy("measure");
-    TDMMeasureLayerData modelData(dummy, pattern);
+    osg::ref_ptr<osg::Group> group;
+    ui->display_widget->addGroup(group);
+    TDMMeasureLayerData modelData(dummy, pattern, group);
     QVariant tool;
     tool.setValue(modelData);
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, parent, data, tool);
@@ -239,7 +243,11 @@ void TDMGui::slot_openMeasureFile()
         QFileInfo fi(f.fileName());
         QVariant data(fi.fileName());
         QString dummy("measure");
-        TDMMeasureLayerData modelData(dummy, pattern);
+        // TODO
+        osg::ref_ptr<osg::Group> group;
+        ui->display_widget->addGroup(group);
+        TDMMeasureLayerData modelData(dummy, pattern, group);
+        modelData.setFileName(fi.filePath());
         QVariant tool;
         tool.setValue(modelData);
         TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, parent, data, tool);
@@ -250,9 +258,16 @@ void TDMGui::slot_openMeasureFile()
         added->setData(1,data1);
         updateAttributeTable(added);
 
+        TDMMeasureLayerData *localData = new TDMMeasureLayerData(modelData);
+        m_currentItem = localData;
         // load data
         QJsonDocument doc = pattern.get();
-        loadData(doc);
+        m_current = pattern;
+        loadData(doc, true);
+        modelData.rows() = localData->rows();
+
+        data1.setValue<TDMMeasureLayerData>(modelData);
+        added->setData(1,data1);
 
         ui->save_measurement_file_action->setEnabled(true);
 
@@ -272,7 +287,7 @@ void TDMGui::slot_openMeasureFile()
     }
 }
 
-void TDMGui::loadData(QJsonDocument &_doc)
+void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
 {
     QTableWidget *table = ui->attrib_table;
 
@@ -289,6 +304,15 @@ void TDMGui::loadData(QJsonDocument &_doc)
         checkbox->setSizeHint(QSize(20,20));
         table->setItem(rowindex, 0, checkbox);
 
+        osgMeasureRow *osgRow = 0;
+        if(_buildOsg)
+        {
+            osgRow = new osgMeasureRow(m_current);
+            m_currentItem->addRow(osgRow, rowindex);
+        }
+        else
+            osgRow = m_currentItem->rows().at(rowindex);
+
         // columns
         for(int c=0; c<m_current.getNbFields(); c++)
         {
@@ -302,7 +326,8 @@ void TDMGui::loadData(QJsonDocument &_doc)
                 // line edit widget
             {
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasureLine *l = new MeasureLine(m_current.fieldName(c));
+
+                MeasureLine *l = new MeasureLine(m_current.fieldName(c),osgRow->get(c));
                 l->decode(obj);
                 pwidget->setMeasureItem(l);
                 table->setItem(rowindex, i, pwidget);
@@ -320,7 +345,7 @@ void TDMGui::loadData(QJsonDocument &_doc)
                 // point edit widget
             {
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasurePoint *p = new MeasurePoint(m_current.fieldName(c));
+                MeasurePoint *p = new MeasurePoint(m_current.fieldName(c),osgRow->get(c));
                 p->decode(obj);
                 pwidget->setMeasureItem(p);
                 table->setItem(rowindex, i, pwidget);
@@ -338,7 +363,7 @@ void TDMGui::loadData(QJsonDocument &_doc)
                 // perimeter edit widget
             {
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasureArea *a = new MeasureArea(m_current.fieldName(c));
+                MeasureArea *a = new MeasureArea(m_current.fieldName(c),osgRow->get(c));
                 a->decode(obj);
                 pwidget->setMeasureItem(a);
                 table->setItem(rowindex, i, pwidget);
@@ -410,6 +435,7 @@ void TDMGui::slot_saveMeasureFile()
     // add suffix if needed
     if (fileinfo.suffix() != "json"){
         name += ".json";
+        fileinfo.setFile(name);
     }
 
     QFile file(name);
@@ -427,6 +453,16 @@ void TDMGui::slot_saveMeasureFile()
     QString json_string = json.toJson();
     file.write(json_string.toUtf8());
     file.close();
+
+    // store file name
+    lda.setFileName(fileinfo.filePath());
+    TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                view->selectionModel()->currentIndex());
+    QVariant fname = fileinfo.fileName();
+    selected->setData(0,fname);
+    QVariant data1;
+    data1.setValue(lda);
+    selected->setData(1, data1);
 }
 
 void TDMGui::saveData(QJsonDocument &_doc)
@@ -515,6 +551,9 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                 pattern.set(doc);
                 data1.setValue<TDMMeasureLayerData>(lda);
                 prevselected->setData(1, data1);
+                delete m_currentItem;
+                m_currentItem = 0;
+                updateAttributeTable(0);
             }
         }
     }
@@ -549,10 +588,12 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
 
                 updateAttributeTable(selected);
 
-                QJsonDocument doc = lda.pattern().get();
-                loadData(doc);
-
                 m_current = lda.pattern();
+                m_currentItem = new TDMMeasureLayerData(lda);
+
+                QJsonDocument doc = lda.pattern().get();
+                //qDebug() << data1.toString() << " " <<  doc.object().value("Data").toArray().count() << " " << lda.rows().size();
+                loadData(doc, false);
 
                 ui->save_measurement_file_action->setEnabled(true);
             }
@@ -593,7 +634,8 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
         {
             // TODO : test
             TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
-            //lda.tool()->getGeode()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+            lda.group()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+            //***TODO + propagate to children ????
         }
     }
 
@@ -686,6 +728,7 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *item)
         {
             // TODO : test
             TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+            ui->display_widget->removeGroup(lda.group());
             //ui->display_widget->removeGeode(lda.tool()->getGeode());
         }
     }
@@ -921,12 +964,16 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
 void TDMGui::slot_addAttributeLine()
 {
     QTableWidget *table = ui->attrib_table;
+    QTreeView *view = ui->tree_widget;
+
     // insert last position
     int rowindex = table->rowCount();
     table->setRowCount(rowindex+1);
     // insert first position
     //int rowindex = 0;
     //table->insertRow(rowindex);
+
+    osgMeasureRow *osgRow = new osgMeasureRow(m_current);
 
     QTableWidgetItem *checkbox = new QTableWidgetItem();
     checkbox->setCheckState(Qt::Checked);
@@ -943,7 +990,7 @@ void TDMGui::slot_addAttributeLine()
             // line edit widget
         {
             MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasureLine *l = new MeasureLine(m_current.fieldName(i-1));
+            MeasureLine *l = new MeasureLine(m_current.fieldName(i-1),osgRow->get(i-1));
             pwidget->setMeasureItem(l);
             table->setItem(rowindex, i, pwidget);
             AttribLineWidget *line = new AttribLineWidget();
@@ -960,7 +1007,7 @@ void TDMGui::slot_addAttributeLine()
             // point edit widget
         {
             MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasurePoint *p = new MeasurePoint(m_current.fieldName(i-1));
+            MeasurePoint *p = new MeasurePoint(m_current.fieldName(i-1),osgRow->get(i-1));
             pwidget->setMeasureItem(p);
             table->setItem(rowindex, i, pwidget);
             AttribPointWidget *point = new AttribPointWidget();
@@ -977,7 +1024,7 @@ void TDMGui::slot_addAttributeLine()
             // perimeter edit widget
         {
             MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasureArea *a = new MeasureArea(m_current.fieldName(i-1));
+            MeasureArea *a = new MeasureArea(m_current.fieldName(i-1),osgRow->get(i-1));
             pwidget->setMeasureItem(a);
             table->setItem(rowindex, i, pwidget);
             AttribAreaWidget *area = new AttribAreaWidget();
@@ -1002,12 +1049,32 @@ void TDMGui::slot_addAttributeLine()
             break;
         }
     }
+
+    m_currentItem->rows().insert(m_currentItem->rows().begin()+rowindex,osgRow);
+
+    // save in actual selection
+    TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                view->selectionModel()->currentIndex());
+    if(selected != nullptr)
+    {
+        QVariant data1 = selected->data(1);
+        TDMMeasureLayerData lda;
+        if(selected->type() == TdmLayerItem::MeasurementLayer)
+        {
+            lda = data1.value<TDMMeasureLayerData>();
+            lda.rows() = m_currentItem->rows();
+            data1.setValue(lda);
+            selected->setData(1, data1);
+        }
+    }
+
     table->selectRow(rowindex);
 }
 
 void TDMGui::slot_deleteAttributeLine()
 {
     QTableWidget *table = ui->attrib_table;
+    QTreeView *view = ui->tree_widget;
 
     bool hasCurrent = table->selectionModel()->currentIndex().isValid();
     bool hasSelection = !table->selectionModel()->selection().isEmpty();
@@ -1022,8 +1089,26 @@ void TDMGui::slot_deleteAttributeLine()
             return;
         }
 
+        // remove in osg
+        int row = table->currentRow();
+        m_currentItem->deleteRow(row);
+        // save in actual selection
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            QVariant data1 = selected->data(1);
+            TDMMeasureLayerData lda;
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+                lda = data1.value<TDMMeasureLayerData>();
+                lda.rows() = m_currentItem->rows();
+                data1.setValue(lda);
+                selected->setData(1, data1);
+            }
+        }
         // removal of data : done by destructor
-        table->removeRow(table->currentRow());
+        table->removeRow(row);
     }
 }
 
@@ -1068,6 +1153,23 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
 
 void TDMGui::slot_attribTableCellChanged(int row, int column)
 {
+    if(column == 0)
+    {
+        // check state
+        QTableWidget *table = ui->attrib_table;
+        QTableWidgetItem *it = table->item(row, column);
+        if(it->checkState() == Qt::Checked)
+        {
+            // show line items
+        }
+        else
+        {
+            // hide line items
+        }
+
+        return;
+    }
+
     MeasureType::type type = m_current.fieldType(column-1);
 
     switch(type)
@@ -1088,14 +1190,14 @@ void TDMGui::slot_attribTableCellChanged(int row, int column)
 
 void TDMGui::slot_displayToplevelChanged(bool floating)
 {
-       if(floating)
-       {
-           // *** TODO : afficher quelque chose
-           if(ui->display_widget_dock->isWindow())
-           {
- //              ui->display_widget->setParent(ui->display_widget_dock->topLevelWidget());
-           }
-       }
-       else
-           ui->display_widget->setParent(ui->display_widget_dock);
+    if(floating)
+    {
+        // *** TODO : afficher quelque chose
+        if(ui->display_widget_dock->isWindow())
+        {
+            //              ui->display_widget->setParent(ui->display_widget_dock->topLevelWidget());
+        }
+    }
+    else
+        ui->display_widget->setParent(ui->display_widget_dock);
 }

@@ -1,7 +1,7 @@
 #include "measurepoint.h"
 
-MeasurePoint::MeasurePoint(const QString _fieldName)
-    : MeasureItem(_fieldName),
+MeasurePoint::MeasurePoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
+    : MeasureItem(_fieldName, _geode),
       m_p()
 {
 

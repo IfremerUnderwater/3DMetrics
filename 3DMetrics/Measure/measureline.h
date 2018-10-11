@@ -17,7 +17,7 @@
 class MeasureLine : public MeasureItem
 {
 public:
-    MeasureLine(const QString _fieldName);
+    MeasureLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
 
     virtual QString type() { return MeasureType::value(MeasureType::Line); }
 

@@ -8,6 +8,7 @@
 class TdmLayerItem;
 class QCloseEvent;
 class QItemSelection;
+class TDMMeasureLayerData;
 
 namespace Ui {
 class TDMGui;
@@ -34,6 +35,8 @@ private:
     // attribute table
     void updateAttributeTable(TdmLayerItem *item);
     MeasurePattern m_current;
+    // for current vector of rows
+    TDMMeasureLayerData *m_currentItem;
 
 public slots:
 
@@ -50,7 +53,7 @@ public slots:
     void slot_patternChanged(MeasurePattern pattern);
 
     // helper functions
-    void loadData(QJsonDocument &_doc);
+    void loadData(QJsonDocument &_doc, bool _buildOsg);
     void saveData(QJsonDocument &_doc);
 
     // from TreeView

@@ -1,6 +1,6 @@
 #include "measurestring.h"
 
-MeasureString::MeasureString(const QString _fieldName) : MeasureItem(_fieldName)
+MeasureString::MeasureString(const QString _fieldName) : MeasureItem(_fieldName, 0)
 {
 }
 

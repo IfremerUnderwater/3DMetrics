@@ -741,7 +741,8 @@ void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
 
 void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
 {
-    m_group->insertChild(1,_geode);
+    m_group->addChild(_geode.get());
+    m_geodes.push_back(_geode);
 }
 
 void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
@@ -752,6 +753,22 @@ void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
         m_geodes.erase(position);
 
     m_group->removeChild(_geode);
+}
+
+void OSGWidget::addGroup(osg::ref_ptr<osg::Group> _group)
+{
+    m_groups.push_back(_group);
+    m_group->addChild(_group.get());
+}
+
+void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
+{
+    // remove group
+    std::vector<osg::ref_ptr<osg::Group>>::iterator position = std::find(m_groups.begin(), m_groups.end(), _group);
+    if (position != m_groups.end()) // == myVector.end() means the element was not found
+        m_groups.erase(position);
+
+     m_group->removeChild(_group);
 }
 
 // reset view to home

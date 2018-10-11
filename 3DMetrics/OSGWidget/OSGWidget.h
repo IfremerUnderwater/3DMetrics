@@ -100,6 +100,10 @@ public:
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
 
+    // for measures
+    void addGroup(osg::ref_ptr<osg::Group> _group);
+    void removeGroup(osg::ref_ptr<osg::Group> _group);
+
     ///
     /// \brief getGeoOrigin get geographic origin
     /// \param _ref_lat_lon lat lon origin
@@ -151,6 +155,7 @@ private:
     std::vector<osg::ref_ptr<osg::Node>> m_models;
     osg::ref_ptr<osg::Group> m_group;
     std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
+    std::vector<osg::ref_ptr<osg::Group>> m_groups;
     //osg::ref_ptr<osg::Geode> m_measurement_geode;
 
     // Georef objects
