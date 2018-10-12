@@ -1,6 +1,7 @@
 #include "attribareawidget.h"
 #include "ui_attribareawidget.h"
 #include "Measure/measurearea.h"
+#include "OSGWidget/osgwidgettool.h"
 
 AttribAreaWidget::AttribAreaWidget(QWidget *parent) :
     QWidget(parent),
@@ -18,20 +19,19 @@ AttribAreaWidget::~AttribAreaWidget()
 
 void AttribAreaWidget::clicked()
 {
-    ui->tool_label->setStyleSheet("");
-    if(m_item)
-    {
-        //*** TODO
-        // test
-        double t = m_item->getArray().length();
-        Point3D pt;
-        pt.x = t;
-        pt.y = t+1;
-        pt.z = (t+2)*t / 20.0;
-        m_item->getArray().append(pt);
-        m_item->computeLengthAndArea();
-        update();
-    }
+    // start tool
+    QString msg = "Area tool started";
+    emit signal_toolStarted(msg);
+
+    OSGWidgetTool *tool = OSGWidgetTool::instance();
+    connect(tool, SIGNAL(signal_clicked(Point3D&)), this, SLOT(slot_toolClicked(Point3D&)));
+    connect(tool, SIGNAL(signal_endTool()), this, SLOT(slot_toolEnded()));
+
+    m_item->getArray().clear();
+    m_item->updateGeode();
+    update();
+
+    tool->startTool(OSGWidgetTool::Area);
 }
 
 void AttribAreaWidget::update()
@@ -48,4 +48,25 @@ void AttribAreaWidget::update()
         else
             ui->tool_label->setStyleSheet("background-color: red");
     }
+}
+
+void AttribAreaWidget::slot_toolEnded()
+{
+    // ok si nb points > 1
+    update();
+
+    disconnect(OSGWidgetTool::instance(), 0, this, 0);
+    OSGWidgetTool::instance()->endTool();
+
+    QString msg = "Area tool ended";
+    emit signal_toolEnded(msg);
+}
+
+void AttribAreaWidget::slot_toolClicked(Point3D &p)
+{
+    // add point
+    m_item->getArray().push_back(p);
+    m_item->computeLengthAndArea();
+    update();
+    m_item->updateGeode();
 }

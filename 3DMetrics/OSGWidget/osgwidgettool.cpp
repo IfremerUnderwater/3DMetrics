@@ -57,7 +57,7 @@ void OSGWidgetTool::startTool(const type _type)
 
     m_currentType = _type;
 
-    QString msg = "Start tool ";
+    QString msg = tr("Start tool ");
     switch(_type)
     {
     case Point:
@@ -79,12 +79,15 @@ void OSGWidgetTool::startTool(const type _type)
 
 void OSGWidgetTool::endTool()
 {
+    if(!m_osgWidget->isValid())
+        return;
+
     m_osgWidget->setCursor(Qt::ArrowCursor);
 
     if(m_currentType != None)
     {
         // cancel or end
-        QString msg = "End tool ";
+        QString msg = tr("End tool ");
         switch(m_currentType)
         {
         case Point:
@@ -104,4 +107,11 @@ void OSGWidgetTool::endTool()
         emit signal_endTool();
         m_currentType = None;
     }
+}
+
+void OSGWidgetTool::slot_cancelTool()
+{
+    emit signal_cancelTool();
+
+    endTool();
 }

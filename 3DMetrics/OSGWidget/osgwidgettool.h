@@ -31,9 +31,11 @@ public:
 signals:
     void signal_clicked(Point3D &p);
     void signal_endTool(); // to be used to remove connections
+    void signal_cancelTool();
 
 public slots:
     void slot_mouseButtonDown(Qt::MouseButton _button, int _x, int _y);
+    void slot_cancelTool();
 
 private:
     // singleton

@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+class Point3D;
+
 namespace Ui {
 class AttribLineWidget;
 }
@@ -21,6 +23,15 @@ public:
 
     void setLine(MeasureLine *_p) {m_item = _p; update(); }
     // get via table attribute because m_item is a pointer
+
+public slots:
+    //void slot_toolCanceled(); // ended used
+    void slot_toolEnded();
+    void slot_toolClicked(Point3D &p);
+
+signals:
+    void signal_toolStarted(QString &info);
+    void signal_toolEnded(QString &info);
 
 private:
     void update();

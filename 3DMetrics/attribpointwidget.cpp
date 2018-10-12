@@ -24,25 +24,15 @@ AttribPointWidget::~AttribPointWidget()
 
 void AttribPointWidget::clicked()
 {
-//    // test
-//    if(m_item)
-//    {
-//        m_item->setX(m_item->x()+1);
-
-//        update();
-//    }
-//    //*** TODO
-
     // start tool
     QString msg = "Point tool started";
     emit signal_toolStarted(msg);
 
     OSGWidgetTool *tool = OSGWidgetTool::instance();
-    connect(tool, SIGNAL(signal_clicked(Point3D&)), this, SLOT(slot_toolApply(Point3D&)));
+    connect(tool, SIGNAL(signal_clicked(Point3D&)), this, SLOT(slot_toolClicked(Point3D&)));
     connect(tool, SIGNAL(signal_endTool()), this, SLOT(slot_toolEnded()));
 
     tool->startTool(OSGWidgetTool::Point);
-
 }
 
 void AttribPointWidget::update(bool valueOk)
@@ -64,7 +54,7 @@ void AttribPointWidget::update(bool valueOk)
 //    emit signal_toolEnded(msg);
 //}
 
-void AttribPointWidget::slot_toolApply(Point3D &p)
+void AttribPointWidget::slot_toolClicked(Point3D &p)
 {
     m_item->setP(p);
     update();

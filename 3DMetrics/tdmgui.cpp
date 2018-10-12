@@ -100,6 +100,7 @@ TDMGui::TDMGui(QWidget *parent) :
     connect(ui->display_widget, SIGNAL(signal_startTool(QString&)), this, SLOT(slot_messageStartTool(QString&)));
     connect(ui->display_widget, SIGNAL(signal_cancelTool(QString&)), this, SLOT(slot_messageCancelTool(QString&)));
     connect(ui->display_widget, SIGNAL(signal_endTool(QString&)), this, SLOT(slot_messageEndTool(QString&)));
+    connect(ui->cancel_measurement, SIGNAL(triggered()), OSGWidgetTool::instance(), SLOT(slot_cancelTool()));
 
     // docking ????? pb with OSG widget
     connect(ui->display_widget_dock, SIGNAL(topLevelChanged(bool)), this, SLOT(slot_displayToplevelChanged(bool)));
@@ -333,6 +334,10 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
 
                 MeasureLine *l = new MeasureLine(m_current.fieldName(c),osgRow->get(c));
                 l->decode(obj);
+                if(_buildOsg)
+                {
+                    l->updateGeode();
+                }
                 pwidget->setMeasureItem(l);
                 table->setItem(rowindex, i, pwidget);
                 AttribLineWidget *line = new AttribLineWidget();
@@ -373,6 +378,10 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
                 MeasureArea *a = new MeasureArea(m_current.fieldName(c),osgRow->get(c));
                 a->decode(obj);
+                if(_buildOsg)
+                {
+                    a->updateGeode();
+                }
                 pwidget->setMeasureItem(a);
                 table->setItem(rowindex, i, pwidget);
                 AttribAreaWidget *area = new AttribAreaWidget();
@@ -1225,6 +1234,7 @@ void TDMGui::selectItem(QModelIndex &index)
 
 void TDMGui::slot_messageStartTool(QString&_msg)
 {
+    ui->cancel_measurement->setEnabled(true);
     statusBar()->showMessage(_msg);
 }
 
@@ -1235,5 +1245,6 @@ void TDMGui::slot_messageCancelTool(QString&_msg)
 
 void TDMGui::slot_messageEndTool(QString&_msg)
 {
+    ui->cancel_measurement->setEnabled(false);
     statusBar()->showMessage(_msg);
 }

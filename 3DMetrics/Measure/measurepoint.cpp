@@ -1,6 +1,11 @@
-#include "measurepoint.h"
 #include <osg/Geometry>
+#include <osg/StateSet>
+#include <osg/Point>
+
+#include "measurepoint.h"
+
 #include <QDebug>
+
 
 MeasurePoint::MeasurePoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
     : MeasureItem(_fieldName, _geode),
@@ -26,16 +31,15 @@ void MeasurePoint::encode(QJsonObject & _obj)
 
 void MeasurePoint::updateGeode()
 {
-    osg::Vec3d _point;
-    _point[0] = m_p.x;
-    _point[1] = m_p.y;
-    _point[2] = m_p.z;
+    osg::Vec3d point;
+    point[0] = m_p.x;
+    point[1] = m_p.y;
+    point[2] = m_p.z;
     // create point in geode
     // point
     osg::Geometry* shape_point_drawable = new osg::Geometry();
     osg::Vec3Array* vertices = new osg::Vec3Array;
-    vertices->push_back(_point);
-    vertices->dirty();
+    vertices->push_back(point);
 
     // pass the created vertex array to the points geometry object.
     shape_point_drawable->setVertexArray(vertices);
@@ -55,6 +59,9 @@ void MeasurePoint::updateGeode()
     // parameter is the index position into the vertex array of the first point
     // to draw, and the third parameter is the number of points to draw.
     shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
+
+    // fixed size points
+    shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(4.f), osg::StateAttribute::ON);
 
     m_geode->removeDrawables(0);
     m_geode->addDrawable(shape_point_drawable);

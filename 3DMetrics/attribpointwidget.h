@@ -26,14 +26,13 @@ public:
 public slots:
     //void slot_toolCanceled(); // ended used
     void slot_toolEnded();
-    void slot_toolApply(Point3D &p);
+    void slot_toolClicked(Point3D &p);
 
 signals:
     void signal_toolStarted(QString &info);
     void signal_toolEnded(QString &info);
 
 private:
-
     void update(bool valueOk = true);
 
     Ui::AttribPointWidget *ui;

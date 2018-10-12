@@ -22,7 +22,6 @@ public:
     virtual QString type() { return MeasureType::value(MeasureType::Line); }
 
     double length() { return m_length; }
-    //void setLength(const double _length) { m_length = _length; }
     void computeLength();
 
     int nbPts() const { return m_array.length(); }
