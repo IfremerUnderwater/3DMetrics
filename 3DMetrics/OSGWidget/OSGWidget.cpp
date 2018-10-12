@@ -557,7 +557,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
 {
 
     // for tools
-    emit sig_onMousePress(event->button(), event->x(), event->y());
+    emit signal_onMousePress(event->button(), event->x(), event->y());
 
     // 1 = left mouse button
     // 2 = middle mouse button
@@ -776,4 +776,20 @@ void OSGWidget::home()
 {
     osgViewer::View *view = m_viewer->getView(0);
     view->home();
+}
+
+// tools : emit correspondant signal
+void OSGWidget::startTool(QString &message)
+{
+    emit signal_startTool(message);
+}
+
+void OSGWidget::endTool(QString &message)
+{
+    emit signal_endTool(message);
+}
+
+void OSGWidget::cancelTool(QString &message)
+{
+    emit signal_cancelTool(message);
 }

@@ -32,7 +32,10 @@ public:
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
 
-private:
+    // create / update Geode
+    virtual void updateGeode();
+
+protected:
     Point3D m_p;
 };
 

@@ -22,7 +22,10 @@ public:
 
     QString fieldName() const { return m_fieldName; }
 
-private:
+    // create / update Geode
+    virtual void updateGeode() = 0;
+
+protected:
     QString m_fieldName;
     osg::ref_ptr<osg::Geode> m_geode;
 };

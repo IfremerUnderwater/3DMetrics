@@ -1,4 +1,5 @@
 #include "tdmmeasurelayerdata.h"
+#include "Measure/osgmeasurerow.h"
 
 TDMMeasureLayerData::TDMMeasureLayerData()
 {
@@ -24,11 +25,14 @@ TDMMeasureLayerData::~TDMMeasureLayerData() {}
 
 void TDMMeasureLayerData::deleteRow(int row)
 {
+    osgMeasureRow *mrow = m_rows[row];
+    m_group->removeChild( mrow->getGroup() );
     m_rows.erase(m_rows.begin() + row);
 }
 
 void TDMMeasureLayerData::addRow(osgMeasureRow* _row, int row)
 {
     m_rows.insert(m_rows.begin() + row, _row);
+    m_group->addChild(_row->getGroup());
 }
 

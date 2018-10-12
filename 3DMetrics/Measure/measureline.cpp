@@ -67,3 +67,8 @@ void MeasureLine::encode(QJsonObject & _obj)
     // full object
     _obj.insert(fieldName(), obj);
 }
+
+void MeasureLine::updateGeode()
+{
+
+}

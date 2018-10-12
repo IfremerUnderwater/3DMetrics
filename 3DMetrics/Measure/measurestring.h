@@ -22,6 +22,8 @@ public:
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
 
+    virtual void updateGeode() {}
+
 private:
     QString m_val;
 };

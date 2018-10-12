@@ -33,7 +33,7 @@ MainWindow::MainWindow(QWidget *parent) :
     m_delete_menu->addAction(m_delete_measurement_action);
 
     // connect ToolHandler to OSGWidget
-    QObject::connect(ui->display_widget, SIGNAL(sig_onMousePress(Qt::MouseButton,int,int)), m_tool_handler, SLOT(slot_onMousePress(Qt::MouseButton,int,int)));
+    QObject::connect(ui->display_widget, SIGNAL(signal_onMousePress(Qt::MouseButton,int,int)), m_tool_handler, SLOT(slot_onMousePress(Qt::MouseButton,int,int)));
 
     // top menu bar
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));

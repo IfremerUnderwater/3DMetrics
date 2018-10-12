@@ -115,3 +115,8 @@ void MeasureArea::computeLengthAndArea()
     project3DPointsToPlane(plane_coeffs, pt_area_data, proj_pt_area_data);
     m_area = projPointToArea(plane_coeffs, proj_pt_area_data);
 }
+
+void MeasureArea::updateGeode()
+{
+
+}

@@ -33,7 +33,10 @@ public:
     double area() { return m_area; }
     void computeLengthAndArea();
 
-private:
+    // create / update Geode
+    virtual void updateGeode();
+
+protected:
     double m_area;
 };
 

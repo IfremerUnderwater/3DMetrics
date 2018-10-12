@@ -27,6 +27,8 @@
 #include "Measure/measurearea.h"
 #include "Measure/osgmeasurerow.h"
 
+#include "OSGWidget/osgwidgettool.h"
+
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui),
@@ -93,6 +95,13 @@ TDMGui::TDMGui(QWidget *parent) :
 
     updateAttributeTable(0);
 
+    // tools
+    OSGWidgetTool::initialize(ui->display_widget);
+    connect(ui->display_widget, SIGNAL(signal_startTool(QString&)), this, SLOT(slot_messageStartTool(QString&)));
+    connect(ui->display_widget, SIGNAL(signal_cancelTool(QString&)), this, SLOT(slot_messageCancelTool(QString&)));
+    connect(ui->display_widget, SIGNAL(signal_endTool(QString&)), this, SLOT(slot_messageEndTool(QString&)));
+
+    // docking ????? pb with OSG widget
     connect(ui->display_widget_dock, SIGNAL(topLevelChanged(bool)), this, SLOT(slot_displayToplevelChanged(bool)));
 }
 
@@ -148,6 +157,9 @@ void TDMGui::slot_open3dModel()
 
         ui->display_widget->addNodeToScene(node);
 
+        QModelIndex index = model->index(added);
+        selectItem(index);
+
         QApplication::restoreOverrideCursor();
     }
     else
@@ -180,7 +192,7 @@ void TDMGui::slot_newMeasurement()
     //std::shared_ptr<ToolHandler> th(new ToolHandler(ui->display_widget));
     MeasurePattern pattern;
     QString dummy("measure");
-    osg::ref_ptr<osg::Group> group;
+    osg::ref_ptr<osg::Group> group = new osg::Group();
     ui->display_widget->addGroup(group);
     TDMMeasureLayerData modelData(dummy, pattern, group);
     QVariant tool;
@@ -188,13 +200,10 @@ void TDMGui::slot_newMeasurement()
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, parent, data, tool);
     added->setChecked(true);
 
-    // select created item
-    view->selectionModel()->clear();
-    view->selectionModel()->clearSelection();
     QModelIndex index = model->index(added);
+    // select created item
+    selectItem(index);
     view->setExpanded(index.parent(),true);
-    view->selectionModel()->select(index,QItemSelectionModel::ClearAndSelect);
-    view->setCurrentIndex(index);
     view->edit(index);
 
     ui->save_measurement_file_action->setEnabled(true);
@@ -242,11 +251,10 @@ void TDMGui::slot_openMeasureFile()
 
         QFileInfo fi(f.fileName());
         QVariant data(fi.fileName());
-        QString dummy("measure");
-        // TODO
-        osg::ref_ptr<osg::Group> group;
+
+        osg::ref_ptr<osg::Group> group = new osg::Group();
         ui->display_widget->addGroup(group);
-        TDMMeasureLayerData modelData(dummy, pattern, group);
+        TDMMeasureLayerData modelData(f.fileName(), pattern, group);
         modelData.setFileName(fi.filePath());
         QVariant tool;
         tool.setValue(modelData);
@@ -275,11 +283,7 @@ void TDMGui::slot_openMeasureFile()
         view->setExpanded(index.parent(),true);
 
         // select created item
-        view->selectionModel()->clear();
-        view->selectionModel()->clearSelection();
-
-        view->selectionModel()->setCurrentIndex(index,QItemSelectionModel::SelectCurrent);
-        view->selectionModel()->select(index,QItemSelectionModel::SelectCurrent);
+        selectItem(index);
     }
     else
     {
@@ -298,12 +302,6 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
         table->setRowCount(rowindex+1);
         QJsonArray row = array.at(rowindex).toArray();
 
-        // checkbox
-        QTableWidgetItem *checkbox = new QTableWidgetItem();
-        checkbox->setCheckState(Qt::Checked);
-        checkbox->setSizeHint(QSize(20,20));
-        table->setItem(rowindex, 0, checkbox);
-
         osgMeasureRow *osgRow = 0;
         if(_buildOsg)
         {
@@ -312,6 +310,12 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
         }
         else
             osgRow = m_currentItem->rows().at(rowindex);
+
+        // checkbox
+        QTableWidgetItem *checkbox = new QTableWidgetItem();
+        checkbox->setCheckState(Qt::Checked);
+        checkbox->setSizeHint(QSize(20,20));
+        table->setItem(rowindex, 0, checkbox);
 
         // columns
         for(int c=0; c<m_current.getNbFields(); c++)
@@ -347,6 +351,10 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
                 MeasurePoint *p = new MeasurePoint(m_current.fieldName(c),osgRow->get(c));
                 p->decode(obj);
+                if(_buildOsg)
+                {
+                    p->updateGeode();
+                }
                 pwidget->setMeasureItem(p);
                 table->setItem(rowindex, i, pwidget);
                 AttribPointWidget *point = new AttribPointWidget();
@@ -517,14 +525,12 @@ void TDMGui::slot_newGroup()
 
     slot_unselect();
 
-    // select created item
-    view->selectionModel()->clear();
-    view->selectionModel()->clearSelection();
     QModelIndex index = model->index(added);
     view->setExpanded(index.parent(),true);
-    view->selectionModel()->select(index,QItemSelectionModel::ClearAndSelect);
-    view->setCurrentIndex(index);
     view->edit(index);
+
+    // select created item
+    selectItem(index);
 
     ui->save_measurement_file_action->setEnabled(false);
 }
@@ -974,6 +980,7 @@ void TDMGui::slot_addAttributeLine()
     //table->insertRow(rowindex);
 
     osgMeasureRow *osgRow = new osgMeasureRow(m_current);
+    m_currentItem->addRow(osgRow, rowindex);
 
     QTableWidgetItem *checkbox = new QTableWidgetItem();
     checkbox->setCheckState(Qt::Checked);
@@ -1008,10 +1015,11 @@ void TDMGui::slot_addAttributeLine()
         {
             MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
             MeasurePoint *p = new MeasurePoint(m_current.fieldName(i-1),osgRow->get(i-1));
+            //p->updateGeode();
             pwidget->setMeasureItem(p);
             table->setItem(rowindex, i, pwidget);
             AttribPointWidget *point = new AttribPointWidget();
-            point->setPoint(p);
+            point->setPoint(p, false);
             table->setCellWidget(rowindex,i, point);
             int height = table->rowHeight(rowindex);
             int minheight = point->height() + 2;
@@ -1049,8 +1057,6 @@ void TDMGui::slot_addAttributeLine()
             break;
         }
     }
-
-    m_currentItem->rows().insert(m_currentItem->rows().begin()+rowindex,osgRow);
 
     // save in actual selection
     TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
@@ -1153,18 +1159,21 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
 
 void TDMGui::slot_attribTableCellChanged(int row, int column)
 {
-    if(column == 0)
+    if(column == 0 && m_currentItem->rows().size() > 0)
     {
         // check state
         QTableWidget *table = ui->attrib_table;
         QTableWidgetItem *it = table->item(row, column);
+        osg::ref_ptr<osg::Group> pcur = (m_currentItem->rows()[row])->getGroup();
         if(it->checkState() == Qt::Checked)
         {
             // show line items
+            pcur->setNodeMask(0xFFFFFFFF);
         }
         else
         {
             // hide line items
+            pcur->setNodeMask(0);
         }
 
         return;
@@ -1196,8 +1205,35 @@ void TDMGui::slot_displayToplevelChanged(bool floating)
         if(ui->display_widget_dock->isWindow())
         {
             //              ui->display_widget->setParent(ui->display_widget_dock->topLevelWidget());
+            ui->display_widget->updateGeometry();
         }
     }
     else
         ui->display_widget->setParent(ui->display_widget_dock);
+}
+
+void TDMGui::selectItem(QModelIndex &index)
+{
+    QTreeView *view = ui->tree_widget;
+
+    view->selectionModel()->clear();
+    view->selectionModel()->clearSelection();
+
+    view->selectionModel()->setCurrentIndex(index,QItemSelectionModel::SelectCurrent);
+    view->selectionModel()->select(index,QItemSelectionModel::SelectCurrent);
+}
+
+void TDMGui::slot_messageStartTool(QString&_msg)
+{
+    statusBar()->showMessage(_msg);
+}
+
+void TDMGui::slot_messageCancelTool(QString&_msg)
+{
+    statusBar()->showMessage(_msg);
+}
+
+void TDMGui::slot_messageEndTool(QString&_msg)
+{
+    statusBar()->showMessage(_msg);
 }

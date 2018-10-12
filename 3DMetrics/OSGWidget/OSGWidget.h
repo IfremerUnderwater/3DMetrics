@@ -119,7 +119,18 @@ public slots:
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
-    void sig_onMousePress(Qt::MouseButton _button, int _x, int _y);
+    void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
+
+    // tools
+    void signal_startTool(QString &message);
+    void signal_endTool(QString &message);
+    void signal_cancelTool(QString &message);
+
+public:
+    // tools : emit correspondant signal
+    void startTool(QString &message);
+    void endTool(QString &message);
+    void cancelTool(QString &message);
 
 protected:
 

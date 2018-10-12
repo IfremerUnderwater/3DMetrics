@@ -32,6 +32,12 @@ private:
     void deleteTreeItemsData(TdmLayerItem *item);
     void manageCheckStateForChildren(TdmLayerItem *item, bool checked);
 
+    // helper functions
+    void loadData(QJsonDocument &_doc, bool _buildOsg);
+    void saveData(QJsonDocument &_doc);
+
+    void selectItem(QModelIndex &index);
+
     // attribute table
     void updateAttributeTable(TdmLayerItem *item);
     MeasurePattern m_current;
@@ -48,13 +54,12 @@ public slots:
     void slot_focussingTool();
 
     // measurement tools
+    void slot_messageStartTool(QString&_msg);
+    void slot_messageCancelTool(QString&_msg);
+    void slot_messageEndTool(QString&_msg);
 
     // measurment pattern dialog
     void slot_patternChanged(MeasurePattern pattern);
-
-    // helper functions
-    void loadData(QJsonDocument &_doc, bool _buildOsg);
-    void saveData(QJsonDocument &_doc);
 
     // from TreeView
     void slot_selectionChanged(const QItemSelection &,
