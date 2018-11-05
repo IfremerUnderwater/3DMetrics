@@ -36,6 +36,11 @@ public:
     // create / update Geode
     virtual void updateGeode();
 
+    // save / restore for edit
+    void save();
+    void restore();
+    void cancel();
+
 protected:
     double m_area;
 };

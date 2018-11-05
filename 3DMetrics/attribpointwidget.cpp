@@ -48,12 +48,6 @@ void AttribPointWidget::update(bool valueOk)
     }
 }
 
-//void AttribPointWidget::slot_toolCanceled()
-//{
-//    QString msg = "Point tool canceled";
-//    emit signal_toolEnded(msg);
-//}
-
 void AttribPointWidget::slot_toolClicked(Point3D &p)
 {
     m_item->setP(p);

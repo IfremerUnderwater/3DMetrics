@@ -59,7 +59,7 @@ public slots:
     void slot_messageEndTool(QString&_msg);
 
     // measurment pattern dialog
-    void slot_patternChanged(MeasurePattern pattern);
+    void slot_patternChanged(MeasurePattern _pattern);
 
     // from TreeView
     void slot_selectionChanged(const QItemSelection &,

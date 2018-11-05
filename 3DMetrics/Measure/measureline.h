@@ -40,8 +40,14 @@ public:
     // create / update Geode
     virtual void updateGeode();
 
+    // save / restore for edit
+    void save();
+    void restore();
+    void cancel();
+
 protected:
     QVector<Point3D> m_array;
+    QVector<Point3D> m_arraySave;
     double m_length;
 };
 

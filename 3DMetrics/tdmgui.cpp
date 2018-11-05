@@ -124,6 +124,9 @@ void TDMGui::closeEvent(QCloseEvent *event)
     }
     else
     {
+        // to avoid SEGV on exit
+        OSGWidgetTool::instance()->endTool();
+
         event->accept();
     }
 }
@@ -647,10 +650,8 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
         QVariant data1 = item->data(1);
         if(data1.canConvert<TDMMeasureLayerData>())
         {
-            // TODO : test
             TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
             lda.group()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
-            //***TODO + propagate to children ????
         }
     }
 
@@ -880,10 +881,137 @@ void TDMGui::slot_editMeasurement()
     }
 }
 
-void TDMGui::slot_patternChanged(MeasurePattern pattern)
+void TDMGui::slot_patternChanged(MeasurePattern _pattern)
 {
-    //*** TODO refactor data if nb rows > 0
     //** + confirmation
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
+                                                                tr("Do you want change the measurement pattern?\nLoss of data can occur"),
+                                                                QMessageBox::Yes | QMessageBox::No,
+                                                                QMessageBox::No);
+    if (resBtn != QMessageBox::Yes)
+    {
+        return;
+    }
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    QTableWidget *table = ui->attrib_table;
+
+    QJsonDocument newdoc;
+
+    if(table->rowCount() > 0)
+    {
+        QJsonArray array;
+
+        for(int i=0; i<table->rowCount(); i++)
+        {
+            // add row
+            QJsonArray row;
+
+            // delete nonexistent fields in new pattern (nothing to do)
+
+            // keep fields with same name AND same type
+            // order can change
+
+            // add new fields
+
+            for(int c=0; c<_pattern.getNbFields(); c++)
+            {
+                // does field exist in old pattern ?
+                bool found = false;
+                for(int o=0; o< m_current.getNbFields(); o++)
+                {
+                    if(_pattern.fieldName(c) == m_current.fieldName(o)
+                            &&
+                       _pattern.fieldType(c) ==  m_current.fieldType(o))
+                    {
+                        // copy field
+                        found = true;
+                        MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i, o+1);
+                        MeasureItem *it = pwidget->measureItem();
+                        QJsonObject no;
+                        it->encode(no);
+                        row.append(no);
+
+                        break;
+                    }
+                }
+
+                if(!found)
+                {
+                    // add empty
+                    MeasureType::type type = _pattern.fieldType(c);
+
+                    switch(type)
+                    {
+                    case MeasureType::Line:
+                        // line edit widget
+                    {
+                        osg::ref_ptr<osg::Geode> geode;
+                        MeasureLine *l = new MeasureLine(_pattern.fieldName(c), geode);
+                        QJsonObject no;
+                        l->encode(no);
+                        row.append(no);
+                        delete l;
+                    }
+                        break;
+
+                    case MeasureType::Point:
+                        // point edit widget
+                    {
+                        osg::ref_ptr<osg::Geode> geode;
+                        MeasurePoint *p = new MeasurePoint(_pattern.fieldName(c), geode);
+                        QJsonObject no;
+                        p->encode(no);
+                        row.append(no);
+                        delete p;
+                    }
+                        break;
+
+                    case MeasureType::Perimeter:
+                        // perimeter edit widget
+                    {
+                        osg::ref_ptr<osg::Geode> geode;
+                        MeasureArea *a = new MeasureArea(_pattern.fieldName(c), geode);
+                        QJsonObject no;
+                        a->encode(no);
+                        row.append(no);
+                        delete a;
+                    }
+                        break;
+
+                    default:
+                        // string - default editable text line
+                    {
+                        MeasureString *s = new MeasureString(_pattern.fieldName(c));
+                        QJsonObject no;
+                        s->encode(no);
+                        row.append(no);
+                        delete s;
+                    }
+                        break;
+                    }
+
+                }
+
+            }
+
+            array.append(row);
+        }
+
+        // store data
+        QJsonObject rootobj = newdoc.object();
+        rootobj.insert("Data",array);
+        newdoc.setObject(rootobj);
+    }
+
+
+    delete m_currentItem;
+    m_currentItem = 0;
+    updateAttributeTable(0);
+
+    // put in TDMMeasureLayerData
+
     QTreeView *view = ui->tree_widget;
 
     bool hasSelection = !view->selectionModel()->selection().isEmpty();
@@ -901,15 +1029,29 @@ void TDMGui::slot_patternChanged(MeasurePattern pattern)
                 QVariant data1 = selected->data(1);
                 TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
                 lda.pattern().clear();
-                for(int i=0; i<pattern.getNbFields(); i++)
-                    lda.pattern().addField(pattern.fieldName(i), pattern.fieldType(i));
+                for(int i=0; i<_pattern.getNbFields(); i++)
+                    lda.pattern().addField(_pattern.fieldName(i), _pattern.fieldType(i));
                 data1.setValue<TDMMeasureLayerData>(lda);
                 //qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
                 selected->setData(1,data1);
                 updateAttributeTable(selected);
+
+                // delete group
+                lda.group()->removeChildren(0,lda.group()->getNumChildren());
+
+                // update pattern
+
+                m_current = _pattern;
+
+                m_currentItem = new TDMMeasureLayerData(lda);
+
+                // load data
+                loadData(newdoc, true);
             }
         }
     }
+
+    QApplication::restoreOverrideCursor();
 }
 
 void TDMGui::updateAttributeTable(TdmLayerItem *item)

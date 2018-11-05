@@ -20,21 +20,6 @@ AttribLineWidget::~AttribLineWidget()
 
 void AttribLineWidget::clicked()
 {
-    //    ui->tool_label->setStyleSheet("");
-
-    //    if(m_item)
-    //    {
-    //        // test
-    //        double t = m_item->getArray().length();
-    //        Point3D pt;
-    //        pt.x = t;
-    //        pt.y = t;
-    //        pt.z = t;
-    //        m_item->getArray().append(pt);
-    //        m_item->computeLength();
-    //        update();
-    //    }
-
     // start tool
     QString msg = "Line tool started";
     emit signal_toolStarted(msg);
@@ -42,6 +27,9 @@ void AttribLineWidget::clicked()
     OSGWidgetTool *tool = OSGWidgetTool::instance();
     connect(tool, SIGNAL(signal_clicked(Point3D&)), this, SLOT(slot_toolClicked(Point3D&)));
     connect(tool, SIGNAL(signal_endTool()), this, SLOT(slot_toolEnded()));
+    connect(tool, SIGNAL(signal_cancelTool()), this, SLOT(slot_toolCanceled()));
+
+    m_item->save();
 
     m_item->getArray().clear();
     m_item->updateGeode();
@@ -75,7 +63,17 @@ void AttribLineWidget::slot_toolEnded()
     OSGWidgetTool::instance()->endTool();
 
     QString msg = "Line tool ended";
+
     emit signal_toolEnded(msg);
+
+    m_item->cancel();
+}
+
+void AttribLineWidget::slot_toolCanceled()
+{
+    m_item->restore();
+
+    slot_toolEnded();
 }
 
 void AttribLineWidget::slot_toolClicked(Point3D &p)

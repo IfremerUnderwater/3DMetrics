@@ -79,13 +79,15 @@ void OSGWidgetTool::startTool(const type _type)
 
 void OSGWidgetTool::endTool()
 {
-    if(!m_osgWidget->isValid())
-        return;
-
-    m_osgWidget->setCursor(Qt::ArrowCursor);
-
     if(m_currentType != None)
     {
+
+        if(!m_osgWidget->isValid())
+            return;
+
+        m_osgWidget->setCursor(Qt::ArrowCursor);
+
+
         // cancel or end
         QString msg = tr("End tool ");
         switch(m_currentType)
@@ -108,6 +110,7 @@ void OSGWidgetTool::endTool()
         m_currentType = None;
     }
 }
+
 
 void OSGWidgetTool::slot_cancelTool()
 {

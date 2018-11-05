@@ -136,5 +136,22 @@ void MeasureLine::updateGeode()
 
     m_geode->addDrawable(shape_line_drawable);
     m_geode->addDrawable(shape_point_drawable);
+}
 
+
+void MeasureLine::save()
+{
+    m_arraySave = m_array;
+}
+
+void MeasureLine::restore()
+{
+    m_array = m_arraySave;
+    computeLength();
+    updateGeode();
+}
+
+void MeasureLine::cancel()
+{
+    m_arraySave.clear();
 }

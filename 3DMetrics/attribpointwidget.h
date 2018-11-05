@@ -24,7 +24,7 @@ public:
     // get via table attribute because m_item is a pointer
 
 public slots:
-    //void slot_toolCanceled(); // ended used
+    //void slot_toolCanceled(); // ended used - no need to cancel
     void slot_toolEnded();
     void slot_toolClicked(Point3D &p);
 

@@ -26,6 +26,9 @@ void AttribAreaWidget::clicked()
     OSGWidgetTool *tool = OSGWidgetTool::instance();
     connect(tool, SIGNAL(signal_clicked(Point3D&)), this, SLOT(slot_toolClicked(Point3D&)));
     connect(tool, SIGNAL(signal_endTool()), this, SLOT(slot_toolEnded()));
+    connect(tool, SIGNAL(signal_cancelTool()), this, SLOT(slot_toolCanceled()));
+
+    m_item->save();
 
     m_item->getArray().clear();
     m_item->updateGeode();
@@ -61,6 +64,14 @@ void AttribAreaWidget::slot_toolEnded()
     QString msg = "Area tool ended";
     emit signal_toolEnded(msg);
 }
+
+void AttribAreaWidget::slot_toolCanceled()
+{
+    m_item->restore();
+
+    slot_toolEnded();
+}
+
 
 void AttribAreaWidget::slot_toolClicked(Point3D &p)
 {

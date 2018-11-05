@@ -12,9 +12,9 @@ int main(int argc, char *argv[])
     qRegisterMetaType<MeasInfo>();
 
     TDMGui tdm_gui;
-    MainWindow main_window;
+    //MainWindow main_window;
 
-    main_window.show();
+    //main_window.show();
     tdm_gui.show();
 
     return app.exec();

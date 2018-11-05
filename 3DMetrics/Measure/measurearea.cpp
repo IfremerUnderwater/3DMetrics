@@ -185,3 +185,21 @@ void MeasureArea::updateGeode()
     m_geode->addDrawable(shape_line_drawable);
     m_geode->addDrawable(shape_point_drawable);
 }
+
+
+void MeasureArea::save()
+{
+    m_arraySave = m_array;
+}
+
+void MeasureArea::restore()
+{
+    m_array = m_arraySave;
+    computeLengthAndArea();
+    updateGeode();
+}
+
+void MeasureArea::cancel()
+{
+    m_arraySave.clear();
+}
