@@ -10,6 +10,7 @@
 MeasureLine::MeasureLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
     : MeasureItem(_fieldName, _geode)
     , m_length(0)
+    , m_color(0.0f,1.0f,0.0f,1.0f) // green by default
 {
 
 }
@@ -120,8 +121,8 @@ void MeasureLine::updateGeode()
 
     osg::Vec4Array* colorsl = new osg::Vec4Array;
     // add a green color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
-    osg::Vec4 colorl(0.0f,1.0f,0.0f,1.0f);
-    colorsl->push_back(colorl);
+    //osg::Vec4 colorl(0.0f,1.0f,0.0f,1.0f);
+    colorsl->push_back(m_color);
 
     // pass the color array to points geometry, note the binding to tell the geometry
     // that only use one color for the whole object.

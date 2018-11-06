@@ -20,7 +20,7 @@
      <x>0</x>
      <y>0</y>
      <width>1214</width>
-     <height>29</height>
+     <height>25</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -32,6 +32,8 @@
     <addaction name="open_project_action"/>
     <addaction name="save_measurement_file_action"/>
     <addaction name="save_project_action"/>
+    <addaction name="separator"/>
+    <addaction name="import_old_measure_format_action"/>
     <addaction name="separator"/>
     <addaction name="quit_action"/>
    </widget>
@@ -334,6 +336,11 @@
   <action name="quit_action">
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="import_old_measure_format_action">
+   <property name="text">
+    <string>Import old measure format</string>
    </property>
   </action>
  </widget>

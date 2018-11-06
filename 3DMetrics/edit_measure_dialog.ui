@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>410</width>
+    <width>440</width>
     <height>329</height>
    </rect>
   </property>
@@ -29,7 +29,7 @@
   <widget class="QPushButton" name="add_btn">
    <property name="geometry">
     <rect>
-     <x>350</x>
+     <x>400</x>
      <y>40</y>
      <width>31</width>
      <height>31</height>
@@ -47,7 +47,7 @@
     <rect>
      <x>10</x>
      <y>80</y>
-     <width>391</width>
+     <width>421</width>
      <height>211</height>
     </rect>
    </property>
@@ -83,9 +83,12 @@
     <rect>
      <x>10</x>
      <y>295</y>
-     <width>125</width>
+     <width>120</width>
      <height>31</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>Load stored pattern</string>
    </property>
    <property name="text">
     <string>Load Pattern</string>
@@ -94,11 +97,14 @@
   <widget class="QPushButton" name="save_pattern_btn">
    <property name="geometry">
     <rect>
-     <x>140</x>
+     <x>130</x>
      <y>295</y>
-     <width>125</width>
+     <width>120</width>
      <height>31</height>
     </rect>
+   </property>
+   <property name="toolTip">
+    <string>Save current pattern</string>
    </property>
    <property name="text">
     <string>Save Pattern</string>
@@ -107,14 +113,33 @@
   <widget class="QPushButton" name="apply_btn">
    <property name="geometry">
     <rect>
-     <x>322</x>
+     <x>350</x>
      <y>295</y>
      <width>81</width>
      <height>31</height>
     </rect>
    </property>
+   <property name="toolTip">
+    <string>Apply current pattern</string>
+   </property>
    <property name="text">
     <string>Apply</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="close_btn">
+   <property name="geometry">
+    <rect>
+     <x>267</x>
+     <y>295</y>
+     <width>81</width>
+     <height>31</height>
+    </rect>
+   </property>
+   <property name="toolTip">
+    <string>Close dialog without saving</string>
+   </property>
+   <property name="text">
+    <string>Close</string>
    </property>
   </widget>
  </widget>

@@ -26,6 +26,7 @@ edit_measure_dialog::edit_measure_dialog(QWidget *parent) :
     QObject::connect(ui->load_pattern_btn, SIGNAL(clicked(bool)), this, SLOT(slot_loadPattern()));
     QObject::connect(ui->save_pattern_btn, SIGNAL(clicked(bool)), this, SLOT(slot_savePattern()));
     QObject::connect(ui->apply_btn, SIGNAL(clicked(bool)), this, SLOT(slot_apply()));
+    QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
 }
 
 edit_measure_dialog::~edit_measure_dialog()

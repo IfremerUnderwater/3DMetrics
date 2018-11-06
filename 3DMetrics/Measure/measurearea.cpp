@@ -68,6 +68,8 @@ double static projPointToArea(std::pair<Eigen::Vector3f, Eigen::Vector3f> &_plan
 MeasureArea::MeasureArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
     : MeasureLine(_fieldName, _geode), m_area(0)
 {
+    osg::Vec4 colorl(1.0f,0.0f,0.0f,1.0f); // red by default
+    m_color = colorl;
 }
 
 // from JSon to object
@@ -168,8 +170,8 @@ void MeasureArea::updateGeode()
 
     osg::Vec4Array* colorsl = new osg::Vec4Array;
     // add a red color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
-    osg::Vec4 colorl(1.0f,0.0f,0.0f,1.0f);
-    colorsl->push_back(colorl);
+    //osg::Vec4 colorl(1.0f,0.0f,0.0f,1.0f);
+    colorsl->push_back(m_color);
 
     // pass the color array to points geometry, note the binding to tell the geometry
     // that only use one color for the whole object.

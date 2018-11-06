@@ -23,6 +23,8 @@ public:
     // must be initialized
     static void initialize(OSGWidget *_osgwidget);
 
+    OSGWidget * getOSGWidget() const { return m_osgWidget; }
+
     ~OSGWidgetTool();
 
     void startTool(const type _type);

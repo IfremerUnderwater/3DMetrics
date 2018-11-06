@@ -29,6 +29,10 @@
 
 #include "OSGWidget/osgwidgettool.h"
 
+#include "toolpointdialog.h"
+#include "toollinedialog.h"
+#include "toolareadialog.h"
+
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui),
@@ -49,6 +53,8 @@ TDMGui::TDMGui(QWidget *parent) :
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
     QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasureFile()));
     QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasureFile()));
+    QObject::connect(ui->import_old_measure_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasureFile()));
+
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     // check state on the treeview item
@@ -91,6 +97,7 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->cancel_measurement->setEnabled(false);
 
     // file menu
+    ui->open_measurement_file_action->setEnabled(false);
     ui->save_measurement_file_action->setEnabled(false);
 
     updateAttributeTable(0);
@@ -101,6 +108,10 @@ TDMGui::TDMGui(QWidget *parent) :
     connect(ui->display_widget, SIGNAL(signal_cancelTool(QString&)), this, SLOT(slot_messageCancelTool(QString&)));
     connect(ui->display_widget, SIGNAL(signal_endTool(QString&)), this, SLOT(slot_messageEndTool(QString&)));
     connect(ui->cancel_measurement, SIGNAL(triggered()), OSGWidgetTool::instance(), SLOT(slot_cancelTool()));
+    // temporary tools
+    connect(ui->line_tool, SIGNAL(triggered()), this, SLOT(slot_tempLineTool()));
+    connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
+    connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
 
     // docking ????? pb with OSG widget
     connect(ui->display_widget_dock, SIGNAL(topLevelChanged(bool)), this, SLOT(slot_displayToplevelChanged(bool)));
@@ -163,6 +174,14 @@ void TDMGui::slot_open3dModel()
 
         QModelIndex index = model->index(added);
         selectItem(index);
+
+        // allow measurment to be loaded
+        ui->open_measurement_file_action->setEnabled(true);
+
+        // measurement tools
+        ui->line_tool->setEnabled(true);
+        ui->surface_tool->setEnabled(true);
+        ui->pick_point->setEnabled(true);
 
         QApplication::restoreOverrideCursor();
     }
@@ -296,7 +315,9 @@ void TDMGui::slot_openMeasureFile()
 }
 
 void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
-{
+{  
+    OSGWidgetTool::instance()->endTool();
+
     QTableWidget *table = ui->attrib_table;
 
     QJsonArray array = _doc.object().value("Data").toArray();
@@ -415,6 +436,8 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
 
 void TDMGui::slot_saveMeasureFile()
 {
+    OSGWidgetTool::instance()->endTool();
+
     // check measure selected
     QTreeView *view = ui->tree_widget;
 
@@ -468,6 +491,18 @@ void TDMGui::slot_saveMeasureFile()
     QJsonDocument json = lda.pattern().get();
     // add data
     saveData(json);
+    // add reference point from OSG widget
+    QPointF latlon;
+    double refdepth;
+    ui->display_widget->getGeoOrigin(latlon,refdepth);
+    QJsonObject rootobj = json.object();
+    QJsonObject reference;
+    // Warning : latitude is in x, longitude is in y in OSGWidget
+    reference.insert("latitude", QJsonValue(latlon.x()));
+    reference.insert("longitude", QJsonValue(latlon.y()));
+    reference.insert("depth", QJsonValue(refdepth));
+    rootobj.insert("Reference",reference);
+    json.setObject(rootobj);
 
     // write
     QString json_string = json.toJson();
@@ -548,7 +583,9 @@ void TDMGui::slot_newGroup()
 }
 
 void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSelection& _desel)
-{
+{   
+    OSGWidgetTool::instance()->endTool();
+
     if(_desel.length() > 0)
     {
         if(!_desel.first().isEmpty() && _desel.first().isValid())
@@ -686,7 +723,13 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
     if(!hasCurrent)
     {
         menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
-        menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
+        QAction *newMeasure =  menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
+
+        if(ui->open_measurement_file_action->isEnabled())
+            newMeasure->setEnabled(true);
+        else
+            newMeasure->setDisabled(true);
+
         menu->exec(QCursor::pos());
         return;
     }
@@ -882,7 +925,9 @@ void TDMGui::slot_editMeasurement()
 }
 
 void TDMGui::slot_patternChanged(MeasurePattern _pattern)
-{
+{    
+    OSGWidgetTool::instance()->endTool();
+
     //** + confirmation
     QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
                                                                 tr("Do you want change the measurement pattern?\nLoss of data can occur"),
@@ -923,7 +968,7 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                 {
                     if(_pattern.fieldName(c) == m_current.fieldName(o)
                             &&
-                       _pattern.fieldType(c) ==  m_current.fieldType(o))
+                            _pattern.fieldType(c) ==  m_current.fieldType(o))
                     {
                         // copy field
                         found = true;
@@ -1005,7 +1050,8 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
         newdoc.setObject(rootobj);
     }
 
-
+    for(int i=m_currentItem->rows().size()-1; i>=0; i--)
+        m_currentItem->deleteRow(i);
     delete m_currentItem;
     m_currentItem = 0;
     updateAttributeTable(0);
@@ -1119,7 +1165,9 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
 }
 
 void TDMGui::slot_addAttributeLine()
-{
+{   
+    OSGWidgetTool::instance()->endTool();
+
     QTableWidget *table = ui->attrib_table;
     QTreeView *view = ui->tree_widget;
 
@@ -1230,6 +1278,8 @@ void TDMGui::slot_addAttributeLine()
 
 void TDMGui::slot_deleteAttributeLine()
 {
+    OSGWidgetTool::instance()->endTool();
+
     QTableWidget *table = ui->attrib_table;
     QTreeView *view = ui->tree_widget;
 
@@ -1389,4 +1439,39 @@ void TDMGui::slot_messageEndTool(QString&_msg)
 {
     ui->cancel_measurement->setEnabled(false);
     statusBar()->showMessage(_msg);
+}
+
+void TDMGui::slot_tempLineTool()
+{
+    ToolLineDialog *dlg = new ToolLineDialog(this);
+    QPoint p = QCursor::pos();
+    dlg->move(p.x()+20, p.y()+20);
+    dlg->show();
+    dlg->raise();
+    dlg->activateWindow();
+}
+
+void TDMGui::slot_tempPointTool()
+{
+    ToolPointDialog *dlg = new ToolPointDialog(this);
+    QPoint p = QCursor::pos();
+    dlg->move(p.x()+20, p.y()+20);
+    dlg->show();
+    dlg->raise();
+    dlg->activateWindow();
+}
+
+void TDMGui::slot_tempAreaTool()
+{
+    ToolAreaDialog *dlg = new ToolAreaDialog(this);
+    QPoint p = QCursor::pos();
+    dlg->move(p.x()+20, p.y()+20);
+    dlg->show();
+    dlg->raise();
+    dlg->activateWindow();
+}
+
+void TDMGui::slot_importOldMeasureFile()
+{
+
 }

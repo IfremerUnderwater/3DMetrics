@@ -45,10 +45,14 @@ public:
     void restore();
     void cancel();
 
+    // line color
+    void setColor(osg::Vec4f _rgba) { m_color = _rgba; }
+
 protected:
     QVector<Point3D> m_array;
     QVector<Point3D> m_arraySave;
     double m_length;
+    osg::Vec4f m_color;
 };
 
 #endif // MEASURELINE_H

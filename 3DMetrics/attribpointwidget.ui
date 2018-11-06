@@ -22,9 +22,9 @@
   <widget class="QLabel" name="x_label">
    <property name="geometry">
     <rect>
-     <x>60</x>
+     <x>56</x>
      <y>0</y>
-     <width>111</width>
+     <width>116</width>
      <height>20</height>
     </rect>
    </property>
@@ -38,9 +38,9 @@
   <widget class="QLabel" name="y_label">
    <property name="geometry">
     <rect>
-     <x>60</x>
+     <x>56</x>
      <y>20</y>
-     <width>111</width>
+     <width>116</width>
      <height>20</height>
     </rect>
    </property>
@@ -54,14 +54,14 @@
   <widget class="QLabel" name="label">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>30</x>
      <y>0</y>
-     <width>16</width>
+     <width>24</width>
      <height>18</height>
     </rect>
    </property>
    <property name="text">
-    <string>x=</string>
+    <string>lat:</string>
    </property>
    <property name="textFormat">
     <enum>Qt::PlainText</enum>
@@ -70,14 +70,14 @@
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>30</x>
      <y>20</y>
-     <width>16</width>
+     <width>24</width>
      <height>18</height>
     </rect>
    </property>
    <property name="text">
-    <string>y=</string>
+    <string>lon:</string>
    </property>
    <property name="textFormat">
     <enum>Qt::PlainText</enum>
@@ -86,14 +86,14 @@
   <widget class="QLabel" name="label_3">
    <property name="geometry">
     <rect>
-     <x>40</x>
+     <x>30</x>
      <y>40</y>
-     <width>16</width>
+     <width>20</width>
      <height>18</height>
     </rect>
    </property>
    <property name="text">
-    <string>z=</string>
+    <string>dp:</string>
    </property>
    <property name="textFormat">
     <enum>Qt::PlainText</enum>
@@ -102,9 +102,9 @@
   <widget class="QLabel" name="z_label">
    <property name="geometry">
     <rect>
-     <x>60</x>
+     <x>56</x>
      <y>40</y>
-     <width>111</width>
+     <width>70</width>
      <height>20</height>
     </rect>
    </property>

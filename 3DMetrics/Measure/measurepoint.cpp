@@ -9,7 +9,8 @@
 
 MeasurePoint::MeasurePoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
     : MeasureItem(_fieldName, _geode),
-      m_p()
+      m_p(),
+      m_color(0.0f,0.0f,1.0f,1.0f) // blue by default
 {
 
 }
@@ -46,8 +47,8 @@ void MeasurePoint::updateGeode()
 
     osg::Vec4Array* colors = new osg::Vec4Array;
     // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
-    osg::Vec4 color(0.0f,0.0f,1.0f,1.0f);
-    colors->push_back(color);
+    //osg::Vec4 color(0.0f,0.0f,1.0f,1.0f);
+    colors->push_back(m_color);
 
     // pass the color array to points geometry, note the binding to tell the geometry
     // that only use one color for the whole object.

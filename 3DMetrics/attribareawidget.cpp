@@ -31,6 +31,7 @@ void AttribAreaWidget::clicked()
     m_item->save();
 
     m_item->getArray().clear();
+    m_item->computeLengthAndArea();
     m_item->updateGeode();
     update();
 

@@ -74,7 +74,10 @@ SOURCES += main.cpp \
     Measure/measurearea.cpp \
     measuretablewidgetitem.cpp \
     Measure/osgmeasurerow.cpp \
-    OSGWidget/osgwidgettool.cpp
+    OSGWidget/osgwidgettool.cpp \
+    toolpointdialog.cpp \
+    toollinedialog.cpp \
+    toolareadialog.cpp
 
 HEADERS  += mainwindow.h \
     OSGWidget/OSGWidget.h \
@@ -109,7 +112,10 @@ HEADERS  += mainwindow.h \
     Measure/measurearea.h \
     measuretablewidgetitem.h \
     Measure/osgmeasurerow.h \
-    OSGWidget/osgwidgettool.h
+    OSGWidget/osgwidgettool.h \
+    toolpointdialog.h \
+    toollinedialog.h \
+    toolareadialog.h
 
 FORMS    += \
     mainwindow.ui \
@@ -119,7 +125,10 @@ FORMS    += \
     edit_measure_item.ui \
     attribpointwidget.ui \
     attriblinewidget.ui \
-    attribareawidget.ui
+    attribareawidget.ui \
+    toolpointdialog.ui \
+    toollinedialog.ui \
+    toolareadialog.ui
 
 RESOURCES += \
     ressources.qrc

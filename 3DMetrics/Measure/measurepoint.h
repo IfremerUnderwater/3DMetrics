@@ -35,8 +35,11 @@ public:
     // create / update Geode
     virtual void updateGeode();
 
+    void setColor(osg::Vec4f _rgba) { m_color = _rgba; }
+
 protected:
     Point3D m_p;
+    osg::Vec4f m_color;
 };
 
 #endif // MEASUREPOINT_H

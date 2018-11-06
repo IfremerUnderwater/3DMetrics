@@ -32,6 +32,7 @@ void AttribLineWidget::clicked()
     m_item->save();
 
     m_item->getArray().clear();
+    m_item->computeLength();
     m_item->updateGeode();
     update();
 

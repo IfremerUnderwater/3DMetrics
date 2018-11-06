@@ -4,6 +4,9 @@
 #include "Measure/measurepoint.h"
 
 #include "OSGWidget/osgwidgettool.h"
+#include "OSGWidget/OSGWidget.h"
+
+#include <GeographicLib/LocalCartesian.hpp>
 
 AttribPointWidget::AttribPointWidget(QWidget *parent) :
     QWidget(parent),
@@ -37,14 +40,34 @@ void AttribPointWidget::clicked()
 
 void AttribPointWidget::update(bool valueOk)
 {
-    if(m_item)
+    if(m_item && valueOk)
     {
-        ui->x_label->setText(QString::number(m_item->x(),'f',2));
-        ui->y_label->setText(QString::number(m_item->y(),'f',2));
-        ui->z_label->setText(QString::number(m_item->z(),'f',2));
+        OSGWidgetTool *tool = OSGWidgetTool::instance();
+        OSGWidget *osgWidget = tool->getOSGWidget();
 
-        if(valueOk)
-            ui->tool_label->setStyleSheet("");
+        double lat, lon, depth;
+
+        // transform to lat/lon
+        // *** TODO : put in OSGWidget (reference doesn't change often)
+        QPointF ref_lat_lon; double ref_depth;
+        osgWidget->getGeoOrigin(ref_lat_lon, ref_depth);
+        GeographicLib::LocalCartesian ltp_proj;
+        ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
+        ltp_proj.Reverse(m_item->x(), m_item->y(), m_item->z(), lat, lon, depth);
+
+        ui->x_label->setText(QString::number(lat,'f',7));
+        ui->y_label->setText(QString::number(lon,'f',7));
+        ui->z_label->setText(QString::number(depth,'f',1));
+
+        ui->tool_label->setStyleSheet("");
+    }
+    else
+    {
+        ui->x_label->setText("");
+        ui->y_label->setText("");
+        ui->z_label->setText("");
+
+        ui->tool_label->setStyleSheet("background-color: red");
     }
 }
 

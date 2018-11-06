@@ -44,11 +44,13 @@ private:
     // for current vector of rows
     TDMMeasureLayerData *m_currentItem;
 
+
 public slots:
 
     void slot_open3dModel();
     void slot_openMeasureFile();
     void slot_saveMeasureFile();
+    void slot_importOldMeasureFile();
 
     // general tools
     void slot_focussingTool();
@@ -57,6 +59,11 @@ public slots:
     void slot_messageStartTool(QString&_msg);
     void slot_messageCancelTool(QString&_msg);
     void slot_messageEndTool(QString&_msg);
+
+    // temporary tools
+    void slot_tempLineTool();
+    void slot_tempPointTool();
+    void slot_tempAreaTool();
 
     // measurment pattern dialog
     void slot_patternChanged(MeasurePattern _pattern);

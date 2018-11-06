@@ -41,8 +41,12 @@ public:
     void restore();
     void cancel();
 
+    // line color
+    void setColor(osg::Vec4f _rgba) { m_color = _rgba; }
+
 protected:
     double m_area;
+    osg::Vec4f m_color;
 };
 
 #endif // MEASUREAREA_H
