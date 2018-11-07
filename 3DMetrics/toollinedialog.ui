@@ -19,7 +19,7 @@
      <x>8</x>
      <y>9</y>
      <width>181</width>
-     <height>80</height>
+     <height>61</height>
     </rect>
    </property>
    <property name="toolTip">
@@ -60,6 +60,19 @@
    <property name="icon">
     <iconset>
      <normaloff>ressources/icon_point.png</normaloff>ressources/icon_point.png</iconset>
+   </property>
+  </widget>
+  <widget class="QLabel" name="msg_label">
+   <property name="geometry">
+    <rect>
+     <x>6</x>
+     <y>72</y>
+     <width>181</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>TextLabel</string>
    </property>
   </widget>
  </widget>

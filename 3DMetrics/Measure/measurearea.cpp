@@ -68,7 +68,7 @@ double static projPointToArea(std::pair<Eigen::Vector3f, Eigen::Vector3f> &_plan
 MeasureArea::MeasureArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
     : MeasureLine(_fieldName, _geode), m_area(0)
 {
-    osg::Vec4 colorl(1.0f,0.0f,0.0f,1.0f); // red by default
+    osg::Vec4 colorl(0.0f,1.0f,1.0f,1.0f); // cyan by default
     m_color = colorl;
 }
 

@@ -28,6 +28,8 @@ ToolAreaDialog::ToolAreaDialog(QWidget *parent) :
 
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->start_btn, SIGNAL(clicked(bool)), this, SLOT(start()));
+    QObject::connect(ui->areawidget, SIGNAL(signal_toolEnded(QString&)), this, SLOT(slot_toolEnded(QString&)));
+    ui->msg_label->setText("");
 }
 
 ToolAreaDialog::~ToolAreaDialog()
@@ -59,5 +61,12 @@ void ToolAreaDialog::reject()
 
 void ToolAreaDialog::start()
 {
+    OSGWidgetTool::instance()->slot_cancelTool();
+    ui->msg_label->setText(tr("Right button to end"));
     ui->areawidget->clicked();
+}
+
+void ToolAreaDialog::slot_toolEnded(QString&)
+{
+    ui->msg_label->setText(tr(""));
 }

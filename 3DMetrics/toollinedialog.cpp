@@ -27,6 +27,8 @@ ToolLineDialog::ToolLineDialog(QWidget *parent) :
 
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->start_btn, SIGNAL(clicked(bool)), this, SLOT(start()));
+    QObject::connect(ui->linewidget, SIGNAL(signal_toolEnded(QString&)), this, SLOT(slot_toolEnded(QString&)));
+    ui->msg_label->setText("");
 }
 
 ToolLineDialog::~ToolLineDialog()
@@ -58,5 +60,12 @@ void ToolLineDialog::reject()
 
 void ToolLineDialog::start()
 {
+    OSGWidgetTool::instance()->slot_cancelTool();
+    ui->msg_label->setText(tr("Right button to end"));
     ui->linewidget->clicked();
+}
+
+void ToolLineDialog::slot_toolEnded(QString&)
+{
+    ui->msg_label->setText(tr(""));
 }

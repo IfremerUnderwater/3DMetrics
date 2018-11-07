@@ -67,6 +67,9 @@
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
+   <property name="toolTip">
+    <string/>
+   </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>
    </attribute>
@@ -76,6 +79,7 @@
    <addaction name="line_tool"/>
    <addaction name="surface_tool"/>
    <addaction name="pick_point"/>
+   <addaction name="separator"/>
    <addaction name="cancel_measurement"/>
   </widget>
   <widget class="QToolBar" name="view_toolbar">

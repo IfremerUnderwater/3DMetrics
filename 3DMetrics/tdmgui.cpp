@@ -99,6 +99,7 @@ TDMGui::TDMGui(QWidget *parent) :
     // file menu
     ui->open_measurement_file_action->setEnabled(false);
     ui->save_measurement_file_action->setEnabled(false);
+    ui->import_old_measure_format_action->setEnabled(false);
 
     updateAttributeTable(0);
 
@@ -144,7 +145,6 @@ void TDMGui::closeEvent(QCloseEvent *event)
 
 void TDMGui::slot_open3dModel()
 {
-
     // Problem on Linux Ubuntu : to be replaced
     //
     //    QString model_file = QFileDialog::getOpenFileName(
@@ -154,7 +154,6 @@ void TDMGui::slot_open3dModel()
     QString fileName = getOpenFileName(this,tr("Select one 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
     if(fileName.length() > 0)
     {
-
         QApplication::setOverrideCursor(Qt::WaitCursor);
 
         osg::ref_ptr<osg::Node> node = ui->display_widget->createNodeFromFile(fileName.toStdString());
@@ -177,6 +176,7 @@ void TDMGui::slot_open3dModel()
 
         // allow measurment to be loaded
         ui->open_measurement_file_action->setEnabled(true);
+        ui->import_old_measure_format_action->setEnabled(true);
 
         // measurement tools
         ui->line_tool->setEnabled(true);
@@ -230,6 +230,7 @@ void TDMGui::slot_newMeasurement()
     view->edit(index);
 
     ui->save_measurement_file_action->setEnabled(true);
+
     updateAttributeTable(0);
     QItemSelection is;
     slot_selectionChanged(is, is);
@@ -338,7 +339,7 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
 
         // checkbox
         QTableWidgetItem *checkbox = new QTableWidgetItem();
-        checkbox->setCheckState(Qt::Checked);
+        checkbox->setCheckState( osgRow->isVisible() ? Qt::Checked : Qt::Unchecked);
         checkbox->setSizeHint(QSize(20,20));
         table->setItem(rowindex, 0, checkbox);
 
@@ -1329,6 +1330,8 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
     case MeasureType::Line:
         // line edit widget
     {
+        OSGWidgetTool::instance()->slot_cancelTool();
+
         AttribLineWidget *line = (AttribLineWidget *)table->cellWidget(row, column);
         line->clicked();
     }
@@ -1337,6 +1340,8 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
     case MeasureType::Point:
         // point edit widget
     {
+        OSGWidgetTool::instance()->slot_cancelTool();
+
         AttribPointWidget *point = (AttribPointWidget *)table->cellWidget(row, column);
         point->clicked();
     }
@@ -1345,6 +1350,8 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
     case MeasureType::Perimeter:
         // perimeter edit widget
     {
+        OSGWidgetTool::instance()->slot_cancelTool();
+
         AttribAreaWidget *area = (AttribAreaWidget *)table->cellWidget(row, column);
         area->clicked();
     }
@@ -1370,11 +1377,13 @@ void TDMGui::slot_attribTableCellChanged(int row, int column)
         {
             // show line items
             pcur->setNodeMask(0xFFFFFFFF);
+            (m_currentItem->rows()[row])->setVisible(true);
         }
         else
         {
             // hide line items
             pcur->setNodeMask(0);
+            (m_currentItem->rows()[row])->setVisible(false);
         }
 
         return;
@@ -1473,5 +1482,440 @@ void TDMGui::slot_tempAreaTool()
 
 void TDMGui::slot_importOldMeasureFile()
 {
+    // open file
+    QString fileName = getOpenFileName(this,tr("Select old measure file to open"), "", tr("Json files (*.json)"));
+    if(fileName.length() > 0)
+    {
+        // read json
+        QFile f(fileName);
+        f.open(QIODevice::ReadOnly | QIODevice::Text);
+        QByteArray ba = f.readAll();
+        f.close();
+        QJsonDocument doc = QJsonDocument::fromJson(ba);
 
+        // checks
+        if(doc.isNull())
+        {
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Failed to create Json"));
+            return;
+        }
+
+        if(!doc.isObject())
+        {
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Not containing Json object"));
+            return;
+        }
+
+        QJsonObject obj=doc.object();
+
+        if(obj.isEmpty())
+        {
+            QMessageBox::information(this, tr("Reading measurement file"), tr("Json object is empty"));
+            return;
+        }
+
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+
+        // create group (name = json name)
+        // create line
+        TdmLayersModel *model = TdmLayersModel::instance();
+        TdmLayerItem *parent = model->rootItem();
+
+        QFileInfo fi(f.fileName());
+        QVariant data(fi.baseName());
+        QVariant dummy("group");
+        TdmLayerItem *added = model->addLayerItem(TdmLayerItem::GroupLayer, parent, data, dummy);
+        added->setChecked(true);
+
+        slot_unselect();
+
+        // original table in old 3DMetrics:
+        // Name
+        // Type (Line, Point, Area)
+        // Category
+        // Temperature
+        // Result (point:x,y,z, Line:length, Area:surface)
+        // Comment
+
+        // add POINTS
+        // fields input :
+        //      category : String
+        //      comment : String
+        //      name : String
+        //      temp : String
+        //  points (array of 1 point)
+        MeasurePattern patternPoint;
+        patternPoint.addField("Name", MeasureType::type::String);
+        patternPoint.addField("Category", MeasureType::type::String);
+        patternPoint.addField("Temp", MeasureType::type::String);
+        patternPoint.addField("Point", MeasureType::type::Point);
+        patternPoint.addField("Comment", MeasureType::type::String);
+
+        QString pointName(fi.baseName() + "-points");
+        QVariant pointData(pointName);
+        osg::ref_ptr<osg::Group> grouppoint = new osg::Group();
+        ui->display_widget->addGroup(grouppoint);
+        TDMMeasureLayerData modelPointData(pointName, patternPoint, grouppoint);
+        QVariant toolPoint;
+        toolPoint.setValue(modelPointData);
+        TdmLayerItem *addedpoint = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, pointData, toolPoint);
+        addedpoint->setChecked(true);
+
+        // Load data points
+        QJsonArray points = obj["interest_points"].toArray();
+
+        if(!points.isEmpty())
+        {
+            m_current = patternPoint;
+
+            QJsonArray array;
+
+            for (int i=0; i<points.size(); i++)
+            {
+                QJsonArray row;
+
+                QJsonObject points_object = points.at(i).toObject();
+
+                QString meas_name = points_object["name"].toString();
+                QJsonArray points_vector = points_object["points"].toArray();
+                QString meas_comment = points_object["comment"].toString();
+                QString meas_temp = points_object["temp"].toString();
+                QString meas_category = points_object["category"].toString();
+
+                Point3D p;
+
+                if(points_vector.size() > 0 ) // only 1 point
+                {
+                    QJsonArray xyz_json = points_vector.at(0).toArray();
+
+                    p.x = xyz_json.at(0).toDouble();
+                    p.y = xyz_json.at(1).toDouble();
+                    p.z = xyz_json.at(2).toDouble();
+                }
+
+                // add line
+                osgMeasureRow *osgRow = new osgMeasureRow(m_current);
+                modelPointData.addRow(osgRow,i);
+
+                //0 : "Name", MeasureType::type::String);
+                MeasureString min("Name");
+                min.setValue(meas_name);
+                QJsonObject on;
+                min.encode(on);
+                row.append(on);
+
+                //1 : "Category", MeasureType::type::String);
+                MeasureString mic("Category");
+                mic.setValue(meas_category);
+                QJsonObject oc;
+                mic.encode(oc);
+                row.append(oc);
+
+                //2 : "Temp", MeasureType::type::String);
+                MeasureString mit("Temp");
+                mit.setValue(meas_temp);
+                QJsonObject ot;
+                mit.encode(ot);
+                row.append(ot);
+
+                //3 : "Point", MeasureType::type::Point);
+                osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
+                MeasurePoint mip("Point", geode);
+                mip.setP(p);
+                mip.updateGeode();
+                QJsonObject op;
+                mip.encode(op);
+                row.append(op);
+
+                //4 : "Comment", MeasureType::type::String);
+                MeasureString mio("Comment");
+                mio.setValue(meas_comment);
+                QJsonObject oo;
+                mio.encode(oo);
+                row.append(oo);
+
+                array.append(row);
+            }
+
+            QJsonDocument doc = patternPoint.get();
+            QJsonObject rootobj = doc.object();
+            rootobj.insert("Data",array);
+            doc.setObject(rootobj);
+            modelPointData.pattern().set(doc);
+
+            QVariant data1 = addedpoint->data(1);
+            data1.setValue<TDMMeasureLayerData>(modelPointData);
+            addedpoint->setData(1, data1);
+
+            updateAttributeTable(0);
+
+            m_currentItem = new TDMMeasureLayerData(modelPointData);
+            loadData(doc, false);
+
+            delete m_currentItem;
+            m_currentItem = 0;
+            updateAttributeTable(0);
+        }
+
+        // add LINES
+        // fields input :
+        //      category : String
+        //      comment : String
+        //      length : double (ignored -> recalculated)
+        //      name : String
+        //      temp : String
+        //  points (array)
+        MeasurePattern patternLine;
+        patternLine.addField("Name", MeasureType::type::String);
+        patternLine.addField("Category", MeasureType::type::String);
+        patternLine.addField("Temp", MeasureType::type::String);
+        patternLine.addField("Line", MeasureType::type::Line);
+        patternLine.addField("Comment", MeasureType::type::String);
+
+        QString lineName(fi.baseName() + "-lines");
+        QVariant lineData(lineName);
+        osg::ref_ptr<osg::Group> groupline = new osg::Group();
+        ui->display_widget->addGroup(groupline);
+        TDMMeasureLayerData modelLineData(lineName, patternLine, groupline);
+        QVariant toolLine;
+        toolLine.setValue(modelLineData);
+        TdmLayerItem *addedline = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, lineData, toolLine);
+        addedline->setChecked(true);
+
+        // Load data lines
+        QJsonArray lines = obj["line_measurements"].toArray();
+
+        if(!lines.isEmpty())
+        {
+            m_current = patternLine;
+
+            QJsonArray array;
+
+            for (int i=0; i<lines.size(); i++)
+            {
+                QJsonArray row;
+
+                QJsonObject line_object = lines.at(i).toObject();
+
+                QString meas_name = line_object["name"].toString();
+                QJsonArray lines_vector = line_object["points"].toArray();
+                QString meas_comment = line_object["comment"].toString();
+                QString meas_temp = line_object["temp"].toString();
+                QString meas_category = line_object["category"].toString();
+
+                QVector<Point3D> pts;
+
+                for (int j=0; j<lines_vector.size(); j++)
+                {
+                    QJsonArray xyz_json = lines_vector.at(j).toArray();
+
+                    Point3D p;
+                    p.x = xyz_json.at(0).toDouble();
+                    p.y = xyz_json.at(1).toDouble();
+                    p.z = xyz_json.at(2).toDouble();
+                    pts.append(p);
+                }
+
+                // add line
+                osgMeasureRow *osgRow = new osgMeasureRow(m_current);
+                modelLineData.addRow(osgRow,i);
+
+                //"Name", MeasureType::type::String);
+                MeasureString min("Name");
+                min.setValue(meas_name);
+                QJsonObject on;
+                min.encode(on);
+                row.append(on);
+
+                //"Category", MeasureType::type::String);
+                MeasureString mic("Category");
+                mic.setValue(meas_category);
+                QJsonObject oc;
+                mic.encode(oc);
+                row.append(oc);
+
+                //"Temp", MeasureType::type::String);
+                MeasureString mit("Temp");
+                mit.setValue(meas_temp);
+                QJsonObject ot;
+                mit.encode(ot);
+                row.append(ot);
+
+                //"Line", MeasureType::type::Line);
+                osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
+                MeasureLine mil("Line", geode);
+                mil.getArray() = pts;
+                mil.updateGeode();
+                QJsonObject op;
+                mil.encode(op);
+                row.append(op);
+
+                //"Comment", MeasureType::type::String);
+                MeasureString mio("Comment");
+                mio.setValue(meas_comment);
+                QJsonObject oo;
+                mio.encode(oo);
+                row.append(oo);
+
+                array.append(row);
+            }
+
+            QJsonDocument doc = patternLine.get();
+            QJsonObject rootobj = doc.object();
+            rootobj.insert("Data",array);
+            doc.setObject(rootobj);
+            modelLineData.pattern().set(doc);
+
+            QVariant data1 = addedline->data(1);
+            data1.setValue<TDMMeasureLayerData>(modelLineData);
+            addedline->setData(1, data1);
+
+            updateAttributeTable(0);
+
+            m_currentItem = new TDMMeasureLayerData(modelLineData);
+            loadData(doc, false);
+
+            delete m_currentItem;
+            m_currentItem = 0;
+            updateAttributeTable(0);
+        }
+
+        // add AREAS
+        // fields input :
+        //      area : double (ignored : recalculated)
+        //      category : String
+        //      comment : String
+        //      name : String
+        //      temp : String
+        //  points (warning : origin duplicates first and last point)
+        MeasurePattern patternArea;
+        patternArea.addField("Name", MeasureType::type::String);
+        patternArea.addField("Category", MeasureType::type::String);
+        patternArea.addField("Temp", MeasureType::type::String);
+        patternArea.addField("Area", MeasureType::type::Perimeter);
+        patternArea.addField("Comment", MeasureType::type::String);
+
+        QString areaName(fi.baseName() + "-areas");
+        QVariant areaData(areaName);
+        osg::ref_ptr<osg::Group> grouparea = new osg::Group();
+        ui->display_widget->addGroup(grouparea);
+        TDMMeasureLayerData modelAreaData(areaName, patternArea, grouparea);
+        QVariant toolArea;
+        toolArea.setValue(modelAreaData);
+        TdmLayerItem *addedarea = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, areaData, toolArea);
+        addedarea->setChecked(true);
+
+        // Load data area
+        QJsonArray areas = obj["area_measurements"].toArray();
+
+        if(!lines.isEmpty())
+        {
+            m_current = patternArea;
+
+            QJsonArray array;
+
+            for (int i=0; i<areas.size(); i++)
+            {
+                QJsonArray row;
+
+                QJsonObject area_object = areas.at(i).toObject();
+
+                QString meas_name = area_object["name"].toString();
+                QJsonArray areas_vector = area_object["points"].toArray();
+                QString meas_comment = area_object["comment"].toString();
+                QString meas_temp = area_object["temp"].toString();
+                QString meas_category = area_object["category"].toString();
+
+                QVector<Point3D> pts;
+
+                for (int j=0; j<areas_vector.size(); j++)
+                {
+                    QJsonArray xyz_json = areas_vector.at(j).toArray();
+
+                    Point3D p;
+                    p.x = xyz_json.at(0).toDouble();
+                    p.y = xyz_json.at(1).toDouble();
+                    p.z = xyz_json.at(2).toDouble();
+                    pts.append(p);
+                }
+                // TODO : remove last point (because last == first in JSon)
+
+                // add line
+                osgMeasureRow *osgRow = new osgMeasureRow(m_current);
+                modelAreaData.addRow(osgRow,i);
+
+                //"Name", MeasureType::type::String);
+                MeasureString min("Name");
+                min.setValue(meas_name);
+                QJsonObject on;
+                min.encode(on);
+                row.append(on);
+
+                //"Category", MeasureType::type::String);
+                MeasureString mic("Category");
+                mic.setValue(meas_category);
+                QJsonObject oc;
+                mic.encode(oc);
+                row.append(oc);
+
+                //"Temp", MeasureType::type::String);
+                MeasureString mit("Temp");
+                mit.setValue(meas_temp);
+                QJsonObject ot;
+                mit.encode(ot);
+                row.append(ot);
+
+                //"Area", MeasureType::type::Perimeter);
+                osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
+                MeasureArea mia("Area", geode);
+                mia.getArray() = pts;
+                mia.updateGeode();
+                QJsonObject op;
+                mia.encode(op);
+                row.append(op);
+
+                //"Comment", MeasureType::type::String);
+                MeasureString mio("Comment");
+                mio.setValue(meas_comment);
+                QJsonObject oo;
+                mio.encode(oo);
+                row.append(oo);
+
+                array.append(row);
+            }
+
+            QJsonDocument doc = patternArea.get();
+            QJsonObject rootobj = doc.object();
+            rootobj.insert("Data",array);
+            doc.setObject(rootobj);
+            modelAreaData.pattern().set(doc);
+
+            QVariant data1 = addedarea->data(1);
+            data1.setValue<TDMMeasureLayerData>(modelAreaData);
+            addedarea->setData(1, data1);
+
+            updateAttributeTable(0);
+
+            m_currentItem = new TDMMeasureLayerData(modelAreaData);
+            loadData(doc, false);
+
+            delete m_currentItem;
+            m_currentItem = 0;
+            updateAttributeTable(0);
+        }
+
+        // expand
+        QTreeView *view = ui->tree_widget;
+        QModelIndex index = model->index(added);
+        view->setExpanded(index,true);
+
+        // select created item
+        selectItem(index);
+
+        updateAttributeTable(0);
+        QItemSelection is;
+        slot_selectionChanged(is, is);
+
+        QApplication::restoreOverrideCursor();
+    }
 }

@@ -81,7 +81,6 @@ void OSGWidgetTool::endTool()
 {
     if(m_currentType != None)
     {
-
         if(!m_osgWidget->isValid())
             return;
 
@@ -114,7 +113,10 @@ void OSGWidgetTool::endTool()
 
 void OSGWidgetTool::slot_cancelTool()
 {
-    emit signal_cancelTool();
+    if(m_currentType != None)
+    {
+        emit signal_cancelTool();
 
-    endTool();
+        endTool();
+    }
 }

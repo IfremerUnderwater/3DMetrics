@@ -1,6 +1,6 @@
 #include "osgmeasurerow.h"
 
-osgMeasureRow::osgMeasureRow(MeasurePattern &pattern)
+osgMeasureRow::osgMeasureRow(MeasurePattern &pattern) : m_visible(true)
 {
     m_group = new osg::Group();
     for(int i=0; i<pattern.getNbFields(); i++)

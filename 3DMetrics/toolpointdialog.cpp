@@ -58,5 +58,7 @@ void ToolPointDialog::reject()
 
 void ToolPointDialog::start()
 {
+    OSGWidgetTool::instance()->slot_cancelTool();
+
     ui->pointwidget->clicked();
 }
