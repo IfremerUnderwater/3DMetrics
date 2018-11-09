@@ -44,12 +44,28 @@ private:
     // for current vector of rows
     TDMMeasureLayerData *m_currentItem;
 
+    // working helpers
+    void load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem);
+    bool loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectItem);
+    bool saveMeasure(QString _filename, TDMMeasureLayerData &_data);
+
+    bool checkAndSaveMeasures(TdmLayerItem *item);
+    QJsonObject saveTreeStructure(TdmLayerItem *item);
+    void buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent);
+
+    QString m_projectFileName;
 
 public slots:
 
     void slot_open3dModel();
+
     void slot_openMeasureFile();
     void slot_saveMeasureFile();
+    void slot_saveMeasureFileAs();
+
+    void slot_openProject();
+    void slot_saveProject();
+
     void slot_importOldMeasureFile();
 
     // general tools

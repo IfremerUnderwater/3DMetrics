@@ -26,12 +26,18 @@ QString getOpenFileName(QWidget *_parent, QString _title, QString _directory, QS
     return QString();
 }
 
-QString getSaveFileName(QWidget *_parent, QString _title, QString _directory, QString _filter)
+QString getSaveFileName(QWidget *_parent, QString _title, QString _directory, QString _filter, QString _defaultFile)
 {
     QFileDialog fileDialog(_parent,_title, _directory, _filter);
     fileDialog.setAcceptMode(QFileDialog::AcceptSave);
     fileDialog.setFileMode(QFileDialog::AnyFile);
-
+    if(!_defaultFile.isEmpty())
+    {
+        QFileInfo finfo(_defaultFile);
+        QString dir = finfo.absolutePath();
+        fileDialog.setDirectory(dir);
+        fileDialog.selectFile(finfo.fileName());
+    }
     fileDialog.setOption(QFileDialog::DontUseCustomDirectoryIcons, true);
 
 #ifndef __MINGW32__

@@ -58,6 +58,9 @@ public:
 
     TdmLayerItem *getLayerItem(const QModelIndex &_index) const;
 
+    // for Drag & Drop
+    void removeNode(TdmLayerItem *node);
+
 signals:
     void signal_checkChanged(TdmLayerItem*);
     void signal_itemDropped(TdmLayerItem*);
@@ -66,9 +69,6 @@ private:
     // singleton
     TdmLayersModel(QObject *_parent = 0);
     static TdmLayersModel *s_instance;
-
-    // for Drag & Drop
-    void removeNode(TdmLayerItem *node);
 
     TdmLayerItem *m_root_item;
 };

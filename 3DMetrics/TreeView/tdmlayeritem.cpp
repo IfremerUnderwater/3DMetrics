@@ -45,6 +45,8 @@
 */
 
 #include "tdmlayeritem.h"
+#include "tdmmeasurelayerdata.h"
+#include "tdmmodellayerdata.h"
 
 #include <QStringList>
 
@@ -172,3 +174,29 @@ void TdmLayerItem::insertChild(int _pos, TdmLayerItem *_child)
     m_child_items.insert(_pos, _child);
     _child->m_parent_item = this;
 }
+
+// displayed name
+QString TdmLayerItem::getName()
+{
+    QVariant v = data(0);
+    return v.toString();
+}
+
+// file name (may be empty)
+QString TdmLayerItem::getFileName()
+{
+    if(type() == TdmLayerItem::MeasurementLayer)
+    {
+        QVariant data1 = data(1);
+        TDMMeasureLayerData lda = data1.value<TDMMeasureLayerData>();
+        return lda.fileName();
+    }
+    if(type() == TdmLayerItem::ModelLayer)
+    {
+        QVariant data1 = data(1);
+        TDMModelLayerData lda = data1.value<TDMModelLayerData>();
+        return lda.fileName();
+    }
+    return QString("");
+}
+

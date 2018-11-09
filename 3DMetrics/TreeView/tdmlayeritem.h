@@ -53,6 +53,34 @@ public:
     void removeChild(int _row);
     int row() const;
 
+    // displayed name
+    QString getName();
+    // file name (may be empty)
+    QString getFileName();
+
+    // private data accessor
+    template<class privateDataClass>
+    privateDataClass getPrivateData()
+    {
+        QVariant data1 = data(1);
+        return data1.value<privateDataClass>();
+    }
+
+    template<class privateDataClass>
+    void setPrivateData(privateDataClass _value)
+    {
+        QVariant data1;
+        data1.setValue<privateDataClass>(_value);
+        setData(1, data1);
+    }
+
+    template<class privateDataClass>
+    bool hasData()
+    {
+        QVariant data1 = data(1);
+        return data1.canConvert<privateDataClass>();
+    }
+
 private:
     QList<TdmLayerItem*> m_child_items;
     QVector<QVariant> m_item_data;

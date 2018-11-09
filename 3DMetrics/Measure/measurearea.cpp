@@ -102,7 +102,8 @@ void MeasureArea::computeLengthAndArea()
 
     std::vector<Eigen::Vector3f> pt_area_data;
 
-    for(int i=1; i<m_array.length(); i++)
+    // start at 0 - because we have not last point = first
+    for(int i=0; i<m_array.length(); i++)
     {
         Eigen::Vector3f xyz;
 
