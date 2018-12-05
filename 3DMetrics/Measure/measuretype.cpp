@@ -5,7 +5,7 @@ static QString values[MeasureType::_Last] =
 {
     QObject::tr("Line"),
     QObject::tr("Point"),
-    QObject::tr("Perimeter"),
+    QObject::tr("Area"),
     QObject::tr("String")};
 
 QString MeasureType::value(const type _t)

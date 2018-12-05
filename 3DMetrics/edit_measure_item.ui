@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>355</width>
-    <height>35</height>
+    <width>445</width>
+    <height>57</height>
    </rect>
   </property>
   <property name="minimumSize">
@@ -19,45 +19,52 @@
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <widget class="QPushButton" name="delete_btn">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>2</y>
-     <width>31</width>
-     <height>31</height>
-    </rect>
+  <layout class="QHBoxLayout" name="horizontalLayout_2">
+   <property name="spacing">
+    <number>1</number>
    </property>
-   <property name="toolTip">
-    <string>Remove this line</string>
+   <property name="leftMargin">
+    <number>1</number>
    </property>
-   <property name="text">
-    <string>-</string>
+   <property name="topMargin">
+    <number>1</number>
    </property>
-   <property name="flat">
-    <bool>false</bool>
+   <property name="rightMargin">
+    <number>1</number>
    </property>
-  </widget>
-  <widget class="QLineEdit" name="name">
-   <property name="geometry">
-    <rect>
-     <x>5</x>
-     <y>3</y>
-     <width>161</width>
-     <height>31</height>
-    </rect>
+   <property name="bottomMargin">
+    <number>1</number>
    </property>
-  </widget>
-  <widget class="QComboBox" name="types_combo">
-   <property name="geometry">
-    <rect>
-     <x>175</x>
-     <y>3</y>
-     <width>141</width>
-     <height>31</height>
-    </rect>
-   </property>
-  </widget>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout">
+     <item>
+      <widget class="QLineEdit" name="name"/>
+     </item>
+     <item>
+      <widget class="QComboBox" name="types_combo"/>
+     </item>
+     <item>
+      <widget class="QPushButton" name="delete_btn">
+       <property name="maximumSize">
+        <size>
+         <width>50</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="toolTip">
+        <string>Remove this line</string>
+       </property>
+       <property name="text">
+        <string>-</string>
+       </property>
+       <property name="flat">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

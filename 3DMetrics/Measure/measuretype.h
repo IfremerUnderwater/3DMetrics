@@ -9,7 +9,7 @@ public:
     enum type {
         Line = 0,
         Point = 1,
-        Perimeter = 2,
+        Area = 2,
         String = 3,
         _Last = 4 // must be the last item
     };

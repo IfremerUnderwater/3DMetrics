@@ -423,7 +423,7 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
             }
                 break;
 
-            case MeasureType::Perimeter:
+            case MeasureType::Area:
                 // perimeter edit widget
             {
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
@@ -1102,7 +1102,7 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                     }
                         break;
 
-                    case MeasureType::Perimeter:
+                    case MeasureType::Area:
                         // perimeter edit widget
                     {
                         osg::ref_ptr<osg::Geode> geode;
@@ -1311,7 +1311,7 @@ void TDMGui::slot_addAttributeLine()
         }
             break;
 
-        case MeasureType::Perimeter:
+        case MeasureType::Area:
             // perimeter edit widget
         {
             MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
@@ -1425,7 +1425,7 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
     }
         break;
 
-    case MeasureType::Perimeter:
+    case MeasureType::Area:
         // perimeter edit widget
     {
         OSGWidgetTool::instance()->slot_cancelTool();
@@ -1868,7 +1868,7 @@ void TDMGui::slot_importOldMeasureFile()
         patternArea.addField("Name", MeasureType::type::String);
         patternArea.addField("Category", MeasureType::type::String);
         patternArea.addField("Temp", MeasureType::type::String);
-        patternArea.addField("Area", MeasureType::type::Perimeter);
+        patternArea.addField("Area", MeasureType::type::Area);
         patternArea.addField("Comment", MeasureType::type::String);
 
         QString areaName(fi.baseName() + "-areas");
@@ -1948,7 +1948,7 @@ void TDMGui::slot_importOldMeasureFile()
                 mit.encode(ot);
                 row.append(ot);
 
-                //"Area", MeasureType::type::Perimeter);
+                //"Area", MeasureType::type::Area);
                 osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
                 MeasureArea mia("Area", geode);
                 mia.getArray() = pts;

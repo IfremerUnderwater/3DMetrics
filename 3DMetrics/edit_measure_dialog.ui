@@ -6,142 +6,110 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>440</width>
-    <height>329</height>
+    <width>618</width>
+    <height>485</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <widget class="QLabel" name="label">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>10</y>
-     <width>80</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Measures</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="add_btn">
-   <property name="geometry">
-    <rect>
-     <x>400</x>
-     <y>40</y>
-     <width>31</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Add measure</string>
-   </property>
-   <property name="text">
-    <string>+</string>
-   </property>
-  </widget>
-  <widget class="QListWidget" name="listWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>80</y>
-     <width>421</width>
-     <height>211</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_2">
-   <property name="geometry">
-    <rect>
-     <x>20</x>
-     <y>50</y>
-     <width>101</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Field Name</string>
-   </property>
-  </widget>
-  <widget class="QLabel" name="label_3">
-   <property name="geometry">
-    <rect>
-     <x>190</x>
-     <y>50</y>
-     <width>80</width>
-     <height>21</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Type</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="load_pattern_btn">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>295</y>
-     <width>120</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Load stored pattern</string>
-   </property>
-   <property name="text">
-    <string>Load Pattern</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="save_pattern_btn">
-   <property name="geometry">
-    <rect>
-     <x>130</x>
-     <y>295</y>
-     <width>120</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Save current pattern</string>
-   </property>
-   <property name="text">
-    <string>Save Pattern</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="apply_btn">
-   <property name="geometry">
-    <rect>
-     <x>350</x>
-     <y>295</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Apply current pattern</string>
-   </property>
-   <property name="text">
-    <string>Apply</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="close_btn">
-   <property name="geometry">
-    <rect>
-     <x>267</x>
-     <y>295</y>
-     <width>81</width>
-     <height>31</height>
-    </rect>
-   </property>
-   <property name="toolTip">
-    <string>Close dialog without saving</string>
-   </property>
-   <property name="text">
-    <string>Close</string>
-   </property>
-  </widget>
+  <layout class="QHBoxLayout" name="horizontalLayout_3">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Measurements</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QLabel" name="label_2">
+         <property name="text">
+          <string>Field Name</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Type</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="add_btn">
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>Add measure</string>
+         </property>
+         <property name="text">
+          <string>+</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <widget class="QListWidget" name="listWidget"/>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="topMargin">
+        <number>5</number>
+       </property>
+       <item>
+        <widget class="QPushButton" name="load_pattern_btn">
+         <property name="toolTip">
+          <string>Load stored pattern</string>
+         </property>
+         <property name="text">
+          <string>Load Pattern</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="save_pattern_btn">
+         <property name="toolTip">
+          <string>Save current pattern</string>
+         </property>
+         <property name="text">
+          <string>Save Pattern</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="close_btn">
+         <property name="toolTip">
+          <string>Close dialog without saving</string>
+         </property>
+         <property name="text">
+          <string>Close</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="apply_btn">
+         <property name="toolTip">
+          <string>Apply current pattern</string>
+         </property>
+         <property name="text">
+          <string>Apply</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

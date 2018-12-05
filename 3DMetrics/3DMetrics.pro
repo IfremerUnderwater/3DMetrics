@@ -32,7 +32,7 @@ win32{
 INCLUDEPATH += C:\msys64\mingw64\include\eigen3
 }
 unix{
-INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
+INCLUDEPATH += /usr/include/eigen3
 }
 
 include(../Scripts/BasicProcessing.pri)
