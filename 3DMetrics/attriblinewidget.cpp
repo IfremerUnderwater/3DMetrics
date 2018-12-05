@@ -1,8 +1,8 @@
 #include "attriblinewidget.h"
 #include "ui_attriblinewidget.h"
 
-#include "Measure/measureline.h"
-#include "OSGWidget/osgwidgettool.h"
+#include "Measurement/measurement_line.h"
+#include "OSGWidget/osg_widget_tool.h"
 
 AttribLineWidget::AttribLineWidget(QWidget *parent) :
     QWidget(parent),

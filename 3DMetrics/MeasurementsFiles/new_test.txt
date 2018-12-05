@@ -1,0 +1,27 @@
+begin_measurements_table
+
+#Name;Type;Category;Temperature;Result;Comments
+distance1;Distance measurement;Basalte;;224.821;;
+point2;Interest point measurement;Basalte;;58.8895  -343.656  72.2936;;
+
+end_measurements_table
+
+begin_line_measurement
+
+end_line_measurement
+
+begin_surface_measurement
+
+end_surface_measurement
+
+begin_interest_point_measurement
+
+end_interest_point_measurement
+
+begin_QMap_measurements
+
+#Measurement_name;measurement_type;measurement_index
+distance1;Distance measurement;1
+point2;Interest point measurement;1
+
+end_QMap_measurements

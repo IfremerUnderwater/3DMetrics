@@ -3,7 +3,7 @@
 
 #include <QDialog>
 #include <QJsonDocument>
-#include "Measure/measurepattern.h"
+#include "Measurement/measurement_pattern.h"
 
 namespace Ui {
 class edit_measure_dialog;

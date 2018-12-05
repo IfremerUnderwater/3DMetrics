@@ -4,10 +4,10 @@
 
 #include <QMouseEvent>
 
-#include "OSGWidget/osgwidgettool.h"
-#include "OSGWidget/OSGWidget.h"
+#include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/osg_widget.h"
 
-#include <Measure/measurearea.h>
+#include <Measurement/measurement_area.h>
 
 ToolAreaDialog::ToolAreaDialog(QWidget *parent) :
     QDialog(parent),

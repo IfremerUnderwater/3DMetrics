@@ -3,10 +3,10 @@
 
 #include <QMouseEvent>
 
-#include "OSGWidget/osgwidgettool.h"
-#include "OSGWidget/OSGWidget.h"
+#include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/osg_widget.h"
 
-#include <Measure/measurepoint.h>
+#include <Measurement/measurement_point.h>
 
 ToolPointDialog::ToolPointDialog(QWidget *parent) :
     QDialog(parent),

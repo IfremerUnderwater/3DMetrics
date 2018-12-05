@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "Measure/measuretype.h"
+#include "Measurement/measurement_type.h"
 
 class QListWidgetItem;
 

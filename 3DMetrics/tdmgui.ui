@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1214</width>
-    <height>988</height>
+    <width>1240</width>
+    <height>1025</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1214</width>
-     <height>25</height>
+     <width>1240</width>
+     <height>39</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -151,7 +151,7 @@
   </widget>
   <widget class="QDockWidget" name="display_widget_dock">
    <property name="sizePolicy">
-    <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
      <horstretch>1</horstretch>
      <verstretch>1</verstretch>
     </sizepolicy>
@@ -360,7 +360,7 @@
   <customwidget>
    <class>OSGWidget</class>
    <extends>QWidget</extends>
-   <header>OSGWidget/OSGWidget.h</header>
+   <header>OSGWidget/osg_widget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

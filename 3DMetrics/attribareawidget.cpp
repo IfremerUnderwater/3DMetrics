@@ -1,7 +1,7 @@
 #include "attribareawidget.h"
 #include "ui_attribareawidget.h"
-#include "Measure/measurearea.h"
-#include "OSGWidget/osgwidgettool.h"
+#include "Measurement/measurement_area.h"
+#include "OSGWidget/osg_widget_tool.h"
 
 AttribAreaWidget::AttribAreaWidget(QWidget *parent) :
     QWidget(parent),

@@ -3,12 +3,12 @@
 
 #include <QMainWindow>
 
-#include "Measure/measurepattern.h"
+#include "Measurement/measurement_pattern.h"
 
 class TdmLayerItem;
 class QCloseEvent;
 class QItemSelection;
-class TDMMeasureLayerData;
+class TDMMeasurementLayerData;
 
 namespace Ui {
 class TDMGui;
@@ -42,12 +42,12 @@ private:
     void updateAttributeTable(TdmLayerItem *item);
     MeasurePattern m_current;
     // for current vector of rows
-    TDMMeasureLayerData *m_currentItem;
+    TDMMeasurementLayerData *m_currentItem;
 
     // working helpers
     void load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem);
     bool loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectItem);
-    bool saveMeasure(QString _filename, TDMMeasureLayerData &_data);
+    bool saveMeasure(QString _filename, TDMMeasurementLayerData &_data);
 
     bool checkAndSaveMeasures(TdmLayerItem *item);
     QJsonObject saveTreeStructure(TdmLayerItem *item);

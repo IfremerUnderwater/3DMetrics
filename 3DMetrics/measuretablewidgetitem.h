@@ -3,7 +3,7 @@
 
 #include <QTableWidgetItem>
 
-#include "Measure/measureitem.h"
+#include "Measurement/measurement_item.h"
 
 class MeasureTableWidgetItem : public QTableWidgetItem
 {

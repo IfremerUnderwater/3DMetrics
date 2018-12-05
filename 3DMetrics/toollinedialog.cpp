@@ -3,10 +3,10 @@
 
 #include <QMouseEvent>
 
-#include "OSGWidget/osgwidgettool.h"
-#include "OSGWidget/OSGWidget.h"
+#include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/osg_widget.h"
 
-#include <Measure/measureline.h>
+#include <Measurement/measurement_line.h>
 
 ToolLineDialog::ToolLineDialog(QWidget *parent) :
     QDialog(parent),
