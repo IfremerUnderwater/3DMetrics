@@ -32,7 +32,7 @@ win32{
 INCLUDEPATH += C:\msys64\mingw64\include\eigen3
 }
 unix{
-INCLUDEPATH += /usr/local/include/openMVG/third_party/eigen
+INCLUDEPATH += /usr/include/eigen3
 }
 
 include(../Scripts/BasicProcessing.pri)
@@ -42,30 +42,73 @@ LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkm
 INCLUDEPATH += Tools
 
 SOURCES += main.cpp \
-    mainwindow.cpp \
-    OSGWidget/OSGWidget.cpp \
-    Tools/line_measurement_tool.cpp \
-    Tools/measurement_tool.cpp \
-    measurement_saving_dialog.cpp \
-    Tools/surface_measurement_tool.cpp \
-    Tools/interest_point_tool.cpp \
     OSGWidget/kml_handler.cpp \
-    Tools/tool_handler.cpp
+    tdmgui.cpp \
+    filedialog.cpp \
+    edit_measure_dialog.cpp \
+    edit_measure_item.cpp \
+    attribpointwidget.cpp \
+    attriblinewidget.cpp \
+    attribareawidget.cpp \
+    Measurement/point3d.cpp \
+    measuretablewidgetitem.cpp \
+    OSGWidget/osgwidgettool.cpp \
+    toolpointdialog.cpp \
+    toollinedialog.cpp \
+    toolareadialog.cpp \
+    Measurement/measurement_area.cpp \
+    Measurement/measurement_item.cpp \
+    Measurement/measurement_point.cpp \
+    Measurement/measurement_line.cpp \
+    Measurement/measurement_string.cpp \
+    Measurement/measurement_pattern.cpp \
+    Measurement/measurement_type.cpp \
+    Measurement/osg_measurement_row.cpp \
+    OSGWidget/osg_widget.cpp \
+    TreeView/tdmlayer_item.cpp \
+    TreeView/tdmlayer_model.cpp \
+    TreeView/tdm_measurement_layerdata.cpp \
+    TreeView/tdm_model_layerdata.cpp
 
-HEADERS  += mainwindow.h \
-    OSGWidget/OSGWidget.h \
-    Tools/line_measurement_tool.h \
-    Tools/measurement_tool.h \
-    measurement_saving_dialog.h \
-    Tools/surface_measurement_tool.h \
-    Tools/interest_point_tool.h \
+HEADERS  += \
     OSGWidget/kml_handler.h \
-    Tools/tool_handler.h \
-    Tools/tool_types.h
+    tdmgui.h \
+    filedialog.h \
+    edit_measure_dialog.h \
+    edit_measure_item.h \
+    attribpointwidget.h \
+    attriblinewidget.h \
+    attribareawidget.h \
+    Measurement/point3d.h \
+    measuretablewidgetitem.h \
+    toolpointdialog.h \
+    toollinedialog.h \
+    toolareadialog.h \
+    Measurement/measurement_area.h \
+    Measurement/measurement_line.h \
+    Measurement/measurement_item.h \
+    Measurement/measurement_pattern.h \
+    Measurement/measurement_point.h \
+    Measurement/measurement_string.h \
+    Measurement/measurement_type.h \
+    Measurement/osg_measurement_row.h \
+    OSGWidget/osg_widget.h \
+    OSGWidget/osg_widget_tool.h \
+    TreeView/tdm_layer_item.h \
+    TreeView/tdm_layer_model.h \
+    TreeView/tdm_measurement_layerdata.h \
+    TreeView/tdm_model_layerdata.h
 
 FORMS    += \
-    mainwindow.ui \
-    measurement_saving_dialog.ui
+    tdmgui.ui \
+    edit_measure_dialog.ui \
+    edit_measure_item.ui \
+    attribpointwidget.ui \
+    attriblinewidget.ui \
+    attribareawidget.ui \
+    toolpointdialog.ui \
+    toollinedialog.ui \
+    toolareadialog.ui
 
 RESOURCES += \
     ressources.qrc

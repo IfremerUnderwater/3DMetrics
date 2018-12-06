@@ -1,7 +1,6 @@
 #include <QApplication>
 #include <QtWidgets>
-#include "mainwindow.h"
-
+#include "tdmgui.h"
 
 int main(int argc, char *argv[])
 
@@ -9,11 +8,8 @@ int main(int argc, char *argv[])
 
     QApplication app(argc, argv);
 
-    qRegisterMetaType<MeasInfo>();
-
-    MainWindow main_window;
-
-    main_window.show();
+    TDMGui tdm_gui;
+    tdm_gui.show();
 
     return app.exec();
 
