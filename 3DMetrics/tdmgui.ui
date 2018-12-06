@@ -6,20 +6,26 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1240</width>
-    <height>1025</height>
+    <width>1222</width>
+    <height>907</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>3D Metrics v0.4.0</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="OSGWidget" name="display_widget" native="true"/>
+    </item>
+   </layout>
+  </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1240</width>
+     <width>1222</width>
      <height>39</height>
     </rect>
    </property>
@@ -146,37 +152,6 @@
     </property>
     <property name="headerHidden">
      <bool>true</bool>
-    </property>
-   </widget>
-  </widget>
-  <widget class="QDockWidget" name="display_widget_dock">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-     <horstretch>1</horstretch>
-     <verstretch>1</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>850</width>
-     <height>600</height>
-    </size>
-   </property>
-   <property name="features">
-    <set>QDockWidget::DockWidgetFloatable|QDockWidget::DockWidgetMovable</set>
-   </property>
-   <property name="windowTitle">
-    <string>Display</string>
-   </property>
-   <attribute name="dockWidgetArea">
-    <number>2</number>
-   </attribute>
-   <widget class="OSGWidget" name="display_widget">
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
     </property>
    </widget>
   </widget>

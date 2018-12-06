@@ -3,9 +3,6 @@
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
 
-//#include "TDMLayers/tdmlayer.h"
-//#include "TDMLayers/tdmmaplayerregistry.h"
-
 #include "TreeView/tdm_layer_item.h"
 #include "TreeView/tdm_layer_model.h"
 
@@ -41,11 +38,6 @@ TDMGui::TDMGui(QWidget *parent) :
     qRegisterMetaType<MeasurePattern>();
 
     ui->setupUi(this);
-    //    TDMLayerRegistry *reg = TDMLayerRegistry::instance();
-
-    //    reg->addMapLayer(new TDMLayer(TDMLayer::ModelLayer, tr("Models")));
-
-    //    ui->tree_widget->setModel(reg);
 
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
@@ -81,7 +73,7 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->attrib_table->verticalHeader()->setVisible(true);
     QHeaderView *verticalHeader = ui->attrib_table->verticalHeader();
     verticalHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-    verticalHeader->setDefaultSectionSize(60);
+    verticalHeader->setDefaultSectionSize(100);
 
     // tablewidget contextual menu
     ui->attrib_table->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -118,8 +110,6 @@ TDMGui::TDMGui(QWidget *parent) :
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
 
-    // docking ????? pb with OSG widget
-    connect(ui->display_widget_dock, SIGNAL(topLevelChanged(bool)), this, SLOT(slot_displayToplevelChanged(bool)));
 }
 
 TDMGui::~TDMGui()
@@ -1485,20 +1475,6 @@ void TDMGui::slot_attribTableCellChanged(int row, int column)
 }
 
 
-void TDMGui::slot_displayToplevelChanged(bool floating)
-{
-    if(floating)
-    {
-        // *** TODO : afficher quelque chose
-        if(ui->display_widget_dock->isWindow())
-        {
-            //              ui->display_widget->setParent(ui->display_widget_dock->topLevelWidget());
-            ui->display_widget->updateGeometry();
-        }
-    }
-    else
-        ui->display_widget->setParent(ui->display_widget_dock);
-}
 
 void TDMGui::selectItem(QModelIndex &index)
 {

@@ -109,7 +109,6 @@ public slots:
     void slot_addAttributeLine();
     void slot_deleteAttributeLine();
 
-    void slot_displayToplevelChanged(bool);
 };
 
 #endif // TDMGUI_H
