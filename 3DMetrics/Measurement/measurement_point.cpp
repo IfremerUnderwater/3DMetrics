@@ -22,6 +22,12 @@ void MeasurePoint::decode(QJsonObject & _obj)
   m_p.decode(p);
 }
 
+void MeasurePoint::decode(QJsonObject & _obj, Point3D offset)
+{
+  QJsonObject p = _obj.value(fieldName()).toObject();
+  m_p.decode(p, offset);
+}
+
 // encode to JSon
 void MeasurePoint::encode(QJsonObject & _obj)
 {

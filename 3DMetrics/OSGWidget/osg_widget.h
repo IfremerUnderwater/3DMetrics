@@ -108,6 +108,9 @@ public:
     ///
     void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
 
+    // set initial values
+    void setGeoOrigin(QPointF _latlon, double _depth);
+
     // reset to home position
     void home();
 

@@ -66,6 +66,12 @@ public slots:
     void slot_openProject();
     void slot_saveProject();
 
+    void slot_layersTreeWindow();
+    void slot_attribTableWindow();
+
+    void slot_layersTreeWindowVisibilityChanged(bool);
+    void slot_attribTableWindowVisibilityChanged(bool);
+
     void slot_importOldMeasureFile();
 
     // general tools

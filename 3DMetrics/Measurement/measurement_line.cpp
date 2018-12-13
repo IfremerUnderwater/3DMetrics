@@ -50,6 +50,24 @@ void MeasureLine::decode(QJsonObject & _obj)
     }
 }
 
+
+void MeasureLine::decode(QJsonObject & _obj, Point3D offset)
+{
+    m_array.clear();
+
+    QJsonObject p = _obj.value(fieldName()).toObject();
+    m_length = p.value("length").toDouble();
+
+    QJsonArray array = p.value("pts").toArray();
+    for(int i=0; i<array.count(); i++)
+    {
+        QJsonObject op = array.at(i).toObject();
+        Point3D p;
+        p.decode(op, offset);
+        m_array.append(p);
+    }
+}
+
 // encode to JSon
 void MeasureLine::encode(QJsonObject & _obj)
 {

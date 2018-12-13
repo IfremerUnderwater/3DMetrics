@@ -33,6 +33,7 @@ public:
 
     // from JSon to object
     virtual void decode(QJsonObject & _obj);
+    virtual void decode(QJsonObject & _obj, Point3D offset);
 
     // encode to JSon
     virtual void encode(QJsonObject & _obj);

@@ -739,6 +739,21 @@ void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
     _ref_depth = m_ref_depth;
 }
 
+// set initial values
+void OSGWidget::setGeoOrigin(QPointF _latlon, double _depth)
+{
+    // Transform model
+    osg::ref_ptr<osg::MatrixTransform> model_transform = new osg::MatrixTransform;
+    m_ref_lat_lon = _latlon;
+    m_ref_depth = _depth;
+    m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
+
+    model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
+    osg::ref_ptr<osg::Node> node = new osg::Node();
+    model_transform->addChild(node);
+    addNodeToScene(model_transform);
+}
+
 void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
 {
     m_group->addChild(_geode.get());

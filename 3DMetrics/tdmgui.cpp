@@ -30,6 +30,8 @@
 #include "toollinedialog.h"
 #include "toolareadialog.h"
 
+#include <GeographicLib/LocalCartesian.hpp>
+
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui),
@@ -49,8 +51,12 @@ TDMGui::TDMGui(QWidget *parent) :
     QObject::connect(ui->import_old_measure_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasureFile()));
     QObject::connect(ui->open_project_action, SIGNAL(triggered()), this, SLOT(slot_openProject()));
     QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
-
+    QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
+    QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
+
+    QObject::connect(ui->tree_widget_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_layersTreeWindowVisibilityChanged(bool)));
+    QObject::connect(ui->attrib_table_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_attribTableWindowVisibilityChanged(bool)));
 
     // check state on the treeview item
     QObject::connect(TdmLayersModel::instance(),SIGNAL(signal_checkChanged(TdmLayerItem*)),this,SLOT(slot_checkChanged(TdmLayerItem*)));
@@ -92,7 +98,7 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->cancel_measurement->setEnabled(false);
 
     // file menu
-    ui->open_measurement_file_action->setEnabled(false);
+    ui->open_measurement_file_action->setEnabled(true);
     ui->save_measurement_file_action->setEnabled(false);
     ui->save_measurement_file_as_action->setEnabled(false);
     ui->import_old_measure_format_action->setEnabled(false);
@@ -153,7 +159,7 @@ void TDMGui::slot_open3dModel()
         load3DModel(fileName, TdmLayersModel::instance()->rootItem(), true);
 
         // allow measurement to be loaded
-        ui->open_measurement_file_action->setEnabled(true);
+        //ui->open_measurement_file_action->setEnabled(true);
         ui->import_old_measure_format_action->setEnabled(true);
 
         // measurement tools
@@ -310,8 +316,8 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     TDMMeasurementLayerData *localData = new TDMMeasurementLayerData(modelData);
     m_currentItem = localData;
     // load data
-    QJsonDocument doc = pattern.get();
     m_current = pattern;
+    QJsonDocument doc = pattern.get();
     loadData(doc, true);
     modelData.rows() = localData->rows();
 
@@ -333,6 +339,57 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
     OSGWidgetTool::instance()->endTool();
 
     QTableWidget *table = ui->attrib_table;
+
+    Point3D offset;
+
+    // check reference if available
+    if(_doc.object().contains("Reference"))
+    {
+        QJsonObject reference;
+
+        QJsonObject obj = _doc.object();
+        reference = obj["Reference"].toObject();
+
+        if(reference.contains("latitude") && reference.contains("longitude") && reference.contains("depth") )
+        {
+            // in Json
+            double latref = reference["latitude"].toDouble();
+            double lonref = reference["longitude"].toDouble();
+            double depthref = reference["depth"].toDouble();
+
+            // in OSGWidget
+            // add reference point from OSG widget
+            QPointF latlon;
+            double depthorg;
+            ui->display_widget->getGeoOrigin(latlon, depthorg);
+            // Update OSGWidget if not initialized
+            if(depthorg == INVALID_VALUE)
+            {
+                latlon.setX(latref);
+                latlon.setY(lonref);
+                depthorg = depthref;
+                ui->display_widget->setGeoOrigin(latlon, depthorg);
+            }
+            // Warning : latitude is in x, longitude is in y in OSGWidget
+            double latorg = latlon.x();
+            double lonorg = latlon.y();
+
+            // convert ref in GeoOrigin
+            GeographicLib::LocalCartesian proj;
+            proj.Reset(latorg, lonorg, depthorg);
+            double xref;
+            double yref;
+            double z;
+            proj.Forward(latref, lonref, depthref, xref, yref,z);
+
+            offset.x = xref;
+            offset.y = yref;
+
+            // depth
+            offset.z = depthref - depthorg;
+            qDebug() << "offsetX=" << offset.x << " offsetY=" << offset.y << " offsetZ=" << offset.z;
+        }
+    }
 
     QJsonArray array = _doc.object().value("Data").toArray();
     qDebug() << "loadData buildosg=" << _buildOsg << "  nbItems=" << array.count()
@@ -373,7 +430,7 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
 
                 MeasureLine *l = new MeasureLine(m_current.fieldName(c),osgRow->get(c));
-                l->decode(obj);
+                l->decode(obj, offset);
                 if(_buildOsg)
                 {
                     l->updateGeode();
@@ -396,7 +453,7 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
             {
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
                 MeasurePoint *p = new MeasurePoint(m_current.fieldName(c),osgRow->get(c));
-                p->decode(obj);
+                p->decode(obj, offset);
                 if(_buildOsg)
                 {
                     p->updateGeode();
@@ -414,11 +471,11 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
                 break;
 
             case MeasureType::Area:
-                // perimeter edit widget
+                // area edit widget
             {
                 MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
                 MeasureArea *a = new MeasureArea(m_current.fieldName(c),osgRow->get(c));
-                a->decode(obj);
+                a->decode(obj, offset);
                 if(_buildOsg)
                 {
                     a->updateGeode();
@@ -1093,7 +1150,7 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                         break;
 
                     case MeasureType::Area:
-                        // perimeter edit widget
+                        // area edit widget
                     {
                         osg::ref_ptr<osg::Geode> geode;
                         MeasureArea *a = new MeasureArea(_pattern.fieldName(c), geode);
@@ -1302,7 +1359,7 @@ void TDMGui::slot_addAttributeLine()
             break;
 
         case MeasureType::Area:
-            // perimeter edit widget
+            // area edit widget
         {
             MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
             MeasureArea *a = new MeasureArea(m_current.fieldName(i-1),osgRow->get(i-1));
@@ -1416,7 +1473,7 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
         break;
 
     case MeasureType::Area:
-        // perimeter edit widget
+        // area edit widget
     {
         OSGWidgetTool::instance()->slot_cancelTool();
 
@@ -2007,9 +2064,14 @@ void TDMGui::slot_openProject()
         model->removeRows(0, model->rowCount());
     }
 
-    // allow measurement to be loaded
-    ui->open_measurement_file_action->setEnabled(false);
+    // disallow measurement to be loaded
+    //ui->open_measurement_file_action->setEnabled(false);
     ui->import_old_measure_format_action->setEnabled(false);
+
+    // disallow measurement tools
+    ui->line_tool->setEnabled(false);
+    ui->surface_tool->setEnabled(false);
+    ui->pick_point->setEnabled(false);
 
     // ask file name
     QString fileName = getOpenFileName(this,tr("Select project to open"), "", tr("Json files (*.json)"));
@@ -2080,8 +2142,13 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         load3DModel(filePath, _parent ? _parent : root, false);
 
         // allow measurement to be loaded
-        ui->open_measurement_file_action->setEnabled(true);
+        //ui->open_measurement_file_action->setEnabled(true);
         ui->import_old_measure_format_action->setEnabled(true);
+
+        // measurement tools
+        ui->line_tool->setEnabled(true);
+        ui->surface_tool->setEnabled(true);
+        ui->pick_point->setEnabled(true);
     }
 
     if(_obj.contains("Measure"))
@@ -2243,4 +2310,38 @@ void TDMGui::slot_saveProject()
     file.write(json_string.toUtf8());
     file.close();
 
+}
+
+void TDMGui::slot_layersTreeWindow()
+{
+    if(ui->layers_tree_window_action->isChecked())
+    {
+        ui->tree_widget_dock->show();
+    }
+    else
+    {
+        ui->tree_widget_dock->hide();
+    }
+}
+
+void TDMGui::slot_attribTableWindow()
+{
+    if(ui->attrib_table_window_action->isChecked())
+    {
+        ui->attrib_table_dock->show();
+    }
+    else
+    {
+        ui->attrib_table_dock->hide();
+    }
+}
+
+void TDMGui::slot_layersTreeWindowVisibilityChanged(bool value)
+{
+    ui->layers_tree_window_action->setChecked(value);
+}
+
+void TDMGui::slot_attribTableWindowVisibilityChanged(bool value)
+{
+    ui->attrib_table_window_action->setChecked(value);
 }

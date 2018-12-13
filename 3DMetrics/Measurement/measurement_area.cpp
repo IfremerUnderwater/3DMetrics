@@ -80,6 +80,13 @@ void MeasureArea::decode(QJsonObject & _obj)
     m_area = p.value("area").toDouble();
 }
 
+void MeasureArea::decode(QJsonObject & _obj, Point3D offset)
+{
+    MeasureLine::decode(_obj, offset);
+    QJsonObject p = _obj.value(fieldName()).toObject();
+    m_area = p.value("area").toDouble();
+}
+
 // encode to JSon
 void MeasureArea::encode(QJsonObject & _obj)
 {
