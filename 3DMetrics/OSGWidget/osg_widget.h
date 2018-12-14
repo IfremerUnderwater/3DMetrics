@@ -59,7 +59,7 @@ public:
     /// \param _sceneData pointer to scene data
     /// \return true if loading succeded
     ///
-    bool setSceneData(osg::ref_ptr<osg::Node> _sceneData);
+    //bool setSceneData(osg::ref_ptr<osg::Node> _sceneData);
 
     ///
     /// \brief setClearColor set the clear color for all cameras
@@ -84,16 +84,16 @@ public:
     ///
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
-//    ///
-//    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
-//    /// \return measurement geode
-//    ///
-//    osg::ref_ptr<osg::Geode> getMeasurementGeode();
+    //    ///
+    //    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
+    //    /// \return measurement geode
+    //    ///
+    //    osg::ref_ptr<osg::Geode> getMeasurementGeode();
 
-//    ///
-//    /// \brief forceGeodeUpdate force geode data to redraw
-//    ///
-//    void forceGeodeUpdate();
+    //    ///
+    //    /// \brief forceGeodeUpdate force geode data to redraw
+    //    ///
+    //    void forceGeodeUpdate();
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
 
@@ -114,12 +114,17 @@ public:
     // reset to home position
     void home();
 
+    // convert x, y, z => lat, lon & depth
+    // if(m_ref_depth == INVALID_VALUE) do nothing
+    void xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, double &_lon, double &_depth);
+
 public slots:
 
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
     void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
+    void signal_onMouseMove(int _x, int _y);
 
     // tools
     void signal_startTool(QString &message);
@@ -159,14 +164,17 @@ private:
 
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> m_graphicsWindow;
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
-    osg::Vec3d m_intersection_point;
+    //osg::Vec3d m_intersection_point;
 
-    osgUtil::LineSegmentIntersector::Intersections::iterator m_hitr;
+    //osgUtil::LineSegmentIntersector::Intersections::iterator m_hitr;
 
-    std::vector<osg::ref_ptr<osg::Node>> m_models;
     osg::ref_ptr<osg::Group> m_group;
+
     std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
-    std::vector<osg::ref_ptr<osg::Group>> m_groups;
+    std::vector<osg::ref_ptr<osg::Node>> m_models;
+
+    // not used anymore
+    //std::vector<osg::ref_ptr<osg::Group>> m_groups;
     //osg::ref_ptr<osg::Geode> m_measurement_geode;
 
     // Georef objects

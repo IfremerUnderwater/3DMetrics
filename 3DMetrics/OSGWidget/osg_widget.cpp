@@ -223,8 +223,8 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     // Create group that will contain measurement geode and 3D model
     m_group = new osg::Group;
-//    m_measurement_geode = new osg::Geode;
-//    m_group->addChild(m_measurement_geode);
+    //    m_measurement_geode = new osg::Geode;
+    //    m_group->addChild(m_measurement_geode);
 
 
 }
@@ -241,7 +241,7 @@ bool OSGWidget::setSceneFromFile(std::string _sceneFile)
 
     return addNodeToScene(node);
 
-/***    // load the data
+    /***    // load the data
     setlocale(LC_ALL, "C");
 
     QFileInfo sceneInfo(QString::fromStdString(_sceneFile));
@@ -381,7 +381,8 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::StateSet* stateSet = _node->getOrCreateStateSet();
     stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    m_group->addChild(_node.get());
+    //m_group->addChild(_node.get());
+    m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
     /*osgUtil::Optimizer optimizer;
@@ -419,24 +420,24 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
     return true;
 }
 
-bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> _sceneData)
-{
-    if (!_sceneData)
-    {
-        std::cout << "No data loaded" << std::endl;
-        return false;
-    }
+//bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> _sceneData)
+//{
+//    if (!_sceneData)
+//    {
+//        std::cout << "No data loaded" << std::endl;
+//        return false;
+//    }
 
-    m_models.push_back(_sceneData);
-
-
-    osgViewer::View *view = m_viewer->getView(0);
-
-    view->setSceneData( m_models.back().get() );
+//    m_models.push_back(_sceneData);
 
 
-    return true;
-}
+//    osgViewer::View *view = m_viewer->getView(0);
+
+//    view->setSceneData( m_models.back().get() );
+
+
+//    return true;
+//}
 
 void OSGWidget::setClearColor(double _r, double _g, double _b, double _alpha)
 {
@@ -548,6 +549,8 @@ void OSGWidget::keyReleaseEvent( QKeyEvent* event )
 
 void OSGWidget::mouseMoveEvent( QMouseEvent* event )
 {
+    emit signal_onMouseMove(event->x(), event->y());
+
     this->getEventQueue()->mouseMotion( static_cast<float>( event->x() ),
                                         static_cast<float>( event->y() ) );
 }
@@ -772,18 +775,18 @@ void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
 
 void OSGWidget::addGroup(osg::ref_ptr<osg::Group> _group)
 {
-    m_groups.push_back(_group);
+    //m_groups.push_back(_group);
     m_group->addChild(_group.get());
 }
 
 void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
 {
     // remove group
-    std::vector<osg::ref_ptr<osg::Group>>::iterator position = std::find(m_groups.begin(), m_groups.end(), _group);
-    if (position != m_groups.end()) // == myVector.end() means the element was not found
-        m_groups.erase(position);
+    //    std::vector<osg::ref_ptr<osg::Group>>::iterator position = std::find(m_groups.begin(), m_groups.end(), _group);
+    //    if (position != m_groups.end()) // == myVector.end() means the element was not found
+    //        m_groups.erase(position);
 
-     m_group->removeChild(_group);
+    m_group->removeChild(_group);
 }
 
 // reset view to home
@@ -807,4 +810,14 @@ void OSGWidget::endTool(QString &message)
 void OSGWidget::cancelTool(QString &message)
 {
     emit signal_cancelTool(message);
+}
+
+// convert x, y, z => lat, lon & depth
+// if(m_ref_depth == INVALID_VALUE) do nothing
+void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, double &_lon, double &_depth)
+{
+    if(m_ref_depth == INVALID_VALUE)
+        return;
+
+    m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _depth);
 }

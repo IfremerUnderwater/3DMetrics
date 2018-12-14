@@ -41,6 +41,19 @@ TDMGui::TDMGui(QWidget *parent) :
 
     ui->setupUi(this);
 
+    // to add in reverse because toolbar order is right to left
+    m_depthLabel = new QLabel("depth", ui->coords_toolbar);
+    m_depthLabel->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_depthLabel);
+
+    m_lonLabel = new QLabel("lon", ui->coords_toolbar);
+    m_lonLabel->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_lonLabel);
+
+    m_latLabel = new QLabel("lat", ui->coords_toolbar);
+    m_latLabel->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_latLabel);
+
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
 
@@ -54,6 +67,8 @@ TDMGui::TDMGui(QWidget *parent) :
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
+
+    QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
 
     QObject::connect(ui->tree_widget_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_layersTreeWindowVisibilityChanged(bool)));
     QObject::connect(ui->attrib_table_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_attribTableWindowVisibilityChanged(bool)));
@@ -116,6 +131,7 @@ TDMGui::TDMGui(QWidget *parent) :
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
 
+    connect(ui->display_widget, SIGNAL(signal_onMouseMove(int,int)), this, SLOT(slot_mouseMoveInOsgWidget(int,int)));
 }
 
 TDMGui::~TDMGui()
@@ -298,6 +314,12 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     if(!res)
         return false;
 
+
+    // get reference point from OSG widget
+    QPointF latlon;
+    double depthorg;
+    ui->display_widget->getGeoOrigin(latlon, depthorg);
+
     QFileInfo fi(f.fileName());
     QVariant data(fi.fileName());
 
@@ -308,10 +330,9 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     QVariant tool;
     tool.setValue(modelData);
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, _parent, data, tool);
-    added->setChecked(true);
-
     added->setPrivateData(modelData);
     updateAttributeTable(added);
+    added->setChecked(true);
 
     TDMMeasurementLayerData *localData = new TDMMeasurementLayerData(modelData);
     m_currentItem = localData;
@@ -319,8 +340,19 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     m_current = pattern;
     QJsonDocument doc = pattern.get();
     loadData(doc, true);
+
+    pattern.set(doc);
+    m_current = pattern;
+
+    // update doc in modelData
+    modelData.pattern().set(doc);
+
     modelData.rows() = localData->rows();
 
+    added->setPrivateData(modelData);
+
+    saveData(doc);
+    modelData.pattern().set(doc);
     added->setPrivateData(modelData);
 
     QModelIndex index = model->index(added);
@@ -331,6 +363,10 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     {
         selectItem(index);
     }
+
+    if(depthorg == INVALID_VALUE)
+        ui->display_widget->home();
+
     return true;
 }
 
@@ -362,6 +398,7 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
             QPointF latlon;
             double depthorg;
             ui->display_widget->getGeoOrigin(latlon, depthorg);
+            qDebug() << "Reference lat=" << latlon.x() << " lon=" << latlon.y() << " depth=" << depthorg;
             // Update OSGWidget if not initialized
             if(depthorg == INVALID_VALUE)
             {
@@ -388,6 +425,12 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
             // depth
             offset.z = depthref - depthorg;
             qDebug() << "offsetX=" << offset.x << " offsetY=" << offset.y << " offsetZ=" << offset.z;
+            obj.remove("Reference");
+            _doc.setObject(obj);
+        }
+        else
+        {
+            qDebug() << "NO reference";
         }
     }
 
@@ -407,7 +450,9 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
             m_currentItem->addRow(osgRow, rowindex);
         }
         else
+        {
             osgRow = m_currentItem->rows().at(rowindex);
+        }
 
         // checkbox
         QTableWidgetItem *checkbox = new QTableWidgetItem();
@@ -625,6 +670,7 @@ bool TDMGui::saveMeasure(QString _filename, TDMMeasurementLayerData &_data)
     QJsonDocument json = _data.pattern().get();
     // add data
     saveData(json);
+
     // add reference point from OSG widget
     QPointF latlon;
     double refdepth;
@@ -722,18 +768,13 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
             if(prevselected != nullptr && prevselected->type() == TdmLayerItem::MeasurementLayer)
             {
                 // save data
-                //                QVariant data1 = prevselected->data(1);
-                //                TDMMeasurementLayerData lda = data1.value<TDMMeasurementLayerData>();
                 TDMMeasurementLayerData lda = prevselected->getPrivateData<TDMMeasurementLayerData>();
-                //MeasurePattern &pattern = lda.pattern();
 
                 QJsonDocument doc = lda.pattern().get();
                 saveData(doc);
 
                 lda.pattern().set(doc);
-                prevselected->setPrivateData<TDMMeasurementLayerData>(lda);
-                //                data1.setValue<TDMMeasurementLayerData>(lda);
-                //                prevselected->setData(1, data1);
+
                 delete m_currentItem;
                 m_currentItem = 0;
                 updateAttributeTable(0);
@@ -753,14 +794,10 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
         {
             ui->save_measurement_file_action->setEnabled(false);
             ui->save_measurement_file_as_action->setEnabled(false);
-            //QVariant data1 = selected->data(1);
             QString fileName = selected->getFileName();
 
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
-                //                TDMModelLayerData lda = data1.value<TDMModelLayerData>();
-                //                if(lda.fileName().length())
-                //                    data1 = lda.fileName();
                 updateAttributeTable(selected);
             }
             else if(selected->type() == TdmLayerItem::MeasurementLayer)
@@ -768,17 +805,14 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                 QTableWidget *table = ui->attrib_table;
                 table->setRowCount(0);
 
-                //                QVariant data1 = selected->data(1);
-                //                TDMMeasurementLayerData lda = data1.value<TDMMeasurementLayerData>();
                 TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
                 //                if(lda.fileName().length())
                 //                    data1 = lda.fileName();
 
-                updateAttributeTable(selected);
-
-
                 m_currentItem = new TDMMeasurementLayerData(lda);
                 m_current = m_currentItem->pattern();
+
+                updateAttributeTable(selected);
 
                 QJsonDocument doc = lda.pattern().get();
                 qDebug() << lda.fileName() << " " <<  doc.object().value("Data").toArray().count() << " " << lda.rows().size();
@@ -809,7 +843,6 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
 
     if(item->type() == TdmLayerItem::ModelLayer)
     {
-        //QVariant data1 = item->data(1);
         if(item->hasData<TDMModelLayerData>())
         {
             TDMModelLayerData lda = item->getPrivateData<TDMModelLayerData>();
@@ -819,7 +852,6 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
 
     if(item->type() == TdmLayerItem::MeasurementLayer)
     {
-        //QVariant data1 = item->data(1);
         if(item->hasData<TDMMeasurementLayerData>())
         {
             TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
@@ -910,19 +942,15 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *item)
     if(item->type() == TdmLayerItem::ModelLayer)
     {
         // delete node in osgwidget
-        //QVariant data1 = item->data(1);
         TDMModelLayerData lda = item->getPrivateData<TDMModelLayerData>();
         ui->display_widget->removeNodeFromScene(lda.node());
     }
     if(item->type() == TdmLayerItem::MeasurementLayer)
     {
-        //QVariant data1 = item->data(1);
         if(item->hasData<TDMMeasurementLayerData>())
         {
-            // TODO : test
             TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
             ui->display_widget->removeGroup(lda.group());
-            //ui->display_widget->removeGeode(lda.tool()->getGeode());
         }
     }
     if(item->type() == TdmLayerItem::GroupLayer)
@@ -1256,6 +1284,29 @@ void TDMGui::updateAttributeTable(TdmLayerItem *item)
             QTableWidgetItem* headerItem = table->horizontalHeaderItem(i+1);
             if (headerItem)
                 headerItem->setToolTip(tt);
+
+            // column width
+            switch(lda.pattern().fieldType(i))
+            {
+            case MeasureType::Area:
+                table->setColumnWidth(i+1,150);
+
+                break;
+            case MeasureType::Line:
+                table->setColumnWidth(i+1,150);
+
+                break;
+            case MeasureType::Point:
+                table->setColumnWidth(i+1,160);
+
+                break;
+            case MeasureType::String:
+                table->setColumnWidth(i+1,125);
+
+                break;
+            default:
+                break;
+            }
         }
         table->verticalHeader()->setVisible(true);
         table->setRowCount(0);
@@ -1271,6 +1322,8 @@ void TDMGui::updateAttributeTable(TdmLayerItem *item)
         table->setRowCount(0);
         m_current.clear();
     }
+
+    // 1rst column : check
     table->setColumnWidth(0,30);
     QTableWidgetItem* headerItem = table->horizontalHeaderItem(0);
     if (headerItem)
@@ -1398,6 +1451,12 @@ void TDMGui::slot_addAttributeLine()
         {
             TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
             lda.rows() = m_currentItem->rows();
+            // add in json doc
+            MeasurePattern pattern = lda.pattern();
+            QJsonDocument doc = pattern.get();
+            saveData(doc);
+            pattern.set(doc);
+            lda.pattern() = pattern;
             selected->setPrivateData<TDMMeasurementLayerData>(lda);
         }
     }
@@ -1437,6 +1496,17 @@ void TDMGui::slot_deleteAttributeLine()
             {
                 TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
                 lda.rows() = m_currentItem->rows();
+                // remove in json doc
+                MeasurePattern pattern = lda.pattern();
+                QJsonDocument doc = pattern.get();
+                QJsonObject rootobj = doc.object();
+                QJsonArray array = rootobj["Data"].toArray();
+                array.removeAt(row);
+                rootobj.insert("Data",array);
+                doc.setObject(rootobj);
+                pattern.set(doc);
+                saveData(doc);
+                lda.pattern() = pattern;
                 selected->setPrivateData<TDMMeasurementLayerData>(lda);
             }
         }
@@ -2176,14 +2246,10 @@ bool TDMGui::checkAndSaveMeasures(TdmLayerItem *item)
         {
             QModelIndex index = model->index(item);
             selectItem(index);
-
-            //TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
             if(item->getFileName().isEmpty())
             {
                 slot_saveMeasureFileAs();
 
-                //                data1 = item->data(1);
-                //                return !data1.value<TDMMeasurementLayerData>().fileName().isEmpty();
                 return !item->getFileName().isEmpty();
             }
             else
@@ -2309,7 +2375,6 @@ void TDMGui::slot_saveProject()
     QString json_string = json.toJson();
     file.write(json_string.toUtf8());
     file.close();
-
 }
 
 void TDMGui::slot_layersTreeWindow()
@@ -2344,4 +2409,45 @@ void TDMGui::slot_layersTreeWindowVisibilityChanged(bool value)
 void TDMGui::slot_attribTableWindowVisibilityChanged(bool value)
 {
     ui->attrib_table_window_action->setChecked(value);
+}
+
+void TDMGui::slot_about()
+{
+    QString title = tr("About");
+    QString text = this->windowTitle();
+    QMessageBox::about(this, title, text);
+}
+
+void TDMGui::slot_mouseMoveInOsgWidget(int x, int y)
+{
+    // clic
+    bool exists = false;
+    osg::Vec3d vect;
+    ui->display_widget->getIntersectionPoint(x, y, vect, exists);
+    if(exists)
+    {
+        double lat, lon, depth;
+
+        // transform to lat/lon
+        QPointF ref_lat_lon; double ref_depth;
+        ui->display_widget->getGeoOrigin(ref_lat_lon, ref_depth);
+        if(ref_depth == INVALID_VALUE)
+        {
+            m_latLabel->setText("");
+            m_lonLabel->setText("");
+            m_depthLabel->setText("");
+            return;
+        }
+        ui->display_widget->xyzToLatLonDepth(vect[0], vect[1], vect[2], lat, lon, depth);
+
+        m_latLabel->setText(QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
+        m_lonLabel->setText(QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
+        m_depthLabel->setText(QString::number(depth,'f',1) + "m");
+    }
+    else
+    {
+        m_latLabel->setText("");
+        m_lonLabel->setText("");
+        m_depthLabel->setText("");
+    }
 }

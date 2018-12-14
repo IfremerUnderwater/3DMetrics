@@ -2,6 +2,7 @@
 #define TDMGUI_H
 
 #include <QMainWindow>
+#include <QLabel>
 
 #include "Measurement/measurement_pattern.h"
 
@@ -55,6 +56,10 @@ private:
 
     QString m_projectFileName;
 
+    QLabel *m_latLabel;
+    QLabel *m_lonLabel;
+    QLabel *m_depthLabel;
+
 public slots:
 
     void slot_open3dModel();
@@ -73,6 +78,8 @@ public slots:
     void slot_attribTableWindowVisibilityChanged(bool);
 
     void slot_importOldMeasureFile();
+
+    void slot_about();
 
     // general tools
     void slot_focussingTool();
@@ -115,6 +122,8 @@ public slots:
     void slot_addAttributeLine();
     void slot_deleteAttributeLine();
 
+    // mouse move in osg widget
+    void slot_mouseMoveInOsgWidget(int x, int y);
 };
 
 #endif // TDMGUI_H
