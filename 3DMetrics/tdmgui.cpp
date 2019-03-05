@@ -169,7 +169,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString fileName = getOpenFileName(this,tr("Select one 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
+    QString fileName = getOpenFileName(this,tr("Select a 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
     if(fileName.length() > 0)
     {
         QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -189,7 +189,7 @@ void TDMGui::slot_open3dModel()
     }
     else
     {
-        QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a 3d model"));
+        QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a valid 3d model"));
     }
 }
 
@@ -264,7 +264,7 @@ void TDMGui::slot_newMeasurement()
 
 void TDMGui::slot_openMeasureFile()
 {
-    QString fileName = getOpenFileName(this,tr("Select measure file to open"), "", tr("Json files (*.json)"));
+    QString fileName = getOpenFileName(this,tr("Select measurement file to open"), "", tr("Json files (*.json)"));
     if(fileName.length() > 0)
     {
         // parent to be used
@@ -287,7 +287,7 @@ void TDMGui::slot_openMeasureFile()
         bool res = loadMeasure(fileName, parent, true);
         if(!res)
         {
-            QMessageBox::critical(this, tr("Error : measure file"), tr("Error : invalid file"));
+            QMessageBox::critical(this, tr("Error : measurement file"), tr("Error : invalid file"));
             return;
         }
 
@@ -296,7 +296,7 @@ void TDMGui::slot_openMeasureFile()
     }
     else
     {
-        QMessageBox::critical(this, tr("Error : measure file"), tr("Error : you didn't open measure file"));
+        QMessageBox::critical(this, tr("Error : measurement file"), tr("Error : you didn't open measurement file"));
     }
 }
 
@@ -933,7 +933,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
         {
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
-                menu->addAction(tr("Edit measure"), this, SLOT(slot_editMeasurement()));
+                menu->addAction(tr("Edit measurement"), this, SLOT(slot_editMeasurement()));
                 menu->addSeparator();
             }
         }
@@ -941,7 +941,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
 
     menu->addAction(tr("Rename"), this, SLOT(slot_renameTreeItem()));
     menu->addSeparator();
-    menu->addAction(tr("Delete item"), this, SLOT(slot_deleteRow()));
+    menu->addAction(tr("Remove item"), this, SLOT(slot_deleteRow()));
     menu->addAction(tr("Move item to toplevel"), this, SLOT(slot_moveToToplevel()));
     menu->addSeparator();
     menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
@@ -994,8 +994,8 @@ void TDMGui::slot_deleteRow()
         QAbstractItemModel *model = view->model();
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
 
-        QString msg = tr("Do you want to delete %1:\n%2").arg(item->typeName()).arg(item->getName());
-        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Delete Row Confirmation"),
+        QString msg = tr("Do you want to remove %1:\n%2").arg(item->typeName()).arg(item->getName());
+        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Row removal Confirmation"),
                                                                     msg,
                                                                     QMessageBox::Cancel | QMessageBox::Ok,
                                                                     QMessageBox::Cancel);
@@ -1377,7 +1377,7 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
 
     if (hasSelection && hasCurrent)
     {
-        menu->addAction(tr("Delete line"), this, SLOT(slot_deleteAttributeLine()));
+        menu->addAction(tr("Remove line"), this, SLOT(slot_deleteAttributeLine()));
     }
 
     menu->exec(QCursor::pos());
@@ -1528,8 +1528,8 @@ void TDMGui::slot_deleteAttributeLine()
     bool hasSelection = !table->selectionModel()->selection().isEmpty();
     if (hasSelection && hasCurrent)
     {
-        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Delete Row Confirmation"),
-                                                                    tr("Do you want to delete the selected row?"),
+        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Row removal Confirmation"),
+                                                                    tr("Do you want to remove the selected row?"),
                                                                     QMessageBox::Cancel | QMessageBox::Ok,
                                                                     QMessageBox::Cancel);
         if (resBtn != QMessageBox::Ok)
@@ -1718,7 +1718,7 @@ void TDMGui::slot_tempAreaTool()
 void TDMGui::slot_importOldMeasureFile()
 {
     // open file
-    QString fileName = getOpenFileName(this,tr("Select old measure file to open"), "", tr("Json files (*.json)"));
+    QString fileName = getOpenFileName(this,tr("Select old measurement file to open"), "", tr("Json files (*.json)"));
     if(fileName.length() > 0)
     {
         // read json
@@ -2197,7 +2197,7 @@ void TDMGui::slot_openProject()
     ui->pick_point->setEnabled(false);
 
     // ask file name
-    QString fileName = getOpenFileName(this,tr("Select project to open"), "", tr("Json files (*.json)"));
+    QString fileName = getOpenFileName(this,tr("Select project to open"), "", tr("3DMetrics project (*.tdm)"));
     if(fileName.length() > 0)
     {
         // open project
@@ -2372,7 +2372,7 @@ void TDMGui::slot_saveProject()
     if(root->childCount() > 0)
     {
         QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Save project file"),
-                                                                    tr("Saving measure mandatory before\nProceed?"),
+                                                                    tr("Saving measurement is mandatory before\nProceed?"),
                                                                     QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
                                                                     QMessageBox::Yes);
         if (resBtn != QMessageBox::Yes)
@@ -2388,13 +2388,13 @@ void TDMGui::slot_saveProject()
     bool status = checkAndSaveMeasures(TdmLayersModel::instance()->rootItem());
     if(!status)
     {
-        QMessageBox::information(this, tr("Save project file"), tr("Not all measurment are saved"));
+        QMessageBox::information(this, tr("Save project file"), tr("Not all measurements are saved"));
         return;
     }
 
     // save in file
     QString name = getSaveFileName(this, tr("Save project"), "",
-                                   "*.json");
+                                   "*.tdm");
     QFileInfo fileinfo(name);
 
     // check filename is not empty
@@ -2404,8 +2404,8 @@ void TDMGui::slot_saveProject()
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != "json"){
-        name += ".json";
+    if (fileinfo.suffix() != "tdm"){
+        name += ".tdm";
         fileinfo.setFile(name);
     }
 

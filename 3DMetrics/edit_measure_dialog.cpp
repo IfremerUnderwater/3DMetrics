@@ -96,7 +96,7 @@ void edit_measure_dialog::slot_apply()
 
 void edit_measure_dialog::slot_loadPattern()
 {
-    QString fileName = getOpenFileName(this,tr("Select measure pattern to open"), "", tr("Json files (*.json)"));
+    QString fileName = getOpenFileName(this,tr("Select measurement pattern to open"), "", tr("Json files (*.json)"));
     if(fileName.length() > 0)
     {
         QFile f(fileName);
@@ -109,7 +109,7 @@ void edit_measure_dialog::slot_loadPattern()
         bool res = pattern.loadFromJson(ba);
         if(!res)
         {
-            QMessageBox::critical(this, tr("Error : measure pattern"), tr("Error : invalid file"));
+            QMessageBox::critical(this, tr("Error : measurement pattern"), tr("Error : invalid file"));
             return;
         }
         // clear list
@@ -124,14 +124,14 @@ void edit_measure_dialog::slot_loadPattern()
     }
     else
     {
-        QMessageBox::critical(this, tr("Error : measure pattern"), tr("Error : you didn't open measure pattern"));
+        QMessageBox::critical(this, tr("Error : measurement pattern"), tr("Error : you didn't open measurement pattern"));
     }
 }
 
 void edit_measure_dialog::slot_savePattern()
 {
     // save in file
-    QString name = getSaveFileName(this, tr("Save measure pattern"), "",
+    QString name = getSaveFileName(this, tr("Save measurement pattern"), "",
                                    "*.json");
     QFileInfo fileinfo(name);
 

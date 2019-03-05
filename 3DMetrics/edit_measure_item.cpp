@@ -28,8 +28,8 @@ edit_measure_item::~edit_measure_item()
 
 void edit_measure_item::slot_remove()
 {
-    QString msg = tr("Do you want to delete %1").arg(ui->name->text());
-    QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Delete Row Confirmation"),
+    QString msg = tr("Do you want to remove %1").arg(ui->name->text());
+    QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Row removal Confirmation"),
                                                                 msg,
                                                                 QMessageBox::Cancel | QMessageBox::Ok,
                                                                 QMessageBox::Cancel);
