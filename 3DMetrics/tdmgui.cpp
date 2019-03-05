@@ -1209,6 +1209,17 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                     }
                         break;
 
+                    case MeasureType::Category:
+                        // category edit widget
+                    {
+                        MeasureCategory *a = new MeasureCategory(_pattern.fieldName(c));
+                        QJsonObject no;
+                        a->encode(no);
+                        row.append(no);
+                        delete a;
+                    }
+                        break;
+
                     default:
                         // string - default editable text line
                     {
