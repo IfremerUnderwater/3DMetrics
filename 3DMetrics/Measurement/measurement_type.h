@@ -11,7 +11,8 @@ public:
         Point = 1,
         Area = 2,
         String = 3,
-        _Last = 4 // must be the last item
+        Category = 4,
+        _Last = 5 // must be the last item
     };
 
     static QString value(const type _t);

@@ -16,12 +16,14 @@
 #include "attribpointwidget.h"
 #include "attriblinewidget.h"
 #include "attribareawidget.h"
+#include "attribcategorieswidget.h"
 
 #include "measuretablewidgetitem.h"
 #include "Measurement/measurement_string.h"
 #include "Measurement/measurement_point.h"
 #include "Measurement/measurement_line.h"
 #include "Measurement/measurement_area.h"
+#include "Measurement/measurement_category.h"
 #include "Measurement/osg_measurement_row.h"
 
 #include "OSGWidget/osg_widget_tool.h"
@@ -533,6 +535,24 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
                 table->setCellWidget(rowindex,i, area);
                 int height = table->rowHeight(rowindex);
                 int minheight = area->height() + 2;
+                if(minheight > height)
+                    table->setRowHeight(rowindex,minheight);
+            }
+                break;
+
+            case MeasureType::Category:
+                // category edit widget
+            {
+                MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+                MeasureCategory *cat = new MeasureCategory(m_current.fieldName(c));
+                cat->decode(obj);
+                pwidget->setMeasureItem(cat);
+                table->setItem(rowindex, i, pwidget);
+                AttribCategoriesWidget *category = new AttribCategoriesWidget();
+                category->setCategory(cat);
+                table->setCellWidget(rowindex,i, category);
+                int height = table->rowHeight(rowindex);
+                int minheight = category->height() + 2;
                 if(minheight > height)
                     table->setRowHeight(rowindex,minheight);
             }
@@ -1304,6 +1324,10 @@ void TDMGui::updateAttributeTable(TdmLayerItem *item)
                 table->setColumnWidth(i+1,125);
 
                 break;
+            case MeasureType::Category:
+                table->setColumnWidth(i+1,125);
+
+                break;
             default:
                 break;
             }
@@ -1429,6 +1453,24 @@ void TDMGui::slot_addAttributeLine()
                 table->setRowHeight(rowindex,minheight);
         }
             break;
+
+        case MeasureType::Category:
+            // category edit widget
+        {
+            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+            MeasureCategory *cat = new MeasureCategory(m_current.fieldName(i-1));
+            pwidget->setMeasureItem(cat);
+            table->setItem(rowindex, i, pwidget);
+            AttribCategoriesWidget *category = new AttribCategoriesWidget();
+            category->setCategory(cat); category->initItem();
+            table->setCellWidget(rowindex,i, category);
+            int height = table->rowHeight(rowindex);
+            int minheight = category->height() + 2;
+            if(minheight > height)
+                table->setRowHeight(rowindex,minheight);
+        }
+            break;
+
 
         default:
             // string - default editable text line

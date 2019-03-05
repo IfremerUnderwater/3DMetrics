@@ -6,7 +6,7 @@ osgMeasurementRow::osgMeasurementRow(MeasurePattern &pattern) : m_visible(true)
     for(int i=0; i<pattern.getNbFields(); i++)
     {
         osg::ref_ptr<osg::Geode> p = 0;
-        if(pattern.fieldType(i) != MeasureType::String)
+        if(pattern.fieldType(i)!=MeasureType::String && pattern.fieldType(i)!=MeasureType::Category)
         {
             p = new osg::Geode();
             m_group->addChild(p);
