@@ -71,7 +71,8 @@ SOURCES += main.cpp \
     TreeView/tdm_model_layerdata.cpp \
     Measurement/measurement_category.cpp \
     Measurement/tdm_categories_manager.cpp \
-    attribcategorieswidget.cpp
+    attribcategorieswidget.cpp \
+    decimation_dialog.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -103,7 +104,8 @@ HEADERS  += \
     TreeView/tdm_model_layerdata.h \
     Measurement/measurement_category.h \
     Measurement/tdm_categories_manager.h \
-    attribcategorieswidget.h
+    attribcategorieswidget.h \
+    decimation_dialog.h
 
 FORMS    += \
     tdmgui.ui \
@@ -115,7 +117,8 @@ FORMS    += \
     toolpointdialog.ui \
     toollinedialog.ui \
     toolareadialog.ui \
-    attribcategorieswidget.ui
+    attribcategorieswidget.ui \
+    decimation_dialog.ui
 
 RESOURCES += \
     ressources.qrc

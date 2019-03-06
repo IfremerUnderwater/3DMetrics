@@ -5,6 +5,7 @@
 #include <QLabel>
 
 #include "Measurement/measurement_pattern.h"
+#include "decimation_dialog.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -59,6 +60,8 @@ private:
     QLabel *m_latLabel;
     QLabel *m_lonLabel;
     QLabel *m_depthLabel;
+
+    DecimationDialog m_decimation_dialog;
 
 public slots:
 
@@ -124,6 +127,10 @@ public slots:
 
     // mouse move in osg widget
     void slot_mouseMoveInOsgWidget(int x, int y);
+
+    // decimation dialog & action
+    void slot_showDecimationDialog();
+    void slot_decimateSelectedModel();
 };
 
 #endif // TDMGUI_H

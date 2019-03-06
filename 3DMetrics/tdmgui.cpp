@@ -1,4 +1,5 @@
 #include <QCloseEvent>
+#include <QProcess>
 
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
@@ -12,6 +13,7 @@
 #include "filedialog.h"
 
 #include "edit_measure_dialog.h"
+#include "decimation_dialog.h"
 
 #include "attribpointwidget.h"
 #include "attriblinewidget.h"
@@ -134,6 +136,10 @@ TDMGui::TDMGui(QWidget *parent) :
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
 
     connect(ui->display_widget, SIGNAL(signal_onMouseMove(int,int)), this, SLOT(slot_mouseMoveInOsgWidget(int,int)));
+
+    // decimation
+    connect(ui->decimate_model_action,SIGNAL(triggered(bool)),this,SLOT(slot_showDecimationDialog()));
+    connect(&m_decimation_dialog, SIGNAL(accepted()),this,SLOT(slot_decimateSelectedModel()));
 }
 
 TDMGui::~TDMGui()
@@ -2503,4 +2509,59 @@ void TDMGui::slot_mouseMoveInOsgWidget(int x, int y)
         m_lonLabel->setText("");
         m_depthLabel->setText("");
     }
+}
+
+void TDMGui::slot_showDecimationDialog()
+{
+    m_decimation_dialog.show();
+}
+
+void TDMGui::slot_decimateSelectedModel()
+{
+    QString file_to_be_decimated = m_decimation_dialog.getModelPath();
+
+    if (!file_to_be_decimated.isEmpty())
+    {
+        QFileInfo model_file(file_to_be_decimated);
+
+        double decimation_factor = m_decimation_dialog.getDecimationFactor();
+
+        QProcess decimation_process;
+        decimation_process.setWorkingDirectory(model_file.absoluteDir().absolutePath());
+
+        QString command_line=QString("osgconv.exe -O noRotation --simplify %1 %2 %3")
+                .arg(decimation_factor,3,'f',3)
+                .arg(model_file.fileName())
+                .arg(model_file.baseName()+"_dec"+QString::number((int)(decimation_factor*100))+"."+model_file.completeSuffix());
+
+        decimation_process.start(command_line);
+
+        QProgressDialog decimation_progress(QString("Decimating model"), "Abort decimation", 0, 100, this);
+        decimation_progress.setWindowModality(Qt::WindowModal);
+
+        // Monitor process
+        int k=0,l=0;
+        while(decimation_process.waitForReadyRead(-1)){
+
+            QString output = decimation_process.readAllStandardOutput() + decimation_process.readAllStandardError();
+
+            if (decimation_progress.wasCanceled())
+                decimation_process.kill();
+
+            if (k%200==0){
+                decimation_progress.setValue(l%99);
+                l++;
+            }
+
+            k++;
+            qDebug() << output;
+        }
+
+        decimation_progress.setValue(100);
+
+
+
+
+    }
+
 }
