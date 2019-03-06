@@ -33,7 +33,7 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Decimation factor ( between 0 and 1.0)</string>
+        <string>Decimation factor ( between 0.01 and 1.0)</string>
        </property>
       </widget>
      </item>

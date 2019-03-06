@@ -35,6 +35,8 @@ unix{
 INCLUDEPATH += /usr/include/eigen3
 }
 
+DESTDIR = $${RUN_DIR}
+
 include(../Scripts/BasicProcessing.pri)
 
 LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic
