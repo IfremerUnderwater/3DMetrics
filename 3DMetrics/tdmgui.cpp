@@ -1,5 +1,6 @@
 #include <QCloseEvent>
 #include <QProcess>
+#include <QMessageBox>
 
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
@@ -2553,14 +2554,14 @@ void TDMGui::slot_decimateSelectedModel()
                 l++;
             }
 
+            QApplication::processEvents();
             k++;
             qDebug() << output;
         }
 
         decimation_progress.setValue(100);
 
-
-
+        QMessageBox::information(this,"Success","Decimation of the model ended");
 
     }
 
