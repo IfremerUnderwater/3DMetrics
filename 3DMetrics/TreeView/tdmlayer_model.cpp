@@ -100,17 +100,17 @@ QVariant TdmLayersModel::data(const QModelIndex &index, int role) const
 
     if(role == Qt::DecorationRole)
     {
-        QIcon icon; // = QIcon::fromTheme("edit-undo");
+        QIcon icon;
         switch(item1->type())
         {
         case TdmLayerItem::GroupLayer:
-            icon = QIcon::fromTheme("folder-new");
+            icon = QIcon::fromTheme(":/icons/ressources/folder.svg");
             break;
         case TdmLayerItem::MeasurementLayer:
-            icon = QIcon::fromTheme("document-properties");
+            icon = QIcon::fromTheme(":/icons/ressources/layers-outline.svg");
             break;
         case TdmLayerItem::ModelLayer:
-            icon = QIcon::fromTheme("document-open");
+            icon = QIcon::fromTheme(":/icons/ressources/image-filter-hdr.svg");
             break;
         }
 
