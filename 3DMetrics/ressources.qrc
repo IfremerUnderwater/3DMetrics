@@ -1,31 +1,5 @@
 <RCC>
     <qresource prefix="/icons">
-        <file>ressources/icon.jpeg</file>
-        <file>ressources/icon_anglais.ico</file>
-        <file>ressources/icon_ciseaux.jpg</file>
-        <file>ressources/icon_close.jpg</file>
-        <file>ressources/icon_enregistrer_projet.png</file>
-        <file>ressources/icon_export.png</file>
-        <file>ressources/icon file.jpg</file>
-        <file>ressources/icon_file.png</file>
-        <file>ressources/icon_france.png</file>
-        <file>ressources/icon_import.png</file>
-        <file>ressources/icon_import_export.jpg</file>
-        <file>ressources/icon loupe +.png</file>
-        <file>ressources/icon_loupe -.jpg</file>
-        <file>ressources/icon_open.png</file>
-        <file>ressources/icon_point.png</file>
-        <file>ressources/icon_polygon.png</file>
-        <file>ressources/icon project.png</file>
-        <file>ressources/icon_ptinteret.png</file>
-        <file>ressources/icon_quit.png</file>
-        <file>ressources/icon_recadrage.jpeg</file>
-        <file>ressources/icon_recentopen.ico</file>
-        <file>ressources/icon_redimensionnement.jpg</file>
-        <file>ressources/icon_save.png</file>
-        <file>ressources/icon_segment.png</file>
-        <file>ressources/icon_usermanual.jpg</file>
-        <file>ressources/icon_zone.png</file>
         <file>ressources/camera.svg</file>
         <file>ressources/cancel.svg</file>
         <file>ressources/cube-outline.svg</file>
