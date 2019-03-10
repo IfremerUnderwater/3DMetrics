@@ -2,7 +2,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 
-const QString MeasurePattern::JSONHEADER = "Measure pattern";
+const QString MeasurePattern::JSONHEADER = "Measurement pattern";
 const QString MeasurePattern::JSONHEADERVALUE = "3DMetrics";
 const QString MeasurePattern::JSONFIELD = "Fields";
 const QString MeasurePattern::JSONFIELDNAME = "Name";

@@ -31,8 +31,8 @@ private:
     Ui::TDMGui *ui;
 
     // Treeview
-    void deleteTreeItemsData(TdmLayerItem *item);
-    void manageCheckStateForChildren(TdmLayerItem *item, bool checked);
+    void deleteTreeItemsData(TdmLayerItem *_item);
+    void manageCheckStateForChildren(TdmLayerItem *_item, bool _checked);
 
     // helper functions
     void loadData(QJsonDocument &_doc, bool _buildOsg);

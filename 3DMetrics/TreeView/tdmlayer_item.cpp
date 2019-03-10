@@ -188,14 +188,14 @@ QString TdmLayerItem::getFileName()
     if(type() == TdmLayerItem::MeasurementLayer)
     {
         QVariant data1 = data(1);
-        TDMMeasurementLayerData lda = data1.value<TDMMeasurementLayerData>();
-        return lda.fileName();
+        TDMMeasurementLayerData layer_data = data1.value<TDMMeasurementLayerData>();
+        return layer_data.fileName();
     }
     if(type() == TdmLayerItem::ModelLayer)
     {
         QVariant data1 = data(1);
-        TDMModelLayerData lda = data1.value<TDMModelLayerData>();
-        return lda.fileName();
+        TDMModelLayerData layer_data = data1.value<TDMModelLayerData>();
+        return layer_data.fileName();
     }
     return QString("");
 }

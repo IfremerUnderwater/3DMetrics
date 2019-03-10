@@ -443,6 +443,7 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
         }
     }
 
+    QJsonObject obj_debug = _doc.object();
     QJsonArray array = _doc.object().value("Data").toArray();
     qDebug() << "loadData buildosg=" << _buildOsg << "  nbItems=" << array.count()
              << " osgRowscount=" << m_currentItem->rows().size();
@@ -592,7 +593,7 @@ void TDMGui::slot_saveMeasureFile()
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
     bool ok = false;
 
-    TDMMeasurementLayerData lda;
+    TDMMeasurementLayerData layer_data;
 
     if (hasSelection && hasCurrent) {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
@@ -601,7 +602,7 @@ void TDMGui::slot_saveMeasureFile()
         {
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
-                lda = selected->getPrivateData<TDMMeasurementLayerData>();
+                layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
                 ok = true;
             }
         }
@@ -611,14 +612,14 @@ void TDMGui::slot_saveMeasureFile()
         return;
 
     // get filename
-    QString name = lda.fileName();
+    QString name = layer_data.fileName();
     // check filename is not empty
     if(name.isEmpty()){
         QMessageBox::critical(this, tr("Error : save measurement"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
-    if(!saveMeasure(name, lda))
+    if(!saveMeasure(name, layer_data))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
@@ -636,7 +637,7 @@ void TDMGui::slot_saveMeasureFileAs()
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
     bool ok = false;
 
-    TDMMeasurementLayerData lda;
+    TDMMeasurementLayerData layer_data;
 
     if (hasSelection && hasCurrent) {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
@@ -645,7 +646,7 @@ void TDMGui::slot_saveMeasureFileAs()
         {
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
-                lda = selected->getPrivateData<TDMMeasurementLayerData>();
+                layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
                 ok = true;
             }
         }
@@ -671,18 +672,18 @@ void TDMGui::slot_saveMeasureFileAs()
         fileinfo.setFile(name);
     }
 
-    if(!saveMeasure(name, lda))
+    if(!saveMeasure(name, layer_data))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
     }
 
     // store file name
-    lda.setFileName(fileinfo.filePath());
+    layer_data.setFileName(fileinfo.filePath());
     TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                 view->selectionModel()->currentIndex());
 
-    selected->setPrivateData<TDMMeasurementLayerData>(lda);
+    selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
 }
 
 bool TDMGui::saveMeasure(QString _filename, TDMMeasurementLayerData &_data)
@@ -733,9 +734,9 @@ void TDMGui::saveData(QJsonDocument &_doc)
             // add field
             MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i,c);
             MeasureItem *it = pwidget->measureItem();
-            QJsonObject o;
-            it->encode(o);
-            row.append(o);
+            QJsonObject obj;
+            it->encode(obj);
+            row.append(obj);
         }
         array.append(row);
     }
@@ -795,12 +796,12 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
             if(prevselected != nullptr && prevselected->type() == TdmLayerItem::MeasurementLayer)
             {
                 // save data
-                TDMMeasurementLayerData lda = prevselected->getPrivateData<TDMMeasurementLayerData>();
+                TDMMeasurementLayerData layer_data = prevselected->getPrivateData<TDMMeasurementLayerData>();
 
-                QJsonDocument doc = lda.pattern().get();
+                QJsonDocument doc = layer_data.pattern().get();
                 saveData(doc);
 
-                lda.pattern().set(doc);
+                layer_data.pattern().set(doc);
 
                 delete m_currentItem;
                 m_currentItem = 0;
@@ -832,17 +833,17 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                 QTableWidget *table = ui->attrib_table;
                 table->setRowCount(0);
 
-                TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
+                TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
                 //                if(lda.fileName().length())
                 //                    data1 = lda.fileName();
 
-                m_currentItem = new TDMMeasurementLayerData(lda);
+                m_currentItem = new TDMMeasurementLayerData(layer_data);
                 m_current = m_currentItem->pattern();
 
                 updateAttributeTable(selected);
 
-                QJsonDocument doc = lda.pattern().get();
-                qDebug() << lda.fileName() << " " <<  doc.object().value("Data").toArray().count() << " " << lda.rows().size();
+                QJsonDocument doc = layer_data.pattern().get();
+                qDebug() << layer_data.fileName() << " " <<  doc.object().value("Data").toArray().count() << " " << layer_data.rows().size();
                 loadData(doc, false);
 
                 ui->save_measurement_file_as_action->setEnabled(true);
@@ -861,35 +862,35 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
     }
 }
 
-void TDMGui::manageCheckStateForChildren(TdmLayerItem *item, bool checked)
+void TDMGui::manageCheckStateForChildren(TdmLayerItem *_item, bool _checked)
 {
-    if(item == nullptr)
+    if(_item == nullptr)
         return;
 
-    bool itemChecked = item->isChecked();
+    bool itemChecked = _item->isChecked();
 
-    if(item->type() == TdmLayerItem::ModelLayer)
+    if(_item->type() == TdmLayerItem::ModelLayer)
     {
-        if(item->hasData<TDMModelLayerData>())
+        if(_item->hasData<TDMModelLayerData>())
         {
-            TDMModelLayerData lda = item->getPrivateData<TDMModelLayerData>();
-            lda.node()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+            TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
+            layer_data.node()->setNodeMask(itemChecked && _checked ? 0xFFFFFFFF : 0);
         }
     }
 
-    if(item->type() == TdmLayerItem::MeasurementLayer)
+    if(_item->type() == TdmLayerItem::MeasurementLayer)
     {
-        if(item->hasData<TDMMeasurementLayerData>())
+        if(_item->hasData<TDMMeasurementLayerData>())
         {
-            TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
-            lda.group()->setNodeMask(itemChecked && checked ? 0xFFFFFFFF : 0);
+            TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
+            layer_data.group()->setNodeMask(itemChecked && _checked ? 0xFFFFFFFF : 0);
         }
     }
 
-    if(item->type() == TdmLayerItem::GroupLayer)
+    if(_item->type() == TdmLayerItem::GroupLayer)
     {
-        for(int i=0; i<item->childCount(); i++)
-            manageCheckStateForChildren(item->child(i), checked && itemChecked);
+        for(int i=0; i<_item->childCount(); i++)
+            manageCheckStateForChildren(_item->child(i), _checked && itemChecked);
     }
 }
 
@@ -961,29 +962,29 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
 }
 
 // recursively delete datas (in column 1 - not shown in treeview)
-void TDMGui::deleteTreeItemsData(TdmLayerItem *item)
+void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
 {
-    if(item == nullptr)
+    if(_item == nullptr)
         return;
 
-    if(item->type() == TdmLayerItem::ModelLayer)
+    if(_item->type() == TdmLayerItem::ModelLayer)
     {
         // delete node in osgwidget
-        TDMModelLayerData lda = item->getPrivateData<TDMModelLayerData>();
-        ui->display_widget->removeNodeFromScene(lda.node());
+        TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
+        ui->display_widget->removeNodeFromScene(layer_data.node());
     }
-    if(item->type() == TdmLayerItem::MeasurementLayer)
+    if(_item->type() == TdmLayerItem::MeasurementLayer)
     {
-        if(item->hasData<TDMMeasurementLayerData>())
+        if(_item->hasData<TDMMeasurementLayerData>())
         {
-            TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
-            ui->display_widget->removeGroup(lda.group());
+            TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
+            ui->display_widget->removeGroup(layer_data.group());
         }
     }
-    if(item->type() == TdmLayerItem::GroupLayer)
+    if(_item->type() == TdmLayerItem::GroupLayer)
     {
-        for(int i=0; i<item->childCount(); i++)
-            deleteTreeItemsData(item->child(i));
+        for(int i=0; i<_item->childCount(); i++)
+            deleteTreeItemsData(_item->child(i));
     }
 }
 
@@ -1100,9 +1101,9 @@ void TDMGui::slot_editMeasurement()
                 // Show dialog
                 edit_measure_dialog *dlg = new edit_measure_dialog(this);
 
-                TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
-                qDebug() << "init dialog" << lda.pattern().getNbFields();
-                dlg->setPattern(lda.pattern());
+                TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
+                qDebug() << "init dialog" << layer_data.pattern().getNbFields();
+                dlg->setPattern(layer_data.pattern());
                 dlg->setWindowTitle(name);
                 dlg->setModal(true);
 
@@ -1165,9 +1166,9 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                         found = true;
                         MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i, o+1);
                         MeasureItem *it = pwidget->measureItem();
-                        QJsonObject no;
-                        it->encode(no);
-                        row.append(no);
+                        QJsonObject obj;
+                        it->encode(obj);
+                        row.append(obj);
 
                         break;
                     }
@@ -1274,20 +1275,20 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
         {
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
-                TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
-                lda.pattern().clear();
+                TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
+                layer_data.pattern().clear();
                 for(int i=0; i<_pattern.getNbFields(); i++)
-                    lda.pattern().addField(_pattern.fieldName(i), _pattern.fieldType(i));
-                selected->setPrivateData<TDMMeasurementLayerData>(lda);
+                    layer_data.pattern().addField(_pattern.fieldName(i), _pattern.fieldType(i));
+                selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
                 //qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
                 updateAttributeTable(selected);
 
                 // delete group
-                lda.group()->removeChildren(0,lda.group()->getNumChildren());
+                layer_data.group()->removeChildren(0,layer_data.group()->getNumChildren());
 
                 // update pattern
                 m_current = _pattern;
-                m_currentItem = new TDMMeasurementLayerData(lda);
+                m_currentItem = new TDMMeasurementLayerData(layer_data);
 
                 // load data
                 loadData(newdoc, true);
@@ -1303,28 +1304,28 @@ void TDMGui::updateAttributeTable(TdmLayerItem *item)
     QTableWidget *table = ui->attrib_table;
     if(item != nullptr && item->type() == TdmLayerItem::MeasurementLayer)
     {
-        TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
-        int nbfields = lda.pattern().getNbFields();
+        TDMMeasurementLayerData layer_data = item->getPrivateData<TDMMeasurementLayerData>();
+        int nbfields = layer_data.pattern().getNbFields();
 
         table->setColumnCount(nbfields+1);
         QStringList headers;
         headers << ""; //tr("[+]");
 
-        for(int i=0; i<lda.pattern().getNbFields(); i++)
+        for(int i=0; i<layer_data.pattern().getNbFields(); i++)
         {
-            QString head = lda.pattern().fieldName(i); // + "\n(" + lda.pattern().fieldTypeName(i) + ")";
+            QString head = layer_data.pattern().fieldName(i); // + "\n(" + lda.pattern().fieldTypeName(i) + ")";
             headers << head;
         }
         table->setHorizontalHeaderLabels(headers);
-        for(int i=0; i<lda.pattern().getNbFields(); i++)
+        for(int i=0; i<layer_data.pattern().getNbFields(); i++)
         {
-            QString tt = "(" + lda.pattern().fieldTypeName(i) + ")";
+            QString tt = "(" + layer_data.pattern().fieldTypeName(i) + ")";
             QTableWidgetItem* headerItem = table->horizontalHeaderItem(i+1);
             if (headerItem)
                 headerItem->setToolTip(tt);
 
             // column width
-            switch(lda.pattern().fieldType(i))
+            switch(layer_data.pattern().fieldType(i))
             {
             case MeasureType::Area:
                 table->setColumnWidth(i+1,150);
@@ -1352,7 +1353,7 @@ void TDMGui::updateAttributeTable(TdmLayerItem *item)
         }
         table->verticalHeader()->setVisible(true);
         table->setRowCount(0);
-        m_current = lda.pattern();
+        m_current = layer_data.pattern();
     }
     else
     {
@@ -1501,7 +1502,7 @@ void TDMGui::slot_addAttributeLine()
         }
     }
 
-    // save in actual selection
+    // save in current selection
     TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                 view->selectionModel()->currentIndex());
     if(selected != nullptr)
@@ -1509,15 +1510,15 @@ void TDMGui::slot_addAttributeLine()
 
         if(selected->type() == TdmLayerItem::MeasurementLayer)
         {
-            TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
-            lda.rows() = m_currentItem->rows();
+            TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
+            layer_data.rows() = m_currentItem->rows();
             // add in json doc
-            MeasurePattern pattern = lda.pattern();
+            MeasurePattern pattern = layer_data.pattern();
             QJsonDocument doc = pattern.get();
             saveData(doc);
             pattern.set(doc);
-            lda.pattern() = pattern;
-            selected->setPrivateData<TDMMeasurementLayerData>(lda);
+            layer_data.pattern() = pattern;
+            selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
         }
     }
 
@@ -1554,10 +1555,10 @@ void TDMGui::slot_deleteAttributeLine()
         {
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
-                TDMMeasurementLayerData lda = selected->getPrivateData<TDMMeasurementLayerData>();
-                lda.rows() = m_currentItem->rows();
+                TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
+                layer_data.rows() = m_currentItem->rows();
                 // remove in json doc
-                MeasurePattern pattern = lda.pattern();
+                MeasurePattern pattern = layer_data.pattern();
                 QJsonDocument doc = pattern.get();
                 QJsonObject rootobj = doc.object();
                 QJsonArray array = rootobj["Data"].toArray();
@@ -1566,8 +1567,8 @@ void TDMGui::slot_deleteAttributeLine()
                 doc.setObject(rootobj);
                 pattern.set(doc);
                 saveData(doc);
-                lda.pattern() = pattern;
-                selected->setPrivateData<TDMMeasurementLayerData>(lda);
+                layer_data.pattern() = pattern;
+                selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
             }
         }
         // removal of data : done by destructor
@@ -2314,8 +2315,8 @@ bool TDMGui::checkAndSaveMeasures(TdmLayerItem *item)
             }
             else
             {
-                TDMMeasurementLayerData lda = item->getPrivateData<TDMMeasurementLayerData>();
-                return saveMeasure(lda.fileName(),lda);
+                TDMMeasurementLayerData layer_data = item->getPrivateData<TDMMeasurementLayerData>();
+                return saveMeasure(layer_data.fileName(),layer_data);
             }
         }
     }
