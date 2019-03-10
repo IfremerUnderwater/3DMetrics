@@ -24,8 +24,18 @@
         <file>ressources/icon_redimensionnement.jpg</file>
         <file>ressources/icon_save.png</file>
         <file>ressources/icon_segment.png</file>
-        <file>ressources/icon_statistiques.jpg</file>
         <file>ressources/icon_usermanual.jpg</file>
         <file>ressources/icon_zone.png</file>
+        <file>ressources/camera.svg</file>
+        <file>ressources/cancel.svg</file>
+        <file>ressources/cube-outline.svg</file>
+        <file>ressources/folder.svg</file>
+        <file>ressources/image-filter-center-focus.svg</file>
+        <file>ressources/image-filter-hdr.svg</file>
+        <file>ressources/layers-outline.svg</file>
+        <file>ressources/magnify-minus.svg</file>
+        <file>ressources/magnify-plus.svg</file>
+        <file>ressources/map-marker-plus.svg</file>
+        <file>ressources/vector-polyline.svg</file>
     </qresource>
 </RCC>

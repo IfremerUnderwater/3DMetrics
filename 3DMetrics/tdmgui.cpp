@@ -291,7 +291,7 @@ void TDMGui::slot_openMeasureFile()
             }
         }
 
-        bool res = loadMeasure(fileName, parent, true);
+        bool res = loadMeasurementFromFile(fileName, parent, true);
         if(!res)
         {
             QMessageBox::critical(this, tr("Error : measurement file"), tr("Error : invalid file"));
@@ -307,7 +307,7 @@ void TDMGui::slot_openMeasureFile()
     }
 }
 
-bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectItem)
+bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _selectItem)
 {
     TdmLayersModel *model = TdmLayersModel::instance();
     QTreeView *view = ui->tree_widget;
@@ -348,7 +348,7 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     // load data
     m_current = pattern;
     QJsonDocument doc = pattern.get();
-    loadData(doc, true);
+    loadAttribTableFromJson(doc, true);
 
     pattern.set(doc);
     m_current = pattern;
@@ -360,7 +360,7 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
 
     added->setPrivateData(modelData);
 
-    saveData(doc);
+    saveAttribTableToJson(doc);
     modelData.pattern().set(doc);
     added->setPrivateData(modelData);
 
@@ -379,7 +379,7 @@ bool TDMGui::loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectI
     return true;
 }
 
-void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
+void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg)
 {  
     OSGWidgetTool::instance()->endTool();
 
@@ -443,7 +443,6 @@ void TDMGui::loadData(QJsonDocument &_doc, bool _buildOsg)
         }
     }
 
-    QJsonObject obj_debug = _doc.object();
     QJsonArray array = _doc.object().value("Data").toArray();
     qDebug() << "loadData buildosg=" << _buildOsg << "  nbItems=" << array.count()
              << " osgRowscount=" << m_currentItem->rows().size();
@@ -619,7 +618,7 @@ void TDMGui::slot_saveMeasureFile()
         return;
     }
 
-    if(!saveMeasure(name, layer_data))
+    if(!saveMeasurementToFile(name, layer_data))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
@@ -672,7 +671,7 @@ void TDMGui::slot_saveMeasureFileAs()
         fileinfo.setFile(name);
     }
 
-    if(!saveMeasure(name, layer_data))
+    if(!saveMeasurementToFile(name, layer_data))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
@@ -686,7 +685,7 @@ void TDMGui::slot_saveMeasureFileAs()
     selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
 }
 
-bool TDMGui::saveMeasure(QString _filename, TDMMeasurementLayerData &_data)
+bool TDMGui::saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data)
 {
     QFile file(_filename);
     if(!file.open(QIODevice::WriteOnly))
@@ -697,7 +696,7 @@ bool TDMGui::saveMeasure(QString _filename, TDMMeasurementLayerData &_data)
     // build json object
     QJsonDocument json = _data.pattern().get();
     // add data
-    saveData(json);
+    saveAttribTableToJson(json);
 
     // add reference point from OSG widget
     QPointF latlon;
@@ -720,7 +719,7 @@ bool TDMGui::saveMeasure(QString _filename, TDMMeasurementLayerData &_data)
     return true;
 }
 
-void TDMGui::saveData(QJsonDocument &_doc)
+void TDMGui::saveAttribTableToJson(QJsonDocument &_doc)
 {
     QTableWidget *table = ui->attrib_table;
     QJsonArray array;
@@ -795,13 +794,15 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
             TdmLayerItem *prevselected = TdmLayersModel::instance()->getLayerItem(prev);
             if(prevselected != nullptr && prevselected->type() == TdmLayerItem::MeasurementLayer)
             {
-                // save data
+                // save layer attrib data before changing current layer
                 TDMMeasurementLayerData layer_data = prevselected->getPrivateData<TDMMeasurementLayerData>();
 
                 QJsonDocument doc = layer_data.pattern().get();
-                saveData(doc);
+                saveAttribTableToJson(doc);
 
                 layer_data.pattern().set(doc);
+
+                prevselected->setPrivateData<TDMMeasurementLayerData>(layer_data);
 
                 delete m_currentItem;
                 m_currentItem = 0;
@@ -844,7 +845,7 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
 
                 QJsonDocument doc = layer_data.pattern().get();
                 qDebug() << layer_data.fileName() << " " <<  doc.object().value("Data").toArray().count() << " " << layer_data.rows().size();
-                loadData(doc, false);
+                loadAttribTableFromJson(doc, false);
 
                 ui->save_measurement_file_as_action->setEnabled(true);
                 ui->save_measurement_file_action->setEnabled(!fileName.isEmpty());
@@ -1291,7 +1292,7 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                 m_currentItem = new TDMMeasurementLayerData(layer_data);
 
                 // load data
-                loadData(newdoc, true);
+                loadAttribTableFromJson(newdoc, true);
             }
         }
     }
@@ -1299,12 +1300,12 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
     QApplication::restoreOverrideCursor();
 }
 
-void TDMGui::updateAttributeTable(TdmLayerItem *item)
+void TDMGui::updateAttributeTable(TdmLayerItem *_item)
 {
     QTableWidget *table = ui->attrib_table;
-    if(item != nullptr && item->type() == TdmLayerItem::MeasurementLayer)
+    if(_item != nullptr && _item->type() == TdmLayerItem::MeasurementLayer)
     {
-        TDMMeasurementLayerData layer_data = item->getPrivateData<TDMMeasurementLayerData>();
+        TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
         int nbfields = layer_data.pattern().getNbFields();
 
         table->setColumnCount(nbfields+1);
@@ -1515,7 +1516,7 @@ void TDMGui::slot_addAttributeLine()
             // add in json doc
             MeasurePattern pattern = layer_data.pattern();
             QJsonDocument doc = pattern.get();
-            saveData(doc);
+            saveAttribTableToJson(doc);
             pattern.set(doc);
             layer_data.pattern() = pattern;
             selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
@@ -1566,7 +1567,7 @@ void TDMGui::slot_deleteAttributeLine()
                 rootobj.insert("Data",array);
                 doc.setObject(rootobj);
                 pattern.set(doc);
-                saveData(doc);
+                saveAttribTableToJson(doc);
                 layer_data.pattern() = pattern;
                 selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
             }
@@ -1664,15 +1665,15 @@ void TDMGui::slot_attribTableCellChanged(int row, int column)
 
 
 
-void TDMGui::selectItem(QModelIndex &index)
+void TDMGui::selectItem(QModelIndex &_index)
 {
     QTreeView *view = ui->tree_widget;
 
     view->selectionModel()->clear();
     view->selectionModel()->clearSelection();
 
-    view->selectionModel()->setCurrentIndex(index,QItemSelectionModel::SelectCurrent);
-    view->selectionModel()->select(index,QItemSelectionModel::SelectCurrent);
+    view->selectionModel()->setCurrentIndex(_index,QItemSelectionModel::SelectCurrent);
+    view->selectionModel()->select(_index,QItemSelectionModel::SelectCurrent);
     QApplication::instance()->processEvents();
 }
 
@@ -1891,7 +1892,7 @@ void TDMGui::slot_importOldMeasureFile()
             updateAttributeTable(0);
 
             m_currentItem = new TDMMeasurementLayerData(modelPointData);
-            loadData(doc, false);
+            loadAttribTableFromJson(doc, false);
 
             delete m_currentItem;
             m_currentItem = 0;
@@ -2013,7 +2014,7 @@ void TDMGui::slot_importOldMeasureFile()
             updateAttributeTable(0);
 
             m_currentItem = new TDMMeasurementLayerData(modelLineData);
-            loadData(doc, false);
+            loadAttribTableFromJson(doc, false);
 
             delete m_currentItem;
             m_currentItem = 0;
@@ -2143,7 +2144,7 @@ void TDMGui::slot_importOldMeasureFile()
             updateAttributeTable(0);
 
             m_currentItem = new TDMMeasurementLayerData(modelAreaData);
-            loadData(doc, false);
+            loadAttribTableFromJson(doc, false);
 
             delete m_currentItem;
             m_currentItem = 0;
@@ -2290,43 +2291,43 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         QString filePath = dir.absoluteFilePath(fileName);
 
         // loadMeasure
-        loadMeasure(filePath, _parent ? _parent : root, false);
+        loadMeasurementFromFile(filePath, _parent ? _parent : root, false);
     }
 }
 
-bool TDMGui::checkAndSaveMeasures(TdmLayerItem *item)
+bool TDMGui::checkAndSaveMeasures(TdmLayerItem *_item)
 {
-    if(item == nullptr)
+    if(_item == nullptr)
         return false;
 
     TdmLayersModel *model = TdmLayersModel::instance();
 
-    if(item->type() == TdmLayerItem::MeasurementLayer)
+    if(_item->type() == TdmLayerItem::MeasurementLayer)
     {
-        if(item->hasData<TDMMeasurementLayerData>())
+        if(_item->hasData<TDMMeasurementLayerData>())
         {
-            QModelIndex index = model->index(item);
+            QModelIndex index = model->index(_item);
             selectItem(index);
-            if(item->getFileName().isEmpty())
+            if(_item->getFileName().isEmpty())
             {
                 slot_saveMeasureFileAs();
 
-                return !item->getFileName().isEmpty();
+                return !_item->getFileName().isEmpty();
             }
             else
             {
-                TDMMeasurementLayerData layer_data = item->getPrivateData<TDMMeasurementLayerData>();
-                return saveMeasure(layer_data.fileName(),layer_data);
+                TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
+                return saveMeasurementToFile(layer_data.fileName(),layer_data);
             }
         }
     }
 
     bool res = true;
-    if(item->type() == TdmLayerItem::GroupLayer)
+    if(_item->type() == TdmLayerItem::GroupLayer)
     {
-        for(int i=0; i<item->childCount(); i++)
+        for(int i=0; i<_item->childCount(); i++)
         {
-            bool reschildren = checkAndSaveMeasures(item->child(i));
+            bool reschildren = checkAndSaveMeasures(_item->child(i));
             res = res && reschildren;
         }
     }
@@ -2334,18 +2335,18 @@ bool TDMGui::checkAndSaveMeasures(TdmLayerItem *item)
     return res;
 }
 
-QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *item)
+QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *_item)
 {
     QJsonObject obj;
-    if(item->type() == TdmLayerItem::GroupLayer)
+    if(_item->type() == TdmLayerItem::GroupLayer)
     {
         QJsonArray array;
 
-        for(int i=0; i<item->childCount(); i++)
+        for(int i=0; i<_item->childCount(); i++)
         {
-            array.append(saveTreeStructure(item->child(i)));
+            array.append(saveTreeStructure(_item->child(i)));
         }
-        obj.insert("Group",item->getName());
+        obj.insert("Group",_item->getName());
         obj.insert("Children",array);
     }
     else
@@ -2353,16 +2354,16 @@ QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *item)
         //save relative file name
         QFileInfo fileInfo(m_projectFileName);
         QDir dir = fileInfo.absoluteDir();
-        QString relFileName = dir.relativeFilePath(item->getFileName());
+        QString relFileName = dir.relativeFilePath(_item->getFileName());
 
-        if(item->type() == TdmLayerItem::MeasurementLayer)
+        if(_item->type() == TdmLayerItem::MeasurementLayer)
         {
-            obj.insert("Measure", item->getName());
+            obj.insert("Measure", _item->getName());
             obj.insert("File", relFileName);
         }
-        if(item->type() == TdmLayerItem::ModelLayer)
+        if(_item->type() == TdmLayerItem::ModelLayer)
         {
-            obj.insert("Model3D", item->getName());
+            obj.insert("Model3D", _item->getName());
             obj.insert("File", relFileName);
         }
     }

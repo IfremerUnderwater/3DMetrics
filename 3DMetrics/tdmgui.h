@@ -35,24 +35,24 @@ private:
     void manageCheckStateForChildren(TdmLayerItem *_item, bool _checked);
 
     // helper functions
-    void loadData(QJsonDocument &_doc, bool _buildOsg);
-    void saveData(QJsonDocument &_doc);
+    void loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg);
+    void saveAttribTableToJson(QJsonDocument &_doc);
 
-    void selectItem(QModelIndex &index);
+    void selectItem(QModelIndex &_index);
 
     // attribute table
-    void updateAttributeTable(TdmLayerItem *item);
+    void updateAttributeTable(TdmLayerItem *_item);
     MeasurePattern m_current;
     // for current vector of rows
     TDMMeasurementLayerData *m_currentItem;
 
     // working helpers
     void load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem);
-    bool loadMeasure(QString _filename, TdmLayerItem *_parent, bool _selectItem);
-    bool saveMeasure(QString _filename, TDMMeasurementLayerData &_data);
+    bool loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _selectItem);
+    bool saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data);
 
-    bool checkAndSaveMeasures(TdmLayerItem *item);
-    QJsonObject saveTreeStructure(TdmLayerItem *item);
+    bool checkAndSaveMeasures(TdmLayerItem *_item);
+    QJsonObject saveTreeStructure(TdmLayerItem *_item);
     void buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent);
 
     QString m_projectFileName;

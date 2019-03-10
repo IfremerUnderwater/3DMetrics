@@ -226,10 +226,10 @@
   <action name="line_tool">
    <property name="icon">
     <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/icon_segment.png</normaloff>:/icons/ressources/icon_segment.png</iconset>
+     <normaloff>:/icons/ressources/vector-polyline.svg</normaloff>:/icons/ressources/vector-polyline.svg</iconset>
    </property>
    <property name="text">
-    <string/>
+    <string>Polyline tool</string>
    </property>
    <property name="toolTip">
     <string>Tool for fast line measurement</string>
@@ -250,10 +250,10 @@
   <action name="pick_point">
    <property name="icon">
     <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/icon_ptinteret.png</normaloff>:/icons/ressources/icon_ptinteret.png</iconset>
+     <normaloff>:/icons/ressources/map-marker-plus.svg</normaloff>:/icons/ressources/map-marker-plus.svg</iconset>
    </property>
    <property name="text">
-    <string/>
+    <string>Pick point</string>
    </property>
    <property name="toolTip">
     <string>Pick coordinates of a point</string>
@@ -262,10 +262,10 @@
   <action name="cancel_measurement">
    <property name="icon">
     <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/icon_close.jpg</normaloff>:/icons/ressources/icon_close.jpg</iconset>
+     <normaloff>:/icons/ressources/cancel.svg</normaloff>:/icons/ressources/cancel.svg</iconset>
    </property>
    <property name="text">
-    <string/>
+    <string>Cancel measurement</string>
    </property>
    <property name="toolTip">
     <string>Cancel current measurement</string>
@@ -274,10 +274,10 @@
   <action name="focusing_tool_action">
    <property name="icon">
     <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/icon.jpeg</normaloff>:/icons/ressources/icon.jpeg</iconset>
+     <normaloff>:/icons/ressources/image-filter-center-focus.svg</normaloff>:/icons/ressources/image-filter-center-focus.svg</iconset>
    </property>
    <property name="text">
-    <string/>
+    <string>Reset view (center on model)</string>
    </property>
    <property name="toolTip">
     <string>Focus back on the scene</string>
@@ -289,7 +289,7 @@
    </property>
    <property name="icon">
     <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/icon_open.png</normaloff>:/icons/ressources/icon_open.png</iconset>
+     <normaloff>:/icons/ressources/folder.svg</normaloff>:/icons/ressources/folder.svg</iconset>
    </property>
    <property name="text">
     <string>Open 3D model</string>
