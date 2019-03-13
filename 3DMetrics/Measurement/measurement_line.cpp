@@ -91,6 +91,11 @@ void MeasureLine::encode(QJsonObject & _obj)
     _obj.insert(fieldName(), obj);
 }
 
+void MeasureLine::encodeASCII(QString &_string)
+{
+    _string = QString::number(m_length,'f');
+}
+
 void MeasureLine::updateGeode()
 {
     m_geode->removeDrawables(0, 2);

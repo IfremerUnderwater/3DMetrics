@@ -53,7 +53,7 @@
     <property name="title">
      <string>Tools</string>
     </property>
-    <addaction name="export_data_to_ASCII_csv_or_txt_action"/>
+    <addaction name="export_data_to_csv_action"/>
     <addaction name="decimate_model_action"/>
    </widget>
    <widget class="QMenu" name="menuView">
@@ -318,7 +318,7 @@
     <string>Save project</string>
    </property>
   </action>
-  <action name="export_data_to_ASCII_csv_or_txt_action">
+  <action name="export_data_to_csv_action">
    <property name="text">
     <string>Export data to ASCII (.csv or .txt)</string>
    </property>

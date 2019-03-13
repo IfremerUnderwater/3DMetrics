@@ -71,6 +71,8 @@ public slots:
     void slot_saveMeasureFile();
     void slot_saveMeasureFileAs();
 
+    void slot_saveAttribTableToASCII();
+
     void slot_openProject();
     void slot_saveProject();
 

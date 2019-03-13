@@ -1,6 +1,10 @@
 #include <osg/Geometry>
 #include <osg/StateSet>
 #include <osg/Point>
+#include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/osg_widget.h"
+#include <GeographicLib/LocalCartesian.hpp>
+#include "QPointF"
 
 #include "measurement_point.h"
 
@@ -34,6 +38,23 @@ void MeasurePoint::encode(QJsonObject & _obj)
     QJsonObject p;
     m_p.encode(p);
     _obj.insert(fieldName(), QJsonValue(p));
+}
+
+void MeasurePoint::encodeASCII(QString &_string)
+{
+    QPointF ref_lat_lon;
+    double ref_depth;
+    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_depth);
+
+    GeographicLib::LocalCartesian ltp_proj;
+    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
+
+    double lat,lon,depth;
+    ltp_proj.Reverse(m_p.x, m_p.y, m_p.z, lat, lon, depth);
+
+    _string = "lat=" + QString::number(lat,'f',8)+
+            "\tlon="+ QString::number(lon,'f',8)+
+            "\tdepth="+ QString::number(depth,'f',3);
 }
 
 void MeasurePoint::updateGeode()

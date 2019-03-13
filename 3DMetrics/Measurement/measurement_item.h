@@ -20,6 +20,9 @@ public:
     // encode to JSon
     virtual void encode(QJsonObject & _obj) = 0;
 
+    // encode to ASCII
+    virtual void encodeASCII(QString & _string) = 0;
+
     QString fieldName() const { return m_fieldName; }
 
     // create / update Geode

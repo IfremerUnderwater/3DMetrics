@@ -141,6 +141,9 @@ TDMGui::TDMGui(QWidget *parent) :
     // decimation
     connect(ui->decimate_model_action,SIGNAL(triggered(bool)),this,SLOT(slot_showDecimationDialog()));
     connect(&m_decimation_dialog, SIGNAL(accepted()),this,SLOT(slot_decimateSelectedModel()));
+
+    // csv export
+    connect(ui->export_data_to_csv_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveAttribTableToASCII()));
 }
 
 TDMGui::~TDMGui()
@@ -743,6 +746,73 @@ void TDMGui::saveAttribTableToJson(QJsonDocument &_doc)
     QJsonObject rootobj = _doc.object();
     rootobj.insert("Data",array);
     _doc.setObject(rootobj);
+}
+
+void TDMGui::slot_saveAttribTableToASCII()
+{
+    // save in file
+    QString out_filename = getSaveFileName(this, tr("Save measurement to csv"), "",
+                                   "*.csv");
+    QFileInfo fileinfo(out_filename);
+
+    // check filename is not empty
+    if(fileinfo.fileName().isEmpty()){
+        QMessageBox::critical(this, tr("Error : save measurement to csv"), tr("Error : you didn't give a name to the file"));
+        return;
+    }
+
+    // add suffix if needed
+    if (fileinfo.suffix() != "csv"){
+        out_filename += ".csv";
+        fileinfo.setFile(out_filename);
+    }
+
+    QFile file(out_filename);
+    if(!file.open(QIODevice::WriteOnly))
+    {
+        QMessageBox::critical(this, tr("Error : save measurement to csv"), tr("Error : cannot open the file"));
+        return;
+    }
+
+    // Get Table
+    QTableWidget *table = ui->attrib_table;
+
+    //get and write header
+    for(int c=1; c<table->columnCount(); c++)
+    {
+        QString field_string = table->horizontalHeaderItem(c)->text();
+        // write field
+        if (c<table->columnCount()-1)
+            field_string = field_string + ",";
+
+        file.write(field_string.toUtf8());
+    }
+    // write end of line
+    file.write(QString("\n").toUtf8());
+
+    // write fields data
+    for(int i=0; i<table->rowCount(); i++)
+    {
+        for(int c=1; c<table->columnCount(); c++)
+        {
+            // add field
+            MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i,c);
+            MeasureItem *it = pwidget->measureItem();
+            QString field_string;
+            it->encodeASCII(field_string);
+
+            // write field
+            if (c<table->columnCount()-1)
+                field_string = field_string + ",";
+
+            file.write(field_string.toUtf8());
+        }
+        // write end of line
+        file.write(QString("\n").toUtf8());
+    }
+
+    // close file
+    file.close();
 }
 
 void TDMGui::slot_newGroup()

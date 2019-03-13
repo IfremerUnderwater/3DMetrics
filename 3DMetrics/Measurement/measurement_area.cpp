@@ -96,6 +96,12 @@ void MeasureArea::encode(QJsonObject & _obj)
     _obj.insert(fieldName(), obj);
 }
 
+// encode to ASCII
+void MeasureArea::encodeASCII(QString &_string)
+{
+    _string = QString::number(m_area,'f');
+}
+
 void MeasureArea::computeLengthAndArea()
 {
     computeLength();

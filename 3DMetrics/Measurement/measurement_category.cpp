@@ -15,3 +15,8 @@ void MeasureCategory::encode(QJsonObject & _obj)
 {
     _obj.insert(fieldName(), QJsonValue(m_val));
 }
+
+void MeasureCategory::encodeASCII(QString &_string)
+{
+    _string = m_val;
+}

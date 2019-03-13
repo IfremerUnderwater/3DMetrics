@@ -28,9 +28,11 @@ public:
     virtual void decode(QJsonObject & _obj);
     virtual void decode(QJsonObject & _obj, Point3D offset);
 
-
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
+
+    // encode to ASCII
+    virtual void encodeASCII(QString & _string);
 
     double area() { return m_area; }
     void computeLengthAndArea();

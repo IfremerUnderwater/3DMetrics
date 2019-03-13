@@ -38,6 +38,9 @@ public:
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
 
+    // encode to ASCII
+    virtual void encodeASCII(QString & _string);
+
     // create / update Geode
     virtual void updateGeode();
 
