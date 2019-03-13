@@ -55,7 +55,7 @@
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap resource="ressources.qrc">:/icons/ressources/icon_polygon.png</pixmap>
+        <pixmap resource="ressources.qrc">:/icons/ressources/vector-closed-polyline.svg</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
