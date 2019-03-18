@@ -133,6 +133,10 @@ public slots:
     // decimation dialog & action
     void slot_showDecimationDialog();
     void slot_decimateSelectedModel();
+
+    //Snapshot
+    void slot_saveSnapshot();
+
 };
 
 #endif // TDMGUI_H

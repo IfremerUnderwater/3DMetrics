@@ -144,6 +144,10 @@ TDMGui::TDMGui(QWidget *parent) :
 
     // csv export
     connect(ui->export_data_to_csv_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveAttribTableToASCII()));
+
+    // snapshot
+    //connect(ui->take_snapshot_action,SIGNAl(triggered(bool)),this,SLOT(slot_saveSnapshot())));
+    connect(ui->take_snapshot_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveSnapshot()));
 }
 
 TDMGui::~TDMGui()
@@ -2637,4 +2641,41 @@ void TDMGui::slot_decimateSelectedModel()
 
     }
 
+}
+
+void TDMGui::slot_saveSnapshot()
+{
+
+    QImage m_captureImage = ui->display_widget->grabFramebuffer();
+
+    QString nameSnapshot = getSaveFileName(this, tr("Save snapshot"), "",
+                                           tr("Images (*.png)"));
+
+    QFileInfo fileinfo(nameSnapshot);
+
+    // check filename is not empty
+    if(fileinfo.fileName().isEmpty()){
+        QMessageBox::critical(this, tr("Error : save snapshot"), tr("Error : you didn't give a name to the file"));
+        return;
+    }
+
+    // add suffix if needed
+    if (fileinfo.suffix() != "png"){
+        nameSnapshot += ".png";
+        fileinfo.setFile(nameSnapshot);
+    }
+
+    // save the capture
+    bool save_check = m_captureImage.save(nameSnapshot,"png");
+
+    // check if the image has been saved
+    if(save_check)
+    {
+        QMessageBox::information(this,"Success","Your capture is saved");
+    }
+    else
+    {
+        QMessageBox::critical(this, tr("Error : save snapshot"), tr("Error : your capture is not saved"));
+
+    }
 }
