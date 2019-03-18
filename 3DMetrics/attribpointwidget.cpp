@@ -58,7 +58,7 @@ void AttribPointWidget::update(bool valueOk)
 
         ui->x_label->setText(QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
         ui->y_label->setText(QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        ui->z_label->setText(QString::number(depth,'f',1) + "m");
+        ui->z_label->setText(QString::number(depth,'f',1) + " m");
 
         ui->tool_label->setStyleSheet("");
     }

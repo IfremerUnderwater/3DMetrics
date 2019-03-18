@@ -45,7 +45,7 @@ void AttribAreaWidget::update()
         QString snb = QString::number(m_item->nbPts());
         ui->pts_label->setText(snb);
         QString slg = QString::number(m_item->area(),'f',2);
-        ui->length_label->setText(slg);
+        ui->length_label->setText(slg + " m²");
 
         if(m_item->nbPts() > 0)
             ui->tool_label->setStyleSheet("");

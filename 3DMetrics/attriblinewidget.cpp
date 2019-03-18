@@ -46,7 +46,7 @@ void AttribLineWidget::update()
         QString snb = QString::number(m_item->nbPts());
         ui->pts_label->setText(snb);
         QString slg = QString::number(m_item->length(),'f',2);
-        ui->length_label->setText(slg);
+        ui->length_label->setText(slg + " m");
 
         if(m_item->nbPts() > 0)
             ui->tool_label->setStyleSheet("");
