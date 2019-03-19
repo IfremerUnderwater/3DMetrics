@@ -642,6 +642,7 @@ void TDMGui::slot_saveMeasureFileAs()
     bool hasSelection = !view->selectionModel()->selection().isEmpty();
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
     bool ok = false;
+    QString name_measurement;
 
     TDMMeasurementLayerData layer_data;
 
@@ -654,6 +655,8 @@ void TDMGui::slot_saveMeasureFileAs()
             {
                 layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
                 ok = true;
+                name_measurement = selected->getName();
+
             }
         }
     }
@@ -662,7 +665,7 @@ void TDMGui::slot_saveMeasureFileAs()
         return;
 
     // save in file
-    QString name = getSaveFileName(this, tr("Save measurement"), "",
+    QString name = getSaveFileName(this, "Save measurement : "+ name_measurement,"",
                                    "*.json");
     QFileInfo fileinfo(name);
 
@@ -2645,8 +2648,9 @@ void TDMGui::slot_decimateSelectedModel()
 
 void TDMGui::slot_saveSnapshot()
 {
-
+    // retrieve the screenshot
     QImage m_captureImage = ui->display_widget->grabFramebuffer();
+
 
     QString nameSnapshot = getSaveFileName(this, tr("Save snapshot"), "",
                                            tr("Images (*.png)"));
