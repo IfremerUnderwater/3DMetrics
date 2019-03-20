@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QLabel>
+#include <QSettings>
 
 #include "Measurement/measurement_pattern.h"
 #include "decimation_dialog.h"
@@ -62,6 +63,12 @@ private:
     QLabel *m_depthLabel;
 
     DecimationDialog m_decimation_dialog;
+
+    // Settings variable
+    QSettings m_settings;
+    QString m_pathModel3D;
+    QString m_pathMeasurement;
+    QString m_pathProject;
 
 public slots:
 
@@ -136,6 +143,9 @@ public slots:
 
     //Snapshot
     void slot_saveSnapshot();
+
+    // Settings
+    void slot_applySettings();
 
 };
 

@@ -40,7 +40,8 @@
 TDMGui::TDMGui(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::TDMGui),
-    m_currentItem(0)
+    m_currentItem(0),
+    m_settings("3DMetrics", "IFREMER")
 {
     qRegisterMetaType<MeasurePattern>();
 
@@ -146,8 +147,37 @@ TDMGui::TDMGui(QWidget *parent) :
     connect(ui->export_data_to_csv_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveAttribTableToASCII()));
 
     // snapshot
-    //connect(ui->take_snapshot_action,SIGNAl(triggered(bool)),this,SLOT(slot_saveSnapshot())));
     connect(ui->take_snapshot_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveSnapshot()));
+
+    // settings
+    bool ready_to_apply = true;
+    if(m_settings.contains("3DMetrics/pathModel3D"))
+    {
+        ready_to_apply = ready_to_apply && true;
+        m_pathModel3D = m_settings.value("3DMetrics/pathModel3D").value<QString>();
+    }else{
+        m_pathModel3D="";
+        ready_to_apply = ready_to_apply && false;
+    }
+    if(m_settings.contains("3DMetrics/pathMeasurement"))
+    {
+        ready_to_apply = ready_to_apply && true;
+        m_pathMeasurement = m_settings.value("3DMetrics/pathMeasurement").value<QString>();
+    }else{
+        m_pathMeasurement="";
+        ready_to_apply = ready_to_apply && false;
+    }
+    if(m_settings.contains("3DMetrics/pathProject"))
+    {
+        ready_to_apply = ready_to_apply && true;
+        m_pathProject = m_settings.value("3DMetrics/pathProject").value<QString>();
+    }else{
+        m_pathProject="";
+        ready_to_apply = ready_to_apply && false;
+    }
+
+    if(ready_to_apply)
+        slot_applySettings();
 }
 
 TDMGui::~TDMGui()
@@ -183,7 +213,12 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString fileName = getOpenFileName(this,tr("Select a 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
+    QString fileName = getOpenFileName(this,tr("Select a 3d Model to open"),m_pathModel3D, tr("3D files (*.kml *.obj)"));
+
+    // save Path Model 3D
+    m_pathModel3D = fileName;
+    slot_applySettings();
+
     if(fileName.length() > 0)
     {
         QApplication::setOverrideCursor(Qt::WaitCursor);
@@ -278,7 +313,12 @@ void TDMGui::slot_newMeasurement()
 
 void TDMGui::slot_openMeasureFile()
 {
-    QString fileName = getOpenFileName(this,tr("Select measurement file to open"), "", tr("Json files (*.json)"));
+    QString fileName = getOpenFileName(this,tr("Select measurement file to open"), m_pathMeasurement, tr("Json files (*.json)"));
+
+    // save Path Measurement
+    m_pathMeasurement = fileName;
+    slot_applySettings();
+
     if(fileName.length() > 0)
     {
         // parent to be used
@@ -665,8 +705,13 @@ void TDMGui::slot_saveMeasureFileAs()
         return;
 
     // save in file
-    QString name = getSaveFileName(this, "Save measurement : "+ name_measurement,"",
+    QString name = getSaveFileName(this, "Save measurement : "+ name_measurement,m_pathMeasurement,
                                    "*.json");
+
+    // save Path Measurement
+    m_pathMeasurement = name;
+    slot_applySettings();
+
     QFileInfo fileinfo(name);
 
     // check filename is not empty
@@ -1804,7 +1849,12 @@ void TDMGui::slot_tempAreaTool()
 void TDMGui::slot_importOldMeasureFile()
 {
     // open file
-    QString fileName = getOpenFileName(this,tr("Select old measurement file to open"), "", tr("Json files (*.json)"));
+    QString fileName = getOpenFileName(this,tr("Select old measurement file to open"), m_pathMeasurement, tr("Json files (*.json)"));
+
+    // save Path Measurement
+    m_pathMeasurement = fileName;
+    slot_applySettings();
+
     if(fileName.length() > 0)
     {
         // read json
@@ -2283,7 +2333,12 @@ void TDMGui::slot_openProject()
     ui->pick_point->setEnabled(false);
 
     // ask file name
-    QString fileName = getOpenFileName(this,tr("Select project to open"), "", tr("3DMetrics project (*.tdm)"));
+    QString fileName = getOpenFileName(this,tr("Select project to open"),m_pathProject, tr("3DMetrics project (*.tdm)"));
+
+    // save pathProject
+    m_pathProject = fileName;
+    slot_applySettings();
+
     if(fileName.length() > 0)
     {
         // open project
@@ -2653,7 +2708,7 @@ void TDMGui::slot_saveSnapshot()
 
 
     QString nameSnapshot = getSaveFileName(this, tr("Save snapshot"), "",
-                                           tr("Images (*.png)"));
+                                           tr("Images (*.jpeg)"));
 
     QFileInfo fileinfo(nameSnapshot);
 
@@ -2664,13 +2719,13 @@ void TDMGui::slot_saveSnapshot()
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != "png"){
-        nameSnapshot += ".png";
+    if (fileinfo.suffix() != "jpeg"){
+        nameSnapshot += ".jpeg";
         fileinfo.setFile(nameSnapshot);
     }
 
     // save the capture
-    bool save_check = m_captureImage.save(nameSnapshot,"png");
+    bool save_check = m_captureImage.save(nameSnapshot,"jpeg");
 
     // check if the image has been saved
     if(save_check)
@@ -2682,4 +2737,12 @@ void TDMGui::slot_saveSnapshot()
         QMessageBox::critical(this, tr("Error : save snapshot"), tr("Error : your capture is not saved"));
 
     }
+}
+
+void TDMGui::slot_applySettings()
+{
+    m_settings.setValue("3DMetrics/pathModel3D", m_pathModel3D);
+    m_settings.setValue("3DMetrics/pathMeasurement", m_pathMeasurement);
+    m_settings.setValue("3DMetrics/pathProject", m_pathProject);
+
 }
