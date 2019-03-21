@@ -178,6 +178,11 @@ TDMGui::TDMGui(QWidget *parent) :
 
     if(ready_to_apply)
         slot_applySettings();
+
+    // ctrl-Z
+    m_ctrlZ = new QShortcut(this);
+    m_ctrlZ->setKey(Qt::CTRL + Qt::Key_Z);
+    connect(m_ctrlZ, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
 }
 
 TDMGui::~TDMGui()
@@ -1111,7 +1116,6 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
     }
 }
 
-
 void TDMGui::slot_deleteRow()
 {
     QTreeView *view = ui->tree_widget;
@@ -1784,8 +1788,6 @@ void TDMGui::slot_attribTableCellChanged(int row, int column)
         break;
     }
 }
-
-
 
 void TDMGui::selectItem(QModelIndex &_index)
 {

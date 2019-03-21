@@ -120,3 +120,13 @@ void OSGWidgetTool::slot_cancelTool()
         endTool();
     }
 }
+void OSGWidgetTool::slot_removeLastPointTool()
+{
+    if(m_currentType != None)
+    {
+        emit signal_removeLastPointTool();
+
+        //endTool();
+    }
+}
+

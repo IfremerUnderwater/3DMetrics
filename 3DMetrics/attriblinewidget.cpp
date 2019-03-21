@@ -28,6 +28,7 @@ void AttribLineWidget::clicked()
     connect(tool, SIGNAL(signal_clicked(Point3D&)), this, SLOT(slot_toolClicked(Point3D&)));
     connect(tool, SIGNAL(signal_endTool()), this, SLOT(slot_toolEnded()));
     connect(tool, SIGNAL(signal_cancelTool()), this, SLOT(slot_toolCanceled()));
+    connect(tool, SIGNAL(signal_removeLastPointTool()), this, SLOT(slot_toolRemoveLastPoint()));
 
     m_item->save();
 
@@ -84,4 +85,17 @@ void AttribLineWidget::slot_toolClicked(Point3D &p)
     m_item->computeLength();
     update();
     m_item->updateGeode();
+}
+
+void AttribLineWidget::slot_toolRemoveLastPoint()
+{
+    // remove last point
+    if(!m_item->getArray().empty())
+    {
+        m_item->getArray().pop_back();
+        m_item->computeLength();
+        update();
+        m_item->updateGeode();
+    }
+
 }

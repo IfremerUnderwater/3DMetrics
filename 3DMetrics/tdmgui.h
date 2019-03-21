@@ -4,6 +4,8 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QSettings>
+#include <QShortcut>
+
 
 #include "Measurement/measurement_pattern.h"
 #include "decimation_dialog.h"
@@ -69,6 +71,8 @@ private:
     QString m_pathModel3D;
     QString m_pathMeasurement;
     QString m_pathProject;
+
+    QShortcut *m_ctrlZ;
 
 public slots:
 

@@ -2,6 +2,7 @@
 #define ATTRIBLINEWIDGET_H
 
 #include <QWidget>
+#include <QShortcut>
 
 class Point3D;
 
@@ -28,6 +29,7 @@ public slots:
     void slot_toolCanceled();
     void slot_toolEnded();
     void slot_toolClicked(Point3D &p);
+    void slot_toolRemoveLastPoint();
 
 signals:
     void signal_toolStarted(QString &info);

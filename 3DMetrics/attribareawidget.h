@@ -27,6 +27,7 @@ public slots:
     void slot_toolCanceled();
     void slot_toolEnded();
     void slot_toolClicked(Point3D &p);
+    void slot_toolRemoveLastPoint();
 
 signals:
     void signal_toolStarted(QString &info);
