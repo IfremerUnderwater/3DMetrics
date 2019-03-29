@@ -63,6 +63,8 @@
     </property>
     <addaction name="layers_tree_window_action"/>
     <addaction name="attrib_table_window_action"/>
+    <addaction name="separator"/>
+    <addaction name="add_axes"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -388,6 +390,20 @@
   <action name="take_snapshot_action">
    <property name="text">
     <string>Take a snapshot of current view</string>
+   </property>
+  </action>
+  <action name="add_axes">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Add axes</string>
+   </property>
+   <property name="toolTip">
+    <string>Add axes on the 3D model</string>
    </property>
   </action>
  </widget>

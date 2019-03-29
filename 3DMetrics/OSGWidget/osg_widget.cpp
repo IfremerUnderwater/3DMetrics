@@ -485,7 +485,6 @@ void OSGWidget::clearSceneData()
     this->initializeGL();
 }
 
-
 void OSGWidget::initializeGL(){
 
     // Init properties
@@ -555,7 +554,6 @@ void OSGWidget::mouseMoveEvent( QMouseEvent* event )
                                         static_cast<float>( event->y() ) );
 }
 
-
 void OSGWidget::mousePressEvent( QMouseEvent* event )
 {
 
@@ -596,8 +594,6 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
                                              static_cast<float>( event->y() ),
                                              button );
 }
-
-
 
 void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists)
 {
@@ -704,7 +700,6 @@ bool OSGWidget::event( QEvent* event )
 
     return handled;
 }
-
 
 void OSGWidget::onResize( int width, int height )
 {

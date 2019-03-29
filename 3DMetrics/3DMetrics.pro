@@ -74,7 +74,8 @@ SOURCES += main.cpp \
     Measurement/measurement_category.cpp \
     Measurement/tdm_categories_manager.cpp \
     attribcategorieswidget.cpp \
-    decimation_dialog.cpp
+    decimation_dialog.cpp \
+    osg_axes.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -107,7 +108,8 @@ HEADERS  += \
     Measurement/measurement_category.h \
     Measurement/tdm_categories_manager.h \
     attribcategorieswidget.h \
-    decimation_dialog.h
+    decimation_dialog.h \
+    osg_axes.h
 
 FORMS    += \
     tdmgui.ui \

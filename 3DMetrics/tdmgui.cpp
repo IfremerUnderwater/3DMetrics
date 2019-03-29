@@ -35,6 +35,8 @@
 #include "toollinedialog.h"
 #include "toolareadialog.h"
 
+#include "osg_axes.h"
+
 #include <GeographicLib/LocalCartesian.hpp>
 
 TDMGui::TDMGui(QWidget *parent) :
@@ -72,6 +74,7 @@ TDMGui::TDMGui(QWidget *parent) :
     QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
+    QObject::connect(ui->add_axes, SIGNAL(triggered()),this, SLOT(slot_axeWindows()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -2747,4 +2750,18 @@ void TDMGui::slot_applySettings()
     m_settings.setValue("3DMetrics/pathMeasurement", m_pathMeasurement);
     m_settings.setValue("3DMetrics/pathProject", m_pathProject);
 
+}
+
+void TDMGui::slot_axeWindows()
+{
+    if(ui->add_axes->isChecked())
+    {
+        QMessageBox::information(this,tr("Information"), tr("Double click where you want to put your axe"));
+        m_axe.start();
+        m_axe.show();
+    }
+    else
+    {
+        m_axe.removeAxe();
+    }
 }

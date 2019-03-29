@@ -9,6 +9,7 @@
 
 #include "Measurement/measurement_pattern.h"
 #include "decimation_dialog.h"
+#include "osg_axes.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -74,6 +75,7 @@ private:
 
     QShortcut *m_ctrlZ;
 
+    OSGAxes m_axe;
 public slots:
 
     void slot_open3dModel();
@@ -145,11 +147,16 @@ public slots:
     void slot_showDecimationDialog();
     void slot_decimateSelectedModel();
 
-    //Snapshot
+    // Snapshot
     void slot_saveSnapshot();
 
     // Settings
     void slot_applySettings();
+
+    // Axes
+    void slot_axeWindows();
+
+private slots:
 
 };
 

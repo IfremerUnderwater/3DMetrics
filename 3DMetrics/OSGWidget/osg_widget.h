@@ -10,8 +10,10 @@
 #include <osg/ref_ptr>
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
-#include "kml_handler.h"
 #include <GeographicLib/LocalCartesian.hpp>
+
+#include "kml_handler.h"
+
 
 #define INVALID_VALUE 100000
 
@@ -119,7 +121,6 @@ public:
     void xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, double &_lon, double &_depth);
 
 public slots:
-
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
