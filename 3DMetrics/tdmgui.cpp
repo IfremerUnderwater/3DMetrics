@@ -37,6 +37,8 @@
 
 #include "osg_axes.h"
 
+#include "Measurement/measurement_total_area.h"
+
 #include <GeographicLib/LocalCartesian.hpp>
 
 TDMGui::TDMGui(QWidget *parent) :
@@ -1075,6 +1077,11 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Edit measurement"), this, SLOT(slot_editMeasurement()));
                 menu->addSeparator();
             }
+            if(selected->type() == TdmLayerItem::ModelLayer)
+            {
+                menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
+                menu->addSeparator();
+            }
         }
     }
 
@@ -1088,6 +1095,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
     menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
     menu->addSeparator();
     menu->addAction(tr("Unselect"), this, SLOT(slot_unselect()));
+    menu->addSeparator();
 
     menu->exec(QCursor::pos());
 }
@@ -2764,4 +2772,33 @@ void TDMGui::slot_axeWindows()
     {
         m_axe.removeAxe();
     }
+}
+
+void TDMGui::slot_computeTotalArea()
+{
+
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+
+    if (hasSelection && hasCurrent)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+
+        // compute the surface of the 3D model selected through his node
+        MeasurementTotalArea totalArea;
+        node->accept(totalArea);
+        double areaDouble = totalArea.getArea();
+        QString areaString = QString::number(areaDouble,'f',2);
+        QStringList fileNameSplit = layer_data.fileName().split("/");
+        QString name3DMode = fileNameSplit.at(fileNameSplit.length()-1);
+        QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3DMode+tr(" is ")+areaString + " m²");
+     }
 }

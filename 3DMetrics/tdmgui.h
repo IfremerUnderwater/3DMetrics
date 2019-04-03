@@ -15,6 +15,8 @@ class TdmLayerItem;
 class QCloseEvent;
 class QItemSelection;
 class TDMMeasurementLayerData;
+class TDMModelLayerData;
+class MeasurementTotalArea;
 
 namespace Ui {
 class TDMGui;
@@ -130,6 +132,7 @@ public slots:
     void slot_moveToToplevel();
     void slot_unselect();
     void slot_editMeasurement();
+    void slot_computeTotalArea();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
