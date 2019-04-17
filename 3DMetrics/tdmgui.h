@@ -153,6 +153,9 @@ public slots:
     // Snapshot
     void slot_saveSnapshot();
 
+    // Screenshot 2D
+    void slot_saveScreenshot2D();
+
     // Settings
     void slot_applySettings();
 

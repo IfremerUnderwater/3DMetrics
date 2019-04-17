@@ -138,6 +138,9 @@ public:
     void endTool(QString &message);
     void cancelTool(QString &message);
 
+    // screen2D
+    void screenshot(osg::ref_ptr<osg::Node> _node, QString _filename);
+
 protected:
 
     virtual void paintGL();

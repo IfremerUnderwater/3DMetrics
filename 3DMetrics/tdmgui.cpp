@@ -1079,6 +1079,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             }
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
+                menu->addAction(tr("Screenshot of the 2DModel"),this,SLOT(slot_saveScreenshot2D()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
             }
@@ -2802,3 +2803,43 @@ void TDMGui::slot_computeTotalArea()
         QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3DMode+tr(" is ")+areaString + " m²");
      }
 }
+
+void TDMGui::slot_saveScreenshot2D()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+
+    QString nameSnapshot2D = getSaveFileName(this, tr("Save snapshot2D"), "",
+                                           tr("Images (*.jpg)"));
+
+    QFileInfo fileinfo(nameSnapshot2D);
+
+    // check filename is not empty
+    if(fileinfo.fileName().isEmpty()){
+        QMessageBox::critical(this, tr("Error : save project"), tr("Error : you didn't give a name to the file"));
+        return;
+    }
+
+    // add suffix if needed
+    if (fileinfo.suffix() != "jpg"){
+        nameSnapshot2D += ".jpg";
+        fileinfo.setFile(nameSnapshot2D);
+    }
+
+    if (hasSelection && hasCurrent)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+
+        // SCREEN
+        ui->display_widget->screenshot(node,nameSnapshot2D);
+     }
+}
+

@@ -42,6 +42,25 @@
 #include <osg/Point>
 #include <osg/LineWidth>
 
+#include <QMessageBox>
+
+class WriteToFileCaptureOperation : public osgViewer::ScreenCaptureHandler::CaptureOperation
+{
+public:
+
+    WriteToFileCaptureOperation(const std::string& filename):
+        _filename( filename )
+    {
+    }
+
+    virtual void operator()(const osg::Image& image, const unsigned int context_id)
+    {
+        osgDB::writeImageFile(image,  _filename );
+
+    }
+
+    std::string _filename;
+};
 
 
 
@@ -816,3 +835,84 @@ void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, 
 
     m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _depth);
 }
+
+void OSGWidget::screenshot(osg::ref_ptr<osg::Node> _node, QString _filename)
+{
+    std::string screenCaptureFilename = _filename.toStdString();
+    osg::ref_ptr<osg::Node> node = _node.get();
+    osgViewer::Viewer viewer;
+    osg::ref_ptr<osgViewer::ScreenCaptureHandler::CaptureOperation> writeFile = new WriteToFileCaptureOperation(screenCaptureFilename);
+    osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler = new osgViewer::ScreenCaptureHandler(writeFile.get());
+
+    // CAMERA
+
+    osg::BoundingSphere sphere = node->computeBound();
+    unsigned int diametreSphere = sphere.radius2();
+    int rayonSphere = sphere.radius();
+    unsigned int width,height;
+
+    osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
+
+    osg::GraphicsContext::ScreenIdentifier main_screen_id;
+
+    main_screen_id.readDISPLAY();
+    main_screen_id.setUndefinedScreenDetailsToDefaultScreen();
+    wsi->getScreenResolution(main_screen_id, width, height);
+
+    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+    traits->x = 0;
+    traits->y = 0;
+    traits->width = width;
+    traits->height = height;
+    traits->windowDecoration = false;
+    traits->doubleBuffer = true;
+    traits->readDISPLAY();
+    traits->setUndefinedScreenDetailsToDefaultScreen();
+
+    osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+
+    // Create camera
+    osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+    camera->setGraphicsContext(gc);
+
+    osg::Vec3d oeil(sphere.center().x(), sphere.center().y(), sphere.center().z());
+
+    //osg::Vec3d cible(0, 0, 0);
+    osg::Vec3d normale(0,0,-1);
+    //camera->setViewMatrixAsLookAt(oeil, cible, normale);
+
+    camera->setViewport( new osg::Viewport(traits->x, traits->y,  traits->width, traits->height) );
+
+    // Set clear color
+    QColor clearColor = QColor(0,0,0);
+    camera->setClearColor( osg::Vec4( clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF() ) );
+    camera->setGraphicsContext(gc);
+
+
+    // VIEWER
+    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
+    viewer.setCamera( camera.get() );
+    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
+    viewer.getCameraManipulator()->setHomePosition(oeil,sphere.center(),normale);
+
+    viewer.addEventHandler(screenCaptureHandler);
+    viewer.setSceneData(node);
+
+    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-rayonSphere,rayonSphere,-rayonSphere,rayonSphere);
+
+    viewer.realize();
+
+    //while (!viewer.done())
+    //{
+        screenCaptureHandler->startCapture();
+        screenCaptureHandler->setFramesToCapture(1);
+        screenCaptureHandler->captureNextFrame(viewer);
+        viewer.frame();
+        screenCaptureHandler->stopCapture();
+
+    //}
+
+
+    QMessageBox::information(this,"Success","Your capture is saved");
+}
+
