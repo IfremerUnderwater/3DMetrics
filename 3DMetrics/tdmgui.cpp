@@ -231,10 +231,17 @@ void TDMGui::slot_open3dModel()
 
     if(fileName.length() > 0)
     {
-        QApplication::setOverrideCursor(Qt::WaitCursor);
+        //QApplication::setOverrideCursor(Qt::WaitCursor);
 
-        load3DModel(fileName, TdmLayersModel::instance()->rootItem(), true);
+        //load3DModel(fileName, TdmLayersModel::instance()->rootItem(), true);
+        MyThreadCreateNode *m_threadNode = new MyThreadCreateNode();
+        connect(m_threadNode,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_createNode(osg::Node*,QString,TdmLayerItem*,bool)));
 
+        m_threadNode->setFileName(fileName);
+        m_threadNode->setTDMLayerItem(TdmLayersModel::instance()->rootItem());
+        m_threadNode->setSelectItem(true);
+        m_threadNode->setOSGWidget(ui->display_widget);
+        m_threadNode->start();
         // allow measurement to be loaded
         //ui->open_measurement_file_action->setEnabled(true);
         ui->import_old_measure_format_action->setEnabled(true);
@@ -244,18 +251,25 @@ void TDMGui::slot_open3dModel()
         ui->surface_tool->setEnabled(true);
         ui->pick_point->setEnabled(true);
 
-        QApplication::restoreOverrideCursor();
+        //QApplication::restoreOverrideCursor();
     }
     else
     {
         QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a valid 3d model"));
     }
 }
-
-void TDMGui::load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem)
+void TDMGui::slot_createNode(osg::Node* _node ,QString _filename,TdmLayerItem *_parent, bool _selectItem)
 {
-    osg::ref_ptr<osg::Node> node = ui->display_widget->createNodeFromFile(_filename.toStdString());
 
+    load3DModel(_filename, _parent, _selectItem, _node);
+
+
+}
+
+void TDMGui::load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem, osg::Node* _node)
+{
+    //osg::ref_ptr<osg::Node> node = ui->display_widget->createNodeFromFile(_filename.toStdString());
+    osg::ref_ptr<osg::Node> node = _node;
     TDMModelLayerData modelData(_filename, node);
 
     TdmLayersModel *model = TdmLayersModel::instance();
@@ -2417,7 +2431,15 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         QString filePath = dir.absoluteFilePath(fileName);
 
         // load 3D model
-        load3DModel(filePath, _parent ? _parent : root, false);
+        MyThreadCreateNode *m_threadNode = new MyThreadCreateNode();
+        connect(m_threadNode,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_createNode(osg::Node*,QString,TdmLayerItem*,bool)));
+
+        m_threadNode->setFileName(filePath);
+        m_threadNode->setTDMLayerItem(_parent ? _parent : root);
+        m_threadNode->setSelectItem(false);
+        m_threadNode->setOSGWidget(ui->display_widget);
+        m_threadNode->start();
+        //load3DModel(filePath, _parent ? _parent : root, false);
 
         // allow measurement to be loaded
         //ui->open_measurement_file_action->setEnabled(true);
@@ -2812,7 +2834,7 @@ void TDMGui::slot_saveScreenshot2D()
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
 
     QString nameSnapshot2D = getSaveFileName(this, tr("Save snapshot2D"), "",
-                                           tr("Images (*.jpg)"));
+                                           tr("Images (*.tiff)"));
 
     QFileInfo fileinfo(nameSnapshot2D);
 
@@ -2823,8 +2845,8 @@ void TDMGui::slot_saveScreenshot2D()
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != "jpg"){
-        nameSnapshot2D += ".jpg";
+    if (fileinfo.suffix() != ".tiff"){
+        nameSnapshot2D = nameSnapshot2D.remove(".tiff");
         fileinfo.setFile(nameSnapshot2D);
     }
 
@@ -2838,8 +2860,16 @@ void TDMGui::slot_saveScreenshot2D()
 
         osg::Node* const node = (layer_data.node().get());
 
+        MeasurementTotalArea totalArea;
+        node->accept(totalArea);
+        osg::BoundingBox box = totalArea.getBoundingBox();
+        //double width = totalArea.getWidth();
+        //double length = totalArea.getLength();
+        //double height = totalArea.getHeight();
+
         // SCREEN
-        ui->display_widget->screenshot(node,nameSnapshot2D);
+        ui->display_widget->screenshot(node,nameSnapshot2D,box);
+
      }
 }
 

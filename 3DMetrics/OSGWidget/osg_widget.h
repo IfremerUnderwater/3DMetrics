@@ -139,7 +139,7 @@ public:
     void cancelTool(QString &message);
 
     // screen2D
-    void screenshot(osg::ref_ptr<osg::Node> _node, QString _filename);
+    void screenshot(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box);
 
 protected:
 

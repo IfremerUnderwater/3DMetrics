@@ -66,5 +66,6 @@ void MeasurementTotalArea::apply( osg::Geode &geode )
             }
 
         }
+        m_box = geode.getBoundingBox();
     }
 }

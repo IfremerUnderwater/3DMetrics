@@ -10,6 +10,7 @@
 #include "Measurement/measurement_pattern.h"
 #include "decimation_dialog.h"
 #include "osg_axes.h"
+#include "mythreadcreatenode.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -53,7 +54,7 @@ private:
     TDMMeasurementLayerData *m_currentItem;
 
     // working helpers
-    void load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem);
+    void load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem,osg::Node* _node);
     bool loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _selectItem);
     bool saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data);
 
@@ -77,10 +78,13 @@ private:
 
     QShortcut *m_ctrlZ;
 
+    //MyThreadCreateNode *m_threadNode;
+
     OSGAxes m_axe;
 public slots:
 
     void slot_open3dModel();
+    void slot_createNode(osg::Node*, QString _filename,TdmLayerItem *_parent, bool _selectItem);
 
     void slot_openMeasureFile();
     void slot_saveMeasureFile();

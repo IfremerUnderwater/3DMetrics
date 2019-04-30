@@ -18,9 +18,11 @@ public :
     virtual void apply( osg::Geode &geode );
 
     double getArea() { return m_area; }
+    osg::BoundingBox getBoundingBox() { return m_box; }
 
 private :
     double m_area;
+    osg::BoundingBox m_box;
 };
 
 #endif // MEASUREMENTTOTALAREA_H
