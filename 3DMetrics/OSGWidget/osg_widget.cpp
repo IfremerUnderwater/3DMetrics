@@ -45,59 +45,73 @@
 #include <QMessageBox>
 #include <QProcess>
 
-class WriteToFileCaptureOperation : public osgViewer::ScreenCaptureHandler::CaptureOperation
-{
-public:
-
-    WriteToFileCaptureOperation(const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box):
+struct SnapImage : public osg::Camera::DrawCallback {
+    SnapImage(osg::GraphicsContext* gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box) :
         m_filename( _filename ),
         m_ref_lat_lon( _ref_lat_lon ),
         m_box( _box )
     {
+        m_image = new osg::Image;
+        if (gc->getTraits()) {
+            int width = gc->getTraits()->width;
+            int height = gc->getTraits()->height;
+            m_image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
+        }
     }
 
-    virtual void operator()(const osg::Image& _image, const unsigned int context_id)
-    {
-        // Variable for the command line "gdal_translate"
-        double lat_0  = m_ref_lat_lon.x();
-        double lon_0 = m_ref_lat_lon.y();
-        double x_max = m_box.xMax();
-        double x_min = m_box.xMin();
-        double y_min = m_box.yMin();
-        double y_max = m_box.yMax();
-        QString jpg_name = QString::fromStdString(m_filename)+".jpg";
-        QString tiff_name = QString::fromStdString(m_filename)+".tiff";
+    virtual void operator () (osg::RenderInfo& renderInfo) const {
+        osg::Camera* camera = renderInfo.getCurrentCamera();
 
-        // Create the .jpg, we need it for gdal_translate in order to have a .tiff
-        osgDB::writeImageFile(_image,  m_filename+".jpg" );
+        osg::GraphicsContext* gc = camera->getGraphicsContext();
+        if (gc->getTraits() && m_image.valid()) {
 
-        // Run a command line from Qt
-        QProcess process;
-        QString command_line = QString("gdal_translate -a_srs \"+proj=tmerc +lat_0=%1 +lon_0=%2 +k=0.9996 +x_0=0 +y_0=0 +ellps=WGS84 +units=m\" "
-                               "-of GTiff "
-                               "-co \"INTERLEAVE=PIXEL\" "
-                               "-a_ullr %3 %4 %5 %6 "
-                               "\"%7\" \"%8\"").arg(lat_0).arg(lon_0).arg(x_min).arg(y_max).arg(x_max).arg(y_min).arg(jpg_name).arg(tiff_name);
+            // get the image
+            int width = gc->getTraits()->width;
+            int height = gc->getTraits()->height;
+            m_image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
 
-        process.start(command_line);
+            // Variable for the command line "gdal_translate"
+            double lat_0  = m_ref_lat_lon.x();
+            double lon_0 = m_ref_lat_lon.y();
+            int x_max = qRound(m_box.xMax());
+            int x_min = m_box.xMin();
+            int y_max = qRound(m_box.yMax());
+            int y_min = m_box.yMin();
 
-        while(process.waitForFinished()){
-            QString output = process.readAllStandardOutput() ;
-            output += process.readAllStandardError();
-            qDebug() << output;
+            QString png_name = QString::fromStdString(m_filename)+".png";
+            QString tiff_name = QString::fromStdString(m_filename)+".tiff";
+
+            // Create the .jpg, we need it for gdal_translate in order to have a .tiff
+            osgDB::writeImageFile(*m_image, m_filename+".png" );
+            // Run a command line from Qt
+            QProcess process;
+            QString command_line = QString("gdal_translate -a_srs \"+proj=tmerc +lat_0=%1 +lon_0=%2 +k=0.9996 +x_0=0 +y_0=0 +ellps=WGS84 +units=m\" "
+                                   "-of GTiff "
+                                   "-co \"INTERLEAVE=PIXEL\" "
+                                   "-a_ullr %3 %4 %5 %6 "
+                                   "-mask 4 --config GDAL_TIFF_INTERNAL_MASK YES "
+                                   "\"%7\" \"%8\"").arg(lat_0).arg(lon_0).arg(x_min).arg(y_max).arg(x_max).arg(y_min).arg(png_name).arg(tiff_name);
+
+            process.start(command_line);
+            //
+            while(process.waitForFinished()){
+                QString output = process.readAllStandardOutput() ;
+                output += process.readAllStandardError();
+                qDebug() << output;
+            }
+
+            // Remove the .png
+            QFile pictureFile(png_name);
+            pictureFile.remove();
         }
 
-        // Remove the .jpg
-        QFile pictureFile(jpg_name);
-        pictureFile.remove();
-
     }
+
     std::string m_filename;
+    osg::ref_ptr<osg::Image> m_image;
     QPointF m_ref_lat_lon;
     osg::BoundingBox m_box;
 };
-
-
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
@@ -873,65 +887,112 @@ void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, 
 
 void OSGWidget::screenshot(osg::ref_ptr<osg::Node> _node, QString _filename,osg::BoundingBox _box)
 {
-    // Create the capture with its meta data
-    std::string screenCaptureFilename = _filename.toStdString();
     osg::BoundingBox rectangle = _box;
-    osg::ref_ptr<osgViewer::ScreenCaptureHandler::CaptureOperation> writeFile = new WriteToFileCaptureOperation(screenCaptureFilename,m_ref_lat_lon,rectangle);
-    osg::ref_ptr<osgViewer::ScreenCaptureHandler> screenCaptureHandler = new osgViewer::ScreenCaptureHandler(writeFile.get());
+
+    osg::Node* scene = _node.get();
+
+    // get the translation in the  node
+    osg::MatrixTransform *mt1 = dynamic_cast <osg::MatrixTransform*> (_node.get());
+    osg::Vec3d trans = mt1->getMatrix().getTrans();
 
 
     // Collect the number of pixel that the user want
-
-    QString pixels = QInputDialog::getText(this, "Pixels", "How much Pixel do you want ?");
+    QString pixels = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
     double d_pixels = pixels.toDouble() ;
 
     // Create the edge of our picture
-    double width = (rectangle.xMax()-rectangle.xMin())*d_pixels;
-    double length = (rectangle.yMax()-rectangle.yMin())*d_pixels;
+    // Set graphics contexts
+    int xMax = qRound(rectangle.xMax());
+    int xMin = rectangle.xMin();
+    int yMax = qRound(rectangle.yMax());
+    int yMin = rectangle.yMin();
+    int width = xMax-xMin;
+    int height = yMax - yMin ;
+    int widthPicture = qRound(width/d_pixels);
+    int heightPicture = qRound(height/d_pixels);
     osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
     traits->x = 0;
     traits->y = 0;
-    traits->width = width;
-    traits->height = length;
+    traits->width = widthPicture;
+    traits->height = heightPicture;
+    traits->pbuffer = true;
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
+    osg::ref_ptr< osg::Group > root( new osg::Group );
+    root->addChild( scene );
 
-    // Create camera
-    osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-    // add the edge
-    camera->setGraphicsContext(gc);
-    camera->setViewport( new osg::Viewport(0, 0,  traits->width, traits->height) );
-    // give the direction of our camera
-    osg::Vec3d oeil((rectangle.xMax()+rectangle.xMin())/2, (rectangle.yMax()+rectangle.yMin())/2, rectangle.zMax());
-    osg::Vec3d cible=oeil;
-    osg::Vec3d normale(0,0,-1);
-
-    // Set clear color
-    QColor clearColor = QColor(0,0,0);
-    camera->setClearColor( osg::Vec4( clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF() ) );
+    unsigned int winW = widthPicture;
+    unsigned int winH = heightPicture;
 
 
-    // VIEWER
-    osg::Node* node = _node.get();
-    osgViewer::Viewer viewer;
-    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
-    viewer.setCamera( camera.get() );
-    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
-    viewer.getCameraManipulator()->setHomePosition(oeil,cible,normale);
-    viewer.addEventHandler(screenCaptureHandler);
-    viewer.setSceneData(node);
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width/2,width/2,-length/2,length/2);
+    // setup MRT camera
+    std::vector<osg::Texture2D*> attachedTextures;
+    osg::ref_ptr<osg::Camera> mrtCamera = new osg::Camera;
+    mrtCamera->setGraphicsContext(gc);
+    mrtCamera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    mrtCamera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
+    mrtCamera->setRenderOrder( osg::Camera::PRE_RENDER );
+    mrtCamera->setViewport( 0, 0, winW, winH );
+
+
+    // Create our Texture
+    osg::Texture2D* tex = new osg::Texture2D;
+    tex->setTextureSize( winW, winH );
+    tex->setSourceType( GL_FLOAT );
+    tex->setSourceFormat( GL_RGBA );
+    tex->setInternalFormat( GL_RGBA32F_ARB );
+    tex->setResizeNonPowerOfTwoHint( false );
+    tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
+    tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
+    attachedTextures.push_back( tex );
+    mrtCamera->attach( osg::Camera::COLOR_BUFFER, tex );
+
+    // set RTT textures to quad
+    osg::Geode* geode( new osg::Geode );
+    geode->addDrawable( osg::createTexturedQuadGeometry(
+        osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
+    geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attachedTextures[0] );
+    geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
+    geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::OFF );
+
+    // configure postRenderCamera to draw fullscreen textured quad
+    osg::Camera* postRenderCamera( new osg::Camera );
+    postRenderCamera->setClearMask( 0 );
+    postRenderCamera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER, osg::Camera::FRAME_BUFFER );
+    postRenderCamera->setReferenceFrame( osg::Camera::ABSOLUTE_RF );
+    postRenderCamera->setRenderOrder( osg::Camera::POST_RENDER );
+    postRenderCamera->setViewMatrix( osg::Matrixd::identity() );
+    postRenderCamera->setProjectionMatrix( osg::Matrixd::identity() );
+    postRenderCamera->addChild( geode );
+    root->addChild(postRenderCamera);
 
     // Create the viewer
+    osgViewer::Viewer viewer;
+    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
+    viewer.setCamera( mrtCamera.get() );
+
+    // put our model in the center of our viewer
+    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
+    osg::Vec3d eyes((xMax+xMin)/2 + (trans.x() >= 0 ? trans.x() : - trans.x()),
+                    (yMax+yMin)/2 +(trans.y() >= 0 ? trans.y() : - trans.y()),
+                    rectangle.zMax() +(trans.z() >= 0 ? trans.z() : - trans.z()));
+    osg::Vec3d normal(0,0,-1);
+    viewer.getCameraManipulator()->setHomePosition(eyes,eyes,normal);
+    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width/2,width/2,-height/2,height/2);
+
+    viewer.setSceneData( root.get() );
     viewer.realize();
 
-    // The beginning of our capture
-    screenCaptureHandler->startCapture();
-    screenCaptureHandler->setFramesToCapture(1); // we want 1 capture
-    screenCaptureHandler->captureNextFrame(viewer);
+    // setup the callback
+    std::string screenCaptureFilename = _filename.toStdString();
+    SnapImage* finalDrawCallback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screenCaptureFilename,m_ref_lat_lon, rectangle);
+    mrtCamera->setFinalDrawCallback(finalDrawCallback);
+
+    viewer.home();
     viewer.frame();
-    screenCaptureHandler->stopCapture();
+
 
     QMessageBox::information(this,"Success","Your capture is saved");
-}
 
+
+}

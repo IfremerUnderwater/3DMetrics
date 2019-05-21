@@ -1,4 +1,4 @@
-#include <QCloseEvent>
+ #include <QCloseEvent>
 #include <QProcess>
 #include <QMessageBox>
 
@@ -2863,9 +2863,7 @@ void TDMGui::slot_saveScreenshot2D()
         MeasurementTotalArea totalArea;
         node->accept(totalArea);
         osg::BoundingBox box = totalArea.getBoundingBox();
-        //double width = totalArea.getWidth();
-        //double length = totalArea.getLength();
-        //double height = totalArea.getHeight();
+
 
         // SCREEN
         ui->display_widget->screenshot(node,nameSnapshot2D,box);
