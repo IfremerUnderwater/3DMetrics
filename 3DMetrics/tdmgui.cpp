@@ -1093,7 +1093,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             }
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
-                menu->addAction(tr("Screenshot of the 2DModel"),this,SLOT(slot_saveScreenshot2D()));
+                menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
             }
@@ -2739,7 +2739,7 @@ void TDMGui::slot_decimateSelectedModel()
 
 void TDMGui::slot_saveSnapshot()
 {
-    // retrieve the screenshot
+    // retrieve the generateOrthoMap
     QImage m_captureImage = ui->display_widget->grabFramebuffer();
 
 
@@ -2826,17 +2826,17 @@ void TDMGui::slot_computeTotalArea()
      }
 }
 
-void TDMGui::slot_saveScreenshot2D()
+void TDMGui::slot_saveOrthoMap()
 {
     QTreeView *view = ui->tree_widget;
 
     bool hasSelection = !view->selectionModel()->selection().isEmpty();
     bool hasCurrent = view->selectionModel()->currentIndex().isValid();
 
-    QString nameSnapshot2D = getSaveFileName(this, tr("Save snapshot2D"), "",
+    QString name_file_orhto2D = getSaveFileName(this, tr("Save orthographic map"), "",
                                            tr("Images (*.tiff)"));
 
-    QFileInfo fileinfo(nameSnapshot2D);
+    QFileInfo fileinfo(name_file_orhto2D);
 
     // check filename is not empty
     if(fileinfo.fileName().isEmpty()){
@@ -2846,8 +2846,8 @@ void TDMGui::slot_saveScreenshot2D()
 
     // add suffix if needed
     if (fileinfo.suffix() != ".tiff"){
-        nameSnapshot2D = nameSnapshot2D.remove(".tiff");
-        fileinfo.setFile(nameSnapshot2D);
+        name_file_orhto2D = name_file_orhto2D.remove(".tiff");
+        fileinfo.setFile(name_file_orhto2D);
     }
 
     if (hasSelection && hasCurrent)
@@ -2860,14 +2860,19 @@ void TDMGui::slot_saveScreenshot2D()
 
         osg::Node* const node = (layer_data.node().get());
 
-        MeasurementTotalArea totalArea;
-        node->accept(totalArea);
-        osg::BoundingBox box = totalArea.getBoundingBox();
+        MeasurementTotalArea total_area;
+        node->accept(total_area);
+        osg::BoundingBox box = total_area.getBoundingBox();
 
 
         // SCREEN
-        ui->display_widget->screenshot(node,nameSnapshot2D,box);
 
+        // Collect the number of pixel that the user want
+        QString pixels = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
+        double d_pixels = pixels.toDouble() ;
+
+        bool save_image = ui->display_widget->generateOrthoMap(node,name_file_orhto2D,box,d_pixels);
+        if (save_image) QMessageBox::information(this,"Finish","Your image have been generated");
      }
 }
 

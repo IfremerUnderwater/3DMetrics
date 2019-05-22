@@ -33,14 +33,14 @@ public:
     /// \param _sceneFile path to any 3D file supported by osg
     /// \return true if loading succeded
     ///
-    bool setSceneFromFile(std::string _sceneFile);
+    bool setSceneFromFile(std::string _scene_file);
 
     ///
     /// \brief createNodeFromFile load a scene from a 3D file
     /// \param _sceneFile path to any 3D file supported by osg
     /// \return node if loading succeded
     ///
-    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _sceneFile);
+    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
 
     ///
     /// \brief addNodeToScene add a node to the scene
@@ -139,7 +139,7 @@ public:
     void cancelTool(QString &message);
 
     // screen2D
-    void screenshot(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box);
+    bool generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box, double _dPixel);
 
 protected:
 
