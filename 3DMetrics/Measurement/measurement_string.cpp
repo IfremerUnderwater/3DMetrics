@@ -1,22 +1,22 @@
 #include "measurement_string.h"
 
-MeasureString::MeasureString(const QString _fieldName) : MeasureItem(_fieldName, 0)
+MeasString::MeasString(const QString _fieldName) : MeasItem(_fieldName, 0)
 {
 }
 
 // from JSon to object
-void MeasureString::decode(QJsonObject & _obj)
+void MeasString::decode(QJsonObject & _obj)
 {
     m_val = _obj.value(fieldName()).toString();
 }
 
 // encode to JSon
-void MeasureString::encode(QJsonObject & _obj)
+void MeasString::encode(QJsonObject & _obj)
 {
     _obj.insert(fieldName(), QJsonValue(m_val));
 }
 
-void MeasureString::encodeASCII(QString &_string)
+void MeasString::encodeASCII(QString &_string)
 {
     _string = m_val;
 }

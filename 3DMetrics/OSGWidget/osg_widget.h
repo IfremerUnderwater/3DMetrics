@@ -1,5 +1,5 @@
-#ifndef OSGWidget_h__
-#define OSGWidget_h__
+#ifndef OSG_WIDGET_H
+#define OSG_WIDGET_H
 
 #include <QPoint>
 #include <QtOpenGL>
@@ -10,12 +10,12 @@
 #include <osg/ref_ptr>
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
-#include "kml_handler.h"
 #include <GeographicLib/LocalCartesian.hpp>
 
+#include "kml_handler.h"
+
+
 #define INVALID_VALUE 100000
-
-
 
 class OSGWidget : public QOpenGLWidget
 {
@@ -31,14 +31,14 @@ public:
     /// \param _sceneFile path to any 3D file supported by osg
     /// \return true if loading succeded
     ///
-    bool setSceneFromFile(std::string _sceneFile);
+    bool setSceneFromFile(std::string _scene_file);
 
     ///
     /// \brief createNodeFromFile load a scene from a 3D file
     /// \param _sceneFile path to any 3D file supported by osg
     /// \return node if loading succeded
     ///
-    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _sceneFile);
+    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
 
     ///
     /// \brief addNodeToScene add a node to the scene
@@ -97,7 +97,7 @@ public:
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
 
-    // for measures
+    // for measurements
     void addGroup(osg::ref_ptr<osg::Group> _group);
     void removeGroup(osg::ref_ptr<osg::Group> _group);
 
@@ -120,37 +120,39 @@ public:
 
 public slots:
 
-
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
     void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
     void signal_onMouseMove(int _x, int _y);
 
     // tools
-    void signal_startTool(QString &message);
-    void signal_endTool(QString &message);
-    void signal_cancelTool(QString &message);
+    void signal_startTool(QString &_message);
+    void signal_endTool(QString &_message);
+    void signal_cancelTool(QString &_message);
 
 public:
     // tools : emit correspondant signal
-    void startTool(QString &message);
-    void endTool(QString &message);
-    void cancelTool(QString &message);
+    void startTool(QString &_message);
+    void endTool(QString &_message);
+    void cancelTool(QString &_message);
+
+    // screen2D
+    bool generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box, double _pixel_size);
 
 protected:
 
     virtual void paintGL();
-    virtual void resizeGL( int width, int height );
+    virtual void resizeGL( int _width, int _height );
 
-    virtual void keyPressEvent( QKeyEvent* event );
-    virtual void keyReleaseEvent( QKeyEvent* event );
+    virtual void keyPressEvent( QKeyEvent* _event );
+    virtual void keyReleaseEvent( QKeyEvent* _event );
 
-    virtual void mouseMoveEvent( QMouseEvent* event );
-    virtual void mousePressEvent( QMouseEvent* event );
-    virtual void mouseReleaseEvent( QMouseEvent* event );
-    virtual void wheelEvent( QWheelEvent* event );
+    virtual void mouseMoveEvent( QMouseEvent* _event );
+    virtual void mousePressEvent( QMouseEvent* _event );
+    virtual void mouseReleaseEvent( QMouseEvent* _event );
+    virtual void wheelEvent( QWheelEvent* _event );
 
-    virtual bool event( QEvent* event );
+    virtual bool event( QEvent* _event );
 
     virtual void initializeGL();
     QTimer m_timer;
@@ -158,7 +160,7 @@ protected:
 
 private:
 
-    virtual void onResize( int width, int height );
+    virtual void onResize( int _width, int _height );
 
     osgGA::EventQueue* getEventQueue() const;
 
@@ -186,4 +188,4 @@ private:
 
 };
 
-#endif
+#endif // OSG_WIDGET_H

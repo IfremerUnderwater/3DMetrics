@@ -1,5 +1,5 @@
-#ifndef MEASURELINE_H
-#define MEASURELINE_H
+#ifndef MEAS_LINE_H
+#define MEAS_LINE_H
 
 #include "measurement_item.h"
 #include "measurement_type.h"
@@ -14,12 +14,12 @@
 //    ],
 //    length: length_m
 // }
-class MeasureLine : public MeasureItem
+class MeasLine : public MeasItem
 {
 public:
-    MeasureLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
+    MeasLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
 
-    virtual QString type() { return MeasureType::value(MeasureType::Line); }
+    virtual QString type() { return MeasType::value(MeasType::Line); }
 
     double length() { return m_length; }
     void computeLength();
@@ -33,7 +33,7 @@ public:
 
     // from JSon to object
     virtual void decode(QJsonObject & _obj);
-    virtual void decode(QJsonObject & _obj, Point3D offset);
+    virtual void decode(QJsonObject & _obj, Point3D _offset);
 
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
@@ -54,9 +54,9 @@ public:
 
 protected:
     QVector<Point3D> m_array;
-    QVector<Point3D> m_arraySave;
+    QVector<Point3D> m_array_save;
     double m_length;
     osg::Vec4f m_color;
 };
 
-#endif // MEASURELINE_H
+#endif // MEAS_LINE_H

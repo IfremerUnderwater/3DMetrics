@@ -7,15 +7,15 @@
 #include <math.h>
 #include <QJsonArray>
 
-MeasureLine::MeasureLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
-    : MeasureItem(_fieldName, _geode)
+MeasLine::MeasLine(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
+    : MeasItem(_fieldName, _geode)
     , m_length(0)
     , m_color(0.0f,1.0f,0.0f,1.0f) // green by default
 {
 
 }
 
-void MeasureLine::computeLength()
+void MeasLine::computeLength()
 {
     double length = 0;
 
@@ -33,70 +33,70 @@ void MeasureLine::computeLength()
 
 
 // from JSon to object
-void MeasureLine::decode(QJsonObject & _obj)
+void MeasLine::decode(QJsonObject & _obj)
 {
     m_array.clear();
 
-    QJsonObject p = _obj.value(fieldName()).toObject();
-    m_length = p.value("length").toDouble();
+    QJsonObject length_json = _obj.value(fieldName()).toObject();
+    m_length = length_json.value("length").toDouble();
 
-    QJsonArray array = p.value("pts").toArray();
+    QJsonArray array = length_json.value("pts").toArray();
     for(int i=0; i<array.count(); i++)
     {
-        QJsonObject op = array.at(i).toObject();
-        Point3D p;
-        p.decode(op);
-        m_array.append(p);
+        QJsonObject point_json = array.at(i).toObject();
+        Point3D point;
+        point.decode(point_json);
+        m_array.append(point);
     }
 }
 
 
-void MeasureLine::decode(QJsonObject & _obj, Point3D offset)
+void MeasLine::decode(QJsonObject & _obj, Point3D _offset)
 {
     m_array.clear();
 
-    QJsonObject p = _obj.value(fieldName()).toObject();
-    m_length = p.value("length").toDouble();
+    QJsonObject length_json = _obj.value(fieldName()).toObject();
+    m_length = length_json.value("length").toDouble();
 
-    QJsonArray array = p.value("pts").toArray();
+    QJsonArray array = length_json.value("pts").toArray();
     for(int i=0; i<array.count(); i++)
     {
-        QJsonObject op = array.at(i).toObject();
-        Point3D p;
-        p.decode(op, offset);
-        m_array.append(p);
+        QJsonObject point_json = array.at(i).toObject();
+        Point3D point;
+        point.decode(point_json, _offset);
+        m_array.append(point);
     }
 }
 
 // encode to JSon
-void MeasureLine::encode(QJsonObject & _obj)
+void MeasLine::encode(QJsonObject & _obj)
 {
-    QJsonObject obj;
+    QJsonObject length_json;
 
     // length
-    obj.insert("length",QJsonValue(m_length));
+    length_json.insert("length",QJsonValue(m_length));
 
     // pts
     QJsonArray array;
     for(int i=0; i<m_array.length(); i++)
     {
-        Point3D p = m_array[i];
-        QJsonObject val;
-        p.encode(val);
-        array.push_back(QJsonValue(val));
+        Point3D point = m_array[i];
+        QJsonObject point_json;
+        point.encode(point_json);
+        array.push_back(QJsonValue(point_json));
     }
-    obj.insert("pts", array);
+    length_json.insert("pts", array);
 
     // full object
-    _obj.insert(fieldName(), obj);
+    _obj.insert(fieldName(), length_json);
 }
 
-void MeasureLine::encodeASCII(QString &_string)
+void MeasLine::encodeASCII(QString &_string)
 {
     _string = QString::number(m_length,'f');
 }
 
-void MeasureLine::updateGeode()
+void MeasLine::updateGeode()
 {
     m_geode->removeDrawables(0, 2);
 
@@ -163,19 +163,19 @@ void MeasureLine::updateGeode()
 }
 
 
-void MeasureLine::save()
+void MeasLine::save()
 {
-    m_arraySave = m_array;
+    m_array_save = m_array;
 }
 
-void MeasureLine::restore()
+void MeasLine::restore()
 {
-    m_array = m_arraySave;
+    m_array = m_array_save;
     computeLength();
     updateGeode();
 }
 
-void MeasureLine::cancel()
+void MeasLine::cancel()
 {
-    m_arraySave.clear();
+    m_array_save.clear();
 }

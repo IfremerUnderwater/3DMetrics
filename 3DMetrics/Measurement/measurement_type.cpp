@@ -1,29 +1,29 @@
 #include "measurement_type.h"
 #include <QObject>
 
-static QString values[MeasureType::_Last] =
+static QString values[MeasType::_Last] =
 {
     QObject::tr("Line"),
     QObject::tr("Point"),
     QObject::tr("Area"),
-    QObject::tr("String"),
+    QObject::tr("Text"),
     QObject::tr("Category")};
 
-QString MeasureType::value(const type _t)
+QString MeasType::value(const type _t)
 {
     if(_t >= 0 && _t < _Last)
         return values[_t];
     return QString();
 }
 
-MeasureType::type MeasureType::valueOf(QString _str)
+MeasType::type MeasType::valueOf(QString _str)
 {
-    for(int i=0; i<MeasureType::_Last; i++)
+    for(int i=0; i<MeasType::_Last; i++)
     {
         if(_str == values[i])
-            return (MeasureType::type)i;
+            return (MeasType::type)i;
     }
-    return MeasureType::_Last;
+    return MeasType::_Last;
 }
 
 

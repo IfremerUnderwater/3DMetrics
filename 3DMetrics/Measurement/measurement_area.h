@@ -1,5 +1,5 @@
-#ifndef MEASUREAREA_H
-#define MEASUREAREA_H
+#ifndef MEAS_AREA_H
+#define MEAS_AREA_H
 
 #include "Measurement/measurement_item.h"
 #include "Measurement/measurement_line.h"
@@ -16,17 +16,17 @@
 //    length: length_m,
 //    area: area_m2
 // }
-// NB : subclass of MeasureLine
-class MeasureArea : public MeasureLine
+// NB : subclass of MeasLine
+class MeasArea : public MeasLine
 {
 public:
-    MeasureArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
+    MeasArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
 
-    virtual QString type() { return MeasureType::value(MeasureType::Area); }
+    virtual QString type() { return MeasType::value(MeasType::Area); }
 
     // from JSon to object
     virtual void decode(QJsonObject & _obj);
-    virtual void decode(QJsonObject & _obj, Point3D offset);
+    virtual void decode(QJsonObject & _obj, Point3D _offset);
 
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
@@ -53,4 +53,4 @@ protected:
     osg::Vec4f m_color;
 };
 
-#endif // MEASUREAREA_H
+#endif // MEAS_AREA_H

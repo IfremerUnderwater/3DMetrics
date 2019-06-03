@@ -46,18 +46,7 @@ INCLUDEPATH += Tools
 SOURCES += main.cpp \
     OSGWidget/kml_handler.cpp \
     tdmgui.cpp \
-    filedialog.cpp \
-    edit_measure_dialog.cpp \
-    edit_measure_item.cpp \
-    attribpointwidget.cpp \
-    attriblinewidget.cpp \
-    attribareawidget.cpp \
     Measurement/point3d.cpp \
-    measuretablewidgetitem.cpp \
-    OSGWidget/osgwidgettool.cpp \
-    toolpointdialog.cpp \
-    toollinedialog.cpp \
-    toolareadialog.cpp \
     Measurement/measurement_area.cpp \
     Measurement/measurement_item.cpp \
     Measurement/measurement_point.cpp \
@@ -67,29 +56,34 @@ SOURCES += main.cpp \
     Measurement/measurement_type.cpp \
     Measurement/osg_measurement_row.cpp \
     OSGWidget/osg_widget.cpp \
-    TreeView/tdmlayer_item.cpp \
-    TreeView/tdmlayer_model.cpp \
     TreeView/tdm_measurement_layerdata.cpp \
     TreeView/tdm_model_layerdata.cpp \
     Measurement/measurement_category.cpp \
     Measurement/tdm_categories_manager.cpp \
-    attribcategorieswidget.cpp \
-    decimation_dialog.cpp
+    decimation_dialog.cpp \
+    osg_axes.cpp \
+    TreeView/tdm_layer_item.cpp \
+    TreeView/tdm_layer_model.cpp \
+    attrib_area_widget.cpp \
+    OSGWidget/osg_widget_tool.cpp \
+    attrib_categories_widget.cpp \
+    attrib_line_widget.cpp \
+    attrib_point_widget.cpp \
+    file_dialog.cpp \
+    file_open_thread.cpp \
+    tool_area_dialog.cpp \
+    tool_line_dialog.cpp \
+    tool_point_dialog.cpp \
+    Measurement/box_visitor.cpp \
+    Measurement/area_computation_visitor.cpp \
+    meas_table_widget_item.cpp \
+    edit_meas_dialog.cpp \
+    edit_meas_item.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
     tdmgui.h \
-    filedialog.h \
-    edit_measure_dialog.h \
-    edit_measure_item.h \
-    attribpointwidget.h \
-    attriblinewidget.h \
-    attribareawidget.h \
     Measurement/point3d.h \
-    measuretablewidgetitem.h \
-    toolpointdialog.h \
-    toollinedialog.h \
-    toolareadialog.h \
     Measurement/measurement_area.h \
     Measurement/measurement_line.h \
     Measurement/measurement_item.h \
@@ -106,21 +100,35 @@ HEADERS  += \
     TreeView/tdm_model_layerdata.h \
     Measurement/measurement_category.h \
     Measurement/tdm_categories_manager.h \
-    attribcategorieswidget.h \
-    decimation_dialog.h
+    decimation_dialog.h \
+    osg_axes.h \
+    attrib_area_widget.h \
+    attrib_categories_widget.h \
+    attrib_line_widget.h \
+    attrib_point_widget.h \
+    file_dialog.h \
+    file_open_thread.h \
+    tool_area_dialog.h \
+    tool_line_dialog.h \
+    tool_point_dialog.h \
+    Measurement/box_visitor.h \
+    Measurement/area_computation_visitor.h \
+    meas_table_widget_item.h \
+    edit_meas_dialog.h \
+    edit_meas_item.h
 
 FORMS    += \
     tdmgui.ui \
-    edit_measure_dialog.ui \
-    edit_measure_item.ui \
-    attribpointwidget.ui \
-    attriblinewidget.ui \
-    attribareawidget.ui \
-    toolpointdialog.ui \
-    toollinedialog.ui \
-    toolareadialog.ui \
-    attribcategorieswidget.ui \
-    decimation_dialog.ui
+    decimation_dialog.ui \
+    attrib_area_widget.ui \
+    attrib_categories_widget.ui \
+    attrib_line_widget.ui \
+    attrib_point_widget.ui \
+    tool_area_dialog.ui \
+    tool_line_dialog.ui \
+    tool_point_dialog.ui \
+    edit_meas_dialog.ui \
+    edit_meas_item.ui
 
 RESOURCES += \
     ressources.qrc

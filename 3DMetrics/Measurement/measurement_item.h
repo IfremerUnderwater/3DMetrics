@@ -1,16 +1,16 @@
-#ifndef MEASUREITEM_H
-#define MEASUREITEM_H
+#ifndef MEAS_ITEM_H
+#define MEAS_ITEM_H
 
 #include <QString>
 #include <QJsonObject>
 
 #include <osg/Geode>
 
-class MeasureItem
+class MeasItem
 {
 public:
-    MeasureItem(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
-    virtual ~MeasureItem();
+    MeasItem(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
+    virtual ~MeasItem();
 
     virtual QString type() = 0;
 
@@ -23,14 +23,14 @@ public:
     // encode to ASCII
     virtual void encodeASCII(QString & _string) = 0;
 
-    QString fieldName() const { return m_fieldName; }
+    QString fieldName() const { return m_field_name; }
 
     // create / update Geode
     virtual void updateGeode() = 0;
 
 protected:
-    QString m_fieldName;
+    QString m_field_name;
     osg::ref_ptr<osg::Geode> m_geode;
 };
 
-#endif // MEASUREITEM_H
+#endif // MEAS_ITEM_H

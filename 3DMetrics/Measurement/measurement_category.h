@@ -1,17 +1,17 @@
-#ifndef MEASURECATEGORY_H
-#define MEASURECATEGORY_H
+#ifndef MEAS_CATEGORY_H
+#define MEAS_CATEGORY_H
 
 #include "measurement_type.h"
 #include "measurement_item.h"
 
 // store a category - persistance in json
 // fieldName: value
-class MeasureCategory : public MeasureItem
+class MeasCategory : public MeasItem
 {
 public:
-    MeasureCategory(const QString _fieldName);
+    MeasCategory(const QString _fieldName);
 
-    virtual QString type() { return MeasureType::value(MeasureType::Category); }
+    virtual QString type() { return MeasType::value(MeasType::Category); }
 
     QString value() const { return m_val; }
     void setValue(QString _val) { m_val = _val; }
@@ -31,4 +31,4 @@ private:
     QString m_val;
 };
 
-#endif // MEASURECATEGORY_H
+#endif // MEAS_CATEGORY_H

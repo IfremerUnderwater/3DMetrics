@@ -1,5 +1,5 @@
-#ifndef MEASUREPOINT_H
-#define MEASUREPOINT_H
+#ifndef MEAS_POINT_H
+#define MEAS_POINT_H
 
 #include "measurement_item.h"
 #include "measurement_type.h"
@@ -7,28 +7,28 @@
 
 // store one point - persistance in json
 // fieldName: { x: val_x, y: val_y, z: val_z }
-class MeasurePoint : public MeasureItem
+class MeasPoint : public MeasItem
 {
 public:
-    MeasurePoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
+    MeasPoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode);
 
-    virtual QString type() { return MeasureType::value(MeasureType::Point); }
+    virtual QString type() { return MeasType::value(MeasType::Point); }
 
-    double x() const { return m_p.x; }
-    void setX(double _x) { m_p.x = _x; }
+    double x() const { return m_point.x; }
+    void setX(double _x) { m_point.x = _x; }
 
-    double y() const { return m_p.y; }
-    void setY(double _y) { m_p.y = _y; }
+    double y() const { return m_point.y; }
+    void setY(double _y) { m_point.y = _y; }
 
-    double z() const { return m_p.z; }
-    void setZ(double _z) { m_p.z = _z; }
+    double z() const { return m_point.z; }
+    void setZ(double _z) { m_point.z = _z; }
 
-    Point3D p() const { return m_p; }
-    void setP(Point3D _p) { m_p = _p; }
+    Point3D point() const { return m_point; }
+    void setP(Point3D _point) { m_point = _point; }
 
     // from JSon to object
     virtual void decode(QJsonObject & _obj);
-    virtual void decode(QJsonObject & _obj, Point3D offset);
+    virtual void decode(QJsonObject & _obj, Point3D _offset);
 
     // encode to JSon
     virtual void encode(QJsonObject & _obj);
@@ -42,8 +42,8 @@ public:
     void setColor(osg::Vec4f _rgba) { m_color = _rgba; }
 
 protected:
-    Point3D m_p;
+    Point3D m_point;
     osg::Vec4f m_color;
 };
 
-#endif // MEASUREPOINT_H
+#endif // MEAS_POINT_H
