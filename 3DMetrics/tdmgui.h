@@ -10,14 +10,15 @@
 #include "Measurement/measurement_pattern.h"
 #include "decimation_dialog.h"
 #include "osg_axes.h"
-#include "mythreadcreatenode.h"
+#include "file_open_thread.h"
 
 class TdmLayerItem;
 class QCloseEvent;
 class QItemSelection;
 class TDMMeasurementLayerData;
 class TDMModelLayerData;
-class MeasurementTotalArea;
+class AreaComputationVisitor;
+class BoxVisitor;
 
 namespace Ui {
 class TDMGui;
@@ -28,11 +29,11 @@ class TDMGui : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit TDMGui(QWidget *parent = 0);
+    explicit TDMGui(QWidget *_parent = 0);
     ~TDMGui();
 
     // ask on close
-    void closeEvent(QCloseEvent *event);
+    void closeEvent(QCloseEvent *_event);
 
 private:
     Ui::TDMGui *ui;
@@ -42,53 +43,50 @@ private:
     void manageCheckStateForChildren(TdmLayerItem *_item, bool _checked);
 
     // helper functions
-    void loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg);
+    void loadAttribTableFromJson(QJsonDocument &_doc, bool _build_osg);
     void saveAttribTableToJson(QJsonDocument &_doc);
 
     void selectItem(QModelIndex &_index);
 
     // attribute table
     void updateAttributeTable(TdmLayerItem *_item);
-    MeasurePattern m_current;
+    MeasPattern m_current_pattern;
     // for current vector of rows
-    TDMMeasurementLayerData *m_currentItem;
+    TDMMeasurementLayerData *m_current_item;
 
     // working helpers
-    void load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem,osg::Node* _node);
-    bool loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _selectItem);
+    bool loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _select_item);
     bool saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data);
 
-    bool checkAndSaveMeasures(TdmLayerItem *_item);
+    bool checkAndSaveMeasurements(TdmLayerItem *_item);
     QJsonObject saveTreeStructure(TdmLayerItem *_item);
     void buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent);
 
-    QString m_projectFileName;
+    QString m_project_filename;
 
-    QLabel *m_latLabel;
-    QLabel *m_lonLabel;
-    QLabel *m_depthLabel;
+    QLabel *m_lat_label;
+    QLabel *m_lon_label;
+    QLabel *m_depth_label;
 
     DecimationDialog m_decimation_dialog;
 
     // Settings variable
     QSettings m_settings;
-    QString m_pathModel3D;
-    QString m_pathMeasurement;
-    QString m_pathProject;
+    QString m_path_model3D;
+    QString m_path_measurement;
+    QString m_path_project;
 
-    QShortcut *m_ctrlZ;
-
-    //MyThreadCreateNode *m_threadNode;
+    QShortcut *m_ctrl_z;
 
     OSGAxes m_axe;
 public slots:
 
     void slot_open3dModel();
-    void slot_createNode(osg::Node*, QString _filename,TdmLayerItem *_parent, bool _selectItem);
+    void slot_load3DModel(osg::Node*, QString _filename,TdmLayerItem *_parent, bool _select_item);
 
-    void slot_openMeasureFile();
-    void slot_saveMeasureFile();
-    void slot_saveMeasureFileAs();
+    void slot_openMeasurementFile();
+    void slot_saveMeasurementFile();
+    void slot_saveMeasurementFileAs();
 
     void slot_saveAttribTableToASCII();
 
@@ -101,7 +99,7 @@ public slots:
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);
 
-    void slot_importOldMeasureFile();
+    void slot_importOldMeasurementFile();
 
     void slot_about();
 
@@ -119,7 +117,7 @@ public slots:
     void slot_tempAreaTool();
 
     // measurment pattern dialog
-    void slot_patternChanged(MeasurePattern _pattern);
+    void slot_patternChanged(MeasPattern _pattern);
 
     // from TreeView
     void slot_selectionChanged(const QItemSelection &,
@@ -140,15 +138,15 @@ public slots:
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
-    void slot_attribTableDoubleClick(int row, int column);
-    void slot_attribTableCellChanged(int row, int column);
+    void slot_attribTableDoubleClick(int _row, int _column);
+    void slot_attribTableCellChanged(int _row, int _column);
 
     // attribute table context menu
     void slot_addAttributeLine();
     void slot_deleteAttributeLine();
 
     // mouse move in osg widget
-    void slot_mouseMoveInOsgWidget(int x, int y);
+    void slot_mouseMoveInOsgWidget(int _x, int _y);
 
     // decimation dialog & action
     void slot_showDecimationDialog();

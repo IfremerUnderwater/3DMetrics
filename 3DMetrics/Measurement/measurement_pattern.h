@@ -1,5 +1,5 @@
-#ifndef MEASUREPATTERN_H
-#define MEASUREPATTERN_H
+#ifndef MEAS_PATTERN_H
+#define MEAS_PATTERN_H
 
 #include <QString>
 #include <QJsonDocument>
@@ -8,35 +8,35 @@
 
 #include "measurement_type.h"
 
-class MeasurePattern
+class MeasPattern
 {
 public:
-    MeasurePattern();
-    MeasurePattern(const MeasurePattern&);
-    ~ MeasurePattern();
+    MeasPattern();
+    MeasPattern(const MeasPattern&);
+    ~ MeasPattern();
 
     int getNbFields();
 
     // field accessors
     QString fieldName(int _n);
-    MeasureType::type fieldType(int _n);
+    MeasType::type fieldType(int _n);
     QString fieldTypeName(int _n);
 
     // data
     void clear();
-    void addField(QString _name, MeasureType::type _type);
+    void addField(QString _name, MeasType::type _type);
 
     // load from json file
-    bool loadFromJson(QByteArray ba);
+    bool loadFromJson(QByteArray _ba);
 
     // json field names
     // header
-    static const QString JSONHEADER; // = "Measure pattern";
-    static const QString JSONHEADERVALUE; // = "3DMetrics";
+    static const QString JSON_HEADER; // = "Measurement pattern";
+    static const QString JSON_HEADER_VALUE; // = "3DMetrics";
     // fields
-    static const QString JSONFIELD; // = "Fields";
-    static const QString JSONFIELDNAME; // = "Name";
-    static const QString JSONFIELDTYPE; // = "Type";
+    static const QString JSON_FIELD; // = "Fields";
+    static const QString JSON_FIELD_NAME; // = "Name";
+    static const QString JSON_FIELD_TYPE; // = "Type";
 
     QJsonDocument get() { return m_doc; }
     void set(QJsonDocument _doc) { m_doc = _doc; }
@@ -46,6 +46,6 @@ private:
 };
 
 // needed for using with QVariant
-Q_DECLARE_METATYPE(MeasurePattern)
+Q_DECLARE_METATYPE(MeasPattern)
 
-#endif // MEASUREPATTERN_H
+#endif // MEAS_PATTERN_H

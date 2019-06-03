@@ -1,22 +1,22 @@
 #include "measurement_category.h"
 
-MeasureCategory::MeasureCategory(const QString _fieldName) : MeasureItem(_fieldName, 0)
+MeasCategory::MeasCategory(const QString _fieldName) : MeasItem(_fieldName, 0)
 {
 }
 
 // from JSon to object
-void MeasureCategory::decode(QJsonObject & _obj)
+void MeasCategory::decode(QJsonObject & _obj)
 {
     m_val = _obj.value(fieldName()).toString();
 }
 
 // encode to JSon
-void MeasureCategory::encode(QJsonObject & _obj)
+void MeasCategory::encode(QJsonObject & _obj)
 {
     _obj.insert(fieldName(), QJsonValue(m_val));
 }
 
-void MeasureCategory::encodeASCII(QString &_string)
+void MeasCategory::encodeASCII(QString &_string)
 {
     _string = m_val;
 }

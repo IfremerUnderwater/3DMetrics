@@ -11,17 +11,17 @@
 #include "TreeView/tdm_model_layerdata.h"
 #include "TreeView/tdm_measurement_layerdata.h"
 
-#include "filedialog.h"
+#include "file_dialog.h"
 
-#include "edit_measure_dialog.h"
+#include "edit_meas_dialog.h"
 #include "decimation_dialog.h"
 
-#include "attribpointwidget.h"
-#include "attriblinewidget.h"
-#include "attribareawidget.h"
-#include "attribcategorieswidget.h"
+#include "attrib_point_widget.h"
+#include "attrib_line_widget.h"
+#include "attrib_area_widget.h"
+#include "attrib_categories_widget.h"
 
-#include "measuretablewidgetitem.h"
+#include "meas_table_widget_item.h"
 #include "Measurement/measurement_string.h"
 #include "Measurement/measurement_point.h"
 #include "Measurement/measurement_line.h"
@@ -31,47 +31,48 @@
 
 #include "OSGWidget/osg_widget_tool.h"
 
-#include "toolpointdialog.h"
-#include "toollinedialog.h"
-#include "toolareadialog.h"
+#include "tool_point_dialog.h"
+#include "tool_line_dialog.h"
+#include "tool_area_dialog.h"
 
 #include "osg_axes.h"
 
-#include "Measurement/measurement_total_area.h"
+#include "Measurement/area_computation_visitor.h"
+#include "Measurement/box_visitor.h"
 
 #include <GeographicLib/LocalCartesian.hpp>
 
-TDMGui::TDMGui(QWidget *parent) :
-    QMainWindow(parent),
+TDMGui::TDMGui(QWidget *_parent) :
+    QMainWindow(_parent),
     ui(new Ui::TDMGui),
-    m_currentItem(0),
+    m_current_item(0),
     m_settings("3DMetrics", "IFREMER")
 {
-    qRegisterMetaType<MeasurePattern>();
+    qRegisterMetaType<MeasPattern>();
 
     ui->setupUi(this);
 
     // to add in reverse because toolbar order is right to left
-    m_depthLabel = new QLabel("depth", ui->coords_toolbar);
-    m_depthLabel->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_depthLabel);
+    m_depth_label = new QLabel("depth", ui->coords_toolbar);
+    m_depth_label->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_depth_label);
 
-    m_lonLabel = new QLabel("lon", ui->coords_toolbar);
-    m_lonLabel->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_lonLabel);
+    m_lon_label = new QLabel("lon", ui->coords_toolbar);
+    m_lon_label->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_lon_label);
 
-    m_latLabel = new QLabel("lat", ui->coords_toolbar);
-    m_latLabel->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_latLabel);
+    m_lat_label = new QLabel("lat", ui->coords_toolbar);
+    m_lat_label->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_lat_label);
 
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
 
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
-    QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasureFile()));
-    QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasureFile()));
-    QObject::connect(ui->save_measurement_file_as_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasureFileAs()));
-    QObject::connect(ui->import_old_measure_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasureFile()));
+    QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
+    QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
+    QObject::connect(ui->save_measurement_file_as_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFileAs()));
+    QObject::connect(ui->import_old_measurement_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasurementFile()));
     QObject::connect(ui->open_project_action, SIGNAL(triggered()), this, SLOT(slot_openProject()));
     QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
@@ -103,9 +104,9 @@ TDMGui::TDMGui(QWidget *parent) :
 
     // line numbers
     ui->attrib_table->verticalHeader()->setVisible(true);
-    QHeaderView *verticalHeader = ui->attrib_table->verticalHeader();
-    verticalHeader->setSectionResizeMode(QHeaderView::ResizeToContents);
-    verticalHeader->setDefaultSectionSize(100);
+    QHeaderView *vertical_header = ui->attrib_table->verticalHeader();
+    vertical_header->setSectionResizeMode(QHeaderView::ResizeToContents);
+    vertical_header->setDefaultSectionSize(100);
 
     // tablewidget contextual menu
     ui->attrib_table->setContextMenuPolicy(Qt::CustomContextMenu);
@@ -127,7 +128,7 @@ TDMGui::TDMGui(QWidget *parent) :
     ui->open_measurement_file_action->setEnabled(true);
     ui->save_measurement_file_action->setEnabled(false);
     ui->save_measurement_file_as_action->setEnabled(false);
-    ui->import_old_measure_format_action->setEnabled(false);
+    ui->import_old_measurement_format_action->setEnabled(false);
 
     updateAttributeTable(0);
 
@@ -159,25 +160,25 @@ TDMGui::TDMGui(QWidget *parent) :
     if(m_settings.contains("3DMetrics/pathModel3D"))
     {
         ready_to_apply = ready_to_apply && true;
-        m_pathModel3D = m_settings.value("3DMetrics/pathModel3D").value<QString>();
+        m_path_model3D = m_settings.value("3DMetrics/pathModel3D").value<QString>();
     }else{
-        m_pathModel3D="";
+        m_path_model3D="";
         ready_to_apply = ready_to_apply && false;
     }
     if(m_settings.contains("3DMetrics/pathMeasurement"))
     {
         ready_to_apply = ready_to_apply && true;
-        m_pathMeasurement = m_settings.value("3DMetrics/pathMeasurement").value<QString>();
+        m_path_measurement = m_settings.value("3DMetrics/pathMeasurement").value<QString>();
     }else{
-        m_pathMeasurement="";
+        m_path_measurement="";
         ready_to_apply = ready_to_apply && false;
     }
     if(m_settings.contains("3DMetrics/pathProject"))
     {
         ready_to_apply = ready_to_apply && true;
-        m_pathProject = m_settings.value("3DMetrics/pathProject").value<QString>();
+        m_path_project = m_settings.value("3DMetrics/pathProject").value<QString>();
     }else{
-        m_pathProject="";
+        m_path_project="";
         ready_to_apply = ready_to_apply && false;
     }
 
@@ -185,9 +186,9 @@ TDMGui::TDMGui(QWidget *parent) :
         slot_applySettings();
 
     // ctrl-Z
-    m_ctrlZ = new QShortcut(this);
-    m_ctrlZ->setKey(Qt::CTRL + Qt::Key_Z);
-    connect(m_ctrlZ, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+    m_ctrl_z = new QShortcut(this);
+    m_ctrl_z->setKey(Qt::CTRL + Qt::Key_Z);
+    connect(m_ctrl_z, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
 }
 
 TDMGui::~TDMGui()
@@ -196,22 +197,22 @@ TDMGui::~TDMGui()
 }
 
 // ask on close
-void TDMGui::closeEvent(QCloseEvent *event)
+void TDMGui::closeEvent(QCloseEvent *_event)
 {
-    QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Close 3DMetrics"),
+    QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Close 3DMetrics"),
                                                                 tr("Are you sure?\n"),
                                                                 QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
                                                                 QMessageBox::Yes);
-    if (resBtn != QMessageBox::Yes)
+    if (res_btn != QMessageBox::Yes)
     {
-        event->ignore();
+        _event->ignore();
     }
     else
     {
         // to avoid SEGV on exit
         OSGWidgetTool::instance()->endTool();
 
-        event->accept();
+        _event->accept();
     }
 }
 
@@ -223,67 +224,57 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString fileName = getOpenFileName(this,tr("Select a 3d Model to open"),m_pathModel3D, tr("3D files (*.kml *.obj)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj)"));
 
     // save Path Model 3D
-    m_pathModel3D = fileName;
+    m_path_model3D = filename;
     slot_applySettings();
 
-    if(fileName.length() > 0)
+    if(filename.length() > 0)
     {
-        //QApplication::setOverrideCursor(Qt::WaitCursor);
+        FileOpenThread *thread_node = new FileOpenThread();
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_load3DModel(osg::Node*,QString,TdmLayerItem*,bool)));
 
-        //load3DModel(fileName, TdmLayersModel::instance()->rootItem(), true);
-        MyThreadCreateNode *m_threadNode = new MyThreadCreateNode();
-        connect(m_threadNode,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_createNode(osg::Node*,QString,TdmLayerItem*,bool)));
+        thread_node->setFileName(filename);
+        thread_node->setTDMLayerItem(TdmLayersModel::instance()->rootItem());
+        thread_node->setSelectItem(true);
+        thread_node->setOSGWidget(ui->display_widget);
+        thread_node->start();
 
-        m_threadNode->setFileName(fileName);
-        m_threadNode->setTDMLayerItem(TdmLayersModel::instance()->rootItem());
-        m_threadNode->setSelectItem(true);
-        m_threadNode->setOSGWidget(ui->display_widget);
-        m_threadNode->start();
         // allow measurement to be loaded
         //ui->open_measurement_file_action->setEnabled(true);
-        ui->import_old_measure_format_action->setEnabled(true);
+        ui->import_old_measurement_format_action->setEnabled(true);
 
         // measurement tools
         ui->line_tool->setEnabled(true);
         ui->surface_tool->setEnabled(true);
         ui->pick_point->setEnabled(true);
 
-        //QApplication::restoreOverrideCursor();
     }
     else
     {
         QMessageBox::information(this, tr("Error : 3d Model"), tr("Error : you didn't open a valid 3d model"));
     }
 }
-void TDMGui::slot_createNode(osg::Node* _node ,QString _filename,TdmLayerItem *_parent, bool _selectItem)
+
+
+void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *_parent, bool _select_item)
 {
-
-    load3DModel(_filename, _parent, _selectItem, _node);
-
-
-}
-
-void TDMGui::load3DModel(QString _filename, TdmLayerItem *_parent, bool _selectItem, osg::Node* _node)
-{
-    //osg::ref_ptr<osg::Node> node = ui->display_widget->createNodeFromFile(_filename.toStdString());
     osg::ref_ptr<osg::Node> node = _node;
-    TDMModelLayerData modelData(_filename, node);
+    TDMModelLayerData model_data(_filename, node);
 
     TdmLayersModel *model = TdmLayersModel::instance();
     QFileInfo info(_filename);
     QVariant name(info.fileName());
     QVariant data;
-    data.setValue(modelData);
+    data.setValue(model_data);
 
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
     ui->display_widget->addNodeToScene(node);
 
-    if(_selectItem)
+    if(_select_item)
     {
         QModelIndex index = model->index(added);
         selectItem(index);
@@ -296,10 +287,10 @@ void TDMGui::slot_newMeasurement()
     TdmLayerItem *parent = model->rootItem();
 
     QTreeView *view = ui->tree_widget;
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
 
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
-    if (hasSelection && hasCurrent)
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+    if (has_selection && has_current)
     {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
@@ -311,13 +302,13 @@ void TDMGui::slot_newMeasurement()
     }
 
     QVariant data(tr("New Measurement"));
-    MeasurePattern pattern;
+    MeasPattern pattern;
     QString dummy(""); // must be empty
     osg::ref_ptr<osg::Group> group = new osg::Group();
     ui->display_widget->addGroup(group);
-    TDMMeasurementLayerData modelData(dummy, pattern, group);
+    TDMMeasurementLayerData model_data(dummy, pattern, group);
     QVariant tool;
-    tool.setValue(modelData);
+    tool.setValue(model_data);
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, parent, data, tool);
     added->setChecked(true);
 
@@ -335,24 +326,24 @@ void TDMGui::slot_newMeasurement()
     slot_selectionChanged(is, is);
 }
 
-void TDMGui::slot_openMeasureFile()
+void TDMGui::slot_openMeasurementFile()
 {
-    QString fileName = getOpenFileName(this,tr("Select measurement file to open"), m_pathMeasurement, tr("Json files (*.json)"));
+    QString measurement_filename = getOpenFileName(this,tr("Select measurement file to open"), m_path_measurement, tr("Json files (*.json)"));
 
     // save Path Measurement
-    m_pathMeasurement = fileName;
+    m_path_measurement = measurement_filename;
     slot_applySettings();
 
-    if(fileName.length() > 0)
+    if(measurement_filename.length() > 0)
     {
         // parent to be used
         TdmLayerItem *parent = TdmLayersModel::instance()->rootItem();
 
         QTreeView *view = ui->tree_widget;
-        bool hasSelection = !view->selectionModel()->selection().isEmpty();
+        bool has_selection = !view->selectionModel()->selection().isEmpty();
 
-        bool hasCurrent = view->selectionModel()->currentIndex().isValid();
-        if (hasSelection && hasCurrent)
+        bool has_current = view->selectionModel()->currentIndex().isValid();
+        if (has_selection && has_current)
         {
             TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                         view->selectionModel()->currentIndex());
@@ -362,7 +353,7 @@ void TDMGui::slot_openMeasureFile()
             }
         }
 
-        bool res = loadMeasurementFromFile(fileName, parent, true);
+        bool res = loadMeasurementFromFile(measurement_filename, parent, true);
         if(!res)
         {
             QMessageBox::critical(this, tr("Error : measurement file"), tr("Error : invalid file"));
@@ -378,79 +369,79 @@ void TDMGui::slot_openMeasureFile()
     }
 }
 
-bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _selectItem)
+bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _select_item)
 {
     TdmLayersModel *model = TdmLayersModel::instance();
     QTreeView *view = ui->tree_widget;
 
-    QFile f(_filename);
-    f.open(QIODevice::ReadOnly | QIODevice::Text);
-    QByteArray ba = f.readAll();
-    f.close();
+    QFile measurement_filename(_filename);
+    measurement_filename.open(QIODevice::ReadOnly | QIODevice::Text);
+    QByteArray ba = measurement_filename.readAll();
+    measurement_filename.close();
 
     // load pattern
-    MeasurePattern pattern;
+    MeasPattern pattern;
     bool res = pattern.loadFromJson(ba);
     if(!res)
         return false;
 
 
     // get reference point from OSG widget
-    QPointF latlon;
-    double depthorg;
-    ui->display_widget->getGeoOrigin(latlon, depthorg);
+    QPointF lat_lon;
+    double depth_org;
+    ui->display_widget->getGeoOrigin(lat_lon, depth_org);
 
-    QFileInfo fi(f.fileName());
-    QVariant data(fi.fileName());
+    QFileInfo file_measurement_info(measurement_filename.fileName());
+    QVariant data(file_measurement_info.fileName());
 
     osg::ref_ptr<osg::Group> group = new osg::Group();
     ui->display_widget->addGroup(group);
-    TDMMeasurementLayerData modelData(f.fileName(), pattern, group);
-    modelData.setFileName(fi.filePath());
+    TDMMeasurementLayerData model_data(measurement_filename.fileName(), pattern, group);
+    model_data.setFileName(file_measurement_info.filePath());
     QVariant tool;
-    tool.setValue(modelData);
+    tool.setValue(model_data);
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::MeasurementLayer, _parent, data, tool);
-    added->setPrivateData(modelData);
+    added->setPrivateData(model_data);
     updateAttributeTable(added);
     added->setChecked(true);
 
-    TDMMeasurementLayerData *localData = new TDMMeasurementLayerData(modelData);
-    m_currentItem = localData;
+    TDMMeasurementLayerData *local_data = new TDMMeasurementLayerData(model_data);
+    m_current_item = local_data;
     // load data
-    m_current = pattern;
+    m_current_pattern = pattern;
     QJsonDocument doc = pattern.get();
     loadAttribTableFromJson(doc, true);
 
     pattern.set(doc);
-    m_current = pattern;
+    m_current_pattern = pattern;
 
     // update doc in modelData
-    modelData.pattern().set(doc);
+    model_data.pattern().set(doc);
 
-    modelData.rows() = localData->rows();
+    model_data.rows() = local_data->rows();
 
-    added->setPrivateData(modelData);
+    added->setPrivateData(model_data);
 
     saveAttribTableToJson(doc);
-    modelData.pattern().set(doc);
-    added->setPrivateData(modelData);
+    model_data.pattern().set(doc);
+    added->setPrivateData(model_data);
 
     QModelIndex index = model->index(added);
     view->setExpanded(index.parent(),true);
 
     // select created item
-    if(_selectItem)
+    if(_select_item)
     {
         selectItem(index);
     }
 
-    if(depthorg == INVALID_VALUE)
+    if(depth_org == INVALID_VALUE)
         ui->display_widget->home();
 
     return true;
 }
 
-void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg)
+void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _build_osg)
 {  
     OSGWidgetTool::instance()->endTool();
 
@@ -469,41 +460,41 @@ void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg)
         if(reference.contains("latitude") && reference.contains("longitude") && reference.contains("depth") )
         {
             // in Json
-            double latref = reference["latitude"].toDouble();
-            double lonref = reference["longitude"].toDouble();
-            double depthref = reference["depth"].toDouble();
+            double lat_ref = reference["latitude"].toDouble();
+            double lon_ref = reference["longitude"].toDouble();
+            double depth_ref = reference["depth"].toDouble();
 
             // in OSGWidget
             // add reference point from OSG widget
-            QPointF latlon;
-            double depthorg;
-            ui->display_widget->getGeoOrigin(latlon, depthorg);
-            qDebug() << "Reference lat=" << latlon.x() << " lon=" << latlon.y() << " depth=" << depthorg;
+            QPointF lat_lon;
+            double depth_org;
+            ui->display_widget->getGeoOrigin(lat_lon, depth_org);
+            qDebug() << "Reference lat=" << lat_lon.x() << " lon=" << lat_lon.y() << " depth=" << depth_org;
             // Update OSGWidget if not initialized
-            if(depthorg == INVALID_VALUE)
+            if(depth_org == INVALID_VALUE)
             {
-                latlon.setX(latref);
-                latlon.setY(lonref);
-                depthorg = depthref;
-                ui->display_widget->setGeoOrigin(latlon, depthorg);
+                lat_lon.setX(lat_ref);
+                lat_lon.setY(lon_ref);
+                depth_org = depth_ref;
+                ui->display_widget->setGeoOrigin(lat_lon, depth_org);
             }
             // Warning : latitude is in x, longitude is in y in OSGWidget
-            double latorg = latlon.x();
-            double lonorg = latlon.y();
+            double lat_org = lat_lon.x();
+            double lon_org = lat_lon.y();
 
             // convert ref in GeoOrigin
             GeographicLib::LocalCartesian proj;
-            proj.Reset(latorg, lonorg, depthorg);
-            double xref;
-            double yref;
+            proj.Reset(lat_org, lon_org, depth_org);
+            double x_ref;
+            double y_ref;
             double z;
-            proj.Forward(latref, lonref, depthref, xref, yref,z);
+            proj.Forward(lat_ref, lon_ref, depth_ref, x_ref, y_ref,z);
 
-            offset.x = xref;
-            offset.y = yref;
+            offset.x = x_ref;
+            offset.y = y_ref;
 
             // depth
-            offset.z = depthref - depthorg;
+            offset.z = depth_ref - depth_org;
             qDebug() << "offsetX=" << offset.x << " offsetY=" << offset.y << " offsetZ=" << offset.z;
             obj.remove("Reference");
             _doc.setObject(obj);
@@ -515,136 +506,136 @@ void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg)
     }
 
     QJsonArray array = _doc.object().value("Data").toArray();
-    qDebug() << "loadData buildosg=" << _buildOsg << "  nbItems=" << array.count()
-             << " osgRowscount=" << m_currentItem->rows().size();
-    for(int rowindex=0; rowindex<array.count(); rowindex++)
+    qDebug() << "loadData buildosg=" << _build_osg << "  nbItems=" << array.count()
+             << " osgRowscount=" << m_current_item->rows().size();
+    for(int i=0; i<array.count(); i++)
     {
         //row
-        table->setRowCount(rowindex+1);
-        QJsonArray row = array.at(rowindex).toArray();
+        table->setRowCount(i+1);
+        QJsonArray row = array.at(i).toArray();
 
-        osgMeasurementRow *osgRow = 0;
-        if(_buildOsg)
+        osgMeasurementRow *osg_row = 0;
+        if(_build_osg)
         {
-            osgRow = new osgMeasurementRow(m_current);
-            m_currentItem->addRow(osgRow, rowindex);
+            osg_row = new osgMeasurementRow(m_current_pattern);
+            m_current_item->addRow(osg_row, i);
         }
         else
         {
-            osgRow = m_currentItem->rows().at(rowindex);
+            osg_row = m_current_item->rows().at(i);
         }
 
         // checkbox
         QTableWidgetItem *checkbox = new QTableWidgetItem();
-        checkbox->setCheckState( osgRow->isVisible() ? Qt::Checked : Qt::Unchecked);
+        checkbox->setCheckState( osg_row->isVisible() ? Qt::Checked : Qt::Unchecked);
         checkbox->setSizeHint(QSize(20,20));
-        table->setItem(rowindex, 0, checkbox);
+        table->setItem(i, 0, checkbox);
 
         // columns
-        for(int c=0; c<m_current.getNbFields(); c++)
+        for(int j=0; j<m_current_pattern.getNbFields(); j++)
         {
-            int i = c+1;
-            QJsonObject obj = row.at(c).toObject();
+            int column_index_plus1 = j+1;
+            QJsonObject obj = row.at(j).toObject();
 
-            MeasureType::type type = m_current.fieldType(c);
-            switch(type)
+            MeasType::type meas_type = m_current_pattern.fieldType(j);
+            switch(meas_type)
             {
-            case MeasureType::Line:
+            case MeasType::Line:
                 // line edit widget
             {
-                MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
+                MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
 
-                MeasureLine *l = new MeasureLine(m_current.fieldName(c),osgRow->get(c));
-                l->decode(obj, offset);
-                if(_buildOsg)
+                MeasLine *meas_line = new MeasLine(m_current_pattern.fieldName(j),osg_row->get(j));
+                meas_line->decode(obj, offset);
+                if(_build_osg)
                 {
-                    l->updateGeode();
+                    meas_line->updateGeode();
                 }
-                l->computeLength();
-                pwidget->setMeasureItem(l);
-                table->setItem(rowindex, i, pwidget);
+                meas_line->computeLength();
+                pwidget->setMeasItem(meas_line);
+                table->setItem(i, column_index_plus1, pwidget);
                 AttribLineWidget *line = new AttribLineWidget();
-                line->setLine(l);
-                table->setCellWidget(rowindex,i, line);
-                int height = table->rowHeight(rowindex);
-                int minheight = line->height() + 2;
-                if(minheight > height)
-                    table->setRowHeight(rowindex,minheight);
+                line->setLine(meas_line);
+                table->setCellWidget(i,column_index_plus1, line);
+                int height = table->rowHeight(i);
+                int min_height = line->height() + 2;
+                if(min_height > height)
+                    table->setRowHeight(i,min_height);
             }
                 break;
 
-            case MeasureType::Point:
+            case MeasType::Point:
                 // point edit widget
             {
-                MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasurePoint *p = new MeasurePoint(m_current.fieldName(c),osgRow->get(c));
-                p->decode(obj, offset);
-                if(_buildOsg)
+                MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+                MeasPoint *meas_point = new MeasPoint(m_current_pattern.fieldName(j),osg_row->get(j));
+                meas_point->decode(obj, offset);
+                if(_build_osg)
                 {
-                    p->updateGeode();
+                    meas_point->updateGeode();
                 }
-                pwidget->setMeasureItem(p);
-                table->setItem(rowindex, i, pwidget);
+                pwidget->setMeasItem(meas_point);
+                table->setItem(i, column_index_plus1, pwidget);
                 AttribPointWidget *point = new AttribPointWidget();
-                point->setPoint(p);
-                table->setCellWidget(rowindex,i, point);
-                int height = table->rowHeight(rowindex);
-                int minheight = point->height() + 2;
-                if(minheight > height)
-                    table->setRowHeight(rowindex,minheight);
+                point->setPoint(meas_point);
+                table->setCellWidget(i,column_index_plus1, point);
+                int height = table->rowHeight(i);
+                int min_height = point->height() + 2;
+                if(min_height > height)
+                    table->setRowHeight(i,min_height);
             }
                 break;
 
-            case MeasureType::Area:
+            case MeasType::Area:
                 // area edit widget
             {
-                MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasureArea *a = new MeasureArea(m_current.fieldName(c),osgRow->get(c));
-                a->decode(obj, offset);
-                if(_buildOsg)
+                MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+                MeasArea *meas_area = new MeasArea(m_current_pattern.fieldName(j),osg_row->get(j));
+                meas_area->decode(obj, offset);
+                if(_build_osg)
                 {
-                    a->updateGeode();
+                    meas_area->updateGeode();
                 }
-                a->computeLengthAndArea();
-                pwidget->setMeasureItem(a);
-                table->setItem(rowindex, i, pwidget);
+                meas_area->computeLengthAndArea();
+                pwidget->setMeasItem(meas_area);
+                table->setItem(i, column_index_plus1, pwidget);
                 AttribAreaWidget *area = new AttribAreaWidget();
-                area->setArea(a);
-                table->setCellWidget(rowindex,i, area);
-                int height = table->rowHeight(rowindex);
-                int minheight = area->height() + 2;
-                if(minheight > height)
-                    table->setRowHeight(rowindex,minheight);
+                area->setArea(meas_area);
+                table->setCellWidget(i,column_index_plus1, area);
+                int height = table->rowHeight(i);
+                int min_height = area->height() + 2;
+                if(min_height > height)
+                    table->setRowHeight(i,min_height);
             }
                 break;
 
-            case MeasureType::Category:
+            case MeasType::Category:
                 // category edit widget
             {
-                MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasureCategory *cat = new MeasureCategory(m_current.fieldName(c));
-                cat->decode(obj);
-                pwidget->setMeasureItem(cat);
-                table->setItem(rowindex, i, pwidget);
+                MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+                MeasCategory *meas_category = new MeasCategory(m_current_pattern.fieldName(j));
+                meas_category->decode(obj);
+                pwidget->setMeasItem(meas_category);
+                table->setItem(i, column_index_plus1, pwidget);
                 AttribCategoriesWidget *category = new AttribCategoriesWidget();
-                category->setCategory(cat);
-                table->setCellWidget(rowindex,i, category);
-                int height = table->rowHeight(rowindex);
-                int minheight = category->height() + 2;
-                if(minheight > height)
-                    table->setRowHeight(rowindex,minheight);
+                category->setCategory(meas_category);
+                table->setCellWidget(i,column_index_plus1, category);
+                int height = table->rowHeight(i);
+                int min_height = category->height() + 2;
+                if(min_height > height)
+                    table->setRowHeight(i,min_height);
             }
                 break;
 
             default:
                 // string - default editable text line
             {
-                MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-                MeasureString *s = new MeasureString(m_current.fieldName(c));
-                s->decode(obj);
-                pwidget->setMeasureItem(s);
-                pwidget->setText(s->value());
-                table->setItem(rowindex, i, pwidget);
+                MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+                MeasString *meas_string = new MeasString(m_current_pattern.fieldName(j));
+                meas_string->decode(obj);
+                pwidget->setMeasItem(meas_string);
+                pwidget->setText(meas_string->value());
+                table->setItem(i, column_index_plus1, pwidget);
             }
                 break;
             }
@@ -652,20 +643,20 @@ void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _buildOsg)
     }
 }
 
-void TDMGui::slot_saveMeasureFile()
+void TDMGui::slot_saveMeasurementFile()
 {
     OSGWidgetTool::instance()->endTool();
 
-    // check measure selected
+    // check measurement selected
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
     bool ok = false;
 
     TDMMeasurementLayerData layer_data;
 
-    if (hasSelection && hasCurrent) {
+    if (has_selection && has_current) {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
         if(selected != nullptr)
@@ -682,35 +673,35 @@ void TDMGui::slot_saveMeasureFile()
         return;
 
     // get filename
-    QString name = layer_data.fileName();
+    QString measurement_filename = layer_data.fileName();
     // check filename is not empty
-    if(name.isEmpty()){
+    if(measurement_filename.isEmpty()){
         QMessageBox::critical(this, tr("Error : save measurement"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
-    if(!saveMeasurementToFile(name, layer_data))
+    if(!saveMeasurementToFile(measurement_filename, layer_data))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
     }
 }
 
-void TDMGui::slot_saveMeasureFileAs()
+void TDMGui::slot_saveMeasurementFileAs()
 {
     OSGWidgetTool::instance()->endTool();
 
-    // check measure selected
+    // check measurement selected
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
     bool ok = false;
     QString name_measurement;
 
     TDMMeasurementLayerData layer_data;
 
-    if (hasSelection && hasCurrent) {
+    if (has_selection && has_current) {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
         if(selected != nullptr)
@@ -729,35 +720,35 @@ void TDMGui::slot_saveMeasureFileAs()
         return;
 
     // save in file
-    QString name = getSaveFileName(this, "Save measurement : "+ name_measurement,m_pathMeasurement,
-                                   "*.json");
+    QString measurement_filename = getSaveFileName(this, "Save measurement : "+ name_measurement,m_path_measurement,
+                                  "*.json");
 
     // save Path Measurement
-    m_pathMeasurement = name;
+    m_path_measurement = measurement_filename;
     slot_applySettings();
 
-    QFileInfo fileinfo(name);
+    QFileInfo file_measurement_info(measurement_filename);
 
     // check filename is not empty
-    if(fileinfo.fileName().isEmpty()){
+    if(file_measurement_info.fileName().isEmpty()){
         QMessageBox::critical(this, tr("Error : save measurement"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != "json"){
-        name += ".json";
-        fileinfo.setFile(name);
+    if (file_measurement_info.suffix() != "json"){
+        measurement_filename += ".json";
+        file_measurement_info.setFile(measurement_filename);
     }
 
-    if(!saveMeasurementToFile(name, layer_data))
+    if(!saveMeasurementToFile(measurement_filename, layer_data))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
     }
 
     // store file name
-    layer_data.setFileName(fileinfo.filePath());
+    layer_data.setFileName(file_measurement_info.filePath());
     TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                 view->selectionModel()->currentIndex());
 
@@ -766,34 +757,34 @@ void TDMGui::slot_saveMeasureFileAs()
 
 bool TDMGui::saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data)
 {
-    QFile file(_filename);
-    if(!file.open(QIODevice::WriteOnly))
+    QFile measurement_file(_filename);
+    if(!measurement_file.open(QIODevice::WriteOnly))
     {
         return false;
     }
 
     // build json object
-    QJsonDocument json = _data.pattern().get();
+    QJsonDocument data_json = _data.pattern().get();
     // add data
-    saveAttribTableToJson(json);
+    saveAttribTableToJson(data_json);
 
     // add reference point from OSG widget
-    QPointF latlon;
-    double refdepth;
-    ui->display_widget->getGeoOrigin(latlon,refdepth);
-    QJsonObject rootobj = json.object();
+    QPointF lat_lon;
+    double ref_depth;
+    ui->display_widget->getGeoOrigin(lat_lon,ref_depth);
+    QJsonObject root_obj = data_json.object();
     QJsonObject reference;
     // Warning : latitude is in x, longitude is in y in OSGWidget
-    reference.insert("latitude", QJsonValue(latlon.x()));
-    reference.insert("longitude", QJsonValue(latlon.y()));
-    reference.insert("depth", QJsonValue(refdepth));
-    rootobj.insert("Reference",reference);
-    json.setObject(rootobj);
+    reference.insert("latitude", QJsonValue(lat_lon.x()));
+    reference.insert("longitude", QJsonValue(lat_lon.y()));
+    reference.insert("depth", QJsonValue(ref_depth));
+    root_obj.insert("Reference",reference);
+    data_json.setObject(root_obj);
 
     // write
-    QString json_string = json.toJson();
-    file.write(json_string.toUtf8());
-    file.close();
+    QString json_string = data_json.toJson();
+    measurement_file.write(json_string.toUtf8());
+    measurement_file.close();
 
     return true;
 }
@@ -807,21 +798,21 @@ void TDMGui::saveAttribTableToJson(QJsonDocument &_doc)
     {
         // add row
         QJsonArray row;
-        for(int c=1; c<table->columnCount(); c++)
+        for(int j=1; j<table->columnCount(); j++)
         {
             // add field
-            MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i,c);
-            MeasureItem *it = pwidget->measureItem();
+            MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
+            MeasItem *item = pwidget->measItem();
             QJsonObject obj;
-            it->encode(obj);
+            item->encode(obj);
             row.append(obj);
         }
         array.append(row);
     }
 
-    QJsonObject rootobj = _doc.object();
-    rootobj.insert("Data",array);
-    _doc.setObject(rootobj);
+    QJsonObject root_obj = _doc.object();
+    root_obj.insert("Data",array);
+    _doc.setObject(root_obj);
 }
 
 void TDMGui::slot_saveAttribTableToASCII()
@@ -843,8 +834,8 @@ void TDMGui::slot_saveAttribTableToASCII()
         fileinfo.setFile(out_filename);
     }
 
-    QFile file(out_filename);
-    if(!file.open(QIODevice::WriteOnly))
+    QFile csv_file(out_filename);
+    if(!csv_file.open(QIODevice::WriteOnly))
     {
         QMessageBox::critical(this, tr("Error : save measurement to csv"), tr("Error : cannot open the file"));
         return;
@@ -854,41 +845,41 @@ void TDMGui::slot_saveAttribTableToASCII()
     QTableWidget *table = ui->attrib_table;
 
     //get and write header
-    for(int c=1; c<table->columnCount(); c++)
+    for(int i=1; i<table->columnCount(); i++)
     {
-        QString field_string = table->horizontalHeaderItem(c)->text();
+        QString field_string = table->horizontalHeaderItem(i)->text();
         // write field
-        if (c<table->columnCount()-1)
+        if (i<table->columnCount()-1)
             field_string = field_string + ",";
 
-        file.write(field_string.toUtf8());
+        csv_file.write(field_string.toUtf8());
     }
     // write end of line
-    file.write(QString("\n").toUtf8());
+    csv_file.write(QString("\n").toUtf8());
 
     // write fields data
-    for(int i=0; i<table->rowCount(); i++)
+    for(int i=0; i < table->rowCount(); i++)
     {
-        for(int c=1; c<table->columnCount(); c++)
+        for(int j=1; j < table->columnCount(); j++)
         {
             // add field
-            MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i,c);
-            MeasureItem *it = pwidget->measureItem();
+            MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
+            MeasItem *item = pwidget->measItem();
             QString field_string;
-            it->encodeASCII(field_string);
+            item->encodeASCII(field_string);
 
             // write field
-            if (c<table->columnCount()-1)
+            if (j<table->columnCount()-1)
                 field_string = field_string + ",";
 
-            file.write(field_string.toUtf8());
+            csv_file.write(field_string.toUtf8());
         }
         // write end of line
-        file.write(QString("\n").toUtf8());
+        csv_file.write(QString("\n").toUtf8());
     }
 
     // close file
-    file.close();
+    csv_file.close();
 }
 
 void TDMGui::slot_newGroup()
@@ -898,9 +889,9 @@ void TDMGui::slot_newGroup()
 
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
-    if (hasSelection && hasCurrent)
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+    if (has_selection && has_current)
     {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
@@ -937,31 +928,31 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
         if(!_desel.first().isEmpty() && _desel.first().isValid())
         {
             QModelIndex prev = _desel.first().indexes().first();
-            TdmLayerItem *prevselected = TdmLayersModel::instance()->getLayerItem(prev);
-            if(prevselected != nullptr && prevselected->type() == TdmLayerItem::MeasurementLayer)
+            TdmLayerItem *prev_selected = TdmLayersModel::instance()->getLayerItem(prev);
+            if(prev_selected != nullptr && prev_selected->type() == TdmLayerItem::MeasurementLayer)
             {
                 // save layer attrib data before changing current layer
-                TDMMeasurementLayerData layer_data = prevselected->getPrivateData<TDMMeasurementLayerData>();
+                TDMMeasurementLayerData layer_data = prev_selected->getPrivateData<TDMMeasurementLayerData>();
 
                 QJsonDocument doc = layer_data.pattern().get();
                 saveAttribTableToJson(doc);
 
                 layer_data.pattern().set(doc);
 
-                prevselected->setPrivateData<TDMMeasurementLayerData>(layer_data);
+                prev_selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
 
-                delete m_currentItem;
-                m_currentItem = 0;
+                delete m_current_item;
+                m_current_item = 0;
                 updateAttributeTable(0);
             }
         }
     }
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent) {
+    if (has_selection && has_current) {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
@@ -984,8 +975,8 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                 //                if(lda.fileName().length())
                 //                    data1 = lda.fileName();
 
-                m_currentItem = new TDMMeasurementLayerData(layer_data);
-                m_current = m_currentItem->pattern();
+                m_current_item = new TDMMeasurementLayerData(layer_data);
+                m_current_pattern = m_current_item->pattern();
 
                 updateAttributeTable(selected);
 
@@ -1061,26 +1052,26 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
     QMenu *menu = new QMenu;
     QTreeView *view = ui->tree_widget;
 
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
-    if(!hasCurrent)
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+    if(!has_current)
     {
         menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
-        QAction *newMeasure =  menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
+        QAction *new_measurement =  menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
 
         if(ui->open_measurement_file_action->isEnabled())
-            newMeasure->setEnabled(true);
+            new_measurement->setEnabled(true);
         else
-            newMeasure->setDisabled(true);
+            new_measurement->setDisabled(true);
 
         menu->exec(QCursor::pos());
         return;
     }
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
     view->closePersistentEditor(view->selectionModel()->currentIndex());
 
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
@@ -1146,21 +1137,21 @@ void TDMGui::slot_deleteRow()
 {
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
 
         QString msg = tr("Do you want to remove %1:\n%2").arg(item->typeName()).arg(item->getName());
-        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Row removal Confirmation"),
+        QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Row removal Confirmation"),
                                                                     msg,
                                                                     QMessageBox::Cancel | QMessageBox::Ok,
                                                                     QMessageBox::Cancel);
-        if (resBtn != QMessageBox::Ok)
+        if (res_btn != QMessageBox::Ok)
         {
             return;
         }
@@ -1178,10 +1169,10 @@ void TDMGui::slot_renameTreeItem()
 {
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
@@ -1194,10 +1185,10 @@ void TDMGui::slot_moveToToplevel()
 {
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
@@ -1238,10 +1229,10 @@ void TDMGui::slot_editMeasurement()
 {
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
@@ -1250,35 +1241,35 @@ void TDMGui::slot_editMeasurement()
         {
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
-                QString name = selected->getName();
+                QString title_dialog = selected->getName();
                 // Show dialog
-                edit_measure_dialog *dlg = new edit_measure_dialog(this);
+                EditMeasDialog *edit_meas_dialog = new EditMeasDialog(this);
 
                 TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
                 qDebug() << "init dialog" << layer_data.pattern().getNbFields();
-                dlg->setPattern(layer_data.pattern());
-                dlg->setWindowTitle(name);
-                dlg->setModal(true);
+                edit_meas_dialog->setPattern(layer_data.pattern());
+                edit_meas_dialog->setWindowTitle(title_dialog);
+                edit_meas_dialog->setModal(true);
 
-                QObject::connect(dlg,SIGNAL(signal_apply(MeasurePattern)),
-                                 this,SLOT(slot_patternChanged(MeasurePattern)));
+                QObject::connect(edit_meas_dialog,SIGNAL(signal_apply(MeasPattern)),
+                                 this,SLOT(slot_patternChanged(MeasPattern)));
 
-                dlg->show();
+                edit_meas_dialog->show();
             }
         }
     }
 }
 
-void TDMGui::slot_patternChanged(MeasurePattern _pattern)
+void TDMGui::slot_patternChanged(MeasPattern _pattern)
 {    
     OSGWidgetTool::instance()->endTool();
 
     //** + confirmation
-    QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
+    QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
                                                                 tr("Do you want change the measurement pattern?\nLoss of data can occur"),
                                                                 QMessageBox::Yes | QMessageBox::No,
                                                                 QMessageBox::No);
-    if (resBtn != QMessageBox::Yes)
+    if (res_btn != QMessageBox::Yes)
     {
         return;
     }
@@ -1287,7 +1278,7 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
 
     QTableWidget *table = ui->attrib_table;
 
-    QJsonDocument newdoc;
+    QJsonDocument new_doc;
 
     if(table->rowCount() > 0)
     {
@@ -1305,22 +1296,22 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
 
             // add new fields
 
-            for(int c=0; c<_pattern.getNbFields(); c++)
+            for(int j=0; j<_pattern.getNbFields(); j++)
             {
                 // does field exist in old pattern ?
                 bool found = false;
-                for(int o=0; o< m_current.getNbFields(); o++)
+                for(int k=0; k< m_current_pattern.getNbFields(); k++)
                 {
-                    if(_pattern.fieldName(c) == m_current.fieldName(o)
+                    if(_pattern.fieldName(k) == m_current_pattern.fieldName(k)
                             &&
-                            _pattern.fieldType(c) ==  m_current.fieldType(o))
+                            _pattern.fieldType(k) ==  m_current_pattern.fieldType(k))
                     {
                         // copy field
                         found = true;
-                        MeasureTableWidgetItem *pwidget = (MeasureTableWidgetItem *)table->item(i, o+1);
-                        MeasureItem *it = pwidget->measureItem();
+                        MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i, k+1);
+                        MeasItem *item = pwidget->measItem();
                         QJsonObject obj;
-                        it->encode(obj);
+                        item->encode(obj);
                         row.append(obj);
 
                         break;
@@ -1330,65 +1321,65 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                 if(!found)
                 {
                     // add empty
-                    MeasureType::type type = _pattern.fieldType(c);
+                    MeasType::type type = _pattern.fieldType(j);
 
                     switch(type)
                     {
-                    case MeasureType::Line:
+                    case MeasType::Line:
                         // line edit widget
                     {
                         osg::ref_ptr<osg::Geode> geode;
-                        MeasureLine *l = new MeasureLine(_pattern.fieldName(c), geode);
-                        QJsonObject no;
-                        l->encode(no);
-                        row.append(no);
-                        delete l;
+                        MeasLine *meas_line = new MeasLine(_pattern.fieldName(j), geode);
+                        QJsonObject line_json;
+                        meas_line->encode(line_json);
+                        row.append(line_json);
+                        delete meas_line;
                     }
                         break;
 
-                    case MeasureType::Point:
+                    case MeasType::Point:
                         // point edit widget
                     {
                         osg::ref_ptr<osg::Geode> geode;
-                        MeasurePoint *p = new MeasurePoint(_pattern.fieldName(c), geode);
-                        QJsonObject no;
-                        p->encode(no);
-                        row.append(no);
-                        delete p;
+                        MeasPoint *meas_point = new MeasPoint(_pattern.fieldName(j), geode);
+                        QJsonObject point_json;
+                        meas_point->encode(point_json);
+                        row.append(point_json);
+                        delete meas_point;
                     }
                         break;
 
-                    case MeasureType::Area:
+                    case MeasType::Area:
                         // area edit widget
                     {
                         osg::ref_ptr<osg::Geode> geode;
-                        MeasureArea *a = new MeasureArea(_pattern.fieldName(c), geode);
-                        QJsonObject no;
-                        a->encode(no);
-                        row.append(no);
-                        delete a;
+                        MeasArea *meas_area = new MeasArea(_pattern.fieldName(j), geode);
+                        QJsonObject area_json;
+                        meas_area->encode(area_json);
+                        row.append(area_json);
+                        delete meas_area;
                     }
                         break;
 
-                    case MeasureType::Category:
+                    case MeasType::Category:
                         // category edit widget
                     {
-                        MeasureCategory *a = new MeasureCategory(_pattern.fieldName(c));
-                        QJsonObject no;
-                        a->encode(no);
-                        row.append(no);
-                        delete a;
+                        MeasCategory *meas_category = new MeasCategory(_pattern.fieldName(j));
+                        QJsonObject category_json;
+                        meas_category->encode(category_json);
+                        row.append(category_json);
+                        delete meas_category;
                     }
                         break;
 
                     default:
                         // string - default editable text line
                     {
-                        MeasureString *s = new MeasureString(_pattern.fieldName(c));
-                        QJsonObject no;
-                        s->encode(no);
-                        row.append(no);
-                        delete s;
+                        MeasString *meas_string = new MeasString(_pattern.fieldName(j));
+                        QJsonObject string_json;
+                        meas_string->encode(string_json);
+                        row.append(string_json);
+                        delete meas_string;
                     }
                         break;
                     }
@@ -1401,25 +1392,25 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
         }
 
         // store data
-        QJsonObject rootobj = newdoc.object();
-        rootobj.insert("Data",array);
-        newdoc.setObject(rootobj);
+        QJsonObject root_obj = new_doc.object();
+        root_obj.insert("Data",array);
+        new_doc.setObject(root_obj);
     }
 
-    for(int i=m_currentItem->rows().size()-1; i>=0; i--)
-        m_currentItem->deleteRow(i);
-    delete m_currentItem;
-    m_currentItem = 0;
+    for(int i=m_current_item->rows().size()-1; i>=0; i--)
+        m_current_item->deleteRow(i);
+    delete m_current_item;
+    m_current_item = 0;
     updateAttributeTable(0);
 
     // put in TDMMeasurementLayerData
 
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         view->closePersistentEditor(view->selectionModel()->currentIndex());
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
@@ -1430,8 +1421,8 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
             {
                 TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
                 layer_data.pattern().clear();
-                for(int i=0; i<_pattern.getNbFields(); i++)
-                    layer_data.pattern().addField(_pattern.fieldName(i), _pattern.fieldType(i));
+                for(int j=0; j < _pattern.getNbFields(); j++)
+                    layer_data.pattern().addField(_pattern.fieldName(j), _pattern.fieldType(j));
                 selected->setPrivateData<TDMMeasurementLayerData>(layer_data);
                 //qDebug() << "slot_patternChanged" << lda.pattern().getNbFields();
                 updateAttributeTable(selected);
@@ -1440,11 +1431,11 @@ void TDMGui::slot_patternChanged(MeasurePattern _pattern)
                 layer_data.group()->removeChildren(0,layer_data.group()->getNumChildren());
 
                 // update pattern
-                m_current = _pattern;
-                m_currentItem = new TDMMeasurementLayerData(layer_data);
+                m_current_pattern = _pattern;
+                m_current_item = new TDMMeasurementLayerData(layer_data);
 
                 // load data
-                loadAttribTableFromJson(newdoc, true);
+                loadAttribTableFromJson(new_doc, true);
             }
         }
     }
@@ -1458,9 +1449,9 @@ void TDMGui::updateAttributeTable(TdmLayerItem *_item)
     if(_item != nullptr && _item->type() == TdmLayerItem::MeasurementLayer)
     {
         TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
-        int nbfields = layer_data.pattern().getNbFields();
+        int nb_fields = layer_data.pattern().getNbFields();
 
-        table->setColumnCount(nbfields+1);
+        table->setColumnCount(nb_fields+1);
         QStringList headers;
         headers << ""; //tr("[+]");
 
@@ -1473,30 +1464,30 @@ void TDMGui::updateAttributeTable(TdmLayerItem *_item)
         for(int i=0; i<layer_data.pattern().getNbFields(); i++)
         {
             QString tt = "(" + layer_data.pattern().fieldTypeName(i) + ")";
-            QTableWidgetItem* headerItem = table->horizontalHeaderItem(i+1);
-            if (headerItem)
-                headerItem->setToolTip(tt);
+            QTableWidgetItem* header_item = table->horizontalHeaderItem(i+1);
+            if (header_item)
+                header_item->setToolTip(tt);
 
             // column width
             switch(layer_data.pattern().fieldType(i))
             {
-            case MeasureType::Area:
+            case MeasType::Area:
                 table->setColumnWidth(i+1,150);
 
                 break;
-            case MeasureType::Line:
+            case MeasType::Line:
                 table->setColumnWidth(i+1,150);
 
                 break;
-            case MeasureType::Point:
+            case MeasType::Point:
                 table->setColumnWidth(i+1,160);
 
                 break;
-            case MeasureType::String:
+            case MeasType::String:
                 table->setColumnWidth(i+1,125);
 
                 break;
-            case MeasureType::Category:
+            case MeasType::Category:
                 table->setColumnWidth(i+1,125);
 
                 break;
@@ -1506,7 +1497,7 @@ void TDMGui::updateAttributeTable(TdmLayerItem *_item)
         }
         table->verticalHeader()->setVisible(true);
         table->setRowCount(0);
-        m_current = layer_data.pattern();
+        m_current_pattern = layer_data.pattern();
     }
     else
     {
@@ -1516,14 +1507,14 @@ void TDMGui::updateAttributeTable(TdmLayerItem *_item)
         table->setHorizontalHeaderLabels(headers);
 
         table->setRowCount(0);
-        m_current.clear();
+        m_current_pattern.clear();
     }
 
     // 1rst column : check
     table->setColumnWidth(0,30);
-    QTableWidgetItem* headerItem = table->horizontalHeaderItem(0);
-    if (headerItem)
-        headerItem->setToolTip("Visibility");
+    QTableWidgetItem* header_item = table->horizontalHeaderItem(0);
+    if (header_item)
+        header_item->setToolTip("Visibility");
 }
 
 void TDMGui::slot_attribTableContextMenu(const QPoint &)
@@ -1533,10 +1524,10 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
 
     menu->addAction(tr("Add line"), this, SLOT(slot_addAttributeLine()));
 
-    bool hasCurrent = table->selectionModel()->currentIndex().isValid();
-    bool hasSelection = !table->selectionModel()->selection().isEmpty();
+    bool has_current = table->selectionModel()->currentIndex().isValid();
+    bool has_selection = !table->selectionModel()->selection().isEmpty();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         menu->addAction(tr("Remove line"), this, SLOT(slot_deleteAttributeLine()));
     }
@@ -1552,94 +1543,94 @@ void TDMGui::slot_addAttributeLine()
     QTreeView *view = ui->tree_widget;
 
     // insert last position
-    int rowindex = table->rowCount();
-    table->setRowCount(rowindex+1);
+    int row_index = table->rowCount();
+    table->setRowCount(row_index+1);
     // insert first position
     //int rowindex = 0;
     //table->insertRow(rowindex);
 
-    osgMeasurementRow *osgRow = new osgMeasurementRow(m_current);
-    m_currentItem->addRow(osgRow, rowindex);
+    osgMeasurementRow *osg_row = new osgMeasurementRow(m_current_pattern);
+    m_current_item->addRow(osg_row, row_index);
 
     QTableWidgetItem *checkbox = new QTableWidgetItem();
     checkbox->setCheckState(Qt::Checked);
     checkbox->setSizeHint(QSize(20,20));
-    table->setItem(rowindex, 0, checkbox);
+    table->setItem(row_index, 0, checkbox);
 
     // process items in line
     for(int i=1; i<table->columnCount(); i++)
     {
-        MeasureType::type type = m_current.fieldType(i-1);
-        switch(type)
+        MeasType::type meas_type = m_current_pattern.fieldType(i-1);
+        switch(meas_type)
         {
-        case MeasureType::Line:
+        case MeasType::Line:
             // line edit widget
         {
-            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasureLine *l = new MeasureLine(m_current.fieldName(i-1),osgRow->get(i-1));
-            pwidget->setMeasureItem(l);
-            table->setItem(rowindex, i, pwidget);
+            MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+            MeasLine *meas_line = new MeasLine(m_current_pattern.fieldName(i-1),osg_row->get(i-1));
+            pwidget->setMeasItem(meas_line);
+            table->setItem(row_index, i, pwidget);
             AttribLineWidget *line = new AttribLineWidget();
-            line->setLine(l);
-            table->setCellWidget(rowindex,i, line);
-            int height = table->rowHeight(rowindex);
-            int minheight = line->height() + 2;
-            if(minheight > height)
-                table->setRowHeight(rowindex,minheight);
+            line->setLine(meas_line);
+            table->setCellWidget(row_index,i, line);
+            int height = table->rowHeight(row_index);
+            int min_height = line->height() + 2;
+            if(min_height > height)
+                table->setRowHeight(row_index,min_height);
         }
             break;
 
-        case MeasureType::Point:
+        case MeasType::Point:
             // point edit widget
         {
-            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasurePoint *p = new MeasurePoint(m_current.fieldName(i-1),osgRow->get(i-1));
-            //p->updateGeode();
-            pwidget->setMeasureItem(p);
-            table->setItem(rowindex, i, pwidget);
+            MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+            MeasPoint *meas_point = new MeasPoint(m_current_pattern.fieldName(i-1),osg_row->get(i-1));
+            //point->updateGeode();
+            pwidget->setMeasItem(meas_point);
+            table->setItem(row_index, i, pwidget);
             AttribPointWidget *point = new AttribPointWidget();
-            point->setPoint(p, false);
-            table->setCellWidget(rowindex,i, point);
-            int height = table->rowHeight(rowindex);
-            int minheight = point->height() + 2;
-            if(minheight > height)
-                table->setRowHeight(rowindex,minheight);
+            point->setPoint(meas_point, false);
+            table->setCellWidget(row_index,i, point);
+            int height = table->rowHeight(row_index);
+            int min_height = point->height() + 2;
+            if(min_height > height)
+                table->setRowHeight(row_index,min_height);
         }
             break;
 
-        case MeasureType::Area:
+        case MeasType::Area:
             // area edit widget
         {
-            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasureArea *a = new MeasureArea(m_current.fieldName(i-1),osgRow->get(i-1));
-            pwidget->setMeasureItem(a);
-            table->setItem(rowindex, i, pwidget);
+            MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+            MeasArea *meas_area = new MeasArea(m_current_pattern.fieldName(i-1),osg_row->get(i-1));
+            pwidget->setMeasItem(meas_area);
+            table->setItem(row_index, i, pwidget);
             AttribAreaWidget *area = new AttribAreaWidget();
-            area->setArea(a);
+            area->setArea(meas_area);
             //            area->setNbval("");
             //            area->setAreaval("");
-            table->setCellWidget(rowindex,i, area);
-            int height = table->rowHeight(rowindex);
-            int minheight = area->height() + 2;
-            if(minheight > height)
-                table->setRowHeight(rowindex,minheight);
+            table->setCellWidget(row_index,i, area);
+            int height = table->rowHeight(row_index);
+            int min_height = area->height() + 2;
+            if(min_height > height)
+                table->setRowHeight(row_index,min_height);
         }
             break;
 
-        case MeasureType::Category:
+        case MeasType::Category:
             // category edit widget
         {
-            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            MeasureCategory *cat = new MeasureCategory(m_current.fieldName(i-1));
-            pwidget->setMeasureItem(cat);
-            table->setItem(rowindex, i, pwidget);
+            MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+            MeasCategory *meas_category = new MeasCategory(m_current_pattern.fieldName(i-1));
+            pwidget->setMeasItem(meas_category);
+            table->setItem(row_index, i, pwidget);
             AttribCategoriesWidget *category = new AttribCategoriesWidget();
-            category->setCategory(cat); category->initItem();
-            table->setCellWidget(rowindex,i, category);
-            int height = table->rowHeight(rowindex);
-            int minheight = category->height() + 2;
-            if(minheight > height)
-                table->setRowHeight(rowindex,minheight);
+            category->setCategory(meas_category); category->initItem();
+            table->setCellWidget(row_index,i, category);
+            int height = table->rowHeight(row_index);
+            int min_height = category->height() + 2;
+            if(min_height > height)
+                table->setRowHeight(row_index,min_height);
         }
             break;
 
@@ -1647,9 +1638,9 @@ void TDMGui::slot_addAttributeLine()
         default:
             // string - default editable text line
         {
-            MeasureTableWidgetItem *pwidget = new MeasureTableWidgetItem();
-            pwidget->setMeasureItem(new MeasureString(m_current.fieldName(i-1)));
-            table->setItem(rowindex, i, pwidget);
+            MeasTableWidgetItem *pwidget = new MeasTableWidgetItem();
+            pwidget->setMeasItem(new MeasString(m_current_pattern.fieldName(i-1)));
+            table->setItem(row_index, i, pwidget);
         }
             break;
         }
@@ -1664,9 +1655,9 @@ void TDMGui::slot_addAttributeLine()
         if(selected->type() == TdmLayerItem::MeasurementLayer)
         {
             TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
-            layer_data.rows() = m_currentItem->rows();
+            layer_data.rows() = m_current_item->rows();
             // add in json doc
-            MeasurePattern pattern = layer_data.pattern();
+            MeasPattern pattern = layer_data.pattern();
             QJsonDocument doc = pattern.get();
             saveAttribTableToJson(doc);
             pattern.set(doc);
@@ -1675,7 +1666,7 @@ void TDMGui::slot_addAttributeLine()
         }
     }
 
-    table->selectRow(rowindex);
+    table->selectRow(row_index);
 }
 
 void TDMGui::slot_deleteAttributeLine()
@@ -1685,9 +1676,9 @@ void TDMGui::slot_deleteAttributeLine()
     QTableWidget *table = ui->attrib_table;
     QTreeView *view = ui->tree_widget;
 
-    bool hasCurrent = table->selectionModel()->currentIndex().isValid();
-    bool hasSelection = !table->selectionModel()->selection().isEmpty();
-    if (hasSelection && hasCurrent)
+    bool has_current = table->selectionModel()->currentIndex().isValid();
+    bool has_selection = !table->selectionModel()->selection().isEmpty();
+    if (has_selection && has_current)
     {
         QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Row removal Confirmation"),
                                                                     tr("Do you want to remove the selected row?"),
@@ -1700,7 +1691,7 @@ void TDMGui::slot_deleteAttributeLine()
 
         // remove in osg
         int row = table->currentRow();
-        m_currentItem->deleteRow(row);
+        m_current_item->deleteRow(row);
         // save in actual selection
         TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
                     view->selectionModel()->currentIndex());
@@ -1709,15 +1700,15 @@ void TDMGui::slot_deleteAttributeLine()
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
                 TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
-                layer_data.rows() = m_currentItem->rows();
+                layer_data.rows() = m_current_item->rows();
                 // remove in json doc
-                MeasurePattern pattern = layer_data.pattern();
+                MeasPattern pattern = layer_data.pattern();
                 QJsonDocument doc = pattern.get();
-                QJsonObject rootobj = doc.object();
-                QJsonArray array = rootobj["Data"].toArray();
+                QJsonObject root_obj = doc.object();
+                QJsonArray array = root_obj["Data"].toArray();
                 array.removeAt(row);
-                rootobj.insert("Data",array);
-                doc.setObject(rootobj);
+                root_obj.insert("Data",array);
+                doc.setObject(root_obj);
                 pattern.set(doc);
                 saveAttribTableToJson(doc);
                 layer_data.pattern() = pattern;
@@ -1729,39 +1720,39 @@ void TDMGui::slot_deleteAttributeLine()
     }
 }
 
-void TDMGui::slot_attribTableDoubleClick(int row, int column)
+void TDMGui::slot_attribTableDoubleClick(int _row, int _column)
 {
     QTableWidget *table = ui->attrib_table;
-    MeasureType::type type = m_current.fieldType(column-1);
+    MeasType::type meas_type = m_current_pattern.fieldType(_column-1);
 
-    switch(type)
+    switch(meas_type)
     {
-    case MeasureType::Line:
+    case MeasType::Line:
         // line edit widget
     {
         OSGWidgetTool::instance()->slot_cancelTool();
 
-        AttribLineWidget *line = (AttribLineWidget *)table->cellWidget(row, column);
+        AttribLineWidget *line = (AttribLineWidget *)table->cellWidget(_row, _column);
         line->clicked();
     }
         break;
 
-    case MeasureType::Point:
+    case MeasType::Point:
         // point edit widget
     {
         OSGWidgetTool::instance()->slot_cancelTool();
 
-        AttribPointWidget *point = (AttribPointWidget *)table->cellWidget(row, column);
+        AttribPointWidget *point = (AttribPointWidget *)table->cellWidget(_row, _column);
         point->clicked();
     }
         break;
 
-    case MeasureType::Area:
+    case MeasType::Area:
         // area edit widget
     {
         OSGWidgetTool::instance()->slot_cancelTool();
 
-        AttribAreaWidget *area = (AttribAreaWidget *)table->cellWidget(row, column);
+        AttribAreaWidget *area = (AttribAreaWidget *)table->cellWidget(_row, _column);
         area->clicked();
     }
         break;
@@ -1774,40 +1765,40 @@ void TDMGui::slot_attribTableDoubleClick(int row, int column)
     }
 }
 
-void TDMGui::slot_attribTableCellChanged(int row, int column)
+void TDMGui::slot_attribTableCellChanged(int _row, int _column)
 {
-    if(column == 0 && m_currentItem->rows().size() > 0)
+    if(_column == 0 && m_current_item->rows().size() > 0)
     {
         // check state
         QTableWidget *table = ui->attrib_table;
-        QTableWidgetItem *it = table->item(row, column);
-        osg::ref_ptr<osg::Group> pcur = (m_currentItem->rows()[row])->getGroup();
-        if(it->checkState() == Qt::Checked)
+        QTableWidgetItem *table_widget_item = table->item(_row, _column);
+        osg::ref_ptr<osg::Group> current_widget = (m_current_item->rows()[_row])->getGroup();
+        if(table_widget_item->checkState() == Qt::Checked)
         {
             // show line items
-            pcur->setNodeMask(0xFFFFFFFF);
-            (m_currentItem->rows()[row])->setVisible(true);
+            current_widget->setNodeMask(0xFFFFFFFF);
+            (m_current_item->rows()[_row])->setVisible(true);
         }
         else
         {
             // hide line items
-            pcur->setNodeMask(0);
-            (m_currentItem->rows()[row])->setVisible(false);
+            current_widget->setNodeMask(0);
+            (m_current_item->rows()[_row])->setVisible(false);
         }
 
         return;
     }
 
-    MeasureType::type type = m_current.fieldType(column-1);
+    MeasType::type meas_type = m_current_pattern.fieldType(_column-1);
 
-    switch(type)
+    switch(meas_type)
     {
-    case MeasureType::String:
+    case MeasType::String:
     {
-        // update MeasureString data
+        // update MeasString data
         QTableWidget *table = ui->attrib_table;
-        MeasureTableWidgetItem *it = (MeasureTableWidgetItem *)table->item(row, column);
-        ((MeasureString*)it->measureItem())->setValue(table->item(row,column)->text());
+        MeasTableWidgetItem *meas_table_widget_item = (MeasTableWidgetItem *)table->item(_row, _column);
+        ((MeasString*)meas_table_widget_item->measItem())->setValue(table->item(_row,_column)->text());
         break;
     }
     default:
@@ -1846,50 +1837,50 @@ void TDMGui::slot_messageEndTool(QString&_msg)
 
 void TDMGui::slot_tempLineTool()
 {
-    ToolLineDialog *dlg = new ToolLineDialog(this);
-    QPoint p = QCursor::pos();
-    dlg->move(p.x()+20, p.y()+20);
-    dlg->show();
-    dlg->raise();
-    dlg->activateWindow();
+    ToolLineDialog *line_dialog = new ToolLineDialog(this);
+    QPoint point = QCursor::pos();
+    line_dialog->move(point.x()+20, point.y()+20);
+    line_dialog->show();
+    line_dialog->raise();
+    line_dialog->activateWindow();
 }
 
 void TDMGui::slot_tempPointTool()
 {
-    ToolPointDialog *dlg = new ToolPointDialog(this);
-    QPoint p = QCursor::pos();
-    dlg->move(p.x()+20, p.y()+20);
-    dlg->show();
-    dlg->raise();
-    dlg->activateWindow();
+    ToolPointDialog *point_dialog = new ToolPointDialog(this);
+    QPoint point = QCursor::pos();
+    point_dialog->move(point.x()+20, point.y()+20);
+    point_dialog->show();
+    point_dialog->raise();
+    point_dialog->activateWindow();
 }
 
 void TDMGui::slot_tempAreaTool()
 {
-    ToolAreaDialog *dlg = new ToolAreaDialog(this);
-    QPoint p = QCursor::pos();
-    dlg->move(p.x()+20, p.y()+20);
-    dlg->show();
-    dlg->raise();
-    dlg->activateWindow();
+    ToolAreaDialog *area_dialog = new ToolAreaDialog(this);
+    QPoint point = QCursor::pos();
+    area_dialog->move(point.x()+20, point.y()+20);
+    area_dialog->show();
+    area_dialog->raise();
+    area_dialog->activateWindow();
 }
 
-void TDMGui::slot_importOldMeasureFile()
+void TDMGui::slot_importOldMeasurementFile()
 {
     // open file
-    QString fileName = getOpenFileName(this,tr("Select old measurement file to open"), m_pathMeasurement, tr("Json files (*.json)"));
+    QString old_meas_fileName = getOpenFileName(this,tr("Select old measurement file to open"), m_path_measurement, tr("Json files (*.json)"));
 
     // save Path Measurement
-    m_pathMeasurement = fileName;
+    m_path_measurement = old_meas_fileName;
     slot_applySettings();
 
-    if(fileName.length() > 0)
+    if(old_meas_fileName.length() > 0)
     {
         // read json
-        QFile f(fileName);
-        f.open(QIODevice::ReadOnly | QIODevice::Text);
-        QByteArray ba = f.readAll();
-        f.close();
+        QFile old_meas_file(old_meas_fileName);
+        old_meas_file.open(QIODevice::ReadOnly | QIODevice::Text);
+        QByteArray ba = old_meas_file.readAll();
+        old_meas_file.close();
         QJsonDocument doc = QJsonDocument::fromJson(ba);
 
         // checks
@@ -1920,8 +1911,8 @@ void TDMGui::slot_importOldMeasureFile()
         TdmLayersModel *model = TdmLayersModel::instance();
         TdmLayerItem *parent = model->rootItem();
 
-        QFileInfo fi(f.fileName());
-        QVariant data(fi.baseName());
+        QFileInfo old_meas_info(old_meas_file.fileName());
+        QVariant data(old_meas_info.baseName());
         QVariant dummy("group");
         TdmLayerItem *added = model->addLayerItem(TdmLayerItem::GroupLayer, parent, data, dummy);
         added->setChecked(true);
@@ -1943,29 +1934,29 @@ void TDMGui::slot_importOldMeasureFile()
         //      name : String
         //      temp : String
         //  points (array of 1 point)
-        MeasurePattern patternPoint;
-        patternPoint.addField("Name", MeasureType::type::String);
-        patternPoint.addField("Category", MeasureType::type::String);
-        patternPoint.addField("Temp", MeasureType::type::String);
-        patternPoint.addField("Point", MeasureType::type::Point);
-        patternPoint.addField("Comment", MeasureType::type::String);
+        MeasPattern pattern_point;
+        pattern_point.addField("Name", MeasType::type::String);
+        pattern_point.addField("Category", MeasType::type::String);
+        pattern_point.addField("Temp", MeasType::type::String);
+        pattern_point.addField("Point", MeasType::type::Point);
+        pattern_point.addField("Comment", MeasType::type::String);
 
-        QString pointName(fi.baseName() + "-points");
-        QVariant pointData(pointName);
-        osg::ref_ptr<osg::Group> grouppoint = new osg::Group();
-        ui->display_widget->addGroup(grouppoint);
-        TDMMeasurementLayerData modelPointData("", patternPoint, grouppoint);
-        QVariant toolPoint;
-        toolPoint.setValue(modelPointData);
-        TdmLayerItem *addedpoint = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, pointData, toolPoint);
-        addedpoint->setChecked(true);
+        QString point_name(old_meas_info.baseName() + "-points");
+        QVariant point_data(point_name);
+        osg::ref_ptr<osg::Group> group_point = new osg::Group();
+        ui->display_widget->addGroup(group_point);
+        TDMMeasurementLayerData model_point_data("", pattern_point, group_point);
+        QVariant tool_point;
+        tool_point.setValue(model_point_data);
+        TdmLayerItem *added_point = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, point_data, tool_point);
+        added_point->setChecked(true);
 
         // Load data points
         QJsonArray points = obj["interest_points"].toArray();
 
         if(!points.isEmpty())
         {
-            m_current = patternPoint;
+            m_current_pattern = pattern_point;
 
             QJsonArray array;
 
@@ -1981,76 +1972,76 @@ void TDMGui::slot_importOldMeasureFile()
                 QString meas_temp = points_object["temp"].toString();
                 QString meas_category = points_object["category"].toString();
 
-                Point3D p;
+                Point3D point;
 
                 if(points_vector.size() > 0 ) // only 1 point
                 {
                     QJsonArray xyz_json = points_vector.at(0).toArray();
 
-                    p.x = xyz_json.at(0).toDouble();
-                    p.y = xyz_json.at(1).toDouble();
-                    p.z = xyz_json.at(2).toDouble();
+                    point.x = xyz_json.at(0).toDouble();
+                    point.y = xyz_json.at(1).toDouble();
+                    point.z = xyz_json.at(2).toDouble();
                 }
 
                 // add line
-                osgMeasurementRow *osgRow = new osgMeasurementRow(m_current);
-                modelPointData.addRow(osgRow,i);
+                osgMeasurementRow *osg_row = new osgMeasurementRow(m_current_pattern);
+                model_point_data.addRow(osg_row,i);
 
-                //0 : "Name", MeasureType::type::String);
-                MeasureString min("Name");
-                min.setValue(meas_name);
-                QJsonObject on;
-                min.encode(on);
-                row.append(on);
+                //0 : "Name", MeasType::type::String);
+                MeasString name_meas_string("Name");
+                name_meas_string.setValue(meas_name);
+                QJsonObject name_json;
+                name_meas_string.encode(name_json);
+                row.append(name_json);
 
-                //1 : "Category", MeasureType::type::String);
-                MeasureString mic("Category");
-                mic.setValue(meas_category);
-                QJsonObject oc;
-                mic.encode(oc);
-                row.append(oc);
+                //1 : "Category", MeasType::type::String);
+                MeasString cat_meas_string("Category");
+                cat_meas_string.setValue(meas_category);
+                QJsonObject category_json;
+                cat_meas_string.encode(category_json);
+                row.append(category_json);
 
-                //2 : "Temp", MeasureType::type::String);
-                MeasureString mit("Temp");
-                mit.setValue(meas_temp);
-                QJsonObject ot;
-                mit.encode(ot);
-                row.append(ot);
+                //2 : "Temp", MeasType::type::String);
+                MeasString temp_meas_string("Temp");
+                temp_meas_string.setValue(meas_temp);
+                QJsonObject temp_json;
+                temp_meas_string.encode(temp_json);
+                row.append(temp_json);
 
-                //3 : "Point", MeasureType::type::Point);
-                osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
-                MeasurePoint mip("Point", geode);
-                mip.setP(p);
-                mip.updateGeode();
-                QJsonObject op;
-                mip.encode(op);
-                row.append(op);
+                //3 : "Point", MeasType::type::Point);
+                osg::ref_ptr<osg::Geode> geode = osg_row->get(3);
+                MeasPoint point_meas_point("Point", geode);
+                point_meas_point.setP(point);
+                point_meas_point.updateGeode();
+                QJsonObject point_json;
+                point_meas_point.encode(point_json);
+                row.append(point_json);
 
-                //4 : "Comment", MeasureType::type::String);
-                MeasureString mio("Comment");
-                mio.setValue(meas_comment);
-                QJsonObject oo;
-                mio.encode(oo);
-                row.append(oo);
+                //4 : "Comment", MeasType::type::String);
+                MeasString comment_meas_string("Comment");
+                comment_meas_string.setValue(meas_comment);
+                QJsonObject comment_json;
+                comment_meas_string.encode(comment_json);
+                row.append(comment_json);
 
                 array.append(row);
             }
 
-            QJsonDocument doc = patternPoint.get();
-            QJsonObject rootobj = doc.object();
-            rootobj.insert("Data",array);
-            doc.setObject(rootobj);
-            modelPointData.pattern().set(doc);
+            QJsonDocument doc = pattern_point.get();
+            QJsonObject root_obj = doc.object();
+            root_obj.insert("Data",array);
+            doc.setObject(root_obj);
+            model_point_data.pattern().set(doc);
 
-            addedpoint->setPrivateData<TDMMeasurementLayerData>(modelPointData);
+            added_point->setPrivateData<TDMMeasurementLayerData>(model_point_data);
 
             updateAttributeTable(0);
 
-            m_currentItem = new TDMMeasurementLayerData(modelPointData);
+            m_current_item = new TDMMeasurementLayerData(model_point_data);
             loadAttribTableFromJson(doc, false);
 
-            delete m_currentItem;
-            m_currentItem = 0;
+            delete m_current_item;
+            m_current_item = 0;
             updateAttributeTable(0);
         }
 
@@ -2062,29 +2053,29 @@ void TDMGui::slot_importOldMeasureFile()
         //      name : String
         //      temp : String
         //  points (array)
-        MeasurePattern patternLine;
-        patternLine.addField("Name", MeasureType::type::String);
-        patternLine.addField("Category", MeasureType::type::String);
-        patternLine.addField("Temp", MeasureType::type::String);
-        patternLine.addField("Line", MeasureType::type::Line);
-        patternLine.addField("Comment", MeasureType::type::String);
+        MeasPattern pattern_line;
+        pattern_line.addField("Name", MeasType::type::String);
+        pattern_line.addField("Category", MeasType::type::String);
+        pattern_line.addField("Temp", MeasType::type::String);
+        pattern_line.addField("Line", MeasType::type::Line);
+        pattern_line.addField("Comment", MeasType::type::String);
 
-        QString lineName(fi.baseName() + "-lines");
-        QVariant lineData(lineName);
-        osg::ref_ptr<osg::Group> groupline = new osg::Group();
-        ui->display_widget->addGroup(groupline);
-        TDMMeasurementLayerData modelLineData("", patternLine, groupline);
-        QVariant toolLine;
-        toolLine.setValue(modelLineData);
-        TdmLayerItem *addedline = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, lineData, toolLine);
-        addedline->setChecked(true);
+        QString line_name(old_meas_info.baseName() + "-lines");
+        QVariant line_data(line_name);
+        osg::ref_ptr<osg::Group> group_line = new osg::Group();
+        ui->display_widget->addGroup(group_line);
+        TDMMeasurementLayerData model_line_data("", pattern_line, group_line);
+        QVariant tool_line;
+        tool_line.setValue(model_line_data);
+        TdmLayerItem *added_line = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, line_data, tool_line);
+        added_line->setChecked(true);
 
         // Load data lines
         QJsonArray lines = obj["line_measurements"].toArray();
 
         if(!lines.isEmpty())
         {
-            m_current = patternLine;
+            m_current_pattern = pattern_line;
 
             QJsonArray array;
 
@@ -2100,79 +2091,79 @@ void TDMGui::slot_importOldMeasureFile()
                 QString meas_temp = line_object["temp"].toString();
                 QString meas_category = line_object["category"].toString();
 
-                QVector<Point3D> pts;
+                QVector<Point3D> points_vector;
 
                 for (int j=0; j<lines_vector.size(); j++)
                 {
                     QJsonArray xyz_json = lines_vector.at(j).toArray();
 
-                    Point3D p;
-                    p.x = xyz_json.at(0).toDouble();
-                    p.y = xyz_json.at(1).toDouble();
-                    p.z = xyz_json.at(2).toDouble();
-                    pts.append(p);
+                    Point3D point;
+                    point.x = xyz_json.at(0).toDouble();
+                    point.y = xyz_json.at(1).toDouble();
+                    point.z = xyz_json.at(2).toDouble();
+                    points_vector.append(point);
                 }
 
                 // add line
-                osgMeasurementRow *osgRow = new osgMeasurementRow(m_current);
-                modelLineData.addRow(osgRow,i);
+                osgMeasurementRow *osg_row = new osgMeasurementRow(m_current_pattern);
+                model_line_data.addRow(osg_row,i);
 
-                //"Name", MeasureType::type::String);
-                MeasureString min("Name");
-                min.setValue(meas_name);
-                QJsonObject on;
-                min.encode(on);
-                row.append(on);
+                //"Name", MeasType::type::String);
+                MeasString name_meas_string("Name");
+                name_meas_string.setValue(meas_name);
+                QJsonObject name_json;
+                name_meas_string.encode(name_json);
+                row.append(name_json);
 
-                //"Category", MeasureType::type::String);
-                MeasureString mic("Category");
-                mic.setValue(meas_category);
-                QJsonObject oc;
-                mic.encode(oc);
-                row.append(oc);
+                //"Category", MeasType::type::String);
+                MeasString cat_meas_string("Category");
+                cat_meas_string.setValue(meas_category);
+                QJsonObject category_json;
+                cat_meas_string.encode(category_json);
+                row.append(category_json);
 
-                //"Temp", MeasureType::type::String);
-                MeasureString mit("Temp");
-                mit.setValue(meas_temp);
-                QJsonObject ot;
-                mit.encode(ot);
-                row.append(ot);
+                //"Temp", MeasType::type::String);
+                MeasString temp_meas_string("Temp");
+                temp_meas_string.setValue(meas_temp);
+                QJsonObject temp_json;
+                temp_meas_string.encode(temp_json);
+                row.append(temp_json);
 
-                //"Line", MeasureType::type::Line);
-                osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
-                MeasureLine mil("Line", geode);
-                mil.getArray() = pts;
-                mil.computeLength();
-                mil.updateGeode();
-                QJsonObject op;
-                mil.encode(op);
-                row.append(op);
+                //"Line", MeasType::type::Line);
+                osg::ref_ptr<osg::Geode> geode = osg_row->get(3);
+                MeasLine line_meas_line("Line", geode);
+                line_meas_line.getArray() = points_vector;
+                line_meas_line.computeLength();
+                line_meas_line.updateGeode();
+                QJsonObject line_json;
+                line_meas_line.encode(line_json);
+                row.append(line_json);
 
-                //"Comment", MeasureType::type::String);
-                MeasureString mio("Comment");
-                mio.setValue(meas_comment);
-                QJsonObject oo;
-                mio.encode(oo);
-                row.append(oo);
+                //"Comment", MeasType::type::String);
+                MeasString comment_meas_string("Comment");
+                comment_meas_string.setValue(meas_comment);
+                QJsonObject comment_json;
+                comment_meas_string.encode(comment_json);
+                row.append(comment_json);
 
                 array.append(row);
             }
 
-            QJsonDocument doc = patternLine.get();
-            QJsonObject rootobj = doc.object();
-            rootobj.insert("Data",array);
-            doc.setObject(rootobj);
-            modelLineData.pattern().set(doc);
+            QJsonDocument doc = pattern_line.get();
+            QJsonObject root_obj = doc.object();
+            root_obj.insert("Data",array);
+            doc.setObject(root_obj);
+            model_line_data.pattern().set(doc);
 
-            addedline->setPrivateData<TDMMeasurementLayerData>(modelLineData);
+            added_line->setPrivateData<TDMMeasurementLayerData>(model_line_data);
 
             updateAttributeTable(0);
 
-            m_currentItem = new TDMMeasurementLayerData(modelLineData);
+            m_current_item = new TDMMeasurementLayerData(model_line_data);
             loadAttribTableFromJson(doc, false);
 
-            delete m_currentItem;
-            m_currentItem = 0;
+            delete m_current_item;
+            m_current_item = 0;
             updateAttributeTable(0);
         }
 
@@ -2184,29 +2175,29 @@ void TDMGui::slot_importOldMeasureFile()
         //      name : String
         //      temp : String
         //  points (warning : origin duplicates first and last point)
-        MeasurePattern patternArea;
-        patternArea.addField("Name", MeasureType::type::String);
-        patternArea.addField("Category", MeasureType::type::String);
-        patternArea.addField("Temp", MeasureType::type::String);
-        patternArea.addField("Area", MeasureType::type::Area);
-        patternArea.addField("Comment", MeasureType::type::String);
+        MeasPattern pattern_area;
+        pattern_area.addField("Name", MeasType::type::String);
+        pattern_area.addField("Category", MeasType::type::String);
+        pattern_area.addField("Temp", MeasType::type::String);
+        pattern_area.addField("Area", MeasType::type::Area);
+        pattern_area.addField("Comment", MeasType::type::String);
 
-        QString areaName(fi.baseName() + "-areas");
-        QVariant areaData(areaName);
-        osg::ref_ptr<osg::Group> grouparea = new osg::Group();
-        ui->display_widget->addGroup(grouparea);
-        TDMMeasurementLayerData modelAreaData("", patternArea, grouparea);
-        QVariant toolArea;
-        toolArea.setValue(modelAreaData);
-        TdmLayerItem *addedarea = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, areaData, toolArea);
-        addedarea->setChecked(true);
+        QString area_name(old_meas_info.baseName() + "-areas");
+        QVariant area_data(area_name);
+        osg::ref_ptr<osg::Group> group_area = new osg::Group();
+        ui->display_widget->addGroup(group_area);
+        TDMMeasurementLayerData model_area_data("", pattern_area, group_area);
+        QVariant tool_area;
+        tool_area.setValue(model_area_data);
+        TdmLayerItem *added_area = model->addLayerItem(TdmLayerItem::MeasurementLayer, added, area_data, tool_area);
+        added_area->setChecked(true);
 
         // Load data area
         QJsonArray areas = obj["area_measurements"].toArray();
 
         if(!lines.isEmpty())
         {
-            m_current = patternArea;
+            m_current_pattern = pattern_area;
 
             QJsonArray array;
 
@@ -2222,87 +2213,87 @@ void TDMGui::slot_importOldMeasureFile()
                 QString meas_temp = area_object["temp"].toString();
                 QString meas_category = area_object["category"].toString();
 
-                QVector<Point3D> pts;
+                QVector<Point3D> points_vector;
 
                 for (int j=0; j<areas_vector.size(); j++)
                 {
                     QJsonArray xyz_json = areas_vector.at(j).toArray();
 
-                    Point3D p;
-                    p.x = xyz_json.at(0).toDouble();
-                    p.y = xyz_json.at(1).toDouble();
-                    p.z = xyz_json.at(2).toDouble();
-                    pts.append(p);
+                    Point3D point;
+                    point.x = xyz_json.at(0).toDouble();
+                    point.y = xyz_json.at(1).toDouble();
+                    point.z = xyz_json.at(2).toDouble();
+                    points_vector.append(point);
                 }
                 // remove last point (because last == first in JSon)
                 if(areas_vector.size() > 1
-                        && pts[0].x == pts[areas_vector.size()-1].x
-                        && pts[0].y == pts[areas_vector.size()-1].y
-                        && pts[0].z == pts[areas_vector.size()-1].z )
+                        && points_vector[0].x == points_vector[areas_vector.size()-1].x
+                        && points_vector[0].y == points_vector[areas_vector.size()-1].y
+                        && points_vector[0].z == points_vector[areas_vector.size()-1].z )
                 {
-                    pts.removeLast();
+                    points_vector.removeLast();
                 }
 
                 // add line
-                osgMeasurementRow *osgRow = new osgMeasurementRow(m_current);
-                modelAreaData.addRow(osgRow,i);
+                osgMeasurementRow *osg_row = new osgMeasurementRow(m_current_pattern);
+                model_area_data.addRow(osg_row,i);
 
-                //"Name", MeasureType::type::String);
-                MeasureString min("Name");
-                min.setValue(meas_name);
-                QJsonObject on;
-                min.encode(on);
-                row.append(on);
+                //"Name", MeasType::type::String);
+                MeasString name_meas_string("Name");
+                name_meas_string.setValue(meas_name);
+                QJsonObject name_json;
+                name_meas_string.encode(name_json);
+                row.append(name_json);
 
-                //"Category", MeasureType::type::String);
-                MeasureString mic("Category");
-                mic.setValue(meas_category);
-                QJsonObject oc;
-                mic.encode(oc);
-                row.append(oc);
+                //"Category", MeasType::type::String);
+                MeasString cat_meas_string("Category");
+                cat_meas_string.setValue(meas_category);
+                QJsonObject category_json;
+                cat_meas_string.encode(category_json);
+                row.append(category_json);
 
-                //"Temp", MeasureType::type::String);
-                MeasureString mit("Temp");
-                mit.setValue(meas_temp);
-                QJsonObject ot;
-                mit.encode(ot);
-                row.append(ot);
+                //"Temp", MeasType::type::String);
+                MeasString temp_meas_string("Temp");
+                temp_meas_string.setValue(meas_temp);
+                QJsonObject temp_json;
+                temp_meas_string.encode(temp_json);
+                row.append(temp_json);
 
-                //"Area", MeasureType::type::Area);
-                osg::ref_ptr<osg::Geode> geode = osgRow->get(3);
-                MeasureArea mia("Area", geode);
-                mia.getArray() = pts;
-                mia.updateGeode();
-                mia.computeLengthAndArea();
-                QJsonObject op;
-                mia.encode(op);
-                row.append(op);
+                //"Area", MeasType::type::Area);
+                osg::ref_ptr<osg::Geode> geode = osg_row->get(3);
+                MeasArea area_meas_area("Area", geode);
+                area_meas_area.getArray() = points_vector;
+                area_meas_area.updateGeode();
+                area_meas_area.computeLengthAndArea();
+                QJsonObject area_json;
+                area_meas_area.encode(area_json);
+                row.append(area_json);
 
-                //"Comment", MeasureType::type::String);
-                MeasureString mio("Comment");
-                mio.setValue(meas_comment);
-                QJsonObject oo;
-                mio.encode(oo);
-                row.append(oo);
+                //"Comment", MeasType::type::String);
+                MeasString comment_meas_string("Comment");
+                comment_meas_string.setValue(meas_comment);
+                QJsonObject comment_json;
+                comment_meas_string.encode(comment_json);
+                row.append(comment_json);
 
                 array.append(row);
             }
 
-            QJsonDocument doc = patternArea.get();
-            QJsonObject rootobj = doc.object();
-            rootobj.insert("Data",array);
-            doc.setObject(rootobj);
-            modelAreaData.pattern().set(doc);
+            QJsonDocument doc = pattern_area.get();
+            QJsonObject root_obj = doc.object();
+            root_obj.insert("Data",array);
+            doc.setObject(root_obj);
+            model_area_data.pattern().set(doc);
 
-            addedarea->setPrivateData<TDMMeasurementLayerData>(modelAreaData);
+            added_area->setPrivateData<TDMMeasurementLayerData>(model_area_data);
 
             updateAttributeTable(0);
 
-            m_currentItem = new TDMMeasurementLayerData(modelAreaData);
+            m_current_item = new TDMMeasurementLayerData(model_area_data);
             loadAttribTableFromJson(doc, false);
 
-            delete m_currentItem;
-            m_currentItem = 0;
+            delete m_current_item;
+            m_current_item = 0;
             updateAttributeTable(0);
         }
 
@@ -2315,8 +2306,8 @@ void TDMGui::slot_importOldMeasureFile()
         selectItem(index);
 
         updateAttributeTable(0);
-        QItemSelection is;
-        slot_selectionChanged(is, is);
+        QItemSelection item_selection;
+        slot_selectionChanged(item_selection, item_selection);
 
         QApplication::restoreOverrideCursor();
     }
@@ -2331,15 +2322,15 @@ void TDMGui::slot_openProject()
     // ask to save project (if not empty)
     if(root->childCount() > 0)
     {
-        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Save project file"),
+        QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Save project file"),
                                                                     tr("Do you want to save current project?"),
                                                                     QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
                                                                     QMessageBox::Yes);
-        if (resBtn == QMessageBox::Yes)
+        if (res_btn == QMessageBox::Yes)
         {
             slot_saveProject();
         }
-        if(resBtn == QMessageBox::Cancel)
+        if(res_btn == QMessageBox::Cancel)
             return;
     }
 
@@ -2353,7 +2344,7 @@ void TDMGui::slot_openProject()
 
     // disallow measurement to be loaded
     //ui->open_measurement_file_action->setEnabled(false);
-    ui->import_old_measure_format_action->setEnabled(false);
+    ui->import_old_measurement_format_action->setEnabled(false);
 
     // disallow measurement tools
     ui->line_tool->setEnabled(false);
@@ -2361,29 +2352,29 @@ void TDMGui::slot_openProject()
     ui->pick_point->setEnabled(false);
 
     // ask file name
-    QString fileName = getOpenFileName(this,tr("Select project to open"),m_pathProject, tr("3DMetrics project (*.tdm)"));
+    QString project_filename = getOpenFileName(this,tr("Select project to open"),m_path_project, tr("3DMetrics project (*.tdm)"));
 
     // save pathProject
-    m_pathProject = fileName;
+    m_path_project = project_filename;
     slot_applySettings();
 
-    if(fileName.length() > 0)
+    if(project_filename.length() > 0)
     {
         // open project
-        QFile f(fileName);
-        if(!f.open(QIODevice::ReadOnly | QIODevice::Text))
+        QFile project_file(project_filename);
+        if(!project_file.open(QIODevice::ReadOnly | QIODevice::Text))
         {
             QMessageBox::critical(this, tr("Error : project file"), tr("Error : reading file"));
             return;
         }
-        QByteArray ba = f.readAll();
-        f.close();
+        QByteArray ba = project_file.readAll();
+        project_file.close();
 
         QJsonDocument doc = QJsonDocument::fromJson(ba);
 
         QApplication::setOverrideCursor(Qt::WaitCursor);
         // create project structure
-        m_projectFileName = fileName;
+        m_project_filename = project_filename;
 
         buildProjectTree(doc.object(), nullptr);
 
@@ -2425,25 +2416,24 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
     if(_obj.contains("Model3D"))
     {
-        QString fileName = _obj["File"].toString();
-        QFileInfo projectPath(m_projectFileName);
-        QDir dir(projectPath.absoluteDir());
-        QString filePath = dir.absoluteFilePath(fileName);
+        QString filename = _obj["File"].toString();
+        QFileInfo project_path(m_project_filename);
+        QDir dir(project_path.absoluteDir());
+        QString file_path = dir.absoluteFilePath(filename);
 
         // load 3D model
-        MyThreadCreateNode *m_threadNode = new MyThreadCreateNode();
-        connect(m_threadNode,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_createNode(osg::Node*,QString,TdmLayerItem*,bool)));
+        FileOpenThread *thread_node = new FileOpenThread();
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_load3DModel(osg::Node*,QString,TdmLayerItem*,bool)));
 
-        m_threadNode->setFileName(filePath);
-        m_threadNode->setTDMLayerItem(_parent ? _parent : root);
-        m_threadNode->setSelectItem(false);
-        m_threadNode->setOSGWidget(ui->display_widget);
-        m_threadNode->start();
-        //load3DModel(filePath, _parent ? _parent : root, false);
+        thread_node->setFileName(file_path);
+        thread_node->setTDMLayerItem(_parent ? _parent : root);
+        thread_node->setSelectItem(false);
+        thread_node->setOSGWidget(ui->display_widget);
+        thread_node->start();
 
         // allow measurement to be loaded
         //ui->open_measurement_file_action->setEnabled(true);
-        ui->import_old_measure_format_action->setEnabled(true);
+        ui->import_old_measurement_format_action->setEnabled(true);
 
         // measurement tools
         ui->line_tool->setEnabled(true);
@@ -2451,19 +2441,19 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         ui->pick_point->setEnabled(true);
     }
 
-    if(_obj.contains("Measure"))
+    if(_obj.contains("Measurement"))
     {
-        QString fileName = _obj["File"].toString();
-        QFileInfo projectPath(m_projectFileName);
-        QDir dir(projectPath.absoluteDir());
-        QString filePath = dir.absoluteFilePath(fileName);
+        QString filename = _obj["File"].toString();
+        QFileInfo project_path(m_project_filename);
+        QDir dir(project_path.absoluteDir());
+        QString file_path = dir.absoluteFilePath(filename);
 
-        // loadMeasure
-        loadMeasurementFromFile(filePath, _parent ? _parent : root, false);
+        // loadMeasurement
+        loadMeasurementFromFile(file_path, _parent ? _parent : root, false);
     }
 }
 
-bool TDMGui::checkAndSaveMeasures(TdmLayerItem *_item)
+bool TDMGui::checkAndSaveMeasurements(TdmLayerItem *_item)
 {
     if(_item == nullptr)
         return false;
@@ -2478,7 +2468,7 @@ bool TDMGui::checkAndSaveMeasures(TdmLayerItem *_item)
             selectItem(index);
             if(_item->getFileName().isEmpty())
             {
-                slot_saveMeasureFileAs();
+                slot_saveMeasurementFileAs();
 
                 return !_item->getFileName().isEmpty();
             }
@@ -2495,7 +2485,7 @@ bool TDMGui::checkAndSaveMeasures(TdmLayerItem *_item)
     {
         for(int i=0; i<_item->childCount(); i++)
         {
-            bool reschildren = checkAndSaveMeasures(_item->child(i));
+            bool reschildren = checkAndSaveMeasurements(_item->child(i));
             res = res && reschildren;
         }
     }
@@ -2520,19 +2510,19 @@ QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *_item)
     else
     {
         //save relative file name
-        QFileInfo fileInfo(m_projectFileName);
-        QDir dir = fileInfo.absoluteDir();
-        QString relFileName = dir.relativeFilePath(_item->getFileName());
+        QFileInfo file_info(m_project_filename);
+        QDir dir = file_info.absoluteDir();
+        QString rel_filename = dir.relativeFilePath(_item->getFileName());
 
         if(_item->type() == TdmLayerItem::MeasurementLayer)
         {
-            obj.insert("Measure", _item->getName());
-            obj.insert("File", relFileName);
+            obj.insert("Measurement", _item->getName());
+            obj.insert("File", rel_filename);
         }
         if(_item->type() == TdmLayerItem::ModelLayer)
         {
             obj.insert("Model3D", _item->getName());
-            obj.insert("File", relFileName);
+            obj.insert("File", rel_filename);
         }
     }
 
@@ -2548,11 +2538,11 @@ void TDMGui::slot_saveProject()
     // ask to save project (if not empty)
     if(root->childCount() > 0)
     {
-        QMessageBox::StandardButton resBtn = QMessageBox::question( this, tr("Save project file"),
-                                                                    tr("Saving measurement is mandatory before\nProceed?"),
+        QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Save project file"),
+                                                                    tr("Saving f_nodemeasurement is mandatory before\nProceed?"),
                                                                     QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
                                                                     QMessageBox::Yes);
-        if (resBtn != QMessageBox::Yes)
+        if (res_btn != QMessageBox::Yes)
         {
             QMessageBox::information(this,tr("Save project file"),tr("Project not saved"));
             return;
@@ -2562,7 +2552,7 @@ void TDMGui::slot_saveProject()
     // check all measurement have filenames
     // ask to save missing
     // save all measurements
-    bool status = checkAndSaveMeasures(TdmLayersModel::instance()->rootItem());
+    bool status = checkAndSaveMeasurements(TdmLayersModel::instance()->rootItem());
     if(!status)
     {
         QMessageBox::information(this, tr("Save project file"), tr("Not all measurements are saved"));
@@ -2570,31 +2560,31 @@ void TDMGui::slot_saveProject()
     }
 
     // save in file
-    QString name = getSaveFileName(this, tr("Save project"), "",
+    QString project_filename = getSaveFileName(this, tr("Save project"), "",
                                    "*.tdm");
-    QFileInfo fileinfo(name);
+    QFileInfo project_file_info(project_filename);
 
     // check filename is not empty
-    if(fileinfo.fileName().isEmpty()){
+    if(project_file_info.fileName().isEmpty()){
         QMessageBox::critical(this, tr("Error : save project"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != "tdm"){
-        name += ".tdm";
-        fileinfo.setFile(name);
+    if (project_file_info.suffix() != "tdm"){
+        project_filename += ".tdm";
+        project_file_info.setFile(project_filename);
     }
 
     // save project structure
-    QFile file(name);
-    if(!file.open(QIODevice::WriteOnly))
+    QFile project_file(project_filename);
+    if(!project_file.open(QIODevice::WriteOnly))
     {
         QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
         return;
     }
 
-    m_projectFileName = fileinfo.absoluteFilePath();
+    m_project_filename = project_file_info.absoluteFilePath();
 
     // build json object
     QJsonDocument json;
@@ -2603,8 +2593,8 @@ void TDMGui::slot_saveProject()
 
     // write
     QString json_string = json.toJson();
-    file.write(json_string.toUtf8());
-    file.close();
+    project_file.write(json_string.toUtf8());
+    project_file.close();
 }
 
 void TDMGui::slot_layersTreeWindow()
@@ -2648,12 +2638,12 @@ void TDMGui::slot_about()
     QMessageBox::about(this, title, text);
 }
 
-void TDMGui::slot_mouseMoveInOsgWidget(int x, int y)
+void TDMGui::slot_mouseMoveInOsgWidget(int _x, int _y)
 {
     // clic
     bool exists = false;
     osg::Vec3d vect;
-    ui->display_widget->getIntersectionPoint(x, y, vect, exists);
+    ui->display_widget->getIntersectionPoint(_x, _y, vect, exists);
     if(exists)
     {
         double lat, lon, depth;
@@ -2663,22 +2653,22 @@ void TDMGui::slot_mouseMoveInOsgWidget(int x, int y)
         ui->display_widget->getGeoOrigin(ref_lat_lon, ref_depth);
         if(ref_depth == INVALID_VALUE)
         {
-            m_latLabel->setText("");
-            m_lonLabel->setText("");
-            m_depthLabel->setText("");
+            m_lat_label->setText("");
+            m_lon_label->setText("");
+            m_depth_label->setText("");
             return;
         }
         ui->display_widget->xyzToLatLonDepth(vect[0], vect[1], vect[2], lat, lon, depth);
 
-        m_latLabel->setText(QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
-        m_lonLabel->setText(QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        m_depthLabel->setText(QString::number(depth,'f',1) + "m");
+        m_lat_label->setText(QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
+        m_lon_label->setText(QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
+        m_depth_label->setText(QString::number(depth,'f',1) + "m");
     }
     else
     {
-        m_latLabel->setText("");
-        m_lonLabel->setText("");
-        m_depthLabel->setText("");
+        m_lat_label->setText("");
+        m_lon_label->setText("");
+        m_depth_label->setText("");
     }
 }
 
@@ -2740,28 +2730,28 @@ void TDMGui::slot_decimateSelectedModel()
 void TDMGui::slot_saveSnapshot()
 {
     // retrieve the generateOrthoMap
-    QImage m_captureImage = ui->display_widget->grabFramebuffer();
+    QImage image_capture = ui->display_widget->grabFramebuffer();
 
 
-    QString nameSnapshot = getSaveFileName(this, tr("Save snapshot"), "",
+    QString snapshot_name = getSaveFileName(this, tr("Save snapshot"), "",
                                            tr("Images (*.jpeg)"));
 
-    QFileInfo fileinfo(nameSnapshot);
+    QFileInfo snapshot_file_info(snapshot_name);
 
     // check filename is not empty
-    if(fileinfo.fileName().isEmpty()){
+    if(snapshot_file_info.fileName().isEmpty()){
         QMessageBox::critical(this, tr("Error : save snapshot"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != "jpeg"){
-        nameSnapshot += ".jpeg";
-        fileinfo.setFile(nameSnapshot);
+    if (snapshot_file_info.suffix() != "jpeg"){
+        snapshot_name += ".jpeg";
+        snapshot_file_info.setFile(snapshot_name);
     }
 
     // save the capture
-    bool save_check = m_captureImage.save(nameSnapshot,"jpeg");
+    bool save_check = image_capture.save(snapshot_name,"jpeg");
 
     // check if the image has been saved
     if(save_check)
@@ -2777,9 +2767,9 @@ void TDMGui::slot_saveSnapshot()
 
 void TDMGui::slot_applySettings()
 {
-    m_settings.setValue("3DMetrics/pathModel3D", m_pathModel3D);
-    m_settings.setValue("3DMetrics/pathMeasurement", m_pathMeasurement);
-    m_settings.setValue("3DMetrics/pathProject", m_pathProject);
+    m_settings.setValue("3DMetrics/pathModel3D", m_path_model3D);
+    m_settings.setValue("3DMetrics/pathMeasurement", m_path_measurement);
+    m_settings.setValue("3DMetrics/pathProject", m_path_project);
 
 }
 
@@ -2802,10 +2792,10 @@ void TDMGui::slot_computeTotalArea()
 
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         // get the 3D model selected
         QModelIndex index = view->selectionModel()->currentIndex();
@@ -2816,13 +2806,13 @@ void TDMGui::slot_computeTotalArea()
         osg::Node* const node = (layer_data.node().get());
 
         // compute the surface of the 3D model selected through his node
-        MeasurementTotalArea totalArea;
-        node->accept(totalArea);
-        double areaDouble = totalArea.getArea();
-        QString areaString = QString::number(areaDouble,'f',2);
-        QStringList fileNameSplit = layer_data.fileName().split("/");
-        QString name3DMode = fileNameSplit.at(fileNameSplit.length()-1);
-        QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3DMode+tr(" is ")+areaString + " m²");
+        AreaComputationVisitor total_area;
+        node->accept(total_area);
+        double total_area_double = total_area.getArea();
+        QString total_area_string = QString::number(total_area_double,'f',2);
+        QStringList filename_split = layer_data.fileName().split("/");
+        QString name3D_mode = filename_split.at(filename_split.length()-1);
+        QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3D_mode+tr(" is ")+total_area_string + " m²");
      }
 }
 
@@ -2830,27 +2820,27 @@ void TDMGui::slot_saveOrthoMap()
 {
     QTreeView *view = ui->tree_widget;
 
-    bool hasSelection = !view->selectionModel()->selection().isEmpty();
-    bool hasCurrent = view->selectionModel()->currentIndex().isValid();
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
 
     QString name_file_orhto2D = getSaveFileName(this, tr("Save orthographic map"), "",
                                            tr("Images (*.tiff)"));
 
-    QFileInfo fileinfo(name_file_orhto2D);
+    QFileInfo ortho2D_file_info(name_file_orhto2D);
 
     // check filename is not empty
-    if(fileinfo.fileName().isEmpty()){
+    if(ortho2D_file_info.fileName().isEmpty()){
         QMessageBox::critical(this, tr("Error : save project"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
     // add suffix if needed
-    if (fileinfo.suffix() != ".tiff"){
+    if (ortho2D_file_info.suffix() != ".tiff"){
         name_file_orhto2D = name_file_orhto2D.remove(".tiff");
-        fileinfo.setFile(name_file_orhto2D);
+        ortho2D_file_info.setFile(name_file_orhto2D);
     }
 
-    if (hasSelection && hasCurrent)
+    if (has_selection && has_current)
     {
         // get the 3D model selected
         QModelIndex index = view->selectionModel()->currentIndex();
@@ -2860,18 +2850,18 @@ void TDMGui::slot_saveOrthoMap()
 
         osg::Node* const node = (layer_data.node().get());
 
-        MeasurementTotalArea total_area;
-        node->accept(total_area);
-        osg::BoundingBox box = total_area.getBoundingBox();
+        BoxVisitor boxVisitor;
+        node->accept(boxVisitor);
+        osg::BoundingBox box = boxVisitor.getBoundingBox();
 
 
         // SCREEN
 
         // Collect the number of pixel that the user want
-        QString pixels = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
-        double d_pixels = pixels.toDouble() ;
+        QString pixels_string = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
+        double pixels = pixels_string.toDouble() ;
 
-        bool save_image = ui->display_widget->generateOrthoMap(node,name_file_orhto2D,box,d_pixels);
+        bool save_image = ui->display_widget->generateOrthoMap(node,name_file_orhto2D,box,pixels);
         if (save_image) QMessageBox::information(this,"Finish","Your image have been generated");
      }
 }

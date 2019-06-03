@@ -11,36 +11,36 @@
 #include <QDebug>
 
 
-MeasurePoint::MeasurePoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
-    : MeasureItem(_fieldName, _geode),
-      m_p(),
+MeasPoint::MeasPoint(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
+    : MeasItem(_fieldName, _geode),
+      m_point(),
       m_color(0.0f,0.0f,1.0f,1.0f) // blue by default
 {
 
 }
 
 // from JSon to object
-void MeasurePoint::decode(QJsonObject & _obj)
+void MeasPoint::decode(QJsonObject & _obj)
 {
-  QJsonObject p = _obj.value(fieldName()).toObject();
-  m_p.decode(p);
+  QJsonObject point = _obj.value(fieldName()).toObject();
+  m_point.decode(point);
 }
 
-void MeasurePoint::decode(QJsonObject & _obj, Point3D offset)
+void MeasPoint::decode(QJsonObject & _obj, Point3D _offset)
 {
-  QJsonObject p = _obj.value(fieldName()).toObject();
-  m_p.decode(p, offset);
+  QJsonObject point = _obj.value(fieldName()).toObject();
+  m_point.decode(point, _offset);
 }
 
 // encode to JSon
-void MeasurePoint::encode(QJsonObject & _obj)
+void MeasPoint::encode(QJsonObject & _obj)
 {
-    QJsonObject p;
-    m_p.encode(p);
-    _obj.insert(fieldName(), QJsonValue(p));
+    QJsonObject point;
+    m_point.encode(point);
+    _obj.insert(fieldName(), QJsonValue(point));
 }
 
-void MeasurePoint::encodeASCII(QString &_string)
+void MeasPoint::encodeASCII(QString &_string)
 {
     QPointF ref_lat_lon;
     double ref_depth;
@@ -50,19 +50,19 @@ void MeasurePoint::encodeASCII(QString &_string)
     ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
 
     double lat,lon,depth;
-    ltp_proj.Reverse(m_p.x, m_p.y, m_p.z, lat, lon, depth);
+    ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, depth);
 
     _string = "lat=" + QString::number(lat,'f',8)+
             "\tlon="+ QString::number(lon,'f',8)+
             "\tdepth="+ QString::number(depth,'f',3);
 }
 
-void MeasurePoint::updateGeode()
+void MeasPoint::updateGeode()
 {
     osg::Vec3d point;
-    point[0] = m_p.x;
-    point[1] = m_p.y;
-    point[2] = m_p.z;
+    point[0] = m_point.x;
+    point[1] = m_point.y;
+    point[2] = m_point.z;
     // create point in geode
     // point
     osg::Geometry* shape_point_drawable = new osg::Geometry();

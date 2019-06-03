@@ -1,9 +1,9 @@
-#ifndef MEASURETYPE_H
-#define MEASURETYPE_H
+#ifndef MEAS_TYPE_H
+#define MEAS_TYPE_H
 
 #include <QString>
 
-class MeasureType
+class MeasType
 {
 public:
     enum type {
@@ -19,4 +19,4 @@ public:
     static type valueOf(QString _str);
 };
 
-#endif // MEASURETYPE_H
+#endif // MEAS_TYPE_H

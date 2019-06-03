@@ -12,7 +12,7 @@ class DecimationDialog : public QDialog
     Q_OBJECT
 
 public:
-    explicit DecimationDialog(QWidget *parent = 0);
+    explicit DecimationDialog(QWidget *_parent = 0);
     ~DecimationDialog();
 
     QString getModelPath();

@@ -53,9 +53,9 @@ double static projPointToArea(std::pair<Eigen::Vector3f, Eigen::Vector3f> &_plan
     v2.normalize();
 
     for (unsigned int i=0; i<_projected_points.size(); i++){
-        Eigen::Vector3f P = _projected_points[i]-origin;
-        proj_points_2d_x.push_back(P.dot(v1));
-        proj_points_2d_y.push_back(P.dot(v2));
+        Eigen::Vector3f point = _projected_points[i]-origin;
+        proj_points_2d_x.push_back(point.dot(v1));
+        proj_points_2d_y.push_back(point.dot(v2));
     }
 
     // Construct area Polygon
@@ -65,44 +65,44 @@ double static projPointToArea(std::pair<Eigen::Vector3f, Eigen::Vector3f> &_plan
     return selection_polygon.area();
 }
 
-MeasureArea::MeasureArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
-    : MeasureLine(_fieldName, _geode), m_area(0)
+MeasArea::MeasArea(const QString _fieldName, osg::ref_ptr<osg::Geode> _geode)
+    : MeasLine(_fieldName, _geode), m_area(0)
 {
     osg::Vec4 colorl(0.0f,1.0f,1.0f,1.0f); // cyan by default
     m_color = colorl;
 }
 
 // from JSon to object
-void MeasureArea::decode(QJsonObject & _obj)
+void MeasArea::decode(QJsonObject & _obj)
 {
-    MeasureLine::decode(_obj);
-    QJsonObject p = _obj.value(fieldName()).toObject();
-    m_area = p.value("area").toDouble();
+    MeasLine::decode(_obj);
+    QJsonObject area_json = _obj.value(fieldName()).toObject();
+    m_area = area_json.value("area").toDouble();
 }
 
-void MeasureArea::decode(QJsonObject & _obj, Point3D offset)
+void MeasArea::decode(QJsonObject & _obj, Point3D _offset)
 {
-    MeasureLine::decode(_obj, offset);
-    QJsonObject p = _obj.value(fieldName()).toObject();
-    m_area = p.value("area").toDouble();
+    MeasLine::decode(_obj, _offset);
+    QJsonObject area_json = _obj.value(fieldName()).toObject();
+    m_area = area_json.value("area").toDouble();
 }
 
 // encode to JSon
-void MeasureArea::encode(QJsonObject & _obj)
+void MeasArea::encode(QJsonObject & _obj)
 {
-    MeasureLine::encode(_obj);
-    QJsonObject obj = _obj.value(fieldName()).toObject();
-    obj.insert("area",QJsonValue(m_area));
-    _obj.insert(fieldName(), obj);
+    MeasLine::encode(_obj);
+    QJsonObject area_json = _obj.value(fieldName()).toObject();
+    area_json.insert("area",QJsonValue(m_area));
+    _obj.insert(fieldName(), area_json);
 }
 
 // encode to ASCII
-void MeasureArea::encodeASCII(QString &_string)
+void MeasArea::encodeASCII(QString &_string)
 {
     _string = QString::number(m_area,'f');
 }
 
-void MeasureArea::computeLengthAndArea()
+void MeasArea::computeLengthAndArea()
 {
     computeLength();
 
@@ -136,7 +136,7 @@ void MeasureArea::computeLengthAndArea()
     m_area = projPointToArea(plane_coeffs, proj_pt_area_data);
 }
 
-void MeasureArea::updateGeode()
+void MeasArea::updateGeode()
 {
     m_geode->removeDrawables(0, 2);
 
@@ -203,19 +203,19 @@ void MeasureArea::updateGeode()
 }
 
 
-void MeasureArea::save()
+void MeasArea::save()
 {
-    m_arraySave = m_array;
+    m_array_save = m_array;
 }
 
-void MeasureArea::restore()
+void MeasArea::restore()
 {
-    m_array = m_arraySave;
+    m_array = m_array_save;
     computeLengthAndArea();
     updateGeode();
 }
 
-void MeasureArea::cancel()
+void MeasArea::cancel()
 {
-    m_arraySave.clear();
+    m_array_save.clear();
 }

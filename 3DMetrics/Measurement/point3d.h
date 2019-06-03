@@ -13,7 +13,7 @@ struct Point3D
 
     // from JSon to object
     void decode(QJsonObject & _obj);
-    void decode(QJsonObject & _obj, Point3D &offset);
+    void decode(QJsonObject & _obj, Point3D &_offset);
 
     // encode to JSon
     void encode(QJsonObject & _obj);

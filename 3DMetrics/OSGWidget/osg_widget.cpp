@@ -47,15 +47,15 @@
 #include <math.h>
 
 struct SnapImage : public osg::Camera::DrawCallback {
-    SnapImage(osg::GraphicsContext* gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box) :
+    SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box) :
         m_filename( _filename ),
         m_ref_lat_lon( _ref_lat_lon ),
         m_box( _box )
     {
         m_image = new osg::Image;
-        if (gc->getTraits()) {
-            int width = gc->getTraits()->width;
-            int height = gc->getTraits()->height;
+        if (_gc->getTraits()) {
+            int width = _gc->getTraits()->width;
+            int height = _gc->getTraits()->height;
             m_image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
         }
     }
@@ -82,7 +82,7 @@ struct SnapImage : public osg::Camera::DrawCallback {
             QString png_name = QString::fromStdString(m_filename)+".png";
             QString tiff_name = QString::fromStdString(m_filename)+".tiff";
 
-            // Create the .jpg, we need it for gdal_translate in order to have a .tiff
+            // Create the .png, we need it for gdal_translate in order to have a .tiff
             osgDB::writeImageFile(*m_image, m_filename+".png" );
             // Run a command line from Qt
             QProcess process;
@@ -389,26 +389,26 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
     // load the data
     setlocale(LC_ALL, "C");
 
-    QFileInfo sceneInfo(QString::fromStdString(_scene_file));
-    std::string sceneFile;
+    QFileInfo scene_info(QString::fromStdString(_scene_file));
+    std::string scene_file;
 
     QPointF local_lat_lon;
     double local_depth;
 
-    if (sceneInfo.suffix()==QString("kml")){
+    if (scene_info.suffix()==QString("kml")){
         m_kml_handler.readFile(_scene_file);
-        sceneFile = sceneInfo.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
+        scene_file = scene_info.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
         local_lat_lon.setX(m_kml_handler.getModelLat());
         local_lat_lon.setY(m_kml_handler.getModelLon());
         local_depth = m_kml_handler.getModelAlt();
     }else{
-        sceneFile = _scene_file;
+        scene_file = _scene_file;
         local_lat_lon.setX(0);
         local_lat_lon.setY(0);
         local_depth = 0;
     }
 
-    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile, new osgDB::Options("noRotation"));
+    osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
 
     if (!model_node)
     {
@@ -447,8 +447,8 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
 {
     // Add model
     m_models.push_back(_node);
-    osg::StateSet* stateSet = _node->getOrCreateStateSet();
-    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    osg::StateSet* state_set = _node->getOrCreateStateSet();
+    state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     //m_group->addChild(_node.get());
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
@@ -557,12 +557,12 @@ void OSGWidget::clearSceneData()
 void OSGWidget::initializeGL(){
 
     // Init properties
-    osg::StateSet* stateSet = m_group->getOrCreateStateSet();
+    osg::StateSet* state_set = m_group->getOrCreateStateSet();
     osg::Material* material = new osg::Material;
     material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
-    stateSet->setAttributeAndModes( material, osg::StateAttribute::ON );
-    stateSet->setMode(GL_BLEND, osg::StateAttribute::ON);
-    stateSet->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
+    state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
+    state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
+    state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
     //stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 }
 
@@ -571,20 +571,20 @@ void OSGWidget::paintGL()
     m_viewer->frame();
 }
 
-void OSGWidget::resizeGL( int width, int height )
+void OSGWidget::resizeGL( int _width, int _height )
 {
-    this->getEventQueue()->windowResize( this->x(), this->y(), width, height );
-    m_graphicsWindow->resized( this->x(), this->y(), width, height );
+    this->getEventQueue()->windowResize( this->x(), this->y(), _width, _height );
+    m_graphicsWindow->resized( this->x(), this->y(), _width, _height );
 
-    this->onResize( width, height );
+    this->onResize( _width, _height );
 }
 
-void OSGWidget::keyPressEvent( QKeyEvent* event )
+void OSGWidget::keyPressEvent( QKeyEvent* _event )
 {
-    QString keyString   = event->text();
-    const char* keyData = keyString.toLocal8Bit().data();
+    QString key_string   = _event->text();
+    const char* key_data = key_string.toLocal8Bit().data();
 
-    if( event->key() == Qt::Key_3 )
+    if( _event->key() == Qt::Key_3 )
     {
 
         // Further processing is required for the statistics handler here, so we do
@@ -596,7 +596,7 @@ void OSGWidget::keyPressEvent( QKeyEvent* event )
             osg::DisplaySettings::instance()->setStereo(true);
         }
     }
-    else if( event->key() == Qt::Key_D )
+    else if( _event->key() == Qt::Key_D )
     {
         osgDB::writeNodeFile( *m_viewer->getView(0)->getSceneData(),
                               "/tmp/sceneGraph.osg" );
@@ -604,30 +604,30 @@ void OSGWidget::keyPressEvent( QKeyEvent* event )
         return;
     }
 
-    this->getEventQueue()->keyPress( osgGA::GUIEventAdapter::KeySymbol( *keyData ) );
+    this->getEventQueue()->keyPress( osgGA::GUIEventAdapter::KeySymbol( *key_data ) );
 }
 
-void OSGWidget::keyReleaseEvent( QKeyEvent* event )
+void OSGWidget::keyReleaseEvent( QKeyEvent* _event )
 {
-    QString keyString   = event->text();
-    const char* keyData = keyString.toLocal8Bit().data();
+    QString key_string   = _event->text();
+    const char* key_data = key_string.toLocal8Bit().data();
 
-    this->getEventQueue()->keyRelease( osgGA::GUIEventAdapter::KeySymbol( *keyData ) );
+    this->getEventQueue()->keyRelease( osgGA::GUIEventAdapter::KeySymbol( *key_data ) );
 }
 
-void OSGWidget::mouseMoveEvent( QMouseEvent* event )
+void OSGWidget::mouseMoveEvent( QMouseEvent* _event )
 {
-    emit signal_onMouseMove(event->x(), event->y());
+    emit signal_onMouseMove(_event->x(), _event->y());
 
-    this->getEventQueue()->mouseMotion( static_cast<float>( event->x() ),
-                                        static_cast<float>( event->y() ) );
+    this->getEventQueue()->mouseMotion( static_cast<float>( _event->x() ),
+                                        static_cast<float>( _event->y() ) );
 }
 
-void OSGWidget::mousePressEvent( QMouseEvent* event )
+void OSGWidget::mousePressEvent( QMouseEvent* _event )
 {
 
     // for tools
-    emit signal_onMousePress(event->button(), event->x(), event->y());
+    emit signal_onMousePress(_event->button(), _event->x(), _event->y());
 
     // 1 = left mouse button
     // 2 = middle mouse button
@@ -635,7 +635,7 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
 
     unsigned int button = 0;
 
-    switch( event->button() )
+    switch( _event->button() )
     {
     case Qt::LeftButton:
     {
@@ -659,8 +659,8 @@ void OSGWidget::mousePressEvent( QMouseEvent* event )
         break;
     }
 
-    this->getEventQueue()->mouseButtonPress( static_cast<float>( event->x() ),
-                                             static_cast<float>( event->y() ),
+    this->getEventQueue()->mouseButtonPress( static_cast<float>( _event->x() ),
+                                             static_cast<float>( _event->y() ),
                                              button );
 }
 
@@ -697,7 +697,7 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
     }
 }
 
-void OSGWidget::mouseReleaseEvent(QMouseEvent* event)
+void OSGWidget::mouseReleaseEvent(QMouseEvent* _event)
 {
 
     // 1 = left mouse button
@@ -706,7 +706,7 @@ void OSGWidget::mouseReleaseEvent(QMouseEvent* event)
 
     unsigned int button = 0;
 
-    switch( event->button() )
+    switch( _event->button() )
     {
     case Qt::LeftButton:
         button = 1;
@@ -724,17 +724,17 @@ void OSGWidget::mouseReleaseEvent(QMouseEvent* event)
         break;
     }
 
-    this->getEventQueue()->mouseButtonRelease( static_cast<float>( event->x() ),
-                                               static_cast<float>( event->y() ),
+    this->getEventQueue()->mouseButtonRelease( static_cast<float>( _event->x() ),
+                                               static_cast<float>( _event->y() ),
                                                button );
 
 }
 
-void OSGWidget::wheelEvent( QWheelEvent* event )
+void OSGWidget::wheelEvent( QWheelEvent* _event )
 {
 
-    event->accept();
-    int delta = event->delta();
+    _event->accept();
+    int delta = _event->delta();
 
     // Inversion of wheel action : to be like in Google Maps
     // (just change test)
@@ -744,14 +744,14 @@ void OSGWidget::wheelEvent( QWheelEvent* event )
     this->getEventQueue()->mouseScroll( motion );
 }
 
-bool OSGWidget::event( QEvent* event )
+bool OSGWidget::event( QEvent* _event )
 {
-    bool handled = QOpenGLWidget::event( event );
+    bool handled = QOpenGLWidget::event( _event );
 
     // This ensures that the OSG widget is always going to be repainted after the
     // user performed some interaction. Doing this in the event handler ensures
     // that we don't forget about some event and prevents duplicate code.
-    switch( event->type() )
+    switch( _event->type() )
     {
     case QEvent::KeyPress:
     case QEvent::KeyRelease:
@@ -770,21 +770,21 @@ bool OSGWidget::event( QEvent* event )
     return handled;
 }
 
-void OSGWidget::onResize( int width, int height )
+void OSGWidget::onResize( int _width, int _height )
 {
     std::vector<osg::Camera*> cameras;
     m_viewer->getCameras( cameras );
 
-    cameras[0]->setViewport( 0, 0, width, height );
+    cameras[0]->setViewport( 0, 0, _width, _height );
     //cameras[1]->setViewport( this->width() / 2, 0, this->width() / 2, this->height() );
 }
 
 osgGA::EventQueue* OSGWidget::getEventQueue() const
 {
-    osgGA::EventQueue* eventQueue = m_graphicsWindow->getEventQueue();
+    osgGA::EventQueue* event_queue = m_graphicsWindow->getEventQueue();
 
-    if( eventQueue )
-        return eventQueue;
+    if( event_queue )
+        return event_queue;
     else
         throw std::runtime_error( "Unable to obtain valid event queue");
 }
@@ -861,19 +861,19 @@ void OSGWidget::home()
 }
 
 // tools : emit correspondant signal
-void OSGWidget::startTool(QString &message)
+void OSGWidget::startTool(QString &_message)
 {
-    emit signal_startTool(message);
+    emit signal_startTool(_message);
 }
 
-void OSGWidget::endTool(QString &message)
+void OSGWidget::endTool(QString &_message)
 {
-    emit signal_endTool(message);
+    emit signal_endTool(_message);
 }
 
-void OSGWidget::cancelTool(QString &message)
+void OSGWidget::cancelTool(QString &_message)
 {
-    emit signal_cancelTool(message);
+    emit signal_cancelTool(_message);
 }
 
 // convert x, y, z => lat, lon & depth
@@ -890,8 +890,8 @@ bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filenam
 {
 
     // get the translation in the  node
-    osg::MatrixTransform *mt1 = dynamic_cast <osg::MatrixTransform*> (_node.get());
-    osg::Vec3d trans = mt1->getMatrix().getTrans();
+    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
+    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
 
 
     // Create the edge of our picture
@@ -904,8 +904,8 @@ bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filenam
     int height_pixel = ceil((y_max-y_min)/_pixel_size);
     double width_meter = _pixel_size*width_pixel;
     double height_meter = _pixel_size*height_pixel;
-    double cam_center_x = (x_max+x_min)/2 +  trans.x();
-    double cam_center_y = (y_max+y_min)/2 +  trans.y();
+    double cam_center_x = (x_max+x_min)/2 +  translation.x();
+    double cam_center_y = (y_max+y_min)/2 +  translation.y();
 
 
     osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;

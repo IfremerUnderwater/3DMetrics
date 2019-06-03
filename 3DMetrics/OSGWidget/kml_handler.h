@@ -1,5 +1,5 @@
-#ifndef KMLHANDLER_H
-#define KMLHANDLER_H
+#ifndef KML_HANDLER_H
+#define KML_HANDLER_H
 
 #include <iostream>
 #include <string>
@@ -25,4 +25,4 @@ private:
     kmldom::LocationPtr m_model_location;
 };
 
-#endif // KMLHANDLER_H
+#endif // KML_HANDLER_H

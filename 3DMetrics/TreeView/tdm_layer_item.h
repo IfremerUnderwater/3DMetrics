@@ -6,8 +6,8 @@
 //              data[1] : QVariant of any kind - not displayed
 //
 
-#ifndef TdmLayerItem_H
-#define TdmLayerItem_H
+#ifndef TDM_LAYER_ITEM_H
+#define TDM_LAYER_ITEM_H
 
 #include <QList>
 #include <QVariant>
@@ -94,4 +94,4 @@ private:
 };
 
 
-#endif // TdmLayerItem_H
+#endif // TDM_LAYER_ITEM_H

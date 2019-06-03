@@ -11,13 +11,10 @@
 #include "Measurement/measurement_point.h"
 
 
-OSGAxes::OSGAxes(QWidget *parent) :
-    QWidget(parent)
+OSGAxes::OSGAxes(QWidget *_parent) :
+    QWidget(_parent)
 {
-
     m_geode = new osg::Geode();
-
-
 }
 
 OSGAxes::~OSGAxes()
@@ -36,64 +33,64 @@ void OSGAxes::clicked()
 }
 
 
-void OSGAxes::slot_toolClickedAxes(Point3D &p)
+void OSGAxes::slot_toolClickedAxes(Point3D &_point)
 {
     m_geode->removeDrawables(0, 4);
 
     // draw points
-    setP(p);
+    setP(_point);
     osg::Geometry* shape_point_drawable = new osg::Geometry();
     osg::Vec3Array* vertices = new osg::Vec3Array;
-    osg::Vec3Array* verticesX = new osg::Vec3Array;
-    osg::Vec3Array* verticesY = new osg::Vec3Array;
-    osg::Vec3Array* verticesZ = new osg::Vec3Array;
+    osg::Vec3Array* vertices_x = new osg::Vec3Array;
+    osg::Vec3Array* vertices_y = new osg::Vec3Array;
+    osg::Vec3Array* vertices_z = new osg::Vec3Array;
 
     // origin
-    osg::Vec3d point;
-    point[0] = m_p.x;
-    point[1] = m_p.y;
-    point[2] = m_p.z;
-    verticesX->push_back(point);
-    verticesY->push_back(point);
-    verticesZ->push_back(point);
+    osg::Vec3d origin_point;
+    origin_point[0] = m_point.x;
+    origin_point[1] = m_point.y;
+    origin_point[2] = m_point.z;
+    vertices_x->push_back(origin_point);
+    vertices_y->push_back(origin_point);
+    vertices_z->push_back(origin_point);
 
-    vertices->push_back(point);
+    vertices->push_back(origin_point);
 
     // x-axis
-    osg::Vec3d point1;
-    point1[0] = m_p.x +3;
-    point1[1] = m_p.y;
-    point1[2] = m_p.z;
-    verticesX->push_back(point1);
+    osg::Vec3d x_axis_point;
+    x_axis_point[0] = m_point.x +3;
+    x_axis_point[1] = m_point.y;
+    x_axis_point[2] = m_point.z;
+    vertices_x->push_back(x_axis_point);
 
-    vertices->push_back(point1);
+    vertices->push_back(x_axis_point);
 
     // y-axis
-    osg::Vec3d point2;
-    point2[0] = m_p.x;
-    point2[1] = m_p.y +3;
-    point2[2] = m_p.z;
-    verticesY->push_back(point2);
+    osg::Vec3d y_axis_point;
+    y_axis_point[0] = m_point.x;
+    y_axis_point[1] = m_point.y +3;
+    y_axis_point[2] = m_point.z;
+    vertices_y->push_back(y_axis_point);
 
-    vertices->push_back(point2);
+    vertices->push_back(y_axis_point);
 
     //z-axis
-    osg::Vec3d point3;
-    point3[0] = m_p.x;
-    point3[1] = m_p.y;
-    point3[2] = m_p.z +3;
-    verticesZ->push_back(point3);
+    osg::Vec3d z_axis_point;
+    z_axis_point[0] = m_point.x;
+    z_axis_point[1] = m_point.y;
+    z_axis_point[2] = m_point.z +3;
+    vertices_z->push_back(z_axis_point);
 
-    vertices->push_back(point3);
+    vertices->push_back(z_axis_point);
 
     // pass the created vertex array to the points geometry object.
     shape_point_drawable->setVertexArray(vertices);
     osg::Vec4Array* colors = new osg::Vec4Array;
     // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
-    osg::Vec4f colorGreen(0.0f,1.0f,0.0f,1.0f);
-    osg::Vec4f colorBlue(0.0f,0.0f,1.0f,1.0f);
-    osg::Vec4 colorRed(1.0f,1.0f,0.0f,1.0f);
-    colors->push_back(m_colorGreen);
+    osg::Vec4f green_color(0.0f,1.0f,0.0f,1.0f);
+    osg::Vec4f blue_color(0.0f,0.0f,1.0f,1.0f);
+    osg::Vec4 red_color(1.0f,0.0f,0.0f,1.0f);
+    colors->push_back(green_color);
 
     // pass the color array to points geometry, note the binding to tell the geometry
     // that only use one color for the whole object.
@@ -109,35 +106,34 @@ void OSGAxes::slot_toolClickedAxes(Point3D &p)
 
     // lines
     // x-axis
-    osg::Geometry* shape_line_drawableX = new osg::Geometry();
-    shape_line_drawableX->setVertexArray(verticesX);
-    osg::Vec4Array* colorslX = new osg::Vec4Array;
-    colorslX->push_back(colorGreen);
-    shape_line_drawableX->setColorArray(colorslX, osg::Array::BIND_OVERALL);
-    shape_line_drawableX->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP,0,verticesX->size()));
+    osg::Geometry* shape_line_drawable_x = new osg::Geometry();
+    shape_line_drawable_x->setVertexArray(vertices_x);
+    osg::Vec4Array* x_axis_color = new osg::Vec4Array;
+    x_axis_color->push_back(green_color);
+    shape_line_drawable_x->setColorArray(x_axis_color, osg::Array::BIND_OVERALL);
+    shape_line_drawable_x->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP,0,vertices_x->size()));
 
     // y-axis
-    osg::Geometry* shape_line_drawableY = new osg::Geometry();
-    shape_line_drawableY->setVertexArray(verticesY);
-    osg::Vec4Array* colorslY = new osg::Vec4Array;
-    colorslY->push_back(colorBlue);
-    shape_line_drawableY->setColorArray(colorslY, osg::Array::BIND_OVERALL);
-    shape_line_drawableY->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP,0,verticesY->size()));
+    osg::Geometry* shape_line_drawable_y = new osg::Geometry();
+    shape_line_drawable_y->setVertexArray(vertices_y);
+    osg::Vec4Array* y_axis_color = new osg::Vec4Array;
+    y_axis_color->push_back(blue_color);
+    shape_line_drawable_y->setColorArray(y_axis_color, osg::Array::BIND_OVERALL);
+    shape_line_drawable_y->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP,0,vertices_y->size()));
 
     //z-axis
-    osg::Geometry* shape_line_drawableZ = new osg::Geometry();
-    shape_line_drawableZ->setVertexArray(verticesZ);
-    osg::Vec4Array* colorslZ = new osg::Vec4Array;
-    colorslZ->push_back(colorRed);
-    shape_line_drawableZ->setColorArray(colorslZ, osg::Array::BIND_OVERALL);
-    shape_line_drawableZ->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP,0,verticesZ->size()));
+    osg::Geometry* shape_line_drawable_z = new osg::Geometry();
+    shape_line_drawable_z->setVertexArray(vertices_z);
+    osg::Vec4Array* z_axis_color = new osg::Vec4Array;
+    z_axis_color->push_back(red_color);
+    shape_line_drawable_z->setColorArray(z_axis_color, osg::Array::BIND_OVERALL);
+    shape_line_drawable_z->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_STRIP,0,vertices_z->size()));
 
 
-    m_geode->addDrawable(shape_line_drawableX);
-    m_geode->addDrawable(shape_line_drawableY);
-    m_geode->addDrawable(shape_line_drawableZ);
+    m_geode->addDrawable(shape_line_drawable_x);
+    m_geode->addDrawable(shape_line_drawable_y);
+    m_geode->addDrawable(shape_line_drawable_z);
     m_geode->addDrawable(shape_point_drawable);
-    //m_geode->addDrawable( new osg::ShapeDrawable( new osg::Cone(point1,1.0f, 2.0f) ) );
     // only one point for "point"
     slot_toolEndedAxes();
 }
@@ -150,9 +146,9 @@ void OSGAxes::slot_toolEndedAxes()
 
 }
 
-void OSGAxes::mouseDoubleClickEvent( QMouseEvent * e )
+void OSGAxes::mouseDoubleClickEvent( QMouseEvent * _e )
 {
-    if ( e->button() == Qt::LeftButton )
+    if ( _e->button() == Qt::LeftButton )
     {
         start();
     }

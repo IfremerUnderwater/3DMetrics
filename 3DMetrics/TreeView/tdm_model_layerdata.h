@@ -1,5 +1,5 @@
-#ifndef TDMMODELLAYERDATA_H
-#define TDMMODELLAYERDATA_H
+#ifndef TDM_MODEL_LAYER_DATA_H
+#define TDM_MODEL_LAYER_DATA_H
 
 #include <osg/ref_ptr>
 #include <osg/Node>
@@ -14,19 +14,19 @@ class TDMModelLayerData
 {
 public:
     TDMModelLayerData();
-    TDMModelLayerData(const QString _fileName, const osg::ref_ptr<osg::Node> _node);
+    TDMModelLayerData(const QString _filename, const osg::ref_ptr<osg::Node> _node);
     TDMModelLayerData(const TDMModelLayerData &_other);
     ~TDMModelLayerData();
 
     osg::ref_ptr<osg::Node> node() const { return m_node; }
-    QString fileName() const { return m_file_name; }
+    QString fileName() const { return m_filename; }
 
 private:
-    QString m_file_name;
+    QString m_filename;
     osg::ref_ptr<osg::Node> m_node;
 };
 
 // needed for using with QVariant
 Q_DECLARE_METATYPE(TDMModelLayerData)
 
-#endif // TDMMODELLAYERDATA_H
+#endif // TDM_MODEL_LAYER_DATA_H

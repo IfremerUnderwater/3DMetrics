@@ -1,9 +1,9 @@
 #include "decimation_dialog.h"
 #include "ui_decimation_dialog.h"
-#include "filedialog.h"
+#include "file_dialog.h"
 
-DecimationDialog::DecimationDialog(QWidget *parent) :
-    QDialog(parent),
+DecimationDialog::DecimationDialog(QWidget *_parent) :
+    QDialog(_parent),
     ui(new Ui::DecimationDialog)
 {
     ui->setupUi(this);
@@ -28,6 +28,6 @@ double DecimationDialog::getDecimationFactor()
 
 void DecimationDialog::slot_selectModel()
 {
-    QString fileName = getOpenFileName(this,tr("Select a 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
-    ui->file_to_be_decimated->setText(fileName);
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
+    ui->file_to_be_decimated->setText(filename);
 }

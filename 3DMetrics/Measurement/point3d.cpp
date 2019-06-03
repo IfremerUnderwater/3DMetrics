@@ -9,11 +9,11 @@ void Point3D::decode(QJsonObject & _obj)
 }
 
 // from JSon to object
-void Point3D::decode(QJsonObject & _obj, Point3D &offset)
+void Point3D::decode(QJsonObject & _obj, Point3D &_offset)
 {
-    x = _obj.value("x").toDouble() + offset.x;
-    y = _obj.value("y").toDouble() + offset.y;
-    z = _obj.value("z").toDouble() + offset.z;
+    x = _obj.value("x").toDouble() + _offset.x;
+    y = _obj.value("y").toDouble() + _offset.y;
+    z = _obj.value("z").toDouble() + _offset.z;
 }
 
 

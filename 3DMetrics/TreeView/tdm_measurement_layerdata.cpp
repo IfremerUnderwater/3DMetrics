@@ -5,9 +5,9 @@ TDMMeasurementLayerData::TDMMeasurementLayerData()
 {
 }
 
-TDMMeasurementLayerData::TDMMeasurementLayerData(const QString _fileName, MeasurePattern _pattern, const osg::ref_ptr<osg::Group> _group)
+TDMMeasurementLayerData::TDMMeasurementLayerData(const QString _filename, MeasPattern _pattern, const osg::ref_ptr<osg::Group> _group)
 {
-    m_file_name = _fileName;
+    m_filename = _filename;
     m_pattern = _pattern;
     m_group = _group;
 }
@@ -15,7 +15,7 @@ TDMMeasurementLayerData::TDMMeasurementLayerData(const QString _fileName, Measur
 
 TDMMeasurementLayerData::TDMMeasurementLayerData(const TDMMeasurementLayerData &_other)
 {
-    m_file_name = _other.m_file_name;
+    m_filename = _other.m_filename;
     m_pattern = _other.m_pattern;
     m_group = _other.m_group;
     m_rows = _other.m_rows;

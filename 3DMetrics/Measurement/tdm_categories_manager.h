@@ -1,5 +1,5 @@
-#ifndef CategoriesManager_H
-#define CategoriesManager_H
+#ifndef CATEGORIES_MANAGER_H
+#define CATEGORIES_MANAGER_H
 
 #include <QString>
 #include <QStringList>
@@ -24,4 +24,4 @@ private:
 
 };
 
-#endif // CategoriesManager_H
+#endif // CATEGORIES_MANAGER_H
