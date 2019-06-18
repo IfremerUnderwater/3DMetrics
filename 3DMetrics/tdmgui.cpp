@@ -1085,6 +1085,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
                 menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
+                menu->addAction(tr("Make an depth map"),this,SLOT(slot_saveDepthMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
             }
@@ -2824,7 +2825,7 @@ void TDMGui::slot_saveOrthoMap()
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
     QString name_file_orhto2D = getSaveFileName(this, tr("Save orthographic map"), "",
-                                           tr("Images (*.tiff)"));
+                                           tr("Images (*.tif)"));
 
     QFileInfo ortho2D_file_info(name_file_orhto2D);
 
@@ -2835,8 +2836,8 @@ void TDMGui::slot_saveOrthoMap()
     }
 
     // add suffix if needed
-    if (ortho2D_file_info.suffix() != ".tiff"){
-        name_file_orhto2D = name_file_orhto2D.remove(".tiff");
+    if (ortho2D_file_info.suffix() != ".tif"){
+        name_file_orhto2D = name_file_orhto2D.remove(".tif");
         ortho2D_file_info.setFile(name_file_orhto2D);
     }
 
@@ -2861,8 +2862,58 @@ void TDMGui::slot_saveOrthoMap()
         QString pixels_string = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
         double pixels = pixels_string.toDouble() ;
 
-        bool save_image = ui->display_widget->generateOrthoMap(node,name_file_orhto2D,box,pixels);
-        if (save_image) QMessageBox::information(this,"Finish","Your image have been generated");
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,box,pixels,0);
+        if (save_image) QMessageBox::information(this,"Finish","Your ortho2D image have been generated");
+     }
+}
+
+void TDMGui::slot_saveDepthMap()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    QString name_file_depth = getSaveFileName(this, tr("Save depth map"), "",
+                                           tr("Images (*.tif)"));
+
+    QFileInfo depth_file_info(name_file_depth);
+
+    // check filename is not empty
+    if(depth_file_info.fileName().isEmpty()){
+        QMessageBox::critical(this, tr("Error : save project"), tr("Error : you didn't give a name to the file"));
+        return;
+    }
+
+    // add suffix if needed
+    if (depth_file_info.suffix() != ".tif"){
+        name_file_depth = name_file_depth.remove(".tif");
+        depth_file_info.setFile(name_file_depth);
+    }
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+
+        BoxVisitor boxVisitor;
+        node->accept(boxVisitor);
+        osg::BoundingBox box = boxVisitor.getBoundingBox();
+
+
+        // SCREEN
+
+        // Collect the number of pixel that the user want
+        QString pixels_string = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
+        double pixels = pixels_string.toDouble() ;
+
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,box,pixels,1);
+        if (save_image) QMessageBox::information(this,"Finish","Your depth image have been generated");
      }
 }
 

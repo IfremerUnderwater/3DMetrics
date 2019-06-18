@@ -13,7 +13,9 @@
 #include <GeographicLib/LocalCartesian.hpp>
 
 #include "kml_handler.h"
-
+#include "gdal/gdal_priv.h"
+#include "gdal/cpl_conv.h"
+#include "gdal/ogr_spatialref.h"
 
 #define INVALID_VALUE 100000
 
@@ -137,7 +139,7 @@ public:
     void cancelTool(QString &_message);
 
     // screen2D
-    bool generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box, double _pixel_size);
+    bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box, double _pixel_size, int _num);
 
 protected:
 

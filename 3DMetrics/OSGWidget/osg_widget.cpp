@@ -42,21 +42,29 @@
 #include <osg/Point>
 #include <osg/LineWidth>
 
-#include <QMessageBox>
+#include <osg/PolygonMode>
 #include <QProcess>
 #include <math.h>
+#include <limits>
+
+#include "gdal/gdal_priv.h"
+#include "gdal/cpl_conv.h"
+#include "gdal/ogr_spatialref.h"
+
 
 struct SnapImage : public osg::Camera::DrawCallback {
-    SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box) :
+    SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
         m_filename( _filename ),
         m_ref_lat_lon( _ref_lat_lon ),
-        m_box( _box )
+        m_box( _box ),
+        m_pixel_size( _pixel_size )
     {
         m_image = new osg::Image;
         if (_gc->getTraits()) {
             int width = _gc->getTraits()->width;
             int height = _gc->getTraits()->height;
             m_image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
+            //m_image->allocateImage(width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT);
         }
     }
 
@@ -70,6 +78,7 @@ struct SnapImage : public osg::Camera::DrawCallback {
             int width = gc->getTraits()->width;
             int height = gc->getTraits()->height;
             m_image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
+            //m_image->readPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
 
             // Variable for the command line "gdal_translate"
             double lat_0  = m_ref_lat_lon.x();
@@ -80,38 +89,60 @@ struct SnapImage : public osg::Camera::DrawCallback {
             double y_min = m_box.yMin();
 
             QString png_name = QString::fromStdString(m_filename)+".png";
-            QString tiff_name = QString::fromStdString(m_filename)+".tiff";
+            QString tiff_name = QString::fromStdString(m_filename)+".tif";
+            std::string tiffname = m_filename+".tif";
+            GDALAllRegister();
+            CPLPushErrorHandler(CPLQuietErrorHandler);
+            GDALDataset *geotiffDataset;
+            GDALDriver *driverGeotiff;
 
-            // Create the .png, we need it for gdal_translate in order to have a .tiff
-            osgDB::writeImageFile(*m_image, m_filename+".png" );
-            // Run a command line from Qt
-            QProcess process;
-            QString command_line = QString("gdal_translate -a_srs \"+proj=tmerc +lat_0=%1 +lon_0=%2 +k=0.9996 +x_0=0 +y_0=0 +ellps=WGS84 +units=m\" "
-                                   "-of GTiff "
-                                   "-co \"INTERLEAVE=PIXEL\" "
-                                   "-a_ullr %3 %4 %5 %6 "
-                                   "-mask 4 --config GDAL_TIFF_INTERNAL_MASK YES "
-                                   "\"%7\" \"%8\"").arg(lat_0).arg(lon_0).arg(x_min).arg(y_max).arg(x_max).arg(y_min).arg(png_name).arg(tiff_name);
+            driverGeotiff = GetGDALDriverManager()->GetDriverByName("GTiff");
+            geotiffDataset = driverGeotiff->Create(tiffname.c_str(),width,height,4,GDT_Byte,NULL);
 
-            process.start(command_line);
+            int size = height * width;
+            for(int i=0; i<height; i++) {
+                unsigned char buffer1[width];
+                unsigned char buffer2[width];
+                unsigned char buffer3[width];
+                unsigned char buffer4[width];
+               for(int j=0; j<(width); j++) {
 
-            while(process.waitForFinished()){
-                QString output = process.readAllStandardOutput() ;
-                output += process.readAllStandardError();
-                qDebug() << output;
-            }
+                    buffer1[width-j] = m_image->data(size - ((width*i)+j))[0];
+                    buffer2[width-j] = m_image->data(size - ((width*i)+j))[1];
+                    buffer3[width-j] = m_image->data(size - ((width*i)+j))[2];
+                    buffer4[width-j] = m_image->data(size - ((width*i)+j))[3];
 
-            // Remove the .png
-            QFile pictureFile(png_name);
-            pictureFile.remove();
+                }
+               // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+
+                geotiffDataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer1,width,1,GDT_Byte,0,0);
+                geotiffDataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer2,width,1,GDT_Byte,0,0);
+                geotiffDataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer3,width,1,GDT_Byte,0,0);
+                geotiffDataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer4,width,1,GDT_Byte,0,0);
+             }
+
+            // Setup output coordinate system that is UTM 11 WGS84.
+            double adfGeoTransform[6] = { x_min, m_pixel_size, 0, y_min, 0, -m_pixel_size };
+            geotiffDataset->SetGeoTransform(adfGeoTransform);
+            char *pszSRS_WKT = NULL;
+            OGRSpatialReference oSRS;
+            oSRS.SetTM(lat_0,lon_0,0.9996,0,0);
+            oSRS.SetWellKnownGeogCS( "WGS84" );
+            oSRS.exportToWkt( &pszSRS_WKT );
+
+            geotiffDataset->SetProjection(pszSRS_WKT);
+            CPLFree( pszSRS_WKT );
+            GDALClose(geotiffDataset) ;
+
+            GDALDestroyDriverManager();
         }
-
     }
 
     std::string m_filename;
     osg::ref_ptr<osg::Image> m_image;
     QPointF m_ref_lat_lon;
     osg::BoundingBox m_box;
+    double m_pixel_size;
 };
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
@@ -886,7 +917,8 @@ void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, 
     m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _depth);
 }
 
-bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filename,osg::BoundingBox _box, double _pixel_size)
+
+bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename,osg::BoundingBox _box, double _pixel_size, int _num)
 {
 
     // get the translation in the  node
@@ -949,7 +981,7 @@ bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filenam
         osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
     geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
     geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::OFF );
+    geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     // configure postRenderCamera to draw fullscreen textured quad
     osg::Camera* post_render_camera( new osg::Camera );
@@ -959,7 +991,7 @@ bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filenam
     post_render_camera->setRenderOrder( osg::Camera::POST_RENDER );
     post_render_camera->setViewMatrix( osg::Matrixd::identity() );
     post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
-    post_render_camera->addChild( geode );
+    if (_num == 0 ) post_render_camera->addChild( geode );
     root->addChild(post_render_camera);
 
     // Create the viewer
@@ -974,8 +1006,8 @@ bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filenam
                     _box.zMax());
     osg::Vec3d normal(0,0,-1);
     viewer.getCameraManipulator()->setHomePosition(eyes,eyes,normal);
+    //viewer.getCamera()->setProjectionMatrixAsPerspective( 30.f, width_pixel/height_pixel, 1.f, 1000.f );
     viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-    viewer.getCamera()->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
     viewer.setSceneData( root.get() );
     viewer.realize();
@@ -988,126 +1020,75 @@ bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filenam
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
     std::string screen_capture_filename = _filename.toStdString();
-    SnapImage* final_draw_callback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds);
-    mrt_camera->setFinalDrawCallback(final_draw_callback);
+    if ( _num == 0 )
+    {
+        SnapImage* final_draw_callback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size);
+        mrt_camera->setFinalDrawCallback(final_draw_callback);
+    }
+
 
     viewer.home();
     viewer.frame();
+    if (_num == 1 )
+    {
+        GDALAllRegister();
+        CPLPushErrorHandler(CPLQuietErrorHandler);
+
+        GDALDataset *geotiffDatasetProf;
+        GDALDriver *driverGeotiffProf;
+
+        int noData =  -9999;
+        std::string file_prof = screen_capture_filename+"prof.tif";
+
+        driverGeotiffProf = GetGDALDriverManager()->GetDriverByName("GTiff");
+        geotiffDatasetProf = driverGeotiffProf->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
+
+        float buffer[width_pixel];
+        for(int i=0; i<height_pixel; i++) {
+           for(int j=0; j<width_pixel; j++) {
+               osg::Vec3d _inter_point;
+               osgUtil::LineSegmentIntersector::Intersections intersections;
+
+                if (viewer.computeIntersections(viewer.getCamera(),osgUtil::Intersector::WINDOW,j,height_pixel-i,intersections))
+                {
+
+                    osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
+
+                    // we get the intersections in a osg::Vec3d
+                    _inter_point = hitr->getWorldIntersectPoint();
+                    float depth_point = _inter_point.z();
+                    buffer[j] = depth_point;
+
+                }else{
+                    float depth_point = noData;
+                    buffer[j] = depth_point;
+                }
+            }
+           // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+
+            geotiffDatasetProf->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
+         }
+
+        geotiffDatasetProf->GetRasterBand(1)->SetNoDataValue(noData);
+
+        // Setup output coordinate system that is UTM 11 WGS84.
+        double adfGeoTransform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMin(), 0, -_pixel_size };
+        geotiffDatasetProf->SetGeoTransform(adfGeoTransform);
+        char *pszSRS_WKTProf = NULL;
+        OGRSpatialReference oSRSProf;
+        oSRSProf.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
+        oSRSProf.SetWellKnownGeogCS( "WGS84" );
+        oSRSProf.exportToWkt( &pszSRS_WKTProf );
+
+        geotiffDatasetProf->SetProjection(pszSRS_WKTProf);
+        CPLFree( pszSRS_WKTProf );
+        GDALClose(geotiffDatasetProf) ;
+
+        GDALDestroyDriverManager();
+    }
 
     return true;
 
-}
-
-/*
-bool OSGWidget::generateOrthoMap(osg::ref_ptr<osg::Node> _node, QString _filename,osg::BoundingBox _box, double _pixel_size)
-{
-
-    // get the translation in the  node
-    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
-    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
-
-
-    // Create the edge of our picture
-    // Set graphics contexts
-    double x_max = _box.xMax();
-    double x_min = _box.xMin();
-    double y_max = _box.yMax();
-    double y_min = _box.yMin();
-    int width_pixel = ceil((x_max-x_min)/_pixel_size);
-    int height_pixel = ceil((y_max-y_min)/_pixel_size);
-    double width_meter = _pixel_size*width_pixel;
-    double height_meter = _pixel_size*height_pixel;
-    double cam_center_x = (x_max+x_min)/2 +  translation.x();
-    double cam_center_y = (y_max+y_min)/2 +  translation.y();
-
-
-    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-    traits->x = 0;
-    traits->y = 0;
-    traits->width = width_pixel;
-    traits->height = height_pixel;
-    traits->pbuffer = true;
-    traits->alpha=1;
-    osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-
-    osg::ref_ptr< osg::Group > root( new osg::Group );
-    root->addChild( _node );
-
-
-    // setup MRT camera
-    std::vector<osg::Texture2D*> attached_textures;
-    osg::ref_ptr<osg::Camera> mrt_camera = new osg::Camera;
-    mrt_camera->setGraphicsContext(gc);
-    mrt_camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mrt_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
-    mrt_camera->setRenderOrder( osg::Camera::PRE_RENDER );
-    mrt_camera->setViewport( 0, 0, width_pixel, height_pixel );
-    mrt_camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
-
-    // Create our Texture
-    osg::Texture2D* tex = new osg::Texture2D;
-    tex->setTextureSize( width_pixel, height_pixel );
-    tex->setSourceType( GL_UNSIGNED_BYTE );
-    tex->setSourceFormat( GL_RGBA );
-    tex->setInternalFormat( GL_RGBA32F_ARB );
-    tex->setResizeNonPowerOfTwoHint( false );
-    tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
-    tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-    attached_textures.push_back( tex );
-    mrt_camera->attach( osg::Camera::COLOR_BUFFER, tex );
-
-    // set RTT textures to quad
-    osg::Geode* geode( new osg::Geode );
-    geode->addDrawable( osg::createTexturedQuadGeometry(
-        osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
-    geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
-    geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::OFF );
-
-    // configure postRenderCamera to draw fullscreen textured quad
-    osg::Camera* post_render_camera( new osg::Camera );
-    post_render_camera->setClearMask( 0 );
-    post_render_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER, osg::Camera::FRAME_BUFFER );
-    post_render_camera->setReferenceFrame( osg::Camera::ABSOLUTE_RF );
-    post_render_camera->setRenderOrder( osg::Camera::POST_RENDER );
-    post_render_camera->setViewMatrix( osg::Matrixd::identity() );
-    post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
-    post_render_camera->addChild( geode );
-    root->addChild(post_render_camera);
-
-    // Create the viewer
-    osgViewer::Viewer viewer;
-    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
-    viewer.setCamera( mrt_camera.get() );
-
-    // put our model in the center of our viewer
-    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
-    osg::Vec3d eyes(cam_center_x,
-                    cam_center_y,
-                    _box.zMax());
-    osg::Vec3d normal(0,0,-1);
-    viewer.getCameraManipulator()->setHomePosition(eyes,eyes,normal);
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-    viewer.getCamera()->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-
-    viewer.setSceneData( root.get() );
-    viewer.realize();
-
-    // setup the callback
-    osg::BoundingBox image_bounds;
-    image_bounds.xMin() = cam_center_x-width_meter/2;
-    image_bounds.xMax() = cam_center_x+width_meter/2;
-    image_bounds.yMin() = cam_center_y-height_meter/2;
-    image_bounds.yMax() = cam_center_y+height_meter/2;
-
-    std::string screen_capture_filename = _filename.toStdString();
-    SnapImage* final_draw_callback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds);
-    mrt_camera->setFinalDrawCallback(final_draw_callback);
-
-    viewer.home();
-    viewer.frame();
-
-    return true;
 
 }
- */
+
