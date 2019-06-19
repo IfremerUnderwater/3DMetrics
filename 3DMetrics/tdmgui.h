@@ -158,6 +158,9 @@ public slots:
     // generateOrthoMap 2D
     void slot_saveOrthoMap();
 
+    // generateDepthMap 2D
+    void slot_saveDepthMap();
+
     // Settings
     void slot_applySettings();
 

@@ -44,7 +44,7 @@ DESTDIR = $${RUN_DIR}
 
 include(../Scripts/BasicProcessing.pri)
 
-LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic
+LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic -lgdal
 
 INCLUDEPATH += Tools
 
