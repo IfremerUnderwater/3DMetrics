@@ -34,6 +34,11 @@ INCLUDEPATH += C:\msys64\mingw64\include\eigen3
 unix{
 INCLUDEPATH += /usr/include/eigen3
 }
+mac{
+INCLUDEPATH += /opt/local/include/eigen3
+INCLUDEPATH += /opt/local/include/
+LIBS += -L/opt/local/lib
+}
 
 DESTDIR = $${RUN_DIR}
 

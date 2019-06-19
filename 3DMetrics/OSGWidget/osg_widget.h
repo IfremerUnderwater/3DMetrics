@@ -1,9 +1,27 @@
 #ifndef OSG_WIDGET_H
 #define OSG_WIDGET_H
 
+#include <QGLWidget>
+
+#ifdef __APPLE__
+/* FIX COMPILE BUG:
+    platform: OSX v10.11.6 (15G1611) with Qt v5.9.1 from Homebrew
+    this solves the following compilation error:
+    /usr/local/Cellar/qt/5.9.1/lib/QtGui.framework/Headers/qopenglversionfunctions.h:1089:23: error: unknown type name 'GLDEBUGPROC'
+    somehow the GL_KHR_debug macro is set to 1 in qopengl.h, so
+    #ifndef GL_KHR_debug
+    typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const GLvoid *userParam);
+    #endif
+    are removed, causing the error "unknown type name" GLDEBUGPROC in qopenglversionfunctions.h
+    possible causes:
+        - some change in Qt v5.9.1 (older versions have worked, at least ~5.8 worked)
+*/
+typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum severity,GLsizei length,const GLchar *message,const GLvoid *userParam);
+#endif
+
 #include <QPoint>
-#include <QtOpenGL>
 #include <QTimer>
+#include <QtOpenGL>
 #include <QFileDialog>
 #include <QPointF>
 

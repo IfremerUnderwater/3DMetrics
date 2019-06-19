@@ -1,3 +1,4 @@
+#include <QOpenGLContext>
 #include <osg/Geometry>
 #include <osg/StateSet>
 #include <osg/Point>
