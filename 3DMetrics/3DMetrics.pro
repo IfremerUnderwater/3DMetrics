@@ -34,6 +34,11 @@ INCLUDEPATH += C:\msys64\mingw64\include\eigen3
 unix{
 INCLUDEPATH += /usr/include/eigen3
 }
+mac{
+INCLUDEPATH += /opt/local/include/eigen3
+INCLUDEPATH += /opt/local/include/
+LIBS += -L/opt/local/lib
+}
 
 DESTDIR = $${RUN_DIR}
 
@@ -78,7 +83,8 @@ SOURCES += main.cpp \
     Measurement/area_computation_visitor.cpp \
     meas_table_widget_item.cpp \
     edit_meas_dialog.cpp \
-    edit_meas_item.cpp
+    edit_meas_item.cpp \
+    about_dialog.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -115,7 +121,8 @@ HEADERS  += \
     Measurement/area_computation_visitor.h \
     meas_table_widget_item.h \
     edit_meas_dialog.h \
-    edit_meas_item.h
+    edit_meas_item.h \
+    about_dialog.h
 
 FORMS    += \
     tdmgui.ui \
@@ -128,7 +135,8 @@ FORMS    += \
     tool_line_dialog.ui \
     tool_point_dialog.ui \
     edit_meas_dialog.ui \
-    edit_meas_item.ui
+    edit_meas_item.ui \
+    about_dialog.ui
 
 RESOURCES += \
     ressources.qrc

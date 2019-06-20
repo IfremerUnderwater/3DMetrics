@@ -53,15 +53,15 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->setupUi(this);
 
     // to add in reverse because toolbar order is right to left
-    m_depth_label = new QLabel("depth", ui->coords_toolbar);
+    m_depth_label = new QLabel("", ui->coords_toolbar);
     m_depth_label->setMinimumWidth(120);
     ui->coords_toolbar->addWidget(m_depth_label);
 
-    m_lon_label = new QLabel("lon", ui->coords_toolbar);
+    m_lon_label = new QLabel("", ui->coords_toolbar);
     m_lon_label->setMinimumWidth(120);
     ui->coords_toolbar->addWidget(m_lon_label);
 
-    m_lat_label = new QLabel("lat", ui->coords_toolbar);
+    m_lat_label = new QLabel("", ui->coords_toolbar);
     m_lat_label->setMinimumWidth(120);
     ui->coords_toolbar->addWidget(m_lat_label);
 
@@ -143,7 +143,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
 
-    connect(ui->display_widget, SIGNAL(signal_onMouseMove(int,int)), this, SLOT(slot_mouseMoveInOsgWidget(int,int)));
+    connect(ui->display_widget, SIGNAL(signal_onMousePress(Qt::MouseButton, int, int)), this, SLOT(slot_mouseClickInOsgWidget(Qt::MouseButton, int,int)));
 
     // decimation
     connect(ui->decimate_model_action,SIGNAL(triggered(bool)),this,SLOT(slot_showDecimationDialog()));
@@ -2634,12 +2634,10 @@ void TDMGui::slot_attribTableWindowVisibilityChanged(bool value)
 
 void TDMGui::slot_about()
 {
-    QString title = tr("About");
-    QString text = this->windowTitle();
-    QMessageBox::about(this, title, text);
+    m_dialog.show();
 }
 
-void TDMGui::slot_mouseMoveInOsgWidget(int _x, int _y)
+void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton _button, int _x, int _y)
 {
     // clic
     bool exists = false;
@@ -2661,9 +2659,9 @@ void TDMGui::slot_mouseMoveInOsgWidget(int _x, int _y)
         }
         ui->display_widget->xyzToLatLonDepth(vect[0], vect[1], vect[2], lat, lon, depth);
 
-        m_lat_label->setText(QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
-        m_lon_label->setText(QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        m_depth_label->setText(QString::number(depth,'f',1) + "m");
+        m_lat_label->setText("lat: "+QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
+        m_lon_label->setText("lon: "+QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
+        m_depth_label->setText("depth: "+QString::number(depth,'f',1) + "m");
     }
     else
     {

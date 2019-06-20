@@ -12,5 +12,7 @@
         <file>ressources/map-marker-plus.svg</file>
         <file>ressources/vector-polyline.svg</file>
         <file>ressources/vector-closed-polyline.svg</file>
+        <file>ressources/3dm_icon.svg</file>
+        <file>ressources/ack.svg</file>
     </qresource>
 </RCC>

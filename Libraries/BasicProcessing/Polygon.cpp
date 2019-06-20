@@ -1,6 +1,7 @@
 #include "Polygon.h"
 #include "stdvectoperations.h"
 #include <cfloat>
+#include <cmath>
 
 using namespace basicproc;
 using namespace std;
@@ -241,7 +242,7 @@ double Polygon::area()
     }
 
     // Return absolute value
-    return abs(area / 2.0);
+    return fabs(area / 2.0);
 }
 
 double Polygon::clipArea(Polygon &poly2_p, poly_op operation)

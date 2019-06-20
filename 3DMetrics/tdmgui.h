@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QShortcut>
-
+#include "about_dialog.h"
 
 #include "Measurement/measurement_pattern.h"
 #include "decimation_dialog.h"
@@ -37,6 +37,7 @@ public:
 
 private:
     Ui::TDMGui *ui;
+    AboutDialog m_dialog;
 
     // Treeview
     void deleteTreeItemsData(TdmLayerItem *_item);
@@ -146,7 +147,7 @@ public slots:
     void slot_deleteAttributeLine();
 
     // mouse move in osg widget
-    void slot_mouseMoveInOsgWidget(int _x, int _y);
+    void slot_mouseClickInOsgWidget(Qt::MouseButton _button, int _x, int _y);
 
     // decimation dialog & action
     void slot_showDecimationDialog();
