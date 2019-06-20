@@ -22,7 +22,7 @@ TdmCatManager::TdmCatManager(QString _cat_file)
         }
         cat_file.close();
     }
-    else qDebug() << "Unable to open file";
+    else qDebug() << "Unable to open categories file";
 }
 
 QStringList TdmCatManager::categoriesList() const
