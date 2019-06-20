@@ -64,7 +64,6 @@ struct SnapImage : public osg::Camera::DrawCallback {
             int width = _gc->getTraits()->width;
             int height = _gc->getTraits()->height;
             m_image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
-            //m_image->allocateImage(width, height, 1, GL_DEPTH_COMPONENT, GL_FLOAT);
         }
     }
 
@@ -78,7 +77,6 @@ struct SnapImage : public osg::Camera::DrawCallback {
             int width = gc->getTraits()->width;
             int height = gc->getTraits()->height;
             m_image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
-            //m_image->readPixels(0, 0, width, height, GL_DEPTH_COMPONENT, GL_FLOAT);
 
             // Variable for the command line "gdal_translate"
             double lat_0  = m_ref_lat_lon.x();
@@ -88,51 +86,48 @@ struct SnapImage : public osg::Camera::DrawCallback {
             double y_max = m_box.yMax();
             double y_min = m_box.yMin();
 
-            QString png_name = QString::fromStdString(m_filename)+".png";
-            QString tiff_name = QString::fromStdString(m_filename)+".tif";
-            std::string tiffname = m_filename+".tif";
+            std::string tiff_name = m_filename+".tif";
             GDALAllRegister();
             CPLPushErrorHandler(CPLQuietErrorHandler);
-            GDALDataset *geotiffDataset;
-            GDALDriver *driverGeotiff;
+            GDALDataset *geotiff_dataset;
+            GDALDriver *driver_geotiff;
 
-            driverGeotiff = GetGDALDriverManager()->GetDriverByName("GTiff");
-            geotiffDataset = driverGeotiff->Create(tiffname.c_str(),width,height,4,GDT_Byte,NULL);
+            driver_geotiff = GetGDALDriverManager()->GetDriverByName("GTiff");
+            geotiff_dataset = driver_geotiff->Create(tiff_name.c_str(),width,height,4,GDT_Byte,NULL);
 
-            int size = height * width;
+            int size = height*width;
             for(int i=0; i<height; i++) {
-                unsigned char buffer1[width];
-                unsigned char buffer2[width];
-                unsigned char buffer3[width];
-                unsigned char buffer4[width];
+                unsigned char buffer_R[width];
+                unsigned char buffer_G[width];
+                unsigned char buffer_B[width];
+                unsigned char buffer_A[width];
                for(int j=0; j<(width); j++) {
-
-                    buffer1[width-j] = m_image->data(size - ((width*i)+j))[0];
-                    buffer2[width-j] = m_image->data(size - ((width*i)+j))[1];
-                    buffer3[width-j] = m_image->data(size - ((width*i)+j))[2];
-                    buffer4[width-j] = m_image->data(size - ((width*i)+j))[3];
+                    buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
+                    buffer_G[width-j] = m_image->data(size - ((width*i)+j))[1];
+                    buffer_B[width-j] = m_image->data(size - ((width*i)+j))[2];
+                    buffer_A[width-j] = m_image->data(size - ((width*i)+j))[3];
 
                 }
                // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
 
-                geotiffDataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer1,width,1,GDT_Byte,0,0);
-                geotiffDataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer2,width,1,GDT_Byte,0,0);
-                geotiffDataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer3,width,1,GDT_Byte,0,0);
-                geotiffDataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer4,width,1,GDT_Byte,0,0);
+                geotiff_dataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer_R,width,1,GDT_Byte,0,0);
+                geotiff_dataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer_G,width,1,GDT_Byte,0,0);
+                geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
+                geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
              }
 
-            // Setup output coordinate system that is UTM 11 WGS84.
-            double adfGeoTransform[6] = { x_min, m_pixel_size, 0, y_min, 0, -m_pixel_size };
-            geotiffDataset->SetGeoTransform(adfGeoTransform);
-            char *pszSRS_WKT = NULL;
-            OGRSpatialReference oSRS;
-            oSRS.SetTM(lat_0,lon_0,0.9996,0,0);
-            oSRS.SetWellKnownGeogCS( "WGS84" );
-            oSRS.exportToWkt( &pszSRS_WKT );
+            // Setup output coordinate system.
+            double geo_transform[6] = { x_min, m_pixel_size, 0, y_max, 0, -m_pixel_size };
+            geotiff_dataset->SetGeoTransform(geo_transform);
+            char *geo_reference = NULL;
+            OGRSpatialReference o_SRS;
+            o_SRS.SetTM(lat_0,lon_0,0.9996,0,0);
+            o_SRS.SetWellKnownGeogCS( "WGS84" );
+            o_SRS.exportToWkt( &geo_reference );
 
-            geotiffDataset->SetProjection(pszSRS_WKT);
-            CPLFree( pszSRS_WKT );
-            GDALClose(geotiffDataset) ;
+            geotiff_dataset->SetProjection(geo_reference);
+            CPLFree( geo_reference );
+            GDALClose(geotiff_dataset) ;
 
             GDALDestroyDriverManager();
         }
@@ -297,15 +292,29 @@ OSGWidget::OSGWidget(QWidget* parent)
     view->addEventHandler( new osgViewer::StatsHandler );
     view->addEventHandler(new KeyboardEventHandler(view->getCamera()->getOrCreateStateSet()));
 
+
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
     manipulator->setAllowThrow( false );
-
     view->setCameraManipulator( manipulator );
 
+    osg::Matrix myviewMatrix;
+    osg::Vec3d eye( 0, 0 , 0);
+    osg::Vec3d center( 0, 0 , 0 );
+    osg::Vec3d up( 0, 0, 1 );
+    myviewMatrix.makeLookAt(eye,center,up);
+
+
+
+    //view->getCameraManipulator()->setByMatrix(myviewMatrix);
+
+    //view->getCamera()->setViewMatrixAsLookAt(eye,center,up);
+    //view->getCamera()->getViewMatrixAsLookAt(eye,center,up);
+    view->getCameraManipulator()->setHomePosition(eye,center,up,true);
+
+    view->getCameraManipulator()->setByMatrix(myviewMatrix);
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
     m_viewer->realize();
-
 
     // This ensures that the widget will receive keyboard events. This focus
     // policy is not set by default. The default, Qt::NoFocus, will m_image in
@@ -325,7 +334,6 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_group = new osg::Group;
     //    m_measurement_geode = new osg::Geode;
     //    m_group->addChild(m_measurement_geode);
-
 
 }
 
@@ -1006,7 +1014,6 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                     _box.zMax());
     osg::Vec3d normal(0,0,-1);
     viewer.getCameraManipulator()->setHomePosition(eyes,eyes,normal);
-    //viewer.getCamera()->setProjectionMatrixAsPerspective( 30.f, width_pixel/height_pixel, 1.f, 1000.f );
     viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
 
     viewer.setSceneData( root.get() );
@@ -1034,21 +1041,27 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
         GDALAllRegister();
         CPLPushErrorHandler(CPLQuietErrorHandler);
 
-        GDALDataset *geotiffDatasetProf;
-        GDALDriver *driverGeotiffProf;
+        GDALDataset *geotiff_dataset_depth;
+        GDALDriver *driver_geotiff_depth;
 
-        int noData =  -9999;
-        std::string file_prof = screen_capture_filename+"prof.tif";
+        int no_data =  -9999;
+        std::string file_prof = screen_capture_filename+".tif";
 
-        driverGeotiffProf = GetGDALDriverManager()->GetDriverByName("GTiff");
-        geotiffDatasetProf = driverGeotiffProf->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
+        driver_geotiff_depth = GetGDALDriverManager()->GetDriverByName("GTiff");
+        geotiff_dataset_depth = driver_geotiff_depth->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
 
         float buffer[width_pixel];
+
+        QProgressDialog progress_dialog("Write depth map file...", "Abort depth map", 0, height_pixel, this);
+        progress_dialog.setWindowModality(Qt::WindowModal);
+
         for(int i=0; i<height_pixel; i++) {
            for(int j=0; j<width_pixel; j++) {
                osg::Vec3d _inter_point;
                osgUtil::LineSegmentIntersector::Intersections intersections;
-
+               progress_dialog.setValue(i);
+               if (progress_dialog.wasCanceled())
+                           break;
                 if (viewer.computeIntersections(viewer.getCamera(),osgUtil::Intersector::WINDOW,j,height_pixel-i,intersections))
                 {
 
@@ -1060,31 +1073,30 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                     buffer[j] = depth_point;
 
                 }else{
-                    float depth_point = noData;
+                    float depth_point = no_data;
                     buffer[j] = depth_point;
                 }
             }
            // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+            geotiff_dataset_depth->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
+     }
+    progress_dialog.setValue(height_pixel);
+    geotiff_dataset_depth->GetRasterBand(1)->SetNoDataValue(no_data);
 
-            geotiffDatasetProf->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
-         }
+    // Setup output coordinate system that is UTM 11 WGS84.
+    double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
+    geotiff_dataset_depth->SetGeoTransform(geo_transform);
+    char *geo_reference_depth = NULL;
+    OGRSpatialReference o_SRS_depth;
+    o_SRS_depth.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
+    o_SRS_depth.SetWellKnownGeogCS( "WGS84" );
+    o_SRS_depth.exportToWkt( &geo_reference_depth );
 
-        geotiffDatasetProf->GetRasterBand(1)->SetNoDataValue(noData);
+    geotiff_dataset_depth->SetProjection(geo_reference_depth);
+    CPLFree( geo_reference_depth );
+    GDALClose(geotiff_dataset_depth) ;
 
-        // Setup output coordinate system that is UTM 11 WGS84.
-        double adfGeoTransform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMin(), 0, -_pixel_size };
-        geotiffDatasetProf->SetGeoTransform(adfGeoTransform);
-        char *pszSRS_WKTProf = NULL;
-        OGRSpatialReference oSRSProf;
-        oSRSProf.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
-        oSRSProf.SetWellKnownGeogCS( "WGS84" );
-        oSRSProf.exportToWkt( &pszSRS_WKTProf );
-
-        geotiffDatasetProf->SetProjection(pszSRS_WKTProf);
-        CPLFree( pszSRS_WKTProf );
-        GDALClose(geotiffDatasetProf) ;
-
-        GDALDestroyDriverManager();
+    GDALDestroyDriverManager();
     }
 
     return true;
