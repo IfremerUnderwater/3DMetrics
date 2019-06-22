@@ -47,10 +47,6 @@
 #include <math.h>
 #include <limits>
 
-#include "gdal/gdal_priv.h"
-#include "gdal/cpl_conv.h"
-#include "gdal/ogr_spatialref.h"
-
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
