@@ -1054,11 +1054,12 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
         for(int i=0; i<height_pixel; i++) {
            for(int j=0; j<width_pixel; j++) {
+               QApplication::processEvents();
                osg::Vec3d _inter_point;
                osgUtil::LineSegmentIntersector::Intersections intersections;
                progress_dialog.setValue(i);
                if (progress_dialog.wasCanceled())
-                           break;
+                           return false;
                 if (viewer.computeIntersections(viewer.getCamera(),osgUtil::Intersector::WINDOW,j,height_pixel-i,intersections))
                 {
 
