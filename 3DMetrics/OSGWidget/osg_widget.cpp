@@ -97,20 +97,20 @@ struct SnapImage : public osg::Camera::DrawCallback {
                 unsigned char buffer_G[width];
                 unsigned char buffer_B[width];
                 unsigned char buffer_A[width];
-               for(int j=0; j<(width); j++) {
+                for(int j=0; j<(width); j++) {
                     buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
                     buffer_G[width-j] = m_image->data(size - ((width*i)+j))[1];
                     buffer_B[width-j] = m_image->data(size - ((width*i)+j))[2];
                     buffer_A[width-j] = m_image->data(size - ((width*i)+j))[3];
 
                 }
-               // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+                // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
 
                 geotiff_dataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer_R,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer_G,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
-             }
+            }
 
             // Setup output coordinate system.
             double geo_transform[6] = { x_min, m_pixel_size, 0, y_max, 0, -m_pixel_size };
@@ -983,10 +983,10 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     // set RTT textures to quad
     osg::Geode* geode( new osg::Geode );
     geode->addDrawable( osg::createTexturedQuadGeometry(
-        osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
+                            osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
     geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
     geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    //geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     // configure postRenderCamera to draw fullscreen textured quad
     osg::Camera* post_render_camera( new osg::Camera );
@@ -1053,13 +1053,13 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
         progress_dialog.setWindowModality(Qt::WindowModal);
 
         for(int i=0; i<height_pixel; i++) {
-           for(int j=0; j<width_pixel; j++) {
-               QApplication::processEvents();
-               osg::Vec3d _inter_point;
-               osgUtil::LineSegmentIntersector::Intersections intersections;
-               progress_dialog.setValue(i);
-               if (progress_dialog.wasCanceled())
-                           return false;
+            for(int j=0; j<width_pixel; j++) {
+                QApplication::processEvents();
+                osg::Vec3d _inter_point;
+                osgUtil::LineSegmentIntersector::Intersections intersections;
+                progress_dialog.setValue(i);
+                if (progress_dialog.wasCanceled())
+                    return false;
                 if (viewer.computeIntersections(viewer.getCamera(),osgUtil::Intersector::WINDOW,j,height_pixel-i,intersections))
                 {
 
@@ -1075,26 +1075,26 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                     buffer[j] = depth_point;
                 }
             }
-           // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+            // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
             geotiff_dataset_depth->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
-     }
-    progress_dialog.setValue(height_pixel);
-    geotiff_dataset_depth->GetRasterBand(1)->SetNoDataValue(no_data);
+        }
+        progress_dialog.setValue(height_pixel);
+        geotiff_dataset_depth->GetRasterBand(1)->SetNoDataValue(no_data);
 
-    // Setup output coordinate system that is UTM 11 WGS84.
-    double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
-    geotiff_dataset_depth->SetGeoTransform(geo_transform);
-    char *geo_reference_depth = NULL;
-    OGRSpatialReference o_SRS_depth;
-    o_SRS_depth.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
-    o_SRS_depth.SetWellKnownGeogCS( "WGS84" );
-    o_SRS_depth.exportToWkt( &geo_reference_depth );
+        // Setup output coordinate system that is UTM 11 WGS84.
+        double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
+        geotiff_dataset_depth->SetGeoTransform(geo_transform);
+        char *geo_reference_depth = NULL;
+        OGRSpatialReference o_SRS_depth;
+        o_SRS_depth.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
+        o_SRS_depth.SetWellKnownGeogCS( "WGS84" );
+        o_SRS_depth.exportToWkt( &geo_reference_depth );
 
-    geotiff_dataset_depth->SetProjection(geo_reference_depth);
-    CPLFree( geo_reference_depth );
-    GDALClose(geotiff_dataset_depth) ;
+        geotiff_dataset_depth->SetProjection(geo_reference_depth);
+        CPLFree( geo_reference_depth );
+        GDALClose(geotiff_dataset_depth) ;
 
-    GDALDestroyDriverManager();
+        GDALDestroyDriverManager();
     }
 
     return true;
