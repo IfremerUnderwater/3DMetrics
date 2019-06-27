@@ -58,7 +58,7 @@ void OSGAxes::slot_toolClickedAxes(Point3D &_point)
 
     // x-axis
     osg::Vec3d x_axis_point;
-    x_axis_point[0] = m_point.x +3;
+    x_axis_point[0] = m_point.x + m_scale;
     x_axis_point[1] = m_point.y;
     x_axis_point[2] = m_point.z;
     vertices_x->push_back(x_axis_point);
@@ -68,7 +68,7 @@ void OSGAxes::slot_toolClickedAxes(Point3D &_point)
     // y-axis
     osg::Vec3d y_axis_point;
     y_axis_point[0] = m_point.x;
-    y_axis_point[1] = m_point.y +3;
+    y_axis_point[1] = m_point.y + m_scale;
     y_axis_point[2] = m_point.z;
     vertices_y->push_back(y_axis_point);
 
@@ -78,7 +78,7 @@ void OSGAxes::slot_toolClickedAxes(Point3D &_point)
     osg::Vec3d z_axis_point;
     z_axis_point[0] = m_point.x;
     z_axis_point[1] = m_point.y;
-    z_axis_point[2] = m_point.z +3;
+    z_axis_point[2] = m_point.z + m_scale;
     vertices_z->push_back(z_axis_point);
 
     vertices->push_back(z_axis_point);

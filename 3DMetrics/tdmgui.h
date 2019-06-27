@@ -76,10 +76,12 @@ private:
     QString m_path_model3D;
     QString m_path_measurement;
     QString m_path_project;
-
-    QShortcut *m_ctrl_z;
+    QString m_path_snapshot;
+    QString m_path_ortho_map;
+    QString m_path_depth_map;
 
     OSGAxes m_axe;
+
 public slots:
 
     void slot_open3dModel();
@@ -167,6 +169,10 @@ public slots:
 
     // Axes
     void slot_axeWindows();
+
+    // Keys event
+    void slot_help();
+    void slot_addLine();
 
 private slots:
 

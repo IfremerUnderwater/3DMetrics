@@ -51,6 +51,8 @@
 #include "gdal/cpl_conv.h"
 #include "gdal/ogr_spatialref.h"
 
+#include "Measurement/box_visitor.h"
+
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -101,20 +103,20 @@ struct SnapImage : public osg::Camera::DrawCallback {
                 unsigned char buffer_G[width];
                 unsigned char buffer_B[width];
                 unsigned char buffer_A[width];
-               for(int j=0; j<(width); j++) {
+                for(int j=0; j<(width); j++) {
                     buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
                     buffer_G[width-j] = m_image->data(size - ((width*i)+j))[1];
                     buffer_B[width-j] = m_image->data(size - ((width*i)+j))[2];
                     buffer_A[width-j] = m_image->data(size - ((width*i)+j))[3];
 
                 }
-               // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+                // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
 
                 geotiff_dataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer_R,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer_G,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
-             }
+            }
 
             // Setup output coordinate system.
             double geo_transform[6] = { x_min, m_pixel_size, 0, y_max, 0, -m_pixel_size };
@@ -284,8 +286,10 @@ OSGWidget::OSGWidget(QWidget* parent)
     QColor clearColor = QColor(0,0,0);
     camera->setClearColor( osg::Vec4( clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF() ) );
 
-    camera->setProjectionMatrixAsPerspective( 30.f, aspectRatio, 1.f, 1000.f );
     camera->setGraphicsContext( m_graphicsWindow );
+    camera->setProjectionMatrixAsPerspective( 30.0f, aspectRatio, 1.f, 1000.f );
+
+
 
     osgViewer::View* view = new osgViewer::View;
     view->setCamera( camera );
@@ -298,21 +302,29 @@ OSGWidget::OSGWidget(QWidget* parent)
     manipulator->setAllowThrow( false );
     view->setCameraManipulator( manipulator );
 
-    osg::Matrix myviewMatrix;
-    osg::Vec3d eye( 0, 0 , 0);
+
+
+
+    /*osg::Matrix myviewMatrix;
+    osg::Vec3d eye( 0, 0 , 0 );
     osg::Vec3d center( 0, 0 , 0 );
     osg::Vec3d up( 0, 0, 1 );
-    myviewMatrix.makeLookAt(eye,center,up);
+    myviewMatrix.makeLookAt(eye,center,up);*/
 
 
+    //osg::Vec3d oeil( 0.0, m_ref_lat_lon.x(), m_ref_lat_lon.y());
+    //osg::Vec3d cible( 0.0, 0.0 , 0.0);
+    //osg::Vec3d normale(0.0, 0.0, 1.0);
+    // view->getCamera()->setViewMatrixAsLookAt(oeil, cible, normale);
 
     //view->getCameraManipulator()->setByMatrix(myviewMatrix);
 
     //view->getCamera()->setViewMatrixAsLookAt(eye,center,up);
     //view->getCamera()->getViewMatrixAsLookAt(eye,center,up);
-    view->getCameraManipulator()->setHomePosition(eye,center,up,true);
+    //view->getCameraManipulator()->setHomePosition(oeil,cible,normale);
 
-    view->getCameraManipulator()->setByMatrix(myviewMatrix);
+    //view->getCameraManipulator()->setByMatrix(myviewMatrix);
+
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
     m_viewer->realize();
@@ -500,7 +512,40 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osgViewer::View *view = m_viewer->getView(0);
 
     view->setSceneData( m_group );
+    // get the translation in the  node
+    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
+    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
+    BoxVisitor boxVisitor;
+    _node->accept(boxVisitor);
 
+    osg::BoundingBox box = boxVisitor.getBoundingBox();
+    double x_max = boxVisitor.getxmax();
+    double x_min = boxVisitor.getxmin();
+    double y_max = boxVisitor.getymax();
+    double y_min = boxVisitor.getymin();
+    double cam_center_x = (x_max+x_min)/2 +  translation.x();
+    double cam_center_y = (y_max+y_min)/2 +  translation.y();
+    double cam_center_z;
+    if( (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 )) > (y_max-y_min)/(2*tan(((30* M_PI )/ 180.0 )/2)) )
+    {
+        cam_center_z = (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
+    }
+    else
+    {
+        cam_center_z = (y_max-y_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
+    }
+
+    osg::Vec3d eye(cam_center_x,
+                    cam_center_y,
+                    box.zMin()+cam_center_z);
+    osg::Vec3d cible( cam_center_x,
+                      cam_center_y,
+                      box.zMin());
+    osg::Vec3d normal(0,0,-1);
+
+    view->getCameraManipulator()->setHomePosition(eye,cible,normal);
+
+    home();
     return true;
 }
 
@@ -624,7 +669,7 @@ void OSGWidget::keyPressEvent( QKeyEvent* _event )
     QString key_string   = _event->text();
     const char* key_data = key_string.toLocal8Bit().data();
 
-    if( _event->key() == Qt::Key_3 )
+    if( _event->key() == Qt::Key_F3 )
     {
 
         // Further processing is required for the statistics handler here, so we do
@@ -927,20 +972,28 @@ void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, 
 }
 
 
-bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename,osg::BoundingBox _box, double _pixel_size, int _num)
+bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, int _num)
 {
 
     // get the translation in the  node
     osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
     osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
 
+    BoxVisitor boxVisitor;
+    _node->accept(boxVisitor);
+
+    osg::BoundingBox box = boxVisitor.getBoundingBox();
 
     // Create the edge of our picture
     // Set graphics contexts
-    double x_max = _box.xMax();
-    double x_min = _box.xMin();
-    double y_max = _box.yMax();
-    double y_min = _box.yMin();
+    double x_max = boxVisitor.getxmax();
+    double x_min = boxVisitor.getxmin();
+    double y_max = boxVisitor.getymax();
+    double y_min = boxVisitor.getymin();
+    //double x_max = _box.xMax();
+    //double x_min = _box.xMin();
+    //double y_max = _box.yMax();
+    //double y_min = _box.yMin();
     int width_pixel = ceil((x_max-x_min)/_pixel_size);
     int height_pixel = ceil((y_max-y_min)/_pixel_size);
     double width_meter = _pixel_size*width_pixel;
@@ -955,7 +1008,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     traits->width = width_pixel;
     traits->height = height_pixel;
     traits->pbuffer = true;
-    traits->alpha=1;
+    traits->alpha =  1;
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
     osg::ref_ptr< osg::Group > root( new osg::Group );
@@ -987,10 +1040,15 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     // set RTT textures to quad
     osg::Geode* geode( new osg::Geode );
     geode->addDrawable( osg::createTexturedQuadGeometry(
-        osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
+                            osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
     geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
     geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
     geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    geode->getOrCreateStateSet()->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
+    osg::Material* material = new osg::Material;
+    material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
+    geode->getOrCreateStateSet()->setAttributeAndModes( material, osg::StateAttribute::ON );
+
 
     // configure postRenderCamera to draw fullscreen textured quad
     osg::Camera* post_render_camera( new osg::Camera );
@@ -1000,25 +1058,33 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     post_render_camera->setRenderOrder( osg::Camera::POST_RENDER );
     post_render_camera->setViewMatrix( osg::Matrixd::identity() );
     post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
+
     if (_num == 0 ) post_render_camera->addChild( geode );
+
     root->addChild(post_render_camera);
 
     // Create the viewer
     osgViewer::Viewer viewer;
     viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
     viewer.setCamera( mrt_camera.get() );
+    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
 
     // put our model in the center of our viewer
     viewer.setCameraManipulator(new osgGA::TrackballManipulator());
+    double cam_center_z= (x_max-x_min)/2;
+
     osg::Vec3d eyes(cam_center_x,
                     cam_center_y,
-                    _box.zMax());
+                    box.zMin() + cam_center_z);
+    osg::Vec3d center(cam_center_x,
+                    cam_center_y,
+                    box.zMin());
     osg::Vec3d normal(0,0,-1);
-    viewer.getCameraManipulator()->setHomePosition(eyes,eyes,normal);
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
+    viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
 
     viewer.setSceneData( root.get() );
     viewer.realize();
+    home();
 
     // setup the callback
     osg::BoundingBox image_bounds;
@@ -1057,13 +1123,13 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
         progress_dialog.setWindowModality(Qt::WindowModal);
 
         for(int i=0; i<height_pixel; i++) {
-           for(int j=0; j<width_pixel; j++) {
-               QApplication::processEvents();
-               osg::Vec3d _inter_point;
-               osgUtil::LineSegmentIntersector::Intersections intersections;
-               progress_dialog.setValue(i);
-               if (progress_dialog.wasCanceled())
-                           return false;
+            for(int j=0; j<width_pixel; j++) {
+                QApplication::processEvents();
+                osg::Vec3d _inter_point;
+                osgUtil::LineSegmentIntersector::Intersections intersections;
+                progress_dialog.setValue(i);
+                if (progress_dialog.wasCanceled())
+                    return false;
                 if (viewer.computeIntersections(viewer.getCamera(),osgUtil::Intersector::WINDOW,j,height_pixel-i,intersections))
                 {
 
@@ -1079,26 +1145,26 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                     buffer[j] = depth_point;
                 }
             }
-           // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
+            // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
             geotiff_dataset_depth->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
-     }
-    progress_dialog.setValue(height_pixel);
-    geotiff_dataset_depth->GetRasterBand(1)->SetNoDataValue(no_data);
+        }
+        progress_dialog.setValue(height_pixel);
+        geotiff_dataset_depth->GetRasterBand(1)->SetNoDataValue(no_data);
 
-    // Setup output coordinate system that is UTM 11 WGS84.
-    double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
-    geotiff_dataset_depth->SetGeoTransform(geo_transform);
-    char *geo_reference_depth = NULL;
-    OGRSpatialReference o_SRS_depth;
-    o_SRS_depth.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
-    o_SRS_depth.SetWellKnownGeogCS( "WGS84" );
-    o_SRS_depth.exportToWkt( &geo_reference_depth );
+        // Setup output coordinate system that is UTM 11 WGS84.
+        double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
+        geotiff_dataset_depth->SetGeoTransform(geo_transform);
+        char *geo_reference_depth = NULL;
+        OGRSpatialReference o_SRS_depth;
+        o_SRS_depth.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
+        o_SRS_depth.SetWellKnownGeogCS( "WGS84" );
+        o_SRS_depth.exportToWkt( &geo_reference_depth );
 
-    geotiff_dataset_depth->SetProjection(geo_reference_depth);
-    CPLFree( geo_reference_depth );
-    GDALClose(geotiff_dataset_depth) ;
+        geotiff_dataset_depth->SetProjection(geo_reference_depth);
+        CPLFree( geo_reference_depth );
+        GDALClose(geotiff_dataset_depth) ;
 
-    GDALDestroyDriverManager();
+        GDALDestroyDriverManager();
     }
 
     return true;
