@@ -47,6 +47,8 @@
 #include <math.h>
 #include <limits>
 
+#include "Measurement/box_visitor.h"
+
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -532,12 +534,12 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::Vec3d eye(cam_center_x,
                     cam_center_y,
                     box.zMin()+cam_center_z);
-    osg::Vec3d cible( cam_center_x,
+    osg::Vec3d target( cam_center_x,
                       cam_center_y,
                       box.zMin());
     osg::Vec3d normal(0,0,-1);
 
-    view->getCameraManipulator()->setHomePosition(eye,cible,normal);
+    view->getCameraManipulator()->setHomePosition(eye,target,normal);
 
     home();
     return true;
