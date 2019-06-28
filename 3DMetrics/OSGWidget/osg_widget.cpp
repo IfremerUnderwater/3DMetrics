@@ -1168,3 +1168,21 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
 }
 
+void OSGWidget::changeLight(bool _state)
+{
+    if (_state)
+    {
+        m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::ON);
+    }
+    else
+    {
+        m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+    }
+}
+
+void OSGWidget::changeStereo(bool _state)
+{
+
+    osg::DisplaySettings::instance()->setStereo(_state);
+
+}

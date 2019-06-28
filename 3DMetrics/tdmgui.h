@@ -96,8 +96,12 @@ public slots:
     void slot_openProject();
     void slot_saveProject();
 
+    // Menu "View"
     void slot_layersTreeWindow();
     void slot_attribTableWindow();
+    void slot_axeView();
+    void slot_steroView();
+    void slot_lightView();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);
@@ -166,9 +170,6 @@ public slots:
 
     // Settings
     void slot_applySettings();
-
-    // Axes
-    void slot_axeWindows();
 
     // Keys event
     void slot_help();

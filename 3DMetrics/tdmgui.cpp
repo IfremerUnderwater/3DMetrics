@@ -76,7 +76,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
-    QObject::connect(ui->add_axes, SIGNAL(triggered()),this, SLOT(slot_axeWindows()));
+    QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
+    QObject::connect(ui->add_stereo_action, SIGNAL(triggered()),this, SLOT(slot_steroView()));
+    QObject::connect(ui->add_light_action, SIGNAL(triggered()),this, SLOT(slot_lightView()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -2837,9 +2839,9 @@ void TDMGui::slot_applySettings()
 
 }
 
-void TDMGui::slot_axeWindows()
+void TDMGui::slot_axeView()
 {
-    if(ui->add_axes->isChecked())
+    if(ui->add_axes_action->isChecked())
     {
         //scale
         bool ok;
@@ -3019,5 +3021,28 @@ void TDMGui::slot_addLine()
                 if(layer_data.pattern().getNbFields() !=0 )  slot_addAttributeLine();
             }
         }
+    }
+}
+
+void TDMGui::slot_steroView()
+{
+    if(ui->add_stereo_action->isChecked())
+    {
+        ui->display_widget->changeStereo(true);
+    }
+    else
+    {
+        ui->display_widget->changeStereo(false);
+    }
+}
+void TDMGui::slot_lightView()
+{
+    if(ui->add_light_action->isChecked())
+    {
+        ui->display_widget->changeLight(false);
+    }
+    else
+    {
+        ui->display_widget->changeLight(true);
     }
 }

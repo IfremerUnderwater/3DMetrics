@@ -160,6 +160,10 @@ public:
     // screen2D
     bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, int _num);
 
+    //
+    void changeLight(bool _state);
+    void changeStereo(bool _state);
+
 protected:
 
     virtual void paintGL();

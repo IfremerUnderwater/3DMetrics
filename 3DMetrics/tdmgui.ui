@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1222</width>
-     <height>22</height>
+     <height>29</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -64,7 +64,9 @@
     <addaction name="layers_tree_window_action"/>
     <addaction name="attrib_table_window_action"/>
     <addaction name="separator"/>
-    <addaction name="add_axes"/>
+    <addaction name="add_axes_action"/>
+    <addaction name="add_stereo_action"/>
+    <addaction name="add_light_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -392,7 +394,7 @@
     <string>Take a snapshot of current view</string>
    </property>
   </action>
-  <action name="add_axes">
+  <action name="add_axes_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -404,6 +406,28 @@
    </property>
    <property name="toolTip">
     <string>Add axes on the 3D model</string>
+   </property>
+  </action>
+  <action name="add_stereo_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stéréo </string>
+   </property>
+   <property name="toolTip">
+    <string>Add stéréo on the model</string>
+   </property>
+  </action>
+  <action name="add_light_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Light</string>
+   </property>
+   <property name="toolTip">
+    <string>Add the light on the model</string>
    </property>
   </action>
  </widget>
