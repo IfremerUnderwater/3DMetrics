@@ -42,7 +42,6 @@ void AreaComputationVisitor::apply( osg::Geode &geode )
             // For our model 3D, we only have osg::PrimitiveSet::Triangle
             osg::PrimitiveSet *points = primitive_list[0];
 
-
             for(unsigned int j = 0; j < points->getNumIndices(); j=j+3)
             {
                 osg::Vec3f point_a;

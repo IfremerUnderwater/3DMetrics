@@ -27,11 +27,11 @@ public:
     Point3D point() const { return m_point; }
     void setP(Point3D _point) { m_point = _point; }
 
-
-    Point3D m_point;
-    osg::ref_ptr<osg::Geode> m_geode;
-
     osg::ref_ptr<osg::Geode> geode() const { return m_geode; }
+
+    double getScale() const { return m_scale; }
+    void setScale(double _scale) { m_scale = _scale; }
+
     void mouseDoubleClickEvent( QMouseEvent * _e );
     void start();
     void show();
@@ -45,7 +45,9 @@ public slots:
 signals:
      void signal_toolStarted(QString &_info);
 private:
-
+    Point3D m_point;
+    osg::ref_ptr<osg::Geode> m_geode;
+    double m_scale;
 };
 
 #endif // OSG_AXES_H

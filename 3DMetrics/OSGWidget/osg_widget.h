@@ -157,6 +157,7 @@ signals:
     void signal_endTool(QString &_message);
     void signal_cancelTool(QString &_message);
 
+
 public:
     // tools : emit correspondant signal
     void startTool(QString &_message);
@@ -164,7 +165,11 @@ public:
     void cancelTool(QString &_message);
 
     // screen2D
-    bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, osg::BoundingBox _box, double _pixel_size, int _num);
+    bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, int _num);
+
+    //
+    void changeLight(bool _state);
+    void changeStereo(bool _state);
 
 protected:
 

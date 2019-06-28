@@ -38,7 +38,6 @@
 #include "osg_axes.h"
 
 #include "Measurement/area_computation_visitor.h"
-#include "Measurement/box_visitor.h"
 
 #include <GeographicLib/LocalCartesian.hpp>
 
@@ -81,7 +80,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
-    QObject::connect(ui->add_axes, SIGNAL(triggered()),this, SLOT(slot_axeWindows()));
+    QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
+    QObject::connect(ui->add_stereo_action, SIGNAL(triggered()),this, SLOT(slot_steroView()));
+    QObject::connect(ui->add_light_action, SIGNAL(triggered()),this, SLOT(slot_lightView()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -185,14 +186,50 @@ TDMGui::TDMGui(QWidget *_parent) :
         m_path_project="";
         ready_to_apply = ready_to_apply && false;
     }
+    if(m_settings.contains("3DMetrics/pathSnapshot"))
+    {
+        ready_to_apply = ready_to_apply && true;
+        m_path_snapshot = m_settings.value("3DMetrics/pathSnapshot").value<QString>();
+    }else{
+        m_path_snapshot="";
+        ready_to_apply = ready_to_apply && false;
+    }
+    if(m_settings.contains("3DMetrics/pathOrthoMap"))
+    {
+        ready_to_apply = ready_to_apply && true;
+        m_path_ortho_map = m_settings.value("3DMetrics/pathOrthoMap").value<QString>();
+    }else{
+        m_path_ortho_map="";
+        ready_to_apply = ready_to_apply && false;
+    }
+    if(m_settings.contains("3DMetrics/pathDepthMap"))
+    {
+        ready_to_apply = ready_to_apply && true;
+        m_path_depth_map = m_settings.value("3DMetrics/pathDepthMap").value<QString>();
+    }else{
+        m_path_depth_map="";
+        ready_to_apply = ready_to_apply && false;
+    }
 
     if(ready_to_apply)
         slot_applySettings();
 
-    // ctrl-Z
-    m_ctrl_z = new QShortcut(this);
-    m_ctrl_z->setKey(Qt::CTRL + Qt::Key_Z);
-    connect(m_ctrl_z, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+    // Keys event
+    QShortcut *key_ctrl_z = new QShortcut(this);
+    key_ctrl_z->setKey(Qt::CTRL + Qt::Key_Z);
+    connect(key_ctrl_z, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+
+    QShortcut *key_F1 = new QShortcut(this);
+    key_F1->setKey(Qt::Key_F1);
+    connect(key_F1, SIGNAL(activated()),this, SLOT(slot_help()));
+
+    QShortcut *key_F2 = new QShortcut(this);
+    key_F2->setKey(Qt::Key_F2);
+    connect(key_F2, SIGNAL(activated()),this, SLOT(slot_addLine ()));
+
+    QShortcut *key_suppr = new QShortcut(this);
+    key_suppr->setKey(Qt::Key_Delete);
+    connect(key_suppr, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
 }
 
 TDMGui::~TDMGui()
@@ -264,8 +301,12 @@ void TDMGui::slot_open3dModel()
 
 void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *_parent, bool _select_item)
 {
-    osg::ref_ptr<osg::Node> node = _node;
-    TDMModelLayerData model_data(_filename, node);
+    if(_node == 0)
+    {
+        QMessageBox::critical(this, tr("Error : model file"), tr("Error : model file is missing"));
+        return;
+    }
+    TDMModelLayerData model_data(_filename, _node);
 
     TdmLayersModel *model = TdmLayersModel::instance();
     QFileInfo info(_filename);
@@ -276,7 +317,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
-    ui->display_widget->addNodeToScene(node);
+    ui->display_widget->addNodeToScene(_node);
 
     if(_select_item)
     {
@@ -1527,12 +1568,32 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
     QMenu *menu = new QMenu;
     QTableWidget *table = ui->attrib_table;
 
-    menu->addAction(tr("Add line"), this, SLOT(slot_addAttributeLine()));
+    QTreeView *view = ui->tree_widget;
 
-    bool has_current = table->selectionModel()->currentIndex().isValid();
-    bool has_selection = !table->selectionModel()->selection().isEmpty();
+    bool has_current_tree = view->selectionModel()->currentIndex().isValid();
+    bool has_selection_tree = !view->selectionModel()->selection().isEmpty();
+    view->closePersistentEditor(view->selectionModel()->currentIndex());
 
-    if (has_selection && has_current)
+    if(has_selection_tree && has_current_tree)
+    {
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+
+                TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
+                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line"), this, SLOT(slot_addAttributeLine()));
+            }
+        }
+    }
+
+
+    bool has_current_attrib = table->selectionModel()->currentIndex().isValid();
+    bool has_selection_attrib = !table->selectionModel()->selection().isEmpty();
+
+    if (has_selection_attrib && has_current_attrib)
     {
         menu->addAction(tr("Remove line"), this, SLOT(slot_deleteAttributeLine()));
     }
@@ -2736,8 +2797,11 @@ void TDMGui::slot_saveSnapshot()
     QImage image_capture = ui->display_widget->grabFramebuffer();
 
 
-    QString snapshot_name = getSaveFileName(this, tr("Save snapshot"), "",
-                                           tr("Images (*.jpeg)"));
+    QString snapshot_name = getSaveFileName(this, tr("Save snapshot"), m_path_snapshot,
+                                           tr("Images (*.png)"));
+
+    m_path_snapshot = snapshot_name;
+    slot_applySettings();
 
     QFileInfo snapshot_file_info(snapshot_name);
 
@@ -2748,13 +2812,13 @@ void TDMGui::slot_saveSnapshot()
     }
 
     // add suffix if needed
-    if (snapshot_file_info.suffix() != "jpeg"){
-        snapshot_name += ".jpeg";
+    if (snapshot_file_info.suffix() != "png"){
+        snapshot_name += ".png";
         snapshot_file_info.setFile(snapshot_name);
     }
 
     // save the capture
-    bool save_check = image_capture.save(snapshot_name,"jpeg");
+    bool save_check = image_capture.save(snapshot_name,"png");
 
     // check if the image has been saved
     if(save_check)
@@ -2773,14 +2837,22 @@ void TDMGui::slot_applySettings()
     m_settings.setValue("3DMetrics/pathModel3D", m_path_model3D);
     m_settings.setValue("3DMetrics/pathMeasurement", m_path_measurement);
     m_settings.setValue("3DMetrics/pathProject", m_path_project);
+    m_settings.setValue("3DMetrics/pathSnapshot", m_path_snapshot);
+    m_settings.setValue("3DMetrics/pathOrthoMap", m_path_ortho_map);
+    m_settings.setValue("3DMetrics/pathDepthMap", m_path_depth_map);
 
 }
 
-void TDMGui::slot_axeWindows()
+void TDMGui::slot_axeView()
 {
-    if(ui->add_axes->isChecked())
+    if(ui->add_axes_action->isChecked())
     {
+        //scale
+        bool ok;
+        double scale = QInputDialog::getDouble(this,tr("Scale") , tr("Enter the scale size in meter ?"), 0.0, 0, 99999,4, &ok);
+        if( !ok ) return;
         QMessageBox::information(this,tr("Information"), tr("Double click where you want to put your axe"));
+        m_axe.setScale(scale);
         m_axe.start();
         m_axe.show();
     }
@@ -2826,14 +2898,17 @@ void TDMGui::slot_saveOrthoMap()
     bool has_selection = !view->selectionModel()->selection().isEmpty();
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    QString name_file_orhto2D = getSaveFileName(this, tr("Save orthographic map"), "",
+    QString name_file_orhto2D = getSaveFileName(this, tr("Save orthographic map"), m_path_ortho_map,
                                            tr("Images (*.tif)"));
+
+    m_path_ortho_map = name_file_orhto2D;
+    slot_applySettings();
 
     QFileInfo ortho2D_file_info(name_file_orhto2D);
 
     // check filename is not empty
     if(ortho2D_file_info.fileName().isEmpty()){
-        QMessageBox::critical(this, tr("Error : save project"), tr("Error : you didn't give a name to the file"));
+        QMessageBox::critical(this, tr("Error : save orthographic map"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
@@ -2853,19 +2928,21 @@ void TDMGui::slot_saveOrthoMap()
 
         osg::Node* const node = (layer_data.node().get());
 
-        BoxVisitor boxVisitor;
-        node->accept(boxVisitor);
-        osg::BoundingBox box = boxVisitor.getBoundingBox();
-
 
         // SCREEN
 
         // Collect the number of pixel that the user want
-        QString pixels_string = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
-        double pixels = pixels_string.toDouble() ;
+        bool ok;
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0, 0, 99999,4, &ok);
+        if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,box,pixels,0);
-        if (save_image) QMessageBox::information(this,"Finish","Your ortho2D image have been generated");
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,0);
+        if (save_image) QMessageBox::information(this,"Done","Your orthographic image have been generated");
+        else
+        {
+            QMessageBox::critical(this, tr("Error : depth map file"), tr("Error : your depth image couldn't be generated"));
+            return;
+        }
      }
 }
 
@@ -2876,14 +2953,16 @@ void TDMGui::slot_saveDepthMap()
     bool has_selection = !view->selectionModel()->selection().isEmpty();
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    QString name_file_depth = getSaveFileName(this, tr("Save depth map"), "",
+    QString name_file_depth = getSaveFileName(this, tr("Save depth map"),m_path_depth_map,
                                            tr("Images (*.tif)"));
+    m_path_depth_map = name_file_depth;
+    slot_applySettings();
 
     QFileInfo depth_file_info(name_file_depth);
 
     // check filename is not empty
     if(depth_file_info.fileName().isEmpty()){
-        QMessageBox::critical(this, tr("Error : save project"), tr("Error : you didn't give a name to the file"));
+        QMessageBox::critical(this, tr("Error : save depth map"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
@@ -2903,19 +2982,71 @@ void TDMGui::slot_saveDepthMap()
 
         osg::Node* const node = (layer_data.node().get());
 
-        BoxVisitor boxVisitor;
-        node->accept(boxVisitor);
-        osg::BoundingBox box = boxVisitor.getBoundingBox();
-
-
         // SCREEN
 
         // Collect the number of pixel that the user want
-        QString pixels_string = QInputDialog::getText(this, "Pixels", "Enter the pixel size in meter ?");
-        double pixels = pixels_string.toDouble() ;
+        bool ok;
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.0, 0, 99999,4, &ok);
+        if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,box,pixels,1);
-        if (save_image) QMessageBox::information(this,"Finish","Your depth image have been generated");
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,pixels,1);
+        if (save_image) QMessageBox::information(this,"Done","Your depth image have been generated");
+        else
+        {
+            QMessageBox::critical(this, tr("Error : depth map file"), tr("Error : your depth image couldn't be generated"));
+            return;
+        }
      }
 }
 
+void TDMGui::slot_help()
+{
+    QMessageBox::information(this,"Help",".....");
+}
+
+void TDMGui::slot_addLine()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_current_tree = view->selectionModel()->currentIndex().isValid();
+    bool has_selection_tree = !view->selectionModel()->selection().isEmpty();
+    view->closePersistentEditor(view->selectionModel()->currentIndex());
+
+    if(has_selection_tree && has_current_tree)
+    {
+        TdmLayerItem *selected = TdmLayersModel::instance()->getLayerItem(
+                    view->selectionModel()->currentIndex());
+        if(selected != nullptr)
+        {
+            if(selected->type() == TdmLayerItem::MeasurementLayer)
+            {
+
+                TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
+                if(layer_data.pattern().getNbFields() !=0 )  slot_addAttributeLine();
+            }
+        }
+    }
+}
+
+void TDMGui::slot_steroView()
+{
+    if(ui->add_stereo_action->isChecked())
+    {
+        ui->display_widget->changeStereo(true);
+    }
+    else
+    {
+        ui->display_widget->changeStereo(false);
+    }
+}
+void TDMGui::slot_lightView()
+{
+    if(ui->add_light_action->isChecked())
+    {
+        ui->display_widget->changeLight(false);
+    }
+    else
+    {
+        ui->display_widget->changeLight(true);
+    }
+}
