@@ -990,10 +990,6 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     double x_min = boxVisitor.getxmin();
     double y_max = boxVisitor.getymax();
     double y_min = boxVisitor.getymin();
-    //double x_max = _box.xMax();
-    //double x_min = _box.xMin();
-    //double y_max = _box.yMax();
-    //double y_min = _box.yMin();
     int width_pixel = ceil((x_max-x_min)/_pixel_size);
     int height_pixel = ceil((y_max-y_min)/_pixel_size);
     double width_meter = _pixel_size*width_pixel;

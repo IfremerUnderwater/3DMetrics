@@ -3,6 +3,7 @@
 #include <osg/Vec4>
 #include <osg/Geometry>
 #include <vector>
+#include <limits>
 #include "box_visitor.h"
 using namespace std;
 
@@ -10,6 +11,10 @@ using namespace std;
 
 BoxVisitor::BoxVisitor() : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
 {
+    m_x_min = numeric_limits<double>::max();
+    m_x_max = numeric_limits<double>::min();
+    m_y_min = numeric_limits<double>::max();
+    m_y_max = numeric_limits<double>::min();
 }
 
 BoxVisitor::~BoxVisitor()
@@ -25,7 +30,10 @@ void BoxVisitor::apply( osg::Geode &geode )
 {
         m_box = geode.getBoundingBox();
         m_sphere = geode.getBound();
-
+        double x_min;
+        double x_max;
+        double y_min;
+        double y_max;
         unsigned int num_drawables = geode.getNumDrawables();
         for( unsigned int i = 0; i < num_drawables; i++ )
         {
@@ -45,22 +53,25 @@ void BoxVisitor::apply( osg::Geode &geode )
                 osg::Vec3f first_point;
                 // we use set->index because we want to have the good value for all our triangles from the table of all points
                 first_point = osg::Vec3f((* vertices)[points->index(0)].x(), (* vertices)[points->index(0)].y(), (* vertices)[points->index(0)].z()) ;
-                m_x_min = first_point.x();
-                m_x_max = first_point.x();
-                m_y_min = first_point.y();
-                m_y_max = first_point.y();
+                x_min = first_point.x();
+                x_max = first_point.x();
+                y_min = first_point.y();
+                y_max = first_point.y();
                 for(unsigned int j = 1; j < points->getNumIndices(); j++)
                 {
-                    osg::Vec3f point_a;
                     // we use set->index because we want to have the good value for all our triangles from the table of all points
-                    point_a = osg::Vec3f((* vertices)[points->index(j)].x(), (* vertices)[points->index(j)].y(), (* vertices)[points->index(j)].z()) ;
-                    if(point_a.x() < m_x_min) m_x_min = point_a.x();
-                    if(point_a.y() < m_y_min) m_y_min = point_a.y();
-                    if(point_a.x() > m_x_max) m_x_max = point_a.x();
-                    if(point_a.y() > m_y_max) m_y_max = point_a.y();
+                    if((* vertices)[points->index(j)].x() < x_min) x_min = (* vertices)[points->index(j)].x();
+                    if((* vertices)[points->index(j)].y() < y_min) y_min = (* vertices)[points->index(j)].y();
+                    if((* vertices)[points->index(j)].x() > x_max) x_max = (* vertices)[points->index(j)].x();
+                    if((* vertices)[points->index(j)].y() > y_max) y_max = (* vertices)[points->index(j)].y();
 
 
                 }
             }
         }
+        if(x_min < m_x_min) m_x_min = x_min;
+        if(y_min < m_y_min) m_y_min = y_min;
+        if(x_max > m_x_max) m_x_max = x_max;
+        if(y_max > m_y_max) m_y_max = y_max;
+
 }
