@@ -47,10 +47,6 @@
 #include <math.h>
 #include <limits>
 
-#include "gdal/gdal_priv.h"
-#include "gdal/cpl_conv.h"
-#include "gdal/ogr_spatialref.h"
-
 #include "Measurement/box_visitor.h"
 
 
@@ -538,12 +534,12 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::Vec3d eye(cam_center_x,
                     cam_center_y,
                     box.zMin()+cam_center_z);
-    osg::Vec3d cible( cam_center_x,
+    osg::Vec3d target( cam_center_x,
                       cam_center_y,
                       box.zMin());
     osg::Vec3d normal(0,0,-1);
 
-    view->getCameraManipulator()->setHomePosition(eye,cible,normal);
+    view->getCameraManipulator()->setHomePosition(eye,target,normal);
 
     home();
     return true;
@@ -1039,12 +1035,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                             osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
     geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
     geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
-    geode->getOrCreateStateSet()->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
-    osg::Material* material = new osg::Material;
-    material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
-    geode->getOrCreateStateSet()->setAttributeAndModes( material, osg::StateAttribute::ON );
-
+    //geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     // configure postRenderCamera to draw fullscreen textured quad
     osg::Camera* post_render_camera( new osg::Camera );

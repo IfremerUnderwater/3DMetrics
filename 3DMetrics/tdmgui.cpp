@@ -51,6 +51,10 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     ui->setupUi(this);
 
+    // set icon
+    this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
+    m_dialog.setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
+
     // to add in reverse because toolbar order is right to left
     m_depth_label = new QLabel("", ui->coords_toolbar);
     m_depth_label->setMinimumWidth(120);

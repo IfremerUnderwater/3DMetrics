@@ -140,3 +140,5 @@ FORMS    += \
 
 RESOURCES += \
     ressources.qrc
+
+RC_ICONS = ./ressources/3dm_icon.ico

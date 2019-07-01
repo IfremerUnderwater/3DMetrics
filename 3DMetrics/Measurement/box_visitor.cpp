@@ -28,50 +28,41 @@ void BoxVisitor::apply ( osg::Node &node )
 
 void BoxVisitor::apply( osg::Geode &geode )
 {
-        m_box = geode.getBoundingBox();
-        m_sphere = geode.getBound();
-        double x_min;
-        double x_max;
-        double y_min;
-        double y_max;
-        unsigned int num_drawables = geode.getNumDrawables();
-        for( unsigned int i = 0; i < num_drawables; i++ )
+    m_box = geode.getBoundingBox();
+    //m_sphere = geode.getBound();
+
+    unsigned int num_drawables = geode.getNumDrawables();
+    for( unsigned int i = 0; i < num_drawables; i++ )
+    {
+        // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
+        // every little saving counts
+        osg::Geometry *current_geometry = geode.getDrawable(i)->asGeometry();
+
+        // Only process if the drawable is geometry
+        if ( current_geometry )
         {
-            // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
-            // every little saving counts
-            osg::Geometry *current_geometry = geode.getDrawable(i)->asGeometry();
+            osg::Vec3Array *vertices = dynamic_cast<osg::Vec3Array*>(current_geometry->getVertexArray());
+            // get the list of different geometry mode which were created
+            osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
+            // For our model 3D, we only have osg::PrimitiveSet::Triangle
 
-            // Only process if the drawable is geometry
-            if ( current_geometry )
+            for(unsigned int j = 0; j < primitive_list.size(); j++)
             {
-                osg::Vec3Array *vertices = dynamic_cast<osg::Vec3Array*>(current_geometry->getVertexArray());
-                // get the list of different geometry mode which were created
-                osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
-                // For our model 3D, we only have osg::PrimitiveSet::Triangle
-                osg::PrimitiveSet *points = primitive_list[0];
 
-                osg::Vec3f first_point;
-                // we use set->index because we want to have the good value for all our triangles from the table of all points
-                first_point = osg::Vec3f((* vertices)[points->index(0)].x(), (* vertices)[points->index(0)].y(), (* vertices)[points->index(0)].z()) ;
-                x_min = first_point.x();
-                x_max = first_point.x();
-                y_min = first_point.y();
-                y_max = first_point.y();
-                for(unsigned int j = 1; j < points->getNumIndices(); j++)
+                osg::PrimitiveSet *primitive_set = primitive_list[j];
+
+                for(unsigned int k = 0; k < primitive_set->getNumIndices(); k++)
                 {
                     // we use set->index because we want to have the good value for all our triangles from the table of all points
-                    if((* vertices)[points->index(j)].x() < x_min) x_min = (* vertices)[points->index(j)].x();
-                    if((* vertices)[points->index(j)].y() < y_min) y_min = (* vertices)[points->index(j)].y();
-                    if((* vertices)[points->index(j)].x() > x_max) x_max = (* vertices)[points->index(j)].x();
-                    if((* vertices)[points->index(j)].y() > y_max) y_max = (* vertices)[points->index(j)].y();
-
-
+                    double x = (* vertices)[primitive_set->index(k)].x();
+                    double y = (* vertices)[primitive_set->index(k)].y();
+                    if(x < m_x_min) m_x_min = x;
+                    if(y < m_y_min) m_y_min = y;
+                    if(x > m_x_max) m_x_max = x;
+                    if(y > m_y_max) m_y_max = y;
                 }
             }
         }
-        if(x_min < m_x_min) m_x_min = x_min;
-        if(y_min < m_y_min) m_y_min = y_min;
-        if(x_max > m_x_max) m_x_max = x_max;
-        if(y_max > m_y_max) m_y_max = y_max;
+    }
 
 }
