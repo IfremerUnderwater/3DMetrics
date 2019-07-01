@@ -28,9 +28,6 @@ void BoxVisitor::apply ( osg::Node &node )
 
 void BoxVisitor::apply( osg::Geode &geode )
 {
-    m_box = geode.getBoundingBox();
-    //m_sphere = geode.getBound();
-
     unsigned int num_drawables = geode.getNumDrawables();
     for( unsigned int i = 0; i < num_drawables; i++ )
     {
@@ -56,13 +53,18 @@ void BoxVisitor::apply( osg::Geode &geode )
                     // we use set->index because we want to have the good value for all our triangles from the table of all points
                     double x = (* vertices)[primitive_set->index(k)].x();
                     double y = (* vertices)[primitive_set->index(k)].y();
+                    double z = (* vertices)[primitive_set->index(k)].z();
                     if(x < m_x_min) m_x_min = x;
                     if(y < m_y_min) m_y_min = y;
+                    if(z < m_z_min) m_z_min = z;
                     if(x > m_x_max) m_x_max = x;
                     if(y > m_y_max) m_y_max = y;
+                    if(z > m_z_max) m_z_max = z;
+
                 }
             }
         }
     }
+    m_box = osg::BoundingBox(m_x_min, m_y_min, m_z_min, m_x_max, m_y_max, m_z_max);
 
 }

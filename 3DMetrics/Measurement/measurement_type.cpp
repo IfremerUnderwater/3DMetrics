@@ -7,7 +7,8 @@ static QString values[MeasType::_Last] =
     QObject::tr("Point"),
     QObject::tr("Area"),
     QObject::tr("Text"),
-    QObject::tr("Category")};
+    QObject::tr("Category")
+};
 
 QString MeasType::value(const type _t)
 {

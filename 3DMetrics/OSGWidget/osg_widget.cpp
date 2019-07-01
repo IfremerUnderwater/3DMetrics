@@ -186,7 +186,7 @@ public:
             }
             else if (ea.getKey()==osgGA::GUIEventAdapter::KEY_L)
             {
-                if (_stateset->getMode(GL_LIGHTING)== osg::StateAttribute::OFF)
+                if (_stateset->getMode(GL_LIGHTING) == osg::StateAttribute::OFF)
                     _stateset->setMode(GL_LIGHTING, osg::StateAttribute::ON);
                 else
                     _stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
@@ -982,10 +982,10 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     // Create the edge of our picture
     // Set graphics contexts
-    double x_max = boxVisitor.getxmax();
-    double x_min = boxVisitor.getxmin();
-    double y_max = boxVisitor.getymax();
-    double y_min = boxVisitor.getymin();
+    double x_max = box.xMax();
+    double x_min = box.xMin();
+    double y_max = box.yMax();
+    double y_min = box.yMin();
     int width_pixel = ceil((x_max-x_min)/_pixel_size);
     int height_pixel = ceil((y_max-y_min)/_pixel_size);
     double width_meter = _pixel_size*width_pixel;
