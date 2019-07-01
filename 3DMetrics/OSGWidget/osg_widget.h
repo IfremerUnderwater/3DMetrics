@@ -191,7 +191,6 @@ protected:
 
 
 private:
-
     virtual void onResize( int _width, int _height );
 
     osgGA::EventQueue* getEventQueue() const;
@@ -216,6 +215,8 @@ private:
     QPointF m_ref_lat_lon;
     double m_ref_depth;
     GeographicLib::LocalCartesian m_ltp_proj;
+    bool m_ctrl_pressed;
+    bool m_fake_middle_click_activated;
 
 
 };
