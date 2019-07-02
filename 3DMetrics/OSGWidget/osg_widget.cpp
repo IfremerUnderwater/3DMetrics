@@ -1001,7 +1001,7 @@ void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, 
 }
 
 
-bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, int _num)
+bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type)
 {
 
     // get the translation in the  node
@@ -1079,7 +1079,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     post_render_camera->setViewMatrix( osg::Matrixd::identity() );
     post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
 
-    if (_num == 0 ) post_render_camera->addChild( geode );
+    if ( _map_type == map_type::OrthoMap ) post_render_camera->addChild( geode );
 
     root->addChild(post_render_camera);
 
@@ -1114,7 +1114,8 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
     std::string screen_capture_filename = _filename.toStdString();
-    if ( _num == 0 )
+
+    if ( _map_type == map_type::OrthoMap )
     {
         SnapImage* final_draw_callback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size);
         mrt_camera->setFinalDrawCallback(final_draw_callback);
@@ -1123,7 +1124,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     viewer.home();
     viewer.frame();
-    if (_num == 1 )
+    if ( _map_type == map_type::DepthMap )
     {
         GDALAllRegister();
         CPLPushErrorHandler(CPLQuietErrorHandler);
