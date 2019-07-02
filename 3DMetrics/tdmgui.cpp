@@ -2933,7 +2933,7 @@ void TDMGui::slot_saveOrthoMap()
 
         // Collect the number of pixel that the user want
         bool ok;
-        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0, 0, 99999,4, &ok);
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1 , 0, 99999,4, &ok);
         if( !ok ) return;
 
         bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,OSGWidget::OrthoMap);
@@ -2986,7 +2986,7 @@ void TDMGui::slot_saveDepthMap()
 
         // Collect the number of pixel that the user want
         bool ok;
-        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.0, 0, 99999,4, &ok);
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1, 0, 99999,4, &ok);
         if( !ok ) return;
 
         bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,pixels, OSGWidget::DepthMap);
