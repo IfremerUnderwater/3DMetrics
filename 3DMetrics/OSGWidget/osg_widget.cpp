@@ -1104,7 +1104,6 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     viewer.setSceneData( root.get() );
     viewer.realize();
-    home();
 
     // setup the callback
     osg::BoundingBox image_bounds;

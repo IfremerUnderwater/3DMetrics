@@ -413,7 +413,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Stéréo </string>
+    <string>Stéréo (F3)</string>
    </property>
    <property name="toolTip">
     <string>Add stéréo on the model</string>
@@ -424,7 +424,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Light</string>
+    <string>Light (L)</string>
    </property>
    <property name="toolTip">
     <string>Add the light on the model</string>
