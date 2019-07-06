@@ -50,12 +50,12 @@ void MeasPoint::encodeASCII(QString &_string)
     GeographicLib::LocalCartesian ltp_proj;
     ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
 
-    double lat,lon,depth;
-    ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, depth);
+    double lat,lon,alt;
+    ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, alt);
 
     _string = "lat=" + QString::number(lat,'f',8)+
             "\tlon="+ QString::number(lon,'f',8)+
-            "\tdepth="+ QString::number(depth,'f',3);
+            "\talt="+ QString::number(alt,'f',3);
 }
 
 void MeasPoint::updateGeode()
