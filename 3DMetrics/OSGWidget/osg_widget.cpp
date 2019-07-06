@@ -79,10 +79,8 @@ struct SnapImage : public osg::Camera::DrawCallback {
             // Variable for the command line "gdal_translate"
             double lat_0  = m_ref_lat_lon.x();
             double lon_0 = m_ref_lat_lon.y();
-            double x_max = m_box.xMax();
             double x_min = m_box.xMin();
             double y_max = m_box.yMax();
-            double y_min = m_box.yMin();
 
             std::string tiff_name = m_filename+".tif";
             GDALAllRegister();
@@ -186,7 +184,7 @@ public:
             }
             else if (ea.getKey()==osgGA::GUIEventAdapter::KEY_L)
             {
-                if (_stateset->getMode(GL_LIGHTING)== osg::StateAttribute::OFF)
+                if (_stateset->getMode(GL_LIGHTING) == osg::StateAttribute::OFF)
                     _stateset->setMode(GL_LIGHTING, osg::StateAttribute::ON);
                 else
                     _stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
@@ -259,6 +257,8 @@ OSGWidget::OSGWidget(QWidget* parent)
                                                                this->width(),
                                                                this->height() ) )
     , m_viewer( new osgViewer::CompositeViewer )
+    , m_ctrl_pressed(false)
+    , m_fake_middle_click_activated(false)
 
 {
 
@@ -296,6 +296,9 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
     manipulator->setAllowThrow( false );
+
+
+
     view->setCameraManipulator( manipulator );
 
 
@@ -515,10 +518,10 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     _node->accept(boxVisitor);
 
     osg::BoundingBox box = boxVisitor.getBoundingBox();
-    double x_max = boxVisitor.getxmax();
-    double x_min = boxVisitor.getxmin();
-    double y_max = boxVisitor.getymax();
-    double y_min = boxVisitor.getymin();
+    double x_max = box.xMax();
+    double x_min = box.xMin();
+    double y_max = box.yMax();
+    double y_min = box.yMin();
     double cam_center_x = (x_max+x_min)/2 +  translation.x();
     double cam_center_y = (y_max+y_min)/2 +  translation.y();
     double cam_center_z;
@@ -532,11 +535,11 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     }
 
     osg::Vec3d eye(cam_center_x,
-                    cam_center_y,
-                    box.zMin()+cam_center_z);
+                   cam_center_y,
+                   box.zMin() + cam_center_z);
     osg::Vec3d target( cam_center_x,
-                      cam_center_y,
-                      box.zMin());
+                       cam_center_y,
+                       box.zMin());
     osg::Vec3d normal(0,0,-1);
 
     view->getCameraManipulator()->setHomePosition(eye,target,normal);
@@ -684,6 +687,10 @@ void OSGWidget::keyPressEvent( QKeyEvent* _event )
 
         return;
     }
+    else if( _event->key() == Qt::Key_Control )
+    {
+        m_ctrl_pressed = true;
+    }
 
     this->getEventQueue()->keyPress( osgGA::GUIEventAdapter::KeySymbol( *key_data ) );
 }
@@ -692,6 +699,11 @@ void OSGWidget::keyReleaseEvent( QKeyEvent* _event )
 {
     QString key_string   = _event->text();
     const char* key_data = key_string.toLocal8Bit().data();
+
+    if( _event->key() == Qt::Key_Control )
+    {
+        m_ctrl_pressed =  false;
+    }
 
     this->getEventQueue()->keyRelease( osgGA::GUIEventAdapter::KeySymbol( *key_data ) );
 }
@@ -708,7 +720,12 @@ void OSGWidget::mousePressEvent( QMouseEvent* _event )
 {
 
     // for tools
-    emit signal_onMousePress(_event->button(), _event->x(), _event->y());
+    if( m_ctrl_pressed == true && _event->button()==Qt::LeftButton)
+    {
+        emit signal_onMousePress(Qt::MiddleButton, _event->x(), _event->y());
+    }
+    else
+        emit signal_onMousePress(_event->button(), _event->x(), _event->y());
 
     // 1 = left mouse button
     // 2 = middle mouse button
@@ -720,7 +737,14 @@ void OSGWidget::mousePressEvent( QMouseEvent* _event )
     {
     case Qt::LeftButton:
     {
-        button = 1;
+
+        if( m_ctrl_pressed == true)
+        {
+            button = 2;
+            m_fake_middle_click_activated = true;
+        }else{
+            button = 1;
+        }
     }
         break;
 
@@ -790,11 +814,20 @@ void OSGWidget::mouseReleaseEvent(QMouseEvent* _event)
     switch( _event->button() )
     {
     case Qt::LeftButton:
-        button = 1;
+        if( m_fake_middle_click_activated == true)
+        {
+            button = 2;
+            m_fake_middle_click_activated = false;
+        }
+        else
+        {
+            button = 1;
+        }
         break;
 
     case Qt::MiddleButton:
         button = 2;
+
         break;
 
     case Qt::RightButton:
@@ -968,7 +1001,7 @@ void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, 
 }
 
 
-bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, int _num)
+bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type)
 {
 
     // get the translation in the  node
@@ -982,10 +1015,10 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     // Create the edge of our picture
     // Set graphics contexts
-    double x_max = boxVisitor.getxmax();
-    double x_min = boxVisitor.getxmin();
-    double y_max = boxVisitor.getymax();
-    double y_min = boxVisitor.getymin();
+    double x_max = box.xMax();
+    double x_min = box.xMin();
+    double y_max = box.yMax();
+    double y_min = box.yMin();
     int width_pixel = ceil((x_max-x_min)/_pixel_size);
     int height_pixel = ceil((y_max-y_min)/_pixel_size);
     double width_meter = _pixel_size*width_pixel;
@@ -1046,7 +1079,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     post_render_camera->setViewMatrix( osg::Matrixd::identity() );
     post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
 
-    if (_num == 0 ) post_render_camera->addChild( geode );
+    if ( _map_type == map_type::OrthoMap ) post_render_camera->addChild( geode );
 
     root->addChild(post_render_camera);
 
@@ -1064,14 +1097,13 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                     cam_center_y,
                     box.zMin() + cam_center_z);
     osg::Vec3d center(cam_center_x,
-                    cam_center_y,
-                    box.zMin());
+                      cam_center_y,
+                      box.zMin());
     osg::Vec3d normal(0,0,-1);
     viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
 
     viewer.setSceneData( root.get() );
     viewer.realize();
-    home();
 
     // setup the callback
     osg::BoundingBox image_bounds;
@@ -1081,7 +1113,8 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
     std::string screen_capture_filename = _filename.toStdString();
-    if ( _num == 0 )
+
+    if ( _map_type == map_type::OrthoMap )
     {
         SnapImage* final_draw_callback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size);
         mrt_camera->setFinalDrawCallback(final_draw_callback);
@@ -1090,7 +1123,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     viewer.home();
     viewer.frame();
-    if (_num == 1 )
+    if ( _map_type == map_type::DepthMap )
     {
         GDALAllRegister();
         CPLPushErrorHandler(CPLQuietErrorHandler);

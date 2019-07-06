@@ -1139,7 +1139,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
 
     menu->addAction(tr("Rename"), this, SLOT(slot_renameTreeItem()));
     menu->addSeparator();
-    menu->addAction(tr("Remove item"), this, SLOT(slot_deleteRow()));
+    menu->addAction(tr("Remove item (Del)"), this, SLOT(slot_deleteRow()));
     menu->addAction(tr("Move item to toplevel"), this, SLOT(slot_moveToToplevel()));
     menu->addSeparator();
     menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
@@ -1584,7 +1584,7 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
             {
 
                 TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
-                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line"), this, SLOT(slot_addAttributeLine()));
+                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line (F1)"), this, SLOT(slot_addAttributeLine()));
             }
         }
     }
@@ -2933,10 +2933,10 @@ void TDMGui::slot_saveOrthoMap()
 
         // Collect the number of pixel that the user want
         bool ok;
-        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0, 0, 99999,4, &ok);
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1 , 0, 99999,4, &ok);
         if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,0);
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,OSGWidget::OrthoMap);
         if (save_image) QMessageBox::information(this,"Done","Your orthographic image have been generated");
         else
         {
@@ -2986,10 +2986,10 @@ void TDMGui::slot_saveDepthMap()
 
         // Collect the number of pixel that the user want
         bool ok;
-        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.0, 0, 99999,4, &ok);
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1, 0, 99999,4, &ok);
         if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,pixels,1);
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,pixels, OSGWidget::DepthMap);
         if (save_image) QMessageBox::information(this,"Done","Your depth image have been generated");
         else
         {

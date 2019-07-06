@@ -145,6 +145,11 @@ public:
     // if(m_ref_depth == INVALID_VALUE) do nothing
     void xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, double &_lon, double &_depth);
 
+    enum map_type {
+        OrthoMap = 0,
+        DepthMap = 1
+    };
+
 public slots:
 
 signals:
@@ -165,7 +170,7 @@ public:
     void cancelTool(QString &_message);
 
     // screen2D
-    bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, int _num);
+    bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type);
 
     //
     void changeLight(bool _state);
@@ -191,7 +196,6 @@ protected:
 
 
 private:
-
     virtual void onResize( int _width, int _height );
 
     osgGA::EventQueue* getEventQueue() const;
@@ -216,6 +220,8 @@ private:
     QPointF m_ref_lat_lon;
     double m_ref_depth;
     GeographicLib::LocalCartesian m_ltp_proj;
+    bool m_ctrl_pressed;
+    bool m_fake_middle_click_activated;
 
 
 };
