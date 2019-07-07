@@ -28,6 +28,6 @@ double DecimationDialog::getDecimationFactor()
 
 void DecimationDialog::slot_selectModel()
 {
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"), "", tr("3D files (*.kml *.obj)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"), "", tr("3D files (*.kml *.obj *.ply)"));
     ui->file_to_be_decimated->setText(filename);
 }

@@ -82,6 +82,13 @@ private:
 
     OSGAxes m_axe;
 
+    // shortcuts
+    QShortcut m_undo_shortcut;
+    QShortcut m_help_shortcut;
+    QShortcut m_addline_shortcut;
+    QShortcut m_stereo_shortcut;
+    QShortcut m_delete_shortcut;
+
 public slots:
 
     void slot_open3dModel();
@@ -100,8 +107,9 @@ public slots:
     void slot_layersTreeWindow();
     void slot_attribTableWindow();
     void slot_axeView();
-    void slot_steroView();
-    void slot_lightView();
+    void slot_stereoShortcut();
+    void slot_toggleStereoView();
+    void slot_toggleLight();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);

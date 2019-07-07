@@ -111,16 +111,6 @@ public:
     ///
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
-    //    ///
-    //    /// \brief getMeasurementGeode get measurement geode for tools to draw in it
-    //    /// \return measurement geode
-    //    ///
-    //    osg::ref_ptr<osg::Geode> getMeasurementGeode();
-
-    //    ///
-    //    /// \brief forceGeodeUpdate force geode data to redraw
-    //    ///
-    //    void forceGeodeUpdate();
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
 
@@ -173,8 +163,8 @@ public:
     bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type);
 
     //
-    void changeLight(bool _state);
-    void changeStereo(bool _state);
+    void enableLight(bool _state);
+    void enableStereo(bool _state);
 
 protected:
 
@@ -202,18 +192,11 @@ private:
 
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> m_graphicsWindow;
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
-    //osg::Vec3d m_intersection_point;
-
-    //osgUtil::LineSegmentIntersector::Intersections::iterator m_hitr;
 
     osg::ref_ptr<osg::Group> m_group;
 
     std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
     std::vector<osg::ref_ptr<osg::Node>> m_models;
-
-    // not used anymore
-    //std::vector<osg::ref_ptr<osg::Group>> m_groups;
-    //osg::ref_ptr<osg::Geode> m_measurement_geode;
 
     // Georef objects
     KMLHandler m_kml_handler;

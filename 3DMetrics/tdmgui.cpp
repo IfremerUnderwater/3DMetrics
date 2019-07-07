@@ -45,7 +45,12 @@ TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
     m_current_item(0),
-    m_settings("3DMetrics", "IFREMER")
+    m_settings("3DMetrics", "IFREMER"),
+    m_undo_shortcut(this),
+    m_help_shortcut(this),
+    m_addline_shortcut(this),
+    m_stereo_shortcut(this),
+    m_delete_shortcut(this)
 {
     qRegisterMetaType<MeasPattern>();
 
@@ -81,8 +86,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
-    QObject::connect(ui->add_stereo_action, SIGNAL(triggered()),this, SLOT(slot_steroView()));
-    QObject::connect(ui->add_light_action, SIGNAL(triggered()),this, SLOT(slot_lightView()));
+    QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
+    QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -215,22 +220,21 @@ TDMGui::TDMGui(QWidget *_parent) :
         slot_applySettings();
 
     // Keys event
-    QShortcut *key_ctrl_z = new QShortcut(this);
-    key_ctrl_z->setKey(Qt::CTRL + Qt::Key_Z);
-    connect(key_ctrl_z, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+    m_undo_shortcut.setKey(Qt::CTRL + Qt::Key_Z);
+    connect(&m_undo_shortcut, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
 
-    QShortcut *key_F1 = new QShortcut(this);
-    key_F1->setKey(Qt::Key_F1);
-    connect(key_F1, SIGNAL(activated()),this, SLOT(slot_help()));
+    m_help_shortcut.setKey(Qt::Key_F1);
+    connect(&m_help_shortcut, SIGNAL(activated()),this, SLOT(slot_help()));
     connect(ui->action_user_manual, SIGNAL(triggered(bool)),this, SLOT(slot_help()));
 
-    QShortcut *key_F2 = new QShortcut(this);
-    key_F2->setKey(Qt::Key_F2);
-    connect(key_F2, SIGNAL(activated()),this, SLOT(slot_addLine ()));
+    m_addline_shortcut.setKey(Qt::Key_F2);
+    connect(&m_addline_shortcut, SIGNAL(activated()),this, SLOT(slot_addLine ()));
 
-    QShortcut *key_suppr = new QShortcut(this);
-    key_suppr->setKey(Qt::Key_Delete);
-    connect(key_suppr, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
+    m_stereo_shortcut.setKey(Qt::Key_F3);
+    connect(&m_stereo_shortcut, SIGNAL(activated()),this, SLOT(slot_stereoShortcut ()));
+
+    m_delete_shortcut.setKey(Qt::Key_Delete);
+    connect(&m_delete_shortcut, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
 }
 
 TDMGui::~TDMGui()
@@ -266,7 +270,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -3040,25 +3044,39 @@ void TDMGui::slot_addLine()
     }
 }
 
-void TDMGui::slot_steroView()
+void TDMGui::slot_stereoShortcut()
 {
-    if(ui->add_stereo_action->isChecked())
+    if(ui->stereo_action->isChecked())
     {
-        ui->display_widget->changeStereo(true);
+        ui->stereo_action->setChecked(false);
+        slot_toggleStereoView();
     }
     else
     {
-        ui->display_widget->changeStereo(false);
+        ui->stereo_action->setChecked(true);
+        slot_toggleStereoView();
     }
 }
-void TDMGui::slot_lightView()
+
+void TDMGui::slot_toggleStereoView()
 {
-    if(ui->add_light_action->isChecked())
+    if(ui->stereo_action->isChecked())
     {
-        ui->display_widget->changeLight(false);
+        ui->display_widget->enableStereo(true);
     }
     else
     {
-        ui->display_widget->changeLight(true);
+        ui->display_widget->enableStereo(false);
+    }
+}
+void TDMGui::slot_toggleLight()
+{
+    if(ui->light_action->isChecked())
+    {
+        ui->display_widget->enableLight(false);
+    }
+    else
+    {
+        ui->display_widget->enableLight(true);
     }
 }
