@@ -11,6 +11,7 @@
 #include "decimation_dialog.h"
 #include "osg_axes.h"
 #include "file_open_thread.h"
+#include "meas_geom_export_dialog.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -71,6 +72,8 @@ private:
 
     DecimationDialog m_decimation_dialog;
 
+    MeasGeomExportDialog m_meas_geom_export_dialog;
+
     // Settings variable
     QSettings m_settings;
     QString m_path_model3D;
@@ -98,7 +101,10 @@ public slots:
     void slot_saveMeasurementFile();
     void slot_saveMeasurementFileAs();
 
+    // Export
     void slot_saveAttribTableToASCII();
+    void slot_showExportMeasToGeom();
+    void slot_exportMeasToGeom();
 
     void slot_openProject();
     void slot_saveProject();
@@ -182,6 +188,7 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
+
 
 private slots:
 

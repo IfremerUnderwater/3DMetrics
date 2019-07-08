@@ -84,7 +84,8 @@ SOURCES += main.cpp \
     meas_table_widget_item.cpp \
     edit_meas_dialog.cpp \
     edit_meas_item.cpp \
-    about_dialog.cpp
+    about_dialog.cpp \
+    meas_geom_export_dialog.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -122,7 +123,8 @@ HEADERS  += \
     meas_table_widget_item.h \
     edit_meas_dialog.h \
     edit_meas_item.h \
-    about_dialog.h
+    about_dialog.h \
+    meas_geom_export_dialog.h
 
 FORMS    += \
     tdmgui.ui \
@@ -136,7 +138,8 @@ FORMS    += \
     tool_point_dialog.ui \
     edit_meas_dialog.ui \
     edit_meas_item.ui \
-    about_dialog.ui
+    about_dialog.ui \
+    meas_geom_export_dialog.ui
 
 RESOURCES += \
     ressources.qrc

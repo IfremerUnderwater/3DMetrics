@@ -38,6 +38,7 @@
 #include "osg_axes.h"
 
 #include "Measurement/area_computation_visitor.h"
+#include "meas_geom_export_dialog.h"
 
 #include <GeographicLib/LocalCartesian.hpp>
 
@@ -235,6 +236,10 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     m_delete_shortcut.setKey(Qt::Key_Delete);
     connect(&m_delete_shortcut, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
+
+    // export measurement to geometry
+    connect(&m_meas_geom_export_dialog, SIGNAL(accepted()),this,SLOT(slot_exportMeasToGeom()));
+
 }
 
 TDMGui::~TDMGui()
@@ -1130,7 +1135,9 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
                 menu->addAction(tr("Edit measurement"), this, SLOT(slot_editMeasurement()));
+                menu->addAction(tr("Export measurement to geometry"), this, SLOT(slot_showExportMeasToGeom()));
                 menu->addSeparator();
+
             }
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
@@ -3078,5 +3085,24 @@ void TDMGui::slot_toggleLight()
     else
     {
         ui->display_widget->enableLight(true);
+    }
+}
+
+void TDMGui::slot_showExportMeasToGeom()
+{
+    m_meas_geom_export_dialog.show();
+}
+
+void TDMGui::slot_exportMeasToGeom()
+{
+    QString test = m_meas_geom_export_dialog.getFilename();
+    QMessageBox::information(this,"Done",test);
+    if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ASCII)
+    {
+        QMessageBox::information(this,"Done","ascii");
+    }
+    if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
+    {
+        QMessageBox::information(this,"Done","Shapefile");
     }
 }
