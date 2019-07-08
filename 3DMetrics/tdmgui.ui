@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>3D Metrics v0.5.0</string>
+   <string>3D Metrics v0.5.1</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>
@@ -29,7 +29,7 @@
      <x>0</x>
      <y>0</y>
      <width>1222</width>
-     <height>29</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -65,8 +65,8 @@
     <addaction name="attrib_table_window_action"/>
     <addaction name="separator"/>
     <addaction name="add_axes_action"/>
-    <addaction name="add_stereo_action"/>
-    <addaction name="add_light_action"/>
+    <addaction name="stereo_action"/>
+    <addaction name="light_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -408,18 +408,18 @@
     <string>Add axes on the 3D model</string>
    </property>
   </action>
-  <action name="add_stereo_action">
+  <action name="stereo_action">
    <property name="checkable">
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Stéréo (F3)</string>
+    <string>Stereo (F3)</string>
    </property>
    <property name="toolTip">
     <string>Add stéréo on the model</string>
    </property>
   </action>
-  <action name="add_light_action">
+  <action name="light_action">
    <property name="checkable">
     <bool>true</bool>
    </property>

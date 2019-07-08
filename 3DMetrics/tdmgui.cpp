@@ -1,4 +1,4 @@
- #include <QCloseEvent>
+#include <QCloseEvent>
 #include <QProcess>
 #include <QMessageBox>
 
@@ -45,7 +45,12 @@ TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
     m_current_item(0),
-    m_settings("3DMetrics", "IFREMER")
+    m_settings("3DMetrics", "IFREMER"),
+    m_undo_shortcut(this),
+    m_help_shortcut(this),
+    m_addline_shortcut(this),
+    m_stereo_shortcut(this),
+    m_delete_shortcut(this)
 {
     qRegisterMetaType<MeasPattern>();
 
@@ -81,8 +86,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
-    QObject::connect(ui->add_stereo_action, SIGNAL(triggered()),this, SLOT(slot_steroView()));
-    QObject::connect(ui->add_light_action, SIGNAL(triggered()),this, SLOT(slot_lightView()));
+    QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
+    QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -162,10 +167,10 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     // settings
     bool ready_to_apply = true;
-    if(m_settings.contains("3DMetrics/pathModel3D"))
+    if(m_settings.contains("3DMetrics/path3DModel"))
     {
         ready_to_apply = ready_to_apply && true;
-        m_path_model3D = m_settings.value("3DMetrics/pathModel3D").value<QString>();
+        m_path_model3D = m_settings.value("3DMetrics/path3DModel").value<QString>();
     }else{
         m_path_model3D="";
         ready_to_apply = ready_to_apply && false;
@@ -215,21 +220,21 @@ TDMGui::TDMGui(QWidget *_parent) :
         slot_applySettings();
 
     // Keys event
-    QShortcut *key_ctrl_z = new QShortcut(this);
-    key_ctrl_z->setKey(Qt::CTRL + Qt::Key_Z);
-    connect(key_ctrl_z, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+    m_undo_shortcut.setKey(Qt::CTRL + Qt::Key_Z);
+    connect(&m_undo_shortcut, SIGNAL(activated()),OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
 
-    QShortcut *key_F1 = new QShortcut(this);
-    key_F1->setKey(Qt::Key_F1);
-    connect(key_F1, SIGNAL(activated()),this, SLOT(slot_help()));
+    m_help_shortcut.setKey(Qt::Key_F1);
+    connect(&m_help_shortcut, SIGNAL(activated()),this, SLOT(slot_help()));
+    connect(ui->action_user_manual, SIGNAL(triggered(bool)),this, SLOT(slot_help()));
 
-    QShortcut *key_F2 = new QShortcut(this);
-    key_F2->setKey(Qt::Key_F2);
-    connect(key_F2, SIGNAL(activated()),this, SLOT(slot_addLine ()));
+    m_addline_shortcut.setKey(Qt::Key_F2);
+    connect(&m_addline_shortcut, SIGNAL(activated()),this, SLOT(slot_addLine ()));
 
-    QShortcut *key_suppr = new QShortcut(this);
-    key_suppr->setKey(Qt::Key_Delete);
-    connect(key_suppr, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
+    m_stereo_shortcut.setKey(Qt::Key_F3);
+    connect(&m_stereo_shortcut, SIGNAL(activated()),this, SLOT(slot_stereoShortcut ()));
+
+    m_delete_shortcut.setKey(Qt::Key_Delete);
+    connect(&m_delete_shortcut, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
 }
 
 TDMGui::~TDMGui()
@@ -241,9 +246,9 @@ TDMGui::~TDMGui()
 void TDMGui::closeEvent(QCloseEvent *_event)
 {
     QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Close 3DMetrics"),
-                                                                tr("Are you sure?\n"),
-                                                                QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
-                                                                QMessageBox::Yes);
+                                                                 tr("Are you sure?\n"),
+                                                                 QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                 QMessageBox::Yes);
     if (res_btn != QMessageBox::Yes)
     {
         _event->ignore();
@@ -265,7 +270,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -766,7 +771,7 @@ void TDMGui::slot_saveMeasurementFileAs()
 
     // save in file
     QString measurement_filename = getSaveFileName(this, "Save measurement : "+ name_measurement,m_path_measurement,
-                                  "*.json");
+                                                   "*.json");
 
     // save Path Measurement
     m_path_measurement = measurement_filename;
@@ -864,7 +869,7 @@ void TDMGui::slot_saveAttribTableToASCII()
 {
     // save in file
     QString out_filename = getSaveFileName(this, tr("Save measurement to csv"), "",
-                                   "*.csv");
+                                           "*.csv");
     QFileInfo fileinfo(out_filename);
 
     // check filename is not empty
@@ -1194,9 +1199,9 @@ void TDMGui::slot_deleteRow()
 
         QString msg = tr("Do you want to remove %1:\n%2").arg(item->typeName()).arg(item->getName());
         QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Row removal Confirmation"),
-                                                                    msg,
-                                                                    QMessageBox::Cancel | QMessageBox::Ok,
-                                                                    QMessageBox::Cancel);
+                                                                     msg,
+                                                                     QMessageBox::Cancel | QMessageBox::Ok,
+                                                                     QMessageBox::Cancel);
         if (res_btn != QMessageBox::Ok)
         {
             return;
@@ -1312,9 +1317,9 @@ void TDMGui::slot_patternChanged(MeasPattern _pattern)
 
     //** + confirmation
     QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
-                                                                tr("Do you want change the measurement pattern?\nLoss of data can occur"),
-                                                                QMessageBox::Yes | QMessageBox::No,
-                                                                QMessageBox::No);
+                                                                 tr("Do you want change the measurement pattern?\nLoss of data can occur"),
+                                                                 QMessageBox::Yes | QMessageBox::No,
+                                                                 QMessageBox::No);
     if (res_btn != QMessageBox::Yes)
     {
         return;
@@ -2389,9 +2394,9 @@ void TDMGui::slot_openProject()
     if(root->childCount() > 0)
     {
         QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Save project file"),
-                                                                    tr("Do you want to save current project?"),
-                                                                    QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
-                                                                    QMessageBox::Yes);
+                                                                     tr("Do you want to save current project?"),
+                                                                     QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                     QMessageBox::Yes);
         if (res_btn == QMessageBox::Yes)
         {
             slot_saveProject();
@@ -2605,9 +2610,9 @@ void TDMGui::slot_saveProject()
     if(root->childCount() > 0)
     {
         QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Save project file"),
-                                                                    tr("Saving f_nodemeasurement is mandatory before\nProceed?"),
-                                                                    QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
-                                                                    QMessageBox::Yes);
+                                                                     tr("Saving f_nodemeasurement is mandatory before\nProceed?"),
+                                                                     QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
+                                                                     QMessageBox::Yes);
         if (res_btn != QMessageBox::Yes)
         {
             QMessageBox::information(this,tr("Save project file"),tr("Project not saved"));
@@ -2627,7 +2632,7 @@ void TDMGui::slot_saveProject()
 
     // save in file
     QString project_filename = getSaveFileName(this, tr("Save project"), "",
-                                   "*.tdm");
+                                               "*.tdm");
     QFileInfo project_file_info(project_filename);
 
     // check filename is not empty
@@ -2798,7 +2803,7 @@ void TDMGui::slot_saveSnapshot()
 
 
     QString snapshot_name = getSaveFileName(this, tr("Save snapshot"), m_path_snapshot,
-                                           tr("Images (*.png)"));
+                                            tr("Images (*.png)"));
 
     m_path_snapshot = snapshot_name;
     slot_applySettings();
@@ -2834,7 +2839,7 @@ void TDMGui::slot_saveSnapshot()
 
 void TDMGui::slot_applySettings()
 {
-    m_settings.setValue("3DMetrics/pathModel3D", m_path_model3D);
+    m_settings.setValue("3DMetrics/path3DModel", m_path_model3D);
     m_settings.setValue("3DMetrics/pathMeasurement", m_path_measurement);
     m_settings.setValue("3DMetrics/pathProject", m_path_project);
     m_settings.setValue("3DMetrics/pathSnapshot", m_path_snapshot);
@@ -2888,7 +2893,7 @@ void TDMGui::slot_computeTotalArea()
         QStringList filename_split = layer_data.fileName().split("/");
         QString name3D_mode = filename_split.at(filename_split.length()-1);
         QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3D_mode+tr(" is ")+total_area_string + " m²");
-     }
+    }
 }
 
 void TDMGui::slot_saveOrthoMap()
@@ -2899,7 +2904,7 @@ void TDMGui::slot_saveOrthoMap()
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
     QString name_file_orhto2D = getSaveFileName(this, tr("Save orthographic map"), m_path_ortho_map,
-                                           tr("Images (*.tif)"));
+                                                tr("Images (*.tif)"));
 
     m_path_ortho_map = name_file_orhto2D;
     slot_applySettings();
@@ -2943,7 +2948,7 @@ void TDMGui::slot_saveOrthoMap()
             QMessageBox::critical(this, tr("Error : depth map file"), tr("Error : your depth image couldn't be generated"));
             return;
         }
-     }
+    }
 }
 
 void TDMGui::slot_saveDepthMap()
@@ -2954,7 +2959,7 @@ void TDMGui::slot_saveDepthMap()
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
     QString name_file_depth = getSaveFileName(this, tr("Save depth map"),m_path_depth_map,
-                                           tr("Images (*.tif)"));
+                                              tr("Images (*.tif)"));
     m_path_depth_map = name_file_depth;
     slot_applySettings();
 
@@ -2996,12 +3001,23 @@ void TDMGui::slot_saveDepthMap()
             QMessageBox::critical(this, tr("Error : depth map file"), tr("Error : your depth image couldn't be generated"));
             return;
         }
-     }
+    }
 }
 
 void TDMGui::slot_help()
 {
-    QMessageBox::information(this,"Help",".....");
+    QString userManualFileName = "help/3DMetricsStartGuide.pdf";
+
+    QFileInfo userManualFile(userManualFileName);
+
+    if (!userManualFile.exists()) {
+        QMessageBox::warning(this, tr("User manual"), tr("User manual file '%1' does not exist")
+                             .arg(userManualFile.absoluteFilePath()));
+        return;
+    }
+
+    QUrl url = QUrl::fromLocalFile(userManualFile.absoluteFilePath());
+    QDesktopServices::openUrl(url);
 }
 
 void TDMGui::slot_addLine()
@@ -3028,25 +3044,39 @@ void TDMGui::slot_addLine()
     }
 }
 
-void TDMGui::slot_steroView()
+void TDMGui::slot_stereoShortcut()
 {
-    if(ui->add_stereo_action->isChecked())
+    if(ui->stereo_action->isChecked())
     {
-        ui->display_widget->changeStereo(true);
+        ui->stereo_action->setChecked(false);
+        slot_toggleStereoView();
     }
     else
     {
-        ui->display_widget->changeStereo(false);
+        ui->stereo_action->setChecked(true);
+        slot_toggleStereoView();
     }
 }
-void TDMGui::slot_lightView()
+
+void TDMGui::slot_toggleStereoView()
 {
-    if(ui->add_light_action->isChecked())
+    if(ui->stereo_action->isChecked())
     {
-        ui->display_widget->changeLight(false);
+        ui->display_widget->enableStereo(true);
     }
     else
     {
-        ui->display_widget->changeLight(true);
+        ui->display_widget->enableStereo(false);
+    }
+}
+void TDMGui::slot_toggleLight()
+{
+    if(ui->light_action->isChecked())
+    {
+        ui->display_widget->enableLight(false);
+    }
+    else
+    {
+        ui->display_widget->enableLight(true);
     }
 }

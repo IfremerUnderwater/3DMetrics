@@ -668,26 +668,7 @@ void OSGWidget::keyPressEvent( QKeyEvent* _event )
     QString key_string   = _event->text();
     const char* key_data = key_string.toLocal8Bit().data();
 
-    if( _event->key() == Qt::Key_F3 )
-    {
-
-        // Further processing is required for the statistics handler here, so we do
-        // not return right away.
-        if (osg::DisplaySettings::instance()->getStereo()){
-            osg::DisplaySettings::instance()->setStereo(false);
-        }
-        else{
-            osg::DisplaySettings::instance()->setStereo(true);
-        }
-    }
-    else if( _event->key() == Qt::Key_D )
-    {
-        osgDB::writeNodeFile( *m_viewer->getView(0)->getSceneData(),
-                              "/tmp/sceneGraph.osg" );
-
-        return;
-    }
-    else if( _event->key() == Qt::Key_Control )
+    if( _event->key() == Qt::Key_Control )
     {
         m_ctrl_pressed = true;
     }
@@ -1192,7 +1173,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
 }
 
-void OSGWidget::changeLight(bool _state)
+void OSGWidget::enableLight(bool _state)
 {
     if (_state)
     {
@@ -1204,9 +1185,10 @@ void OSGWidget::changeLight(bool _state)
     }
 }
 
-void OSGWidget::changeStereo(bool _state)
+void OSGWidget::enableStereo(bool _state)
 {
 
+    //osg::DisplaySettings::instance()->setStereoMode(osg::DisplaySettings::VERTICAL_INTERLACE);
     osg::DisplaySettings::instance()->setStereo(_state);
 
 }
