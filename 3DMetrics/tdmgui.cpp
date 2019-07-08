@@ -167,10 +167,10 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     // settings
     bool ready_to_apply = true;
-    if(m_settings.contains("3DMetrics/pathModel3D"))
+    if(m_settings.contains("3DMetrics/path3DModel"))
     {
         ready_to_apply = ready_to_apply && true;
-        m_path_model3D = m_settings.value("3DMetrics/pathModel3D").value<QString>();
+        m_path_model3D = m_settings.value("3DMetrics/path3DModel").value<QString>();
     }else{
         m_path_model3D="";
         ready_to_apply = ready_to_apply && false;
@@ -2839,7 +2839,7 @@ void TDMGui::slot_saveSnapshot()
 
 void TDMGui::slot_applySettings()
 {
-    m_settings.setValue("3DMetrics/pathModel3D", m_path_model3D);
+    m_settings.setValue("3DMetrics/path3DModel", m_path_model3D);
     m_settings.setValue("3DMetrics/pathMeasurement", m_path_measurement);
     m_settings.setValue("3DMetrics/pathProject", m_path_project);
     m_settings.setValue("3DMetrics/pathSnapshot", m_path_snapshot);
