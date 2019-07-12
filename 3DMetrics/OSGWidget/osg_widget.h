@@ -152,7 +152,7 @@ signals:
     void signal_endTool(QString &_message);
     void signal_cancelTool(QString &_message);
 
-
+    void signal_activedLight(bool &_activated);
 public:
     // tools : emit correspondant signal
     void startTool(QString &_message);

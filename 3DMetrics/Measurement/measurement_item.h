@@ -23,6 +23,9 @@ public:
     // encode to ASCII
     virtual void encodeASCII(QString & _string) = 0;
 
+    // encode to Shapefile
+    virtual void encodeShapefile(QString & _string) = 0;
+
     QString fieldName() const { return m_field_name; }
 
     // create / update Geode

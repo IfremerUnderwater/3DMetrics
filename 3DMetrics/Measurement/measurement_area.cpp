@@ -136,6 +136,11 @@ void MeasArea::computeLengthAndArea()
     m_area = projPointToArea(plane_coeffs, proj_pt_area_data);
 }
 
+void MeasArea::encodeShapefile(QString &_string)
+{
+
+}
+
 void MeasArea::updateGeode()
 {
     m_geode->removeDrawables(0, 2);

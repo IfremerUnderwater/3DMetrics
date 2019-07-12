@@ -25,6 +25,9 @@ public:
     // encode to ASCII
     virtual void encodeASCII(QString & _string);
 
+    // encode to Shapefile
+    virtual void encodeShapefile(QString & _string);
+
     virtual void updateGeode() {}
 
 private:

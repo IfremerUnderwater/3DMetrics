@@ -40,6 +40,9 @@
 #include "Measurement/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
 
+#include "gdal/ogr_spatialref.h"
+#include "gdal/ogrsf_frmts.h"
+
 #include <GeographicLib/LocalCartesian.hpp>
 
 TDMGui::TDMGui(QWidget *_parent) :
@@ -51,7 +54,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     m_help_shortcut(this),
     m_addline_shortcut(this),
     m_stereo_shortcut(this),
-    m_delete_shortcut(this)
+    m_delete_shortcut(this),
+    m_light_shortcut(this)
 {
     qRegisterMetaType<MeasPattern>();
 
@@ -232,10 +236,13 @@ TDMGui::TDMGui(QWidget *_parent) :
     connect(&m_addline_shortcut, SIGNAL(activated()),this, SLOT(slot_addLine ()));
 
     m_stereo_shortcut.setKey(Qt::Key_F3);
-    connect(&m_stereo_shortcut, SIGNAL(activated()),this, SLOT(slot_stereoShortcut ()));
+    connect(&m_stereo_shortcut, SIGNAL(activated()),this, SLOT(slot_stereoShortcut()));
 
     m_delete_shortcut.setKey(Qt::Key_Delete);
     connect(&m_delete_shortcut, SIGNAL(activated()),this, SLOT(slot_deleteRow()));
+
+    m_light_shortcut.setKey(Qt::Key_L);
+    connect(&m_light_shortcut, SIGNAL(activated()),this, SLOT(slot_lightShorcut()));
 
     // export measurement to geometry
     connect(&m_meas_geom_export_dialog, SIGNAL(accepted()),this,SLOT(slot_exportMeasToGeom()));
@@ -3076,6 +3083,21 @@ void TDMGui::slot_toggleStereoView()
         ui->display_widget->enableStereo(false);
     }
 }
+
+void TDMGui::slot_lightShorcut()
+{
+    if(ui->light_action->isChecked())
+    {
+        ui->light_action->setChecked(false);
+        slot_toggleLight();
+    }
+    else
+    {
+        ui->light_action->setChecked(true);
+        slot_toggleLight();
+    }
+}
+
 void TDMGui::slot_toggleLight()
 {
     if(ui->light_action->isChecked())
@@ -3096,7 +3118,6 @@ void TDMGui::slot_showExportMeasToGeom()
 void TDMGui::slot_exportMeasToGeom()
 {
     QString test = m_meas_geom_export_dialog.getFilename();
-    QMessageBox::information(this,"Done",test);
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ASCII)
     {
         QMessageBox::information(this,"Done","ascii");
@@ -3104,5 +3125,98 @@ void TDMGui::slot_exportMeasToGeom()
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {
         QMessageBox::information(this,"Done","Shapefile");
+        QTableWidget *table = ui->attrib_table;
+        const char *pszDriverName = "ESRI Shapefile";
+        OGRSFDriver *poDriver;
+        //GDALDriver *poDriver;
+        //GDALAllRegister();
+        OGRRegisterAll();
+        //poDriver = GetGDALDriverManager()->GetDriverByName( pszDriverName );
+        poDriver =OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(pszDriverName);
+        //GDALDataset *poDS;
+        //poDS = poDriver->Create( "/home/data/DATA/3DMETRICS_test/test/shapefile/point_out.gpkg", 0, 0, 0, GDT_Unknown, NULL );
+
+        OGRDataSource *poDS;
+
+        poDS = poDriver->CreateDataSource( "/home/data/DATA/3DMETRICS_test/test/shapefile", NULL );
+
+        if( poDS == NULL )
+        {
+            printf( "Creation of output file failed.\n" );
+            //return;
+         }
+
+        /*OGRSpatialReference oSRS;
+        oSRS.SetTM(48.8446129,2.35621219,0.9996,0,0);
+        oSRS.SetWellKnownGeogCS( "WGS84" );*/
+
+        OGRLayer *poLayer;
+        poLayer = poDS->CreateLayer( "point_out", NULL, wkbPoint, NULL );
+
+        OGRFieldDefn oField( "Name", OFTString );
+        oField.SetWidth(32);
+        if( poLayer->CreateField( &oField ) != OGRERR_NONE )
+        {
+            printf( "Creating Name field failed.\n" );
+            //return;
+        }
+        char szName[33] ;
+        for(int i=0; i<table->rowCount(); i++)
+        {
+            // add row
+
+            for(int j=1; j<table->columnCount(); j++)
+            {
+                MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
+                MeasItem *item = pwidget->measItem();
+                if( item->type() == "Point")
+                {
+                    QString point;
+                    item->encodeShapefile(point);
+                    QMessageBox::information(this,"Done",point);
+                    QStringList point_split = point.split("/");
+
+
+                    OGRFeature *poFeature;
+                    poFeature = OGRFeature::CreateFeature( poLayer->GetLayerDefn() );
+                    poFeature->SetField( "Name", szName );
+                    OGRPoint pt;
+                    pt.setX( point_split.at(0).toDouble() );
+                    pt.setY( point_split.at(1).toDouble() );
+                    double test = pt.getX();
+                    double test1 = pt.getY();
+                    poFeature->SetGeometry( &pt );
+                    if( poLayer->CreateFeature( poFeature ) != OGRERR_NONE )
+                    {
+                        printf( "Failed to create feature in shapefile.\n" );
+                        //return;
+                    }
+                    OGRFeature::DestroyFeature( poFeature );
+
+                }
+
+
+
+
+            }
+
+        }
+
+        // Setup output coordinate system that is UTM 11 WGS84.
+        //double adfGeoTransform[6] = { 39.2482414, 1, 0, 147.839005, 0, -1 };
+
+        /*geotiffDataset->SetGeoTransform(adfGeoTransform);
+        char *pszSRS_WKT = NULL;
+        OGRSpatialReference oSRS;
+        oSRS.SetTM(48.8446129,2.35621219,0.9996,0,0);
+        oSRS.SetWellKnownGeogCS( "WGS84" );
+        oSRS.exportToWkt( &pszSRS_WKT );
+
+        geotiffDataset->SetProjection(pszSRS_WKT);
+        CPLFree( pszSRS_WKT );
+        GDALClose(geotiffDataset) ;
+
+        GDALDestroyDriverManager();*/
+        OGRDataSource::DestroyDataSource( poDS );
     }
 }

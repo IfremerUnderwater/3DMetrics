@@ -20,3 +20,8 @@ void MeasString::encodeASCII(QString &_string)
 {
     _string = m_val;
 }
+
+void MeasString::encodeShapefile(QString &_string)
+{
+
+}

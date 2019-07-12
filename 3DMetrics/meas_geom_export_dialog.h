@@ -39,6 +39,7 @@ private slots:
     void slot_selectPath();
     void on_ASCII_btn_clicked();
     void on_shapefile_btn_clicked();
+    void slot_apply();
 };
 
 #endif // MEAS_GEOM_EXPORT_DIALOG_H

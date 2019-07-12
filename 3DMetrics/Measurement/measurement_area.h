@@ -34,6 +34,9 @@ public:
     // encode to ASCII
     virtual void encodeASCII(QString & _string);
 
+    // encode to Shapefile
+    virtual void encodeShapefile(QString & _string);
+
     double area() { return m_area; }
     void computeLengthAndArea();
 

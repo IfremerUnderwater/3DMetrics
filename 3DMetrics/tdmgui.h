@@ -91,6 +91,7 @@ private:
     QShortcut m_addline_shortcut;
     QShortcut m_stereo_shortcut;
     QShortcut m_delete_shortcut;
+    QShortcut m_light_shortcut;
 
 public slots:
 
@@ -115,6 +116,7 @@ public slots:
     void slot_axeView();
     void slot_stereoShortcut();
     void slot_toggleStereoView();
+    void slot_lightShorcut();
     void slot_toggleLight();
 
     void slot_layersTreeWindowVisibilityChanged(bool);

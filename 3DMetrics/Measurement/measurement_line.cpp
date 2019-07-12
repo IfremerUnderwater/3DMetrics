@@ -96,6 +96,11 @@ void MeasLine::encodeASCII(QString &_string)
     _string = QString::number(m_length,'f');
 }
 
+void MeasLine::encodeShapefile(QString &_string)
+{
+
+}
+
 void MeasLine::updateGeode()
 {
     m_geode->removeDrawables(0, 2);

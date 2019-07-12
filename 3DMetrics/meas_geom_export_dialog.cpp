@@ -8,10 +8,17 @@ MeasGeomExportDialog::MeasGeomExportDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    m_point_selected = false;
+    m_line_selected = false;
+    m_area_selected = false;
+    m_filename = "";
+
     connect(ui->path_pushButton,SIGNAL(clicked(bool)),this,SLOT(slot_selectPath()));
-    if( m_filename == NULL || !ui->shapefile_btn->isChecked() || !ui->ASCII_btn->isChecked() ){
+    if( m_filename == NULL || !ui->shapefile_btn->isChecked() || !ui->ASCII_btn->isChecked()
+            || ( ui->points_checkBox->isChecked() || ui->lines_checkBox->isChecked() || ui->areas_checkBox->isChecked() ) ){
         disconnect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
     }
+    connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(slot_apply()));
 }
 
 MeasGeomExportDialog::~MeasGeomExportDialog()
@@ -36,4 +43,14 @@ void MeasGeomExportDialog::on_shapefile_btn_clicked()
 {
     m_export_type = MeasGeomExportDialog::export_type::ShapeFile;
     connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
+}
+
+void MeasGeomExportDialog::slot_apply()
+{
+   if( ui->points_checkBox->isChecked() )
+       m_point_selected = true;
+   if( ui->lines_checkBox->isChecked() )
+       m_line_selected = true;
+   if( ui->areas_checkBox->isChecked() )
+       m_area_selected = true;
 }
