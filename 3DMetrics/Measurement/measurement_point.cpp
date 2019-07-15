@@ -60,22 +60,8 @@ void MeasPoint::encodeASCII(QString &_string)
 
 void MeasPoint::encodeShapefile(QString &_string)
 {
-    /*_string = QString::number(m_point.x, 'f', 10) + "/"
-            + QString::number( m_point.y, 'f', 10) + "/"
-            + QString::number(m_point.z, 'f', 10);*/
-    QPointF ref_lat_lon;
-    double ref_depth;
-    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_depth);
-
-    GeographicLib::LocalCartesian ltp_proj;
-    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
-
-    double lat,lon,alt;
-    ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, alt);
-
-    _string = QString::number(lat,'f',8) + "/" +
-             QString::number(lon,'f',8);
-
+    _string = QString::number(m_point.x, 'f', 10) + "/"
+            + QString::number( m_point.y, 'f', 10);
 }
 
 void MeasPoint::updateGeode()

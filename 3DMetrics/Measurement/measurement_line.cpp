@@ -98,6 +98,12 @@ void MeasLine::encodeASCII(QString &_string)
 
 void MeasLine::encodeShapefile(QString &_string)
 {
+    for(int i=0; i<m_array.length(); i++)
+    {
+        _string = _string
+                + QString::number(m_array[i].x,'f',10) + "/"
+                + QString::number(m_array[i].y, 'f', 10) + "/";
+    }
 
 }
 
