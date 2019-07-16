@@ -3117,7 +3117,9 @@ void TDMGui::slot_showExportMeasToGeom()
 
 void TDMGui::slot_exportMeasToGeom()
 {
-    QString test = m_meas_geom_export_dialog.getFilename();
+    QFile path(m_meas_geom_export_dialog.getFilename());
+    QFileInfo path_info(path.fileName());
+    QMessageBox::information(this,"Done",path_info.absolutePath() + "      ma   " +path_info.fileName());
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ASCII)
     {
         QMessageBox::information(this,"Done","ascii");
@@ -3128,17 +3130,10 @@ void TDMGui::slot_exportMeasToGeom()
         QTableWidget *table = ui->attrib_table;
         const char *pszDriverName = "ESRI Shapefile";
         OGRSFDriver *poDriver;
-        //GDALDriver *poDriver;
-        //GDALAllRegister();
         OGRRegisterAll();
-        //poDriver = GetGDALDriverManager()->GetDriverByName( pszDriverName );
         poDriver =OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(pszDriverName);
-        //GDALDataset *poDS;
-        //poDS = poDriver->Create( "/home/data/DATA/3DMETRICS_test/test/shapefile/point_out.gpkg", 0, 0, 0, GDT_Unknown, NULL );
-
         OGRDataSource *poDS;
-
-        poDS = poDriver->CreateDataSource( "/home/data/DATA/3DMETRICS_test/test/shapefile", NULL );
+        poDS = poDriver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
 
         if( poDS == NULL )
         {
@@ -3153,77 +3148,89 @@ void TDMGui::slot_exportMeasToGeom()
         oSRS.SetTM(lat_lon.x(),lat_lon.y(),0.9996,0,0);
         oSRS.SetWellKnownGeogCS( "WGS84" );
 
-         /*OGRLayer *po_layer_points;
-         //po_layer_points = poDS->CreateLayer( "point_out2", NULL, wkbPoint, NULL );
-         po_layer_points = poDS->CreateLayer( "point_out2", &oSRS, wkbPoint, NULL );
-        */
-        /*OGRLayer *po_layer_lines;
-        //po_layer_lines = poDS->CreateLayer( "line_out", NULL, wkbLineString, NULL );
-        po_layer_lines = poDS->CreateLayer( "line_out", &oSRS, wkbLineString, NULL );
-        */
-        OGRLayer *po_layer_area;
-        //po_layer_lines = poDS->CreateLayer( "line_out", NULL, wkbLineString, NULL );
-        //po_layer_area = poDS->CreateLayer( "area_out1", &oSRS, wkbLineString, NULL );
-        po_layer_area = poDS->CreateLayer( "area_out2", &oSRS, wkbPolygon, NULL );
-        OGRFieldDefn oField( "Name", OFTString );
+        bool point_created = false;
+        bool line_created = false;
+        bool polygon_created = false;
 
-
+        OGRFieldDefn oField( "Points", OFTString );
         oField.SetWidth(32);
-        /*if( po_layer_points->CreateField( &oField ) != OGRERR_NONE )
-        {
-            printf( "Creating Name field failed.\n" );
-            //return;
-        }*/
-        /*if( po_layer_lines->CreateField( &oField ) != OGRERR_NONE )
-        {
-            printf( "Creating Name field failed.\n" );
-            //return;
-        }*/
-        if( po_layer_area->CreateField( &oField ) != OGRERR_NONE )
-        {
-            printf( "Creating Name field failed.\n" );
-            //return;
-        }
-        char szName[33] ;
+
+        OGRLayer *po_layer_points;
+        OGRLayer *po_layer_lines;
+        OGRLayer *po_layer_area;
         for(int i=0; i<table->rowCount(); i++)
         {
-            // add row
-
             for(int j=1; j<table->columnCount(); j++)
             {
                 MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
                 MeasItem *item = pwidget->measItem();
-                if( item->type() == "Point")
+                if( point_created == false && item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
                 {
-                    /*QString point;
+                    QString fileName_points = path_info.fileName()+"_point";
+                    po_layer_points = poDS->CreateLayer( fileName_points.toStdString().c_str() , &oSRS, wkbPoint, NULL );
+
+                    if( po_layer_points->CreateField( &oField ) != OGRERR_NONE )
+                    {
+                        printf( "Creating Name field failed.\n" );
+                    }
+                    point_created = true;
+                }
+                if( line_created == false && item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
+                {
+                    QString fileName_lines = path_info.fileName()+"_line";
+                    po_layer_lines = poDS->CreateLayer( fileName_lines.toStdString().c_str(), &oSRS, wkbLineString, NULL );
+
+                    if( po_layer_lines->CreateField( &oField ) != OGRERR_NONE )
+                    {
+                        printf( "Creating Name field failed.\n" );
+                    }
+                    line_created = true;
+                }
+                if( polygon_created == false && item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
+                {
+                    QString fileName_polygons = path_info.fileName()+"_polygon";
+                    po_layer_area = poDS->CreateLayer( fileName_polygons.toStdString().c_str() , &oSRS, wkbPolygon, NULL );
+
+                    if( po_layer_area->CreateField( &oField ) != OGRERR_NONE )
+                    {
+                        printf( "Creating Name field failed.\n" );
+                    }
+                    polygon_created = true;
+                }
+            }
+        }
+
+        char szName[33] ;
+        for(int i=0; i<table->rowCount(); i++)
+        {
+            for(int j=1; j<table->columnCount(); j++)
+            {
+                MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
+                MeasItem *item = pwidget->measItem();
+                if( item->type() == "Point" && point_created == true )
+                {
+                    QString point;
                     item->encodeShapefile(point);
-                    QMessageBox::information(this,"Done",point);
+
                     QStringList point_split = point.split("/");
-
-
                     OGRFeature *poFeature;
                     poFeature = OGRFeature::CreateFeature( po_layer_points->GetLayerDefn() );
                     poFeature->SetField( "Name", szName );
                     OGRPoint pt;
                     pt.setX( point_split.at(0).toDouble() );
                     pt.setY( point_split.at(1).toDouble() );
-                    double test = pt.getX();
-                    double test1 = pt.getY();
                     poFeature->SetGeometry( &pt );
                     if( po_layer_points->CreateFeature( poFeature ) != OGRERR_NONE )
                     {
                         printf( "Failed to create feature in shapefile.\n" );
-                        //return;
                     }
                     OGRFeature::DestroyFeature( poFeature );
-                    */
-
                 }
-                if( item->type() == "Line")
+                if( item->type() == "Line" && line_created == true )
                 {
-                    /*QString point;
+                    QString point;
                     item->encodeShapefile(point);
-                    QMessageBox::information(this,"Done",point);
+
                     QStringList point_split = point.split("/");
                     OGRFeature *poFeature;
                     poFeature = OGRFeature::CreateFeature( po_layer_lines->GetLayerDefn() );
@@ -3232,100 +3239,40 @@ void TDMGui::slot_exportMeasToGeom()
                     // point_split.size()  point_split.length()
                     for( int k = 0; k < point_split.size()-1; k = k+2 )
                     {
-
-
-                        //OGRPoint* pt;
-                        //pt->setX( point_split.at(i).toDouble() );
-                        //pt->setY( point_split.at(i+1).toDouble() );
-                        //double test = pt->getX();
-                        //double test1 = pt->getY();
                         poLineString.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
-
-
-
                     }
                     poFeature->SetGeometry( &poLineString );
                     if( po_layer_lines->CreateFeature( poFeature ) != OGRERR_NONE )
                     {
                         printf( "Failed to create feature in shapefile.\n" );
-                        //return;
                     }
-                    OGRFeature::DestroyFeature( poFeature );*/
+                    OGRFeature::DestroyFeature( poFeature );
                 }
-                if( item->type() == "Area")
+                if( item->type() == "Area" && polygon_created == true )
                 {
                     QString point;
                     item->encodeShapefile(point);
-                    QMessageBox::information(this,"Done",point);
+
                     QStringList point_split = point.split("/");
                     OGRFeature *poFeature;
                     poFeature = OGRFeature::CreateFeature( po_layer_area->GetLayerDefn() );
                     poFeature->SetField( "Name", szName );
-                    /*OGRLineString poLineString ;
-                    // point_split.size()  point_split.length()
-                    for( int k = 0; k < point_split.size()-1; k = k+2 )
-                    {
-
-
-                        //OGRPoint* pt;
-                        //pt->setX( point_split.at(i).toDouble() );
-                        //pt->setY( point_split.at(i+1).toDouble() );
-                        //double test = pt->getX();
-                        //double test1 = pt->getY();
-                        poLineString.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
-
-
-
-                    }
-                    poLineString.addPoint(point_split.at(0).toDouble(),point_split.at(1).toDouble());
-                    poFeature->SetGeometry( &poLineString );*/
                     OGRPolygon myPoligon;
                     OGRLinearRing poLineString ;
-                    // point_split.size()  point_split.length()
                     for( int k = 0; k < point_split.size()-1; k = k+2 )
                     {
-
-
-                        //OGRPoint* pt;
-                        //pt->setX( point_split.at(i).toDouble() );
-                        //pt->setY( point_split.at(i+1).toDouble() );
-                        //double test = pt->getX();
-                        //double test1 = pt->getY();
                         poLineString.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
-
-
-
                     }
                     myPoligon.addRing(&poLineString);
                     poFeature->SetGeometry( &myPoligon );
                     if( po_layer_area->CreateFeature( poFeature ) != OGRERR_NONE )
                     {
                         printf( "Failed to create feature in shapefile.\n" );
-                        //return;
                     }
                     OGRFeature::DestroyFeature( poFeature );
                 }
-
-
             }
-
         }
-
-        // Setup output coordinate system that is UTM 11 WGS84.
-        //double adfGeoTransform[6] = { 39.2482414, 1, 0, 147.839005, 0, -1 };
-
-        /*geotiffDataset->SetGeoTransform(adfGeoTransform);
-        char *pszSRS_WKT = NULL;
-        OGRSpatialReference oSRS;
-        oSRS.SetTM(48.8446129,2.35621219,0.9996,0,0);
-        oSRS.SetWellKnownGeogCS( "WGS84" );
-        oSRS.exportToWkt( &pszSRS_WKT );
-
-        geotiffDataset->SetProjection(pszSRS_WKT);
-        CPLFree( pszSRS_WKT );
-        GDALClose(geotiffDataset) ;
-
-        GDALDestroyDriverManager();*/
-         OGRDataSource::DestroyDataSource( poDS );
+        OGRDataSource::DestroyDataSource( poDS );
     }
 }

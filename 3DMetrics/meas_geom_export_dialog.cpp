@@ -14,35 +14,39 @@ MeasGeomExportDialog::MeasGeomExportDialog(QWidget *parent) :
     m_filename = "";
 
     connect(ui->path_pushButton,SIGNAL(clicked(bool)),this,SLOT(slot_selectPath()));
-    if( m_filename == NULL || !ui->shapefile_btn->isChecked() || !ui->ASCII_btn->isChecked()
-            || ( ui->points_checkBox->isChecked() || ui->lines_checkBox->isChecked() || ui->areas_checkBox->isChecked() ) ){
+    if( m_filename == NULL && (!ui->shapefile_btn->isChecked() || !ui->ASCII_btn->isChecked())
+            && ( !ui->points_checkBox->isChecked() || !ui->lines_checkBox->isChecked() || !ui->areas_checkBox->isChecked() ) )
+    {
         disconnect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
+        connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(slot_apply()));
     }
-    connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(slot_apply()));
+    connect(ui->path_lineEdit,SIGNAL(textChanged(QString)), this,SLOT(slot_textFilenameChanged(QString)));
 }
 
 MeasGeomExportDialog::~MeasGeomExportDialog()
 {
     delete ui;
 }
+void MeasGeomExportDialog::slot_textFilenameChanged(QString _filename)
+{
+    m_filename = _filename;
+    ui->path_lineEdit->setText(m_filename);
+}
 
 void MeasGeomExportDialog::slot_selectPath()
 {
     m_filename = getSaveFileName(this,tr("Save measurement to geometry"), "", tr("Shapefile (*.shp)"));
-    ui->path_lineEdit->setText(m_filename);
-    connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
+    slot_textFilenameChanged(m_filename);
 }
 
 void MeasGeomExportDialog::on_ASCII_btn_clicked()
 {
     m_export_type = MeasGeomExportDialog::export_type::ASCII;
-    connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
 }
 
 void MeasGeomExportDialog::on_shapefile_btn_clicked()
 {
     m_export_type = MeasGeomExportDialog::export_type::ShapeFile;
-    connect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
 }
 
 void MeasGeomExportDialog::slot_apply()
@@ -53,4 +57,6 @@ void MeasGeomExportDialog::slot_apply()
        m_line_selected = true;
    if( ui->areas_checkBox->isChecked() )
        m_area_selected = true;
+   if( (ui->shapefile_btn->isChecked() || ui->ASCII_btn->isChecked()) && (ui->points_checkBox->isChecked() || ui->lines_checkBox->isChecked() || ui->areas_checkBox->isChecked()) && (m_filename != NULL) )
+       accept();
 }

@@ -40,6 +40,7 @@ private slots:
     void on_ASCII_btn_clicked();
     void on_shapefile_btn_clicked();
     void slot_apply();
+    void slot_textFilenameChanged(QString);
 };
 
 #endif // MEAS_GEOM_EXPORT_DIALOG_H
