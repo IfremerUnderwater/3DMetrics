@@ -3119,14 +3119,12 @@ void TDMGui::slot_exportMeasToGeom()
 {
     QFile path(m_meas_geom_export_dialog.getFilename());
     QFileInfo path_info(path.fileName());
-    QMessageBox::information(this,"Done",path_info.absolutePath() + "      ma   " +path_info.fileName());
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ASCII)
     {
         QMessageBox::information(this,"Done","ascii");
     }
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {
-        QMessageBox::information(this,"Done","Shapefile");
         QTableWidget *table = ui->attrib_table;
         const char *pszDriverName = "ESRI Shapefile";
         OGRSFDriver *poDriver;
@@ -3138,7 +3136,6 @@ void TDMGui::slot_exportMeasToGeom()
         if( poDS == NULL )
         {
             printf( "Creation of output file failed.\n" );
-            //return;
         }
 
         OGRSpatialReference oSRS;
@@ -3164,6 +3161,7 @@ void TDMGui::slot_exportMeasToGeom()
             {
                 MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
                 MeasItem *item = pwidget->measItem();
+
                 if( point_created == false && item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
                 {
                     QString fileName_points = path_info.fileName()+"_point";
@@ -3207,15 +3205,16 @@ void TDMGui::slot_exportMeasToGeom()
             {
                 MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
                 MeasItem *item = pwidget->measItem();
+
+                QString point;
+                item->encodeShapefile(point);
+
                 if( item->type() == "Point" && point_created == true )
                 {
-                    QString point;
-                    item->encodeShapefile(point);
-
                     QStringList point_split = point.split("/");
                     OGRFeature *poFeature;
                     poFeature = OGRFeature::CreateFeature( po_layer_points->GetLayerDefn() );
-                    poFeature->SetField( "Name", szName );
+                    poFeature->SetField( "Point", szName );
                     OGRPoint pt;
                     pt.setX( point_split.at(0).toDouble() );
                     pt.setY( point_split.at(1).toDouble() );
@@ -3228,15 +3227,11 @@ void TDMGui::slot_exportMeasToGeom()
                 }
                 if( item->type() == "Line" && line_created == true )
                 {
-                    QString point;
-                    item->encodeShapefile(point);
-
                     QStringList point_split = point.split("/");
                     OGRFeature *poFeature;
                     poFeature = OGRFeature::CreateFeature( po_layer_lines->GetLayerDefn() );
-                    poFeature->SetField( "Name", szName );
+                    poFeature->SetField( "Line", szName );
                     OGRLineString poLineString ;
-                    // point_split.size()  point_split.length()
                     for( int k = 0; k < point_split.size()-1; k = k+2 )
                     {
                         poLineString.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
@@ -3250,13 +3245,10 @@ void TDMGui::slot_exportMeasToGeom()
                 }
                 if( item->type() == "Area" && polygon_created == true )
                 {
-                    QString point;
-                    item->encodeShapefile(point);
-
                     QStringList point_split = point.split("/");
                     OGRFeature *poFeature;
                     poFeature = OGRFeature::CreateFeature( po_layer_area->GetLayerDefn() );
-                    poFeature->SetField( "Name", szName );
+                    poFeature->SetField( "Polygon", szName );
                     OGRPolygon myPoligon;
                     OGRLinearRing poLineString ;
                     for( int k = 0; k < point_split.size()-1; k = k+2 )

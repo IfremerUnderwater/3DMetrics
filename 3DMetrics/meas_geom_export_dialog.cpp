@@ -1,3 +1,5 @@
+#include <QMessageBox>
+
 #include "meas_geom_export_dialog.h"
 #include "ui_meas_geom_export_dialog.h"
 #include "file_dialog.h"
@@ -14,7 +16,7 @@ MeasGeomExportDialog::MeasGeomExportDialog(QWidget *parent) :
     m_filename = "";
 
     connect(ui->path_pushButton,SIGNAL(clicked(bool)),this,SLOT(slot_selectPath()));
-    if( m_filename == NULL && (!ui->shapefile_btn->isChecked() || !ui->ASCII_btn->isChecked())
+    if( m_filename == NULL && ( !ui->shapefile_btn->isChecked() || !ui->ASCII_btn->isChecked() )
             && ( !ui->points_checkBox->isChecked() || !ui->lines_checkBox->isChecked() || !ui->areas_checkBox->isChecked() ) )
     {
         disconnect(ui->valid_cancel_buttonBox,SIGNAL(accepted()),this,SLOT(accept()));
@@ -51,12 +53,18 @@ void MeasGeomExportDialog::on_shapefile_btn_clicked()
 
 void MeasGeomExportDialog::slot_apply()
 {
-   if( ui->points_checkBox->isChecked() )
-       m_point_selected = true;
-   if( ui->lines_checkBox->isChecked() )
-       m_line_selected = true;
-   if( ui->areas_checkBox->isChecked() )
-       m_area_selected = true;
-   if( (ui->shapefile_btn->isChecked() || ui->ASCII_btn->isChecked()) && (ui->points_checkBox->isChecked() || ui->lines_checkBox->isChecked() || ui->areas_checkBox->isChecked()) && (m_filename != NULL) )
-       accept();
+    if( ui->points_checkBox->isChecked() )
+        m_point_selected = true;
+    if( ui->lines_checkBox->isChecked() )
+        m_line_selected = true;
+    if( ui->areas_checkBox->isChecked() )
+        m_area_selected = true;
+    if( m_filename == NULL )
+        QMessageBox::information(this,"Error : Export measurement to geometry","Error : you didn't give a name to the file");
+    if( !(ui->points_checkBox->isChecked() || ui->lines_checkBox->isChecked() || ui->areas_checkBox->isChecked()) )
+        QMessageBox::information(this,"Error : Export measurement to geometry","Error : you didn't choose the data to export");
+    if( !(ui->shapefile_btn->isChecked() || ui->ASCII_btn->isChecked()) )
+        QMessageBox::information(this,"Error : Export measurement to geometry","Error : you didn't choose the type to export");
+    if( (ui->shapefile_btn->isChecked() || ui->ASCII_btn->isChecked()) && (ui->points_checkBox->isChecked() || ui->lines_checkBox->isChecked() || ui->areas_checkBox->isChecked()) && (m_filename != NULL) )
+        accept();
 }
