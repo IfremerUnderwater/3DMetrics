@@ -85,7 +85,8 @@ SOURCES += main.cpp \
     edit_meas_dialog.cpp \
     edit_meas_item.cpp \
     about_dialog.cpp \
-    meas_geom_export_dialog.cpp
+    meas_geom_export_dialog.cpp \
+    edit_transparency_model.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -124,7 +125,8 @@ HEADERS  += \
     edit_meas_dialog.h \
     edit_meas_item.h \
     about_dialog.h \
-    meas_geom_export_dialog.h
+    meas_geom_export_dialog.h \
+    edit_transparency_model.h
 
 FORMS    += \
     tdmgui.ui \
@@ -139,7 +141,8 @@ FORMS    += \
     edit_meas_dialog.ui \
     edit_meas_item.ui \
     about_dialog.ui \
-    meas_geom_export_dialog.ui
+    meas_geom_export_dialog.ui \
+    edit_transparency_model.ui
 
 RESOURCES += \
     ressources.qrc

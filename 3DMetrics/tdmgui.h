@@ -12,6 +12,7 @@
 #include "osg_axes.h"
 #include "file_open_thread.h"
 #include "meas_geom_export_dialog.h"
+#include "edit_transparency_model.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -73,6 +74,8 @@ private:
     DecimationDialog m_decimation_dialog;
 
     MeasGeomExportDialog m_meas_geom_export_dialog;
+
+    EditTransparencyModel m_edit_trans_model;
 
     // Settings variable
     QSettings m_settings;
@@ -158,6 +161,7 @@ public slots:
     void slot_unselect();
     void slot_editMeasurement();
     void slot_computeTotalArea();
+    void slot_editTransparency();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
@@ -190,6 +194,9 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
+
+    // Transparency
+    void slot_Transparency(int _transparency_value);
 
 
 private slots:

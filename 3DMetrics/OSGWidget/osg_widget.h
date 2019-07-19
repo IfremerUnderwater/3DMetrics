@@ -29,6 +29,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 #include <GeographicLib/LocalCartesian.hpp>
+#include <osg/Material>
 
 #include "kml_handler.h"
 
@@ -141,6 +142,7 @@ public:
     };
 
 public slots:
+    void slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<osg::Node> _node);
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
@@ -206,6 +208,7 @@ private:
     bool m_ctrl_pressed;
     bool m_fake_middle_click_activated;
 
+    osg::ref_ptr<osg::Material> m_material;
 
 };
 

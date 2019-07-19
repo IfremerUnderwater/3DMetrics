@@ -43,6 +43,8 @@
 #include "gdal/ogr_spatialref.h"
 #include "gdal/ogrsf_frmts.h"
 
+#include "edit_transparency_model.h"
+
 #include <GeographicLib/LocalCartesian.hpp>
 
 TDMGui::TDMGui(QWidget *_parent) :
@@ -1148,10 +1150,13 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             }
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
+                menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
+                menu->addSeparator();
                 menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Make an depth map"),this,SLOT(slot_saveDepthMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
+
             }
         }
     }
@@ -3126,14 +3131,14 @@ void TDMGui::slot_exportMeasToGeom()
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {
         QTableWidget *table = ui->attrib_table;
-        const char *pszDriverName = "ESRI Shapefile";
-        OGRSFDriver *poDriver;
+        const char *psz_driver_name = "ESRI Shapefile";
+        OGRSFDriver *driver;
         OGRRegisterAll();
-        poDriver =OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(pszDriverName);
-        OGRDataSource *poDS;
-        poDS = poDriver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
+        driver =OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
+        OGRDataSource *data_source;
+        data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
 
-        if( poDS == NULL )
+        if( data_source == NULL )
         {
             printf( "Creation of output file failed.\n" );
         }
@@ -3159,13 +3164,13 @@ void TDMGui::slot_exportMeasToGeom()
         {
             for(int j=1; j<table->columnCount(); j++)
             {
-                MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
-                MeasItem *item = pwidget->measItem();
+                MeasTableWidgetItem *widget = (MeasTableWidgetItem *)table->item(i,j);
+                MeasItem *item = widget->measItem();
 
                 if( point_created == false && item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
                 {
                     QString fileName_points = path_info.fileName()+"_point";
-                    po_layer_points = poDS->CreateLayer( fileName_points.toStdString().c_str() , &oSRS, wkbPoint, NULL );
+                    po_layer_points = data_source->CreateLayer( fileName_points.toStdString().c_str() , &oSRS, wkbPoint, NULL );
 
                     if( po_layer_points->CreateField( &oField ) != OGRERR_NONE )
                     {
@@ -3176,7 +3181,7 @@ void TDMGui::slot_exportMeasToGeom()
                 if( line_created == false && item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
                 {
                     QString fileName_lines = path_info.fileName()+"_line";
-                    po_layer_lines = poDS->CreateLayer( fileName_lines.toStdString().c_str(), &oSRS, wkbLineString, NULL );
+                    po_layer_lines = data_source->CreateLayer( fileName_lines.toStdString().c_str(), &oSRS, wkbLineString, NULL );
 
                     if( po_layer_lines->CreateField( &oField ) != OGRERR_NONE )
                     {
@@ -3187,7 +3192,7 @@ void TDMGui::slot_exportMeasToGeom()
                 if( polygon_created == false && item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
                 {
                     QString fileName_polygons = path_info.fileName()+"_polygon";
-                    po_layer_area = poDS->CreateLayer( fileName_polygons.toStdString().c_str() , &oSRS, wkbPolygon, NULL );
+                    po_layer_area = data_source->CreateLayer( fileName_polygons.toStdString().c_str() , &oSRS, wkbPolygon, NULL );
 
                     if( po_layer_area->CreateField( &oField ) != OGRERR_NONE )
                     {
@@ -3198,13 +3203,13 @@ void TDMGui::slot_exportMeasToGeom()
             }
         }
 
-        char szName[33] ;
+        char name[33] ;
         for(int i=0; i<table->rowCount(); i++)
         {
             for(int j=1; j<table->columnCount(); j++)
             {
-                MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
-                MeasItem *item = pwidget->measItem();
+                MeasTableWidgetItem *widget = (MeasTableWidgetItem *)table->item(i,j);
+                MeasItem *item = widget->measItem();
 
                 QString point;
                 item->encodeShapefile(point);
@@ -3212,59 +3217,86 @@ void TDMGui::slot_exportMeasToGeom()
                 if( item->type() == "Point" && point_created == true )
                 {
                     QStringList point_split = point.split("/");
-                    OGRFeature *poFeature;
-                    poFeature = OGRFeature::CreateFeature( po_layer_points->GetLayerDefn() );
-                    poFeature->SetField( "Point", szName );
-                    OGRPoint pt;
-                    pt.setX( point_split.at(0).toDouble() );
-                    pt.setY( point_split.at(1).toDouble() );
-                    poFeature->SetGeometry( &pt );
-                    if( po_layer_points->CreateFeature( poFeature ) != OGRERR_NONE )
+                    OGRFeature *feature;
+                    feature = OGRFeature::CreateFeature( po_layer_points->GetLayerDefn() );
+                    feature->SetField( "Point", name );
+                    OGRPoint point;
+                    point.setX( point_split.at(0).toDouble() );
+                    point.setY( point_split.at(1).toDouble() );
+                    feature->SetGeometry( &point );
+                    if( po_layer_points->CreateFeature( feature ) != OGRERR_NONE )
                     {
                         printf( "Failed to create feature in shapefile.\n" );
                     }
-                    OGRFeature::DestroyFeature( poFeature );
+                    OGRFeature::DestroyFeature( feature );
                 }
                 if( item->type() == "Line" && line_created == true )
                 {
                     QStringList point_split = point.split("/");
-                    OGRFeature *poFeature;
-                    poFeature = OGRFeature::CreateFeature( po_layer_lines->GetLayerDefn() );
-                    poFeature->SetField( "Line", szName );
-                    OGRLineString poLineString ;
+                    OGRFeature *feature;
+                    feature = OGRFeature::CreateFeature( po_layer_lines->GetLayerDefn() );
+                    feature->SetField( "Line", name );
+                    OGRLineString line_OGR ;
                     for( int k = 0; k < point_split.size()-1; k = k+2 )
                     {
-                        poLineString.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
+                        line_OGR.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
                     }
-                    poFeature->SetGeometry( &poLineString );
-                    if( po_layer_lines->CreateFeature( poFeature ) != OGRERR_NONE )
+                    feature->SetGeometry( &line_OGR );
+                    if( po_layer_lines->CreateFeature( feature ) != OGRERR_NONE )
                     {
                         printf( "Failed to create feature in shapefile.\n" );
                     }
-                    OGRFeature::DestroyFeature( poFeature );
+                    OGRFeature::DestroyFeature( feature );
                 }
                 if( item->type() == "Area" && polygon_created == true )
                 {
                     QStringList point_split = point.split("/");
-                    OGRFeature *poFeature;
-                    poFeature = OGRFeature::CreateFeature( po_layer_area->GetLayerDefn() );
-                    poFeature->SetField( "Polygon", szName );
-                    OGRPolygon myPoligon;
-                    OGRLinearRing poLineString ;
+                    OGRFeature *feature;
+                    feature = OGRFeature::CreateFeature( po_layer_area->GetLayerDefn() );
+                    feature->SetField( "Polygon", name );
+                    OGRPolygon polygon_OGR;
+                    OGRLinearRing line_point ;
                     for( int k = 0; k < point_split.size()-1; k = k+2 )
                     {
-                        poLineString.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
+                        line_point.addPoint(point_split.at(k).toDouble(),point_split.at(k+1).toDouble());
                     }
-                    myPoligon.addRing(&poLineString);
-                    poFeature->SetGeometry( &myPoligon );
-                    if( po_layer_area->CreateFeature( poFeature ) != OGRERR_NONE )
+                    polygon_OGR.addRing(&line_point);
+                    feature->SetGeometry( &polygon_OGR );
+                    if( po_layer_area->CreateFeature( feature ) != OGRERR_NONE )
                     {
                         printf( "Failed to create feature in shapefile.\n" );
                     }
-                    OGRFeature::DestroyFeature( poFeature );
+                    OGRFeature::DestroyFeature( feature );
                 }
             }
         }
-        OGRDataSource::DestroyDataSource( poDS );
+        OGRDataSource::DestroyDataSource( data_source );
+    }
+}
+
+void TDMGui::slot_editTransparency()
+{
+    QObject::connect(&m_edit_trans_model, SIGNAL(signal_onChangedTransparencyValue(int)), this, SLOT(slot_Transparency(int)));
+    m_edit_trans_model.show();
+
+}
+
+void TDMGui::slot_Transparency(int _transparency_value_transparency_value)
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+        ui->display_widget->slot_onTransparencyChange(_transparency_value_transparency_value, node);
     }
 }

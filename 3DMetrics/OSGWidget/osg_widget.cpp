@@ -47,7 +47,11 @@
 #include <math.h>
 #include <limits>
 
+#include <osg/AlphaFunc>
+#include <osg/BlendFunc>
+
 #include "Measurement/box_visitor.h"
+#include "edit_transparency_model.h"
 
 
 struct SnapImage : public osg::Camera::DrawCallback {
@@ -259,6 +263,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     , m_viewer( new osgViewer::CompositeViewer )
     , m_ctrl_pressed(false)
     , m_fake_middle_click_activated(false)
+    , m_material( new osg::Material )
 
 {
 
@@ -297,32 +302,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
     manipulator->setAllowThrow( false );
 
-
-
     view->setCameraManipulator( manipulator );
-
-
-
-
-    /*osg::Matrix myviewMatrix;
-    osg::Vec3d eye( 0, 0 , 0 );
-    osg::Vec3d center( 0, 0 , 0 );
-    osg::Vec3d up( 0, 0, 1 );
-    myviewMatrix.makeLookAt(eye,center,up);*/
-
-
-    //osg::Vec3d oeil( 0.0, m_ref_lat_lon.x(), m_ref_lat_lon.y());
-    //osg::Vec3d cible( 0.0, 0.0 , 0.0);
-    //osg::Vec3d normale(0.0, 0.0, 1.0);
-    // view->getCamera()->setViewMatrixAsLookAt(oeil, cible, normale);
-
-    //view->getCameraManipulator()->setByMatrix(myviewMatrix);
-
-    //view->getCamera()->setViewMatrixAsLookAt(eye,center,up);
-    //view->getCamera()->getViewMatrixAsLookAt(eye,center,up);
-    //view->getCameraManipulator()->setHomePosition(oeil,cible,normale);
-
-    //view->getCameraManipulator()->setByMatrix(myviewMatrix);
 
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
@@ -346,7 +326,6 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_group = new osg::Group;
     //    m_measurement_geode = new osg::Geode;
     //    m_group->addChild(m_measurement_geode);
-
 }
 
 OSGWidget::~OSGWidget()
@@ -501,6 +480,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
+
     //m_group->addChild(_node.get());
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
@@ -545,6 +525,32 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     view->getCameraManipulator()->setHomePosition(eye,target,normal);
 
     home();
+    //state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+   // state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    //state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
+    /*osg::AlphaFunc* alphaFunc = new osg::AlphaFunc;
+    alphaFunc->setFunction(osg::AlphaFunc::GREATER,0.2f);*/
+    //osg::ref_ptr<osg::BlendFunc> blendFunc = new osg::BlendFunc;
+    //blendFunc->setFunction( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    //state_set->setAttributeAndModes( blendFunc, osg::StateAttribute::ON );
+
+    //Make sure blending is on.
+    /*state_set->setMode( GL_BLEND,osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    //Get the material if it exists
+    osg::ref_ptr<osg::Material> material = new osg::Material;
+
+
+    material->setAlpha( osg::Material::FRONT_AND_BACK, 0.5 );
+
+    //if ( m_fAlpha >= 1.0f ){
+    //Entity is opaque so turn off state attribute
+    //stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
+    //}else{
+    //Entity has transparency
+    state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);*/
+    //}
     return true;
 }
 
@@ -1190,4 +1196,25 @@ void OSGWidget::enableStereo(bool _state)
     //osg::DisplaySettings::instance()->setStereoMode(osg::DisplaySettings::VERTICAL_INTERLACE);
     osg::DisplaySettings::instance()->setStereo(_state);
 
+}
+
+void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<osg::Node> _node)
+{
+    osg::StateSet* state_set = _node->getOrCreateStateSet();
+
+    state_set->setMode( GL_BLEND,osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+
+
+    osg::ref_ptr<osg::Material> material = new osg::Material;
+    float alpha = (float)_transparency_value/100;
+    material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
+
+    /*if ( m_fAlpha >= 1.0f ){
+    //Entity is opaque so turn off state attribute
+    stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
+    }else{*/
+    //Entity has transparency
+   state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);
 }
