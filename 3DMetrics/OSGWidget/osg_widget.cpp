@@ -53,6 +53,39 @@
 #include "Measurement/box_visitor.h"
 #include "edit_transparency_model.h"
 
+class  Transparency : public osg::NodeVisitor {
+
+public :
+
+    Transparency() : NodeVisitor( NodeVisitor::TRAVERSE_ALL_CHILDREN ) {}
+
+    void apply ( osg::Node &node ){
+
+     if (node.getStateSet()) apply(*node.getStateSet());
+
+    } // apply( osg::Node &node )
+    void apply(osg::StateSet& stateset)
+    {
+        /*stateset->setMode( GL_BLEND, osg::StateAttribute::ON );
+        osg::ref_ptr<osg::Material> material = new osg::Material;
+        material->setAlpha( osg::Material::FRONT_AND_BACK, 1 );
+
+        stateset->setAttributeAndModes ( material.get(),osg::StateAttribute::ON );
+
+*/
+        osg::StateAttribute* attr = stateset.getAttribute(osg::StateAttribute::MATERIAL);
+        if (attr)
+        {
+
+            osg::Material* material = dynamic_cast<osg::Material*>(attr);
+            float alpha = (float)50/100;
+            material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
+            stateset.setAttributeAndModes ( material,osg::StateAttribute::ON );
+            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+            stateset.setAttributeAndModes(bf);
+        }
+    }
+};
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -480,6 +513,13 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
+    state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    osg::ref_ptr<osg::Material> material = new osg::Material;
+    material->setAlpha( osg::Material::FRONT_AND_BACK, 1 );
+
+    state_set->setAttributeAndModes ( material.get(),osg::StateAttribute::ON );
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);
 
     //m_group->addChild(_node.get());
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
@@ -1200,21 +1240,28 @@ void OSGWidget::enableStereo(bool _state)
 
 void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<osg::Node> _node)
 {
-    osg::StateSet* state_set = _node->getOrCreateStateSet();
+    /*osg::StateSet* state_set = _node->getOrCreateStateSet();
 
-    state_set->setMode( GL_BLEND,osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
-
-
-    osg::ref_ptr<osg::Material> material = new osg::Material;
+    osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+    osg::Material* material = dynamic_cast<osg::Material*>(attr);*/
+    /*osg::Material* material = new osg::Material;
     float alpha = (float)_transparency_value/100;
     material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
-
+    m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode( GL_BLEND,osg::StateAttribute::ON );
+    m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setAttributeAndModes(material, osg::StateAttribute::ON);*/
+   /*osg::ref_ptr<osg::Material> material = new osg::Material;
+    float alpha = (float)_transparency_value/100;
+    material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
+*/
     /*if ( m_fAlpha >= 1.0f ){
     //Entity is opaque so turn off state attribute
     stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
     }else{*/
     //Entity has transparency
-   state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    /*state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
     osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
-    state_set->setAttributeAndModes(bf);
+    state_set->setAttributeAndModes(bf);*/
+
+    /*Transparency tr;
+    _node->accept(tr);*/
 }

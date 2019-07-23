@@ -23,8 +23,6 @@ private:
 
 private slots:
     void slot_changeTransparencyValue(int);
-
-
 };
 
 #endif // EDIT_TRANSPARENCY_MODEL_H

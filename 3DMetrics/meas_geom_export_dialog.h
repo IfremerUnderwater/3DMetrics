@@ -25,6 +25,8 @@ public:
     bool getLineSelected() { return m_line_selected; }
     bool getAreaSelected() { return m_area_selected; }
     MeasGeomExportDialog::export_type getExportType() { return m_export_type; }
+    bool getXYZSelected() { return m_xyz_selected; }
+    bool getLatLonSelected() { return m_lat_lon_selected; }
 
 private:
     Ui::MeasGeomExportDialog *ui;
@@ -34,6 +36,8 @@ private:
     bool m_line_selected;
     bool m_area_selected;
     MeasGeomExportDialog::export_type m_export_type;
+    bool m_xyz_selected;
+    bool m_lat_lon_selected;
 
 private slots:
     void slot_selectPath();
@@ -41,6 +45,8 @@ private slots:
     void on_shapefile_btn_clicked();
     void slot_apply();
     void slot_textFilenameChanged(QString);
+    void slot_asciiChecked(bool);
+
 };
 
 #endif // MEAS_GEOM_EXPORT_DIALOG_H

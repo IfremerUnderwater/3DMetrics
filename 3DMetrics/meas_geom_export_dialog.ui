@@ -46,11 +46,29 @@
       </widget>
      </item>
      <item>
-      <widget class="QRadioButton" name="ASCII_btn">
-       <property name="text">
-        <string>ASCII</string>
-       </property>
-      </widget>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <item>
+        <widget class="QRadioButton" name="ASCII_btn">
+         <property name="text">
+          <string>ASCII : </string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="xyz_btn">
+         <property name="text">
+          <string>xyz</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="lat_lon_btn">
+         <property name="text">
+          <string>lon/lat</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
      <item>
       <widget class="Line" name="separtor">

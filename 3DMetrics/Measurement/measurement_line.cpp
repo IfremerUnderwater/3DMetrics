@@ -96,6 +96,11 @@ void MeasLine::encodeASCII(QString &_string)
     _string = QString::number(m_length,'f');
 }
 
+void MeasLine::encodeASCIILatLon(QString &_string)
+{
+    _string = QString::number(m_length,'f');
+}
+
 void MeasLine::encodeShapefile(QString &_string)
 {
     for(int i=0; i<m_array.length(); i++)

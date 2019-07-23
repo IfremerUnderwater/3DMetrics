@@ -22,6 +22,7 @@ public:
 
     // encode to ASCII
     virtual void encodeASCII(QString & _string) = 0;
+    virtual void encodeASCIILatLon(QString & _string) = 0;
 
     // encode to Shapefile
     virtual void encodeShapefile(QString & _string) = 0;

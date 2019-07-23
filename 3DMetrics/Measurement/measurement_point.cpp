@@ -41,7 +41,7 @@ void MeasPoint::encode(QJsonObject & _obj)
     _obj.insert(fieldName(), QJsonValue(point));
 }
 
-void MeasPoint::encodeASCII(QString &_string)
+void MeasPoint::encodeASCIILatLon(QString &_string)
 {
     QPointF ref_lat_lon;
     double ref_depth;
@@ -57,6 +57,25 @@ void MeasPoint::encodeASCII(QString &_string)
             "\tlon="+ QString::number(lon,'f',8)+
             "\talt="+ QString::number(alt,'f',3);
 }
+
+void MeasPoint::encodeASCII(QString &_string)
+{
+    QPointF ref_lat_lon;
+    double ref_depth;
+    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_depth);
+
+    GeographicLib::LocalCartesian ltp_proj;
+    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
+
+    double lat,lon,alt;
+    ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, alt);
+
+    _string = "x=" + QString::number(m_point.x,'f',8)+
+            "\ty="+ QString::number(m_point.y,'f',8)+
+            "\tz="+ QString::number(m_point.z,'f',3);
+}
+
+
 
 void MeasPoint::encodeShapefile(QString &_string)
 {

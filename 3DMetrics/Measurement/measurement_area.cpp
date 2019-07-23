@@ -102,6 +102,11 @@ void MeasArea::encodeASCII(QString &_string)
     _string = QString::number(m_area,'f');
 }
 
+void MeasArea::encodeASCIILatLon(QString &_string)
+{
+    _string = QString::number(m_area,'f');
+}
+
 void MeasArea::computeLengthAndArea()
 {
     computeLength();

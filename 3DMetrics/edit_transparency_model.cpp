@@ -8,9 +8,11 @@ EditTransparencyModel::EditTransparencyModel(QWidget *parent) :
     ui(new Ui::EditTransparencyModel)
 {
     ui->setupUi(this);
+    ui->transparency_label->setText(QString::number(0));
+    ui->transparency_value_slider->setSliderPosition(0);
     ui->transparency_value_slider->setTickInterval(100);
     ui->transparency_value_slider->setSingleStep(1);
-    ui->transparency_label->setText(0);
+
 
     connect(ui->transparency_value_slider,SIGNAL(valueChanged(int)), this, SLOT(slot_changeTransparencyValue(int)));
     connect(ui->valid_btn, SIGNAL(clicked()), this, SLOT(accept()));
