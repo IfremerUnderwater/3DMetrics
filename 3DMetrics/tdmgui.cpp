@@ -3142,23 +3142,26 @@ void TDMGui::slot_exportMeasToGeom()
             QMessageBox::critical(this, tr("Error : save measurement to csv"), tr("Error : cannot open the file"));
             return;
         }
+
+        //get and write header
+        /*for(int i=1; i<table->columnCount(); i++)
+        {
+            QString field_string = table->horizontalHeaderItem(i)->text();
+            // write field
+            if (i<table->columnCount()-1)
+                field_string = field_string + ",";
+
+            csv_file.write(field_string.toUtf8());
+        }
+
+        // write end of line
+        csv_file.write(QString("\n").toUtf8());*/
+
         if( m_meas_geom_export_dialog.getLatLonSelected() == true)
         {
             // Get Table
             QTableWidget *table = ui->attrib_table;
 
-            //get and write header
-            /*for(int i=1; i<table->columnCount(); i++)
-            {
-                QString field_string = table->horizontalHeaderItem(i)->text();
-                // write field
-                if (i<table->columnCount()-1)
-                    field_string = field_string + ",";
-
-                csv_file.write(field_string.toUtf8());
-            }*/
-            // write end of line
-            csv_file.write(QString("\n").toUtf8());
 
             // write fields data
             for(int i=0; i < table->rowCount(); i++)
@@ -3199,69 +3202,54 @@ void TDMGui::slot_exportMeasToGeom()
                 // write end of line
                 csv_file.write(QString("\n").toUtf8());
             }
-            if( m_meas_geom_export_dialog.getXYZSelected() == true)
+        }
+        if( m_meas_geom_export_dialog.getXYZSelected() == true)
+        {
+            // Get Table
+            QTableWidget *table = ui->attrib_table;
+
+            // write fields data
+            for(int i=0; i < table->rowCount(); i++)
             {
-                // Get Table
-                QTableWidget *table = ui->attrib_table;
-
-                //get and write header
-                /*for(int i=1; i<table->columnCount(); i++)
+                for(int j=1; j < table->columnCount(); j++)
                 {
-                    QString field_string = table->horizontalHeaderItem(i)->text();
-                    // write field
-                    if (i<table->columnCount()-1)
-                        field_string = field_string + ",";
+                    // add field
+                    MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
+                    MeasItem *item = pwidget->measItem();
+                    QString field_string;
+                    item->encodeASCII(field_string);
 
-                    csv_file.write(field_string.toUtf8());
-                }*/
+                    if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
+                    {
+                        // write field
+                        if (j<table->columnCount()-1)
+                            field_string = field_string + ",";
+
+                        csv_file.write(field_string.toUtf8());
+                    }
+                    if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
+                    {
+                        // write field
+                        if (j<table->columnCount()-1)
+                            field_string = field_string + ",";
+
+                        csv_file.write(field_string.toUtf8());
+                    }
+                    if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
+                    {
+                        // write field
+                        if (j<table->columnCount()-1)
+                            field_string = field_string + ",";
+
+                        csv_file.write(field_string.toUtf8());
+                    }
+                }
                 // write end of line
                 csv_file.write(QString("\n").toUtf8());
-
-                // write fields data
-                for(int i=0; i < table->rowCount(); i++)
-                {
-                    for(int j=1; j < table->columnCount(); j++)
-                    {
-                        // add field
-                        MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
-                        MeasItem *item = pwidget->measItem();
-                        QString field_string;
-                        item->encodeASCII(field_string);
-
-                        if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
-                        {
-                            // write field
-                            if (j<table->columnCount()-1)
-                                field_string = field_string + ",";
-
-                            csv_file.write(field_string.toUtf8());
-                        }
-                        if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
-                        {
-                            // write field
-                            if (j<table->columnCount()-1)
-                                field_string = field_string + ",";
-
-                            csv_file.write(field_string.toUtf8());
-                        }
-                        if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
-                        {
-                            // write field
-                            if (j<table->columnCount()-1)
-                                field_string = field_string + ",";
-
-                            csv_file.write(field_string.toUtf8());
-                        }
-                    }
-                    // write end of line
-                    csv_file.write(QString("\n").toUtf8());
-                }
             }
+            // close file
+            csv_file.close();
         }
-
-        // close file
-        csv_file.close();
-
     }
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {

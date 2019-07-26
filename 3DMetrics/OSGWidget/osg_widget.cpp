@@ -60,31 +60,99 @@ public :
     Transparency() : NodeVisitor( NodeVisitor::TRAVERSE_ALL_CHILDREN ) {}
 
     void apply ( osg::Node &node ){
+    //osg::StateSet* state_set = _node->getOrCreateStateSet();
+    /*osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+    osg::Material* material = dynamic_cast<osg::Material*>(attr);*/
+        /*osg::StateSet* state_set = node.getOrCreateStateSet();
+        osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+        osg::Material* material = dynamic_cast<osg::Material*>(attr);
+        float alpha = (float)20/100;*/
+        //material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
 
-     if (node.getStateSet()) apply(*node.getStateSet());
-
+       //if (node.getStateSet()) apply(*node.getStateSet());
+        traverse(node);
     } // apply( osg::Node &node )
-    void apply(osg::StateSet& stateset)
+
+    void apply(osg::Geode &geode)
     {
-        /*stateset->setMode( GL_BLEND, osg::StateAttribute::ON );
+        /*osg::Drawable* drawable = geode.asDrawable();
+        osg::StateSet* state_set = drawable->getStateSet();
+        osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+        if (attr)
+        {
+            osg::Material* material = dynamic_cast<osg::Material*>(attr);
+            float alpha = (float)20/100;
+            material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
+        }*/
+        //if (geode.getStateSet()) apply(*geode.getStateSet());
+
+        osg::StateSet* state_set = geode.getOrCreateStateSet();
+        //osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::TEXTURE);
+        osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+        state_set->setMode( GL_BLEND, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        osg::ref_ptr<osg::Material> material;
+        if(attr == NULL) {
+            material = new osg::Material;
+            material->setAlpha( osg::Material::FRONT_AND_BACK, m_alpha );
+
+            state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
+
+            osg::ref_ptr<osg::BlendFunc> bft = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+            state_set->setAttributeAndModes(bft);
+            //osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_COLOR, osg::BlendFunc::ONE_MINUS_SRC_COLOR );
+            //state_set->setAttributeAndModes(bf);
+
+        }
+        else {
+            material = dynamic_cast<osg::Material*>(attr);
+            material->setAlpha( osg::Material::FRONT_AND_BACK, m_alpha );
+        }
+
+
+
+
+       // osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_COLOR, osg::BlendFunc::ONE_MINUS_SRC_COLOR );
+        //state_set->setAttributeAndModes(bf);
+
+        state_set->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+        /*osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+        osg::Material* material = dynamic_cast<osg::Material*>(attr);
+        float alpha = (float)20/100;
+        material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );*/
+    }
+
+     void apply(osg::StateSet& stateset)
+    {
+         //osg::StateSet* state_set = geode.getOrCreateStateSet();
+         stateset.setMode( GL_BLEND, osg::StateAttribute::ON );
+         osg::ref_ptr<osg::Material> material = new osg::Material;
+         material->setAlpha( osg::Material::FRONT_AND_BACK, 0.2 );
+
+         stateset.setAttributeAndModes ( material.get(),osg::StateAttribute::ON );
+         osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+         stateset.setAttributeAndModes(bf);
+         /*stateset->setMode( GL_BLEND, osg::StateAttribute::ON );
         osg::ref_ptr<osg::Material> material = new osg::Material;
         material->setAlpha( osg::Material::FRONT_AND_BACK, 1 );
 
         stateset->setAttributeAndModes ( material.get(),osg::StateAttribute::ON );
 
-*/
         osg::StateAttribute* attr = stateset.getAttribute(osg::StateAttribute::MATERIAL);
         if (attr)
         {
 
             osg::Material* material = dynamic_cast<osg::Material*>(attr);
-            float alpha = (float)50/100;
-            material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
-            stateset.setAttributeAndModes ( material,osg::StateAttribute::ON );
+            float alpha = (float)20/100;
+            material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );*/
+            /*stateset.setAttributeAndModes ( material,osg::StateAttribute::ON );
             osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
             stateset.setAttributeAndModes(bf);
-        }
+        }*/
     }
+
+    void setAlpha(float _alpha) { m_alpha = _alpha;}
+    private :
+     float m_alpha;
 };
 
 struct SnapImage : public osg::Camera::DrawCallback {
@@ -517,7 +585,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::ref_ptr<osg::Material> material = new osg::Material;
     material->setAlpha( osg::Material::FRONT_AND_BACK, 1 );
 
-    state_set->setAttributeAndModes ( material.get(),osg::StateAttribute::ON );
+    state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
     osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
     state_set->setAttributeAndModes(bf);
 
@@ -1240,19 +1308,19 @@ void OSGWidget::enableStereo(bool _state)
 
 void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<osg::Node> _node)
 {
-    /*osg::StateSet* state_set = _node->getOrCreateStateSet();
-
+    osg::StateSet* state_set = _node->getOrCreateStateSet();
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
-    osg::Material* material = dynamic_cast<osg::Material*>(attr);*/
-    /*osg::Material* material = new osg::Material;
-    float alpha = (float)_transparency_value/100;
+    osg::Material* material = dynamic_cast<osg::Material*>(attr);
+    //osg::Material* material = new osg::Material;
+    /*float alpha = (float)_transparency_value/100;
     material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
     m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode( GL_BLEND,osg::StateAttribute::ON );
     m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setAttributeAndModes(material, osg::StateAttribute::ON);*/
-   /*osg::ref_ptr<osg::Material> material = new osg::Material;
+   //osg::ref_ptr<osg::Material> material = new osg::Material;
     float alpha = (float)_transparency_value/100;
+    //state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    //float alpha = (float)20/100;
     material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
-*/
     /*if ( m_fAlpha >= 1.0f ){
     //Entity is opaque so turn off state attribute
     stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
@@ -1262,6 +1330,7 @@ void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<
     osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
     state_set->setAttributeAndModes(bf);*/
 
-    /*Transparency tr;
-    _node->accept(tr);*/
+    Transparency tr;
+    tr.setAlpha(alpha);
+    _node->accept(tr);
 }
