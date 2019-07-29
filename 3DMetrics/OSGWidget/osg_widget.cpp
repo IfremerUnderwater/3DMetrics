@@ -93,12 +93,15 @@ public :
         osg::ref_ptr<osg::Material> material;
         if(attr == NULL) {
             material = new osg::Material;
+            //material->setTransparency(osg::Material::FRONT_AND_BACK,m_alpha);
             material->setAlpha( osg::Material::FRONT_AND_BACK, m_alpha );
 
             state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
 
-            osg::ref_ptr<osg::BlendFunc> bft = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
-            state_set->setAttributeAndModes(bft);
+            //osg::ref_ptr<osg::BlendFunc> bft = new osg::BlendFunc(osg::BlendFunc::DST_COLOR, osg::BlendFunc::SRC_ALPHA_SATURATE );
+            //osg::ref_ptr<osg::BlendFunc> bft = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+            //state_set->setAttributeAndModes(bft);
+            //osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
             //osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_COLOR, osg::BlendFunc::ONE_MINUS_SRC_COLOR );
             //state_set->setAttributeAndModes(bf);
 
@@ -106,6 +109,7 @@ public :
         else {
             material = dynamic_cast<osg::Material*>(attr);
             material->setAlpha( osg::Material::FRONT_AND_BACK, m_alpha );
+            //material->setTransparency(osg::Material::FRONT_AND_BACK,m_alpha);
         }
 
 
@@ -586,8 +590,8 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     material->setAlpha( osg::Material::FRONT_AND_BACK, 1 );
 
     state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
-    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
-    state_set->setAttributeAndModes(bf);
+    /*osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);*/
 
     //m_group->addChild(_node.get());
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
@@ -1303,7 +1307,6 @@ void OSGWidget::enableStereo(bool _state)
 {
     //osg::DisplaySettings::instance()->setStereoMode(osg::DisplaySettings::VERTICAL_INTERLACE);
     osg::DisplaySettings::instance()->setStereo(_state);
-
 }
 
 void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<osg::Node> _node)
@@ -1311,6 +1314,7 @@ void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
     osg::Material* material = dynamic_cast<osg::Material*>(attr);
+
     //osg::Material* material = new osg::Material;
     /*float alpha = (float)_transparency_value/100;
     material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
@@ -1320,17 +1324,28 @@ void OSGWidget::slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<
     float alpha = (float)_transparency_value/100;
     //state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
     //float alpha = (float)20/100;
-    material->setAlpha( osg::Material::FRONT_AND_BACK, alpha );
+
+    //material->setTransparency(osg::Material::FRONT, alpha );
+    material->setAlpha(osg::Material::FRONT_AND_BACK, alpha );
     /*if ( m_fAlpha >= 1.0f ){
     //Entity is opaque so turn off state attribute
     stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
     }else{*/
     //Entity has transparency
-    /*state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
-    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
-    state_set->setAttributeAndModes(bf);*/
+    //state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    //state_set->setRenderingHint(osg::StateSet::TRANSPARENT_BIN);
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+    //osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::DST_COLOR, osg::BlendFunc::SRC_ALPHA_SATURATE );
+    state_set->setAttributeAndModes(bf);
 
-    Transparency tr;
-    tr.setAlpha(alpha);
-    _node->accept(tr);
+
+    state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
+
+    //state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+
+    //state_set->setTextureAttributeAndModes(0, ,osg::StateAttribute::ON );
+    //state_set->setTextureMode(0,GL_BLEND, osg::StateAttribute::ON);
+    //Transparency tr;
+    //tr.setAlpha(alpha);
+   // _node->accept(tr);
 }

@@ -8,8 +8,8 @@ EditTransparencyModel::EditTransparencyModel(QWidget *parent) :
     ui(new Ui::EditTransparencyModel)
 {
     ui->setupUi(this);
-    ui->transparency_label->setText(QString::number(0));
-    ui->transparency_value_slider->setSliderPosition(0);
+    ui->transparency_label->setText(QString::number(100));
+    ui->transparency_value_slider->setSliderPosition(100);
     ui->transparency_value_slider->setTickInterval(100);
     ui->transparency_value_slider->setSingleStep(1);
 
