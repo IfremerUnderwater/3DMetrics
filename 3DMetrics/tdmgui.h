@@ -196,7 +196,7 @@ public slots:
     void slot_addLine();
 
     // Transparency
-    void slot_Transparency(int _transparency_value);
+    void slot_Transparency(int _percentage_transparency);
 
 
 private slots:

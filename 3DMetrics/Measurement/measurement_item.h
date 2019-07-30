@@ -25,7 +25,7 @@ public:
     virtual void encodeASCIILatLon(QString & _string) = 0;
 
     // encode to Shapefile
-    virtual void encodeShapefile(QString & _string) = 0;
+    virtual void encodeShapefile(QString & _string){ Q_UNUSED(_string); }
 
     QString fieldName() const { return m_field_name; }
 

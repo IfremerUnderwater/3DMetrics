@@ -141,8 +141,7 @@ public:
         DepthMap = 1
     };
 
-public slots:
-    void slot_onTransparencyChange(int _transparency_value, osg::ref_ptr<osg::Node> _node);
+    void onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node);
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);

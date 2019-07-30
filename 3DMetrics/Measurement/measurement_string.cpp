@@ -25,8 +25,3 @@ void MeasString::encodeASCIILatLon(QString &_string)
 {
     _string = m_val;
 }
-
-void MeasString::encodeShapefile(QString &_string)
-{
-
-}

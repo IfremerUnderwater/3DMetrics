@@ -15,11 +15,15 @@ public:
     explicit EditTransparencyModel(QWidget *parent = 0);
     ~EditTransparencyModel();
 
+    double getTransparencyValue() { return m_transparency_value; }
+    void setTransparencyValue(double _transparency_value);
+
 signals:
     void signal_onChangedTransparencyValue(int _transparency_value);
 
 private:
     Ui::EditTransparencyModel *ui;
+    double m_transparency_value;
 
 private slots:
     void slot_changeTransparencyValue(int);
