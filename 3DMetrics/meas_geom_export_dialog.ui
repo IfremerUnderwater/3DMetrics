@@ -101,6 +101,9 @@
        <property name="text">
         <string>Points</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
@@ -108,12 +111,18 @@
        <property name="text">
         <string>Lines</string>
        </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QCheckBox" name="areas_checkBox">
        <property name="text">
         <string>Areas</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

@@ -122,23 +122,23 @@ public:
     ///
     /// \brief getGeoOrigin get geographic origin
     /// \param _ref_lat_lon lat lon origin
-    /// \param _ref_depth depth origin
+    /// \param _ref_alt alt origin
     ///
-    void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth);
+    void getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_alt);
 
     // set initial values
-    void setGeoOrigin(QPointF _latlon, double _depth);
+    void setGeoOrigin(QPointF _latlon, double _alt);
 
     // reset to home position
     void home();
 
-    // convert x, y, z => lat, lon & depth
-    // if(m_ref_depth == INVALID_VALUE) do nothing
-    void xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, double &_lon, double &_depth);
+    // convert x, y, z => lat, lon & alt
+    // if(m_ref_alt == INVALID_VALUE) do nothing
+    void xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, double &_lon, double &_alt);
 
     enum map_type {
         OrthoMap = 0,
-        DepthMap = 1
+        AltMap = 1
     };
 
     void onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node);
@@ -202,7 +202,7 @@ private:
     // Georef objects
     KMLHandler m_kml_handler;
     QPointF m_ref_lat_lon;
-    double m_ref_depth;
+    double m_ref_alt;
     GeographicLib::LocalCartesian m_ltp_proj;
     bool m_ctrl_pressed;
     bool m_fake_middle_click_activated;

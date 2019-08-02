@@ -22,7 +22,8 @@ public:
 
     // encode to ASCII
     virtual void encodeASCII(QString & _string) = 0;
-    virtual void encodeASCIILatLon(QString & _string) = 0;
+    virtual void encodeMeasASCIILatLon(QString & _string) { Q_UNUSED(_string); }
+    virtual void encodeMeasASCIIXYZ(QString & _string){ Q_UNUSED(_string); }
 
     // encode to Shapefile
     virtual void encodeShapefile(QString & _string){ Q_UNUSED(_string); }

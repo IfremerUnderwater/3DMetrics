@@ -27,6 +27,7 @@ public:
     MeasGeomExportDialog::export_type getExportType() { return m_export_type; }
     bool getXYZSelected() { return m_xyz_selected; }
     bool getLatLonSelected() { return m_lat_lon_selected; }
+    void clear();
 
 private:
     Ui::MeasGeomExportDialog *ui;

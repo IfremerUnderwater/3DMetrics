@@ -69,7 +69,7 @@ private:
 
     QLabel *m_lat_label;
     QLabel *m_lon_label;
-    QLabel *m_depth_label;
+    QLabel *m_alt_label;
 
     DecimationDialog m_decimation_dialog;
 
@@ -84,7 +84,7 @@ private:
     QString m_path_project;
     QString m_path_snapshot;
     QString m_path_ortho_map;
-    QString m_path_depth_map;
+    QString m_path_alt_map;
 
     OSGAxes m_axe;
 
@@ -185,8 +185,8 @@ public slots:
     // generateOrthoMap 2D
     void slot_saveOrthoMap();
 
-    // generateDepthMap 2D
-    void slot_saveDepthMap();
+    // generateAltMap 2D
+    void slot_saveAltMap();
 
     // Settings
     void slot_applySettings();

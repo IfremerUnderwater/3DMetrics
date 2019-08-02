@@ -40,7 +40,8 @@ public:
 
     // encode to ASCII
     virtual void encodeASCII(QString & _string);
-    virtual void encodeASCIILatLon(QString & _string);
+    virtual void encodeMeasASCIILatLon(QString & _string);
+    virtual void encodeMeasASCIIXYZ(QString & _string);
 
     // encode to Shapefile
     virtual void encodeShapefile(QString & _string);

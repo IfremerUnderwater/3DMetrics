@@ -68,9 +68,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     m_dialog.setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
 
     // to add in reverse because toolbar order is right to left
-    m_depth_label = new QLabel("", ui->coords_toolbar);
-    m_depth_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_depth_label);
+    m_alt_label = new QLabel("", ui->coords_toolbar);
+    m_alt_label->setMinimumWidth(120);
+    ui->coords_toolbar->addWidget(m_alt_label);
 
     m_lon_label = new QLabel("", ui->coords_toolbar);
     m_lon_label->setMinimumWidth(120);
@@ -214,12 +214,12 @@ TDMGui::TDMGui(QWidget *_parent) :
         m_path_ortho_map="";
         ready_to_apply = ready_to_apply && false;
     }
-    if(m_settings.contains("3DMetrics/pathDepthMap"))
+    if(m_settings.contains("3DMetrics/pathAltMap"))
     {
         ready_to_apply = ready_to_apply && true;
-        m_path_depth_map = m_settings.value("3DMetrics/pathDepthMap").value<QString>();
+        m_path_alt_map = m_settings.value("3DMetrics/pathAltMap").value<QString>();
     }else{
-        m_path_depth_map="";
+        m_path_alt_map="";
         ready_to_apply = ready_to_apply && false;
     }
 
@@ -452,8 +452,8 @@ bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, b
 
     // get reference point from OSG widget
     QPointF lat_lon;
-    double depth_org;
-    ui->display_widget->getGeoOrigin(lat_lon, depth_org);
+    double alt_org;
+    ui->display_widget->getGeoOrigin(lat_lon, alt_org);
 
     QFileInfo file_measurement_info(measurement_filename.fileName());
     QVariant data(file_measurement_info.fileName());
@@ -499,7 +499,7 @@ bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, b
         selectItem(index);
     }
 
-    if(depth_org == INVALID_VALUE)
+    if(alt_org == INVALID_VALUE)
         ui->display_widget->home();
 
     return true;
@@ -521,26 +521,26 @@ void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _build_osg)
         QJsonObject obj = _doc.object();
         reference = obj["Reference"].toObject();
 
-        if(reference.contains("latitude") && reference.contains("longitude") && reference.contains("depth") )
+        if(reference.contains("latitude") && reference.contains("longitude") && reference.contains("altitude") )
         {
             // in Json
             double lat_ref = reference["latitude"].toDouble();
             double lon_ref = reference["longitude"].toDouble();
-            double depth_ref = reference["depth"].toDouble();
+            double alt_ref = reference["altitude"].toDouble();
 
             // in OSGWidget
             // add reference point from OSG widget
             QPointF lat_lon;
-            double depth_org;
-            ui->display_widget->getGeoOrigin(lat_lon, depth_org);
-            qDebug() << "Reference lat=" << lat_lon.x() << " lon=" << lat_lon.y() << " depth=" << depth_org;
+            double alt_org;
+            ui->display_widget->getGeoOrigin(lat_lon, alt_org);
+            qDebug() << "Reference lat=" << lat_lon.x() << " lon=" << lat_lon.y() << " alt=" << alt_org;
             // Update OSGWidget if not initialized
-            if(depth_org == INVALID_VALUE)
+            if(alt_org == INVALID_VALUE)
             {
                 lat_lon.setX(lat_ref);
                 lat_lon.setY(lon_ref);
-                depth_org = depth_ref;
-                ui->display_widget->setGeoOrigin(lat_lon, depth_org);
+                alt_org = alt_ref;
+                ui->display_widget->setGeoOrigin(lat_lon, alt_org);
             }
             // Warning : latitude is in x, longitude is in y in OSGWidget
             double lat_org = lat_lon.x();
@@ -548,17 +548,17 @@ void TDMGui::loadAttribTableFromJson(QJsonDocument &_doc, bool _build_osg)
 
             // convert ref in GeoOrigin
             GeographicLib::LocalCartesian proj;
-            proj.Reset(lat_org, lon_org, depth_org);
+            proj.Reset(lat_org, lon_org, alt_org);
             double x_ref;
             double y_ref;
             double z;
-            proj.Forward(lat_ref, lon_ref, depth_ref, x_ref, y_ref,z);
+            proj.Forward(lat_ref, lon_ref, alt_ref, x_ref, y_ref,z);
 
             offset.x = x_ref;
             offset.y = y_ref;
 
-            // depth
-            offset.z = depth_ref - depth_org;
+            // alt
+            offset.z = alt_ref - alt_org;
             qDebug() << "offsetX=" << offset.x << " offsetY=" << offset.y << " offsetZ=" << offset.z;
             obj.remove("Reference");
             _doc.setObject(obj);
@@ -834,14 +834,14 @@ bool TDMGui::saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_
 
     // add reference point from OSG widget
     QPointF lat_lon;
-    double ref_depth;
-    ui->display_widget->getGeoOrigin(lat_lon,ref_depth);
+    double ref_alt;
+    ui->display_widget->getGeoOrigin(lat_lon,ref_alt);
     QJsonObject root_obj = data_json.object();
     QJsonObject reference;
     // Warning : latitude is in x, longitude is in y in OSGWidget
     reference.insert("latitude", QJsonValue(lat_lon.x()));
     reference.insert("longitude", QJsonValue(lat_lon.y()));
-    reference.insert("depth", QJsonValue(ref_depth));
+    reference.insert("altitude", QJsonValue(ref_alt));
     root_obj.insert("Reference",reference);
     data_json.setObject(root_obj);
 
@@ -1155,7 +1155,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
                 menu->addSeparator();
                 menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
-                menu->addAction(tr("Make an depth map"),this,SLOT(slot_saveDepthMap()));
+                menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
 
@@ -2736,29 +2736,29 @@ void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton _button, int _x, int _y)
     ui->display_widget->getIntersectionPoint(_x, _y, vect, exists);
     if(exists)
     {
-        double lat, lon, depth;
+        double lat, lon, alt;
 
         // transform to lat/lon
-        QPointF ref_lat_lon; double ref_depth;
-        ui->display_widget->getGeoOrigin(ref_lat_lon, ref_depth);
-        if(ref_depth == INVALID_VALUE)
+        QPointF ref_lat_lon; double ref_alt;
+        ui->display_widget->getGeoOrigin(ref_lat_lon, ref_alt);
+        if(ref_alt == INVALID_VALUE)
         {
             m_lat_label->setText("");
             m_lon_label->setText("");
-            m_depth_label->setText("");
+            m_alt_label->setText("");
             return;
         }
-        ui->display_widget->xyzToLatLonDepth(vect[0], vect[1], vect[2], lat, lon, depth);
+        ui->display_widget->xyzToLatLonAlt(vect[0], vect[1], vect[2], lat, lon, alt);
 
         m_lat_label->setText("lat: "+QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
         m_lon_label->setText("lon: "+QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        m_depth_label->setText("depth: "+QString::number(depth,'f',1) + "m");
+        m_alt_label->setText("alt: "+QString::number(alt,'f',1) + "m");
     }
     else
     {
         m_lat_label->setText("");
         m_lon_label->setText("");
-        m_depth_label->setText("");
+        m_alt_label->setText("");
     }
 }
 
@@ -2865,7 +2865,7 @@ void TDMGui::slot_applySettings()
     m_settings.setValue("3DMetrics/pathProject", m_path_project);
     m_settings.setValue("3DMetrics/pathSnapshot", m_path_snapshot);
     m_settings.setValue("3DMetrics/pathOrthoMap", m_path_ortho_map);
-    m_settings.setValue("3DMetrics/pathDepthMap", m_path_depth_map);
+    m_settings.setValue("3DMetrics/pathAltMap", m_path_alt_map);
 
 }
 
@@ -2966,36 +2966,36 @@ void TDMGui::slot_saveOrthoMap()
         if (save_image) QMessageBox::information(this,"Done","Your orthographic image have been generated");
         else
         {
-            QMessageBox::critical(this, tr("Error : depth map file"), tr("Error : your depth image couldn't be generated"));
+            QMessageBox::critical(this, tr("Error : altitude map file"), tr("Error : your altitude image couldn't be generated"));
             return;
         }
     }
 }
 
-void TDMGui::slot_saveDepthMap()
+void TDMGui::slot_saveAltMap()
 {
     QTreeView *view = ui->tree_widget;
 
     bool has_selection = !view->selectionModel()->selection().isEmpty();
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
-    QString name_file_depth = getSaveFileName(this, tr("Save depth map"),m_path_depth_map,
+    QString name_file_alt = getSaveFileName(this, tr("Save altitude map"),m_path_alt_map,
                                               tr("Images (*.tif)"));
-    m_path_depth_map = name_file_depth;
+    m_path_alt_map = name_file_alt;
     slot_applySettings();
 
-    QFileInfo depth_file_info(name_file_depth);
+    QFileInfo alt_file_info(name_file_alt);
 
     // check filename is not empty
-    if(depth_file_info.fileName().isEmpty()){
-        QMessageBox::critical(this, tr("Error : save depth map"), tr("Error : you didn't give a name to the file"));
+    if(alt_file_info.fileName().isEmpty()){
+        QMessageBox::critical(this, tr("Error : save altitude map"), tr("Error : you didn't give a name to the file"));
         return;
     }
 
     // add suffix if needed
-    if (depth_file_info.suffix() != ".tif"){
-        name_file_depth = name_file_depth.remove(".tif");
-        depth_file_info.setFile(name_file_depth);
+    if (alt_file_info.suffix() != ".tif"){
+        name_file_alt = name_file_alt.remove(".tif");
+        alt_file_info.setFile(name_file_alt);
     }
 
     if (has_selection && has_current)
@@ -3015,11 +3015,11 @@ void TDMGui::slot_saveDepthMap()
         double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1, 0, 99999,4, &ok);
         if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_depth,pixels, OSGWidget::DepthMap);
-        if (save_image) QMessageBox::information(this,"Done","Your depth image have been generated");
+        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_alt,pixels, OSGWidget::AltMap);
+        if (save_image) QMessageBox::information(this,"Done","Your altitude image have been generated");
         else
         {
-            QMessageBox::critical(this, tr("Error : depth map file"), tr("Error : your depth image couldn't be generated"));
+            QMessageBox::critical(this, tr("Error : altitude map file"), tr("Error : your altitude image couldn't be generated"));
             return;
         }
     }
@@ -3127,6 +3127,9 @@ void TDMGui::slot_exportMeasToGeom()
     QString fileName = m_meas_geom_export_dialog.getFilename();
     QFile path(fileName);
     QFileInfo path_info(path.fileName());
+    // Get Table
+    QTableWidget *table = ui->attrib_table;
+
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ASCII)
     {
         // add suffix if needed
@@ -3144,116 +3147,101 @@ void TDMGui::slot_exportMeasToGeom()
         }
 
         //get and write header
-        /*for(int i=1; i<table->columnCount(); i++)
+        for(int i=1; i<table->columnCount(); i++)
         {
+            MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(0,i);
+            MeasItem *item = pwidget->measItem();
+            QString field_string_xyz = "";
+            QString field_string_latlon = "";
             QString field_string = table->horizontalHeaderItem(i)->text();
-            // write field
-            if (i<table->columnCount()-1)
-                field_string = field_string + ",";
 
-            csv_file.write(field_string.toUtf8());
+            if( m_meas_geom_export_dialog.getLatLonSelected() == true )
+            {
+                field_string_latlon = field_string + "_lat_lon_alt";
+                // write field
+                if ( i<table->columnCount()-1 && field_string_latlon != "" )
+                    field_string_latlon = field_string_latlon + ",";
+            }
+            if( m_meas_geom_export_dialog.getXYZSelected() == true )
+            {
+                field_string_xyz = field_string + "_xyz";
+                // write field
+                if ( i<table->columnCount()-1 && field_string_xyz != "" )
+                    field_string_xyz = field_string_xyz + ",";
+                if( i == table->columnCount()-1 && m_meas_geom_export_dialog.getLatLonSelected() == true )
+                    field_string_xyz = field_string_xyz + ",";
+            }
+
+            field_string = field_string_xyz + field_string_latlon;
+
+            if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
+            {
+                csv_file.write(field_string.toUtf8());
+            }
+            if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
+            {
+                csv_file.write(field_string.toUtf8());
+            }
+            if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
+            {
+                csv_file.write(field_string.toUtf8());
+            }
         }
 
         // write end of line
-        csv_file.write(QString("\n").toUtf8());*/
+        csv_file.write(QString("\n").toUtf8());
 
-        if( m_meas_geom_export_dialog.getLatLonSelected() == true)
+
+        // write fields data
+        for(int i=0; i < table->rowCount(); i++)
         {
-            // Get Table
-            QTableWidget *table = ui->attrib_table;
-
-
-            // write fields data
-            for(int i=0; i < table->rowCount(); i++)
+            for(int j=1; j < table->columnCount(); j++)
             {
-                for(int j=1; j < table->columnCount(); j++)
+                // add field
+                MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
+                MeasItem *item = pwidget->measItem();
+                QString field_string_xyz = "";
+                QString field_string_latlon = "";
+                QString field_string;
+
+                if( m_meas_geom_export_dialog.getLatLonSelected() == true )
                 {
-                    // add field
-                    MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
-                    MeasItem *item = pwidget->measItem();
-                    QString field_string;
-                    item->encodeASCIILatLon(field_string);
-
-                    if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
-                    {
-                        // write field
-                        if (j<table->columnCount()-1)
-                            field_string = field_string + ",";
-
-                        csv_file.write(field_string.toUtf8());
-                    }
-                    if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
-                    {
-                        // write field
-                        if (j<table->columnCount()-1)
-                            field_string = field_string + ",";
-
-                        csv_file.write(field_string.toUtf8());
-                    }
-                    if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
-                    {
-                        // write field
-                        if (j<table->columnCount()-1)
-                            field_string = field_string + ",";
-
-                        csv_file.write(field_string.toUtf8());
-                    }
+                    item->encodeMeasASCIILatLon(field_string_latlon);
+                    // write field
+                    if ( j<table->columnCount()-1 && field_string_latlon != "" )
+                        field_string_latlon = field_string_latlon + ",";
                 }
-                // write end of line
-                csv_file.write(QString("\n").toUtf8());
-            }
-        }
-        if( m_meas_geom_export_dialog.getXYZSelected() == true)
-        {
-            // Get Table
-            QTableWidget *table = ui->attrib_table;
-
-            // write fields data
-            for(int i=0; i < table->rowCount(); i++)
-            {
-                for(int j=1; j < table->columnCount(); j++)
+                if( m_meas_geom_export_dialog.getXYZSelected() == true )
                 {
-                    // add field
-                    MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(i,j);
-                    MeasItem *item = pwidget->measItem();
-                    QString field_string;
-                    item->encodeASCII(field_string);
-
-                    if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
-                    {
-                        // write field
-                        if (j<table->columnCount()-1)
-                            field_string = field_string + ",";
-
-                        csv_file.write(field_string.toUtf8());
-                    }
-                    if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
-                    {
-                        // write field
-                        if (j<table->columnCount()-1)
-                            field_string = field_string + ",";
-
-                        csv_file.write(field_string.toUtf8());
-                    }
-                    if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
-                    {
-                        // write field
-                        if (j<table->columnCount()-1)
-                            field_string = field_string + ",";
-
-                        csv_file.write(field_string.toUtf8());
-                    }
+                    item->encodeMeasASCIIXYZ(field_string_xyz);
+                    // write field
+                   if ( j<table->columnCount()-1 && field_string_xyz != "" )
+                        field_string_xyz = field_string_xyz + ",";
+                   if( j == table->columnCount()-1 && m_meas_geom_export_dialog.getLatLonSelected() == true )
+                       field_string_xyz = field_string_xyz + ",";
                 }
-                // write end of line
-                csv_file.write(QString("\n").toUtf8());
+
+                field_string = field_string_xyz + field_string_latlon;
+
+                if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
+                {
+                    csv_file.write(field_string.toUtf8());
+                }
+                if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
+                {
+                    csv_file.write(field_string.toUtf8());
+                }
+                if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
+                {
+                    csv_file.write(field_string.toUtf8());
+                }
             }
-            // close file
-            csv_file.close();
+            // write end of line
+            csv_file.write(QString("\n").toUtf8());
         }
     }
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {
-        QTableWidget *table = ui->attrib_table;
         const char *psz_driver_name = "ESRI Shapefile";
         OGRSFDriver *driver;
         OGRRegisterAll();
@@ -3268,8 +3256,8 @@ void TDMGui::slot_exportMeasToGeom()
 
         OGRSpatialReference oSRS;
         QPointF lat_lon;
-        double depth_org;
-        ui->display_widget->getGeoOrigin(lat_lon, depth_org);
+        double alt_org;
+        ui->display_widget->getGeoOrigin(lat_lon, alt_org);
         oSRS.SetTM(lat_lon.x(),lat_lon.y(),0.9996,0,0);
         oSRS.SetWellKnownGeogCS( "WGS84" );
 
@@ -3395,6 +3383,7 @@ void TDMGui::slot_exportMeasToGeom()
         }
         OGRDataSource::DestroyDataSource( data_source );
     }
+    m_meas_geom_export_dialog.clear();
 }
 
 void TDMGui::slot_editTransparency()

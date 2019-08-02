@@ -13,6 +13,8 @@ MeasGeomExportDialog::MeasGeomExportDialog(QWidget *parent) :
     m_point_selected = false;
     m_line_selected = false;
     m_area_selected = false;
+    m_xyz_selected = false;
+    m_lat_lon_selected = false;
     m_filename = "";
     ui->xyz_btn->setDisabled(true);
     ui->lat_lon_btn->setDisabled(true);
@@ -37,7 +39,7 @@ void MeasGeomExportDialog::slot_textFilenameChanged(QString _filename)
 
 void MeasGeomExportDialog::slot_selectPath()
 {
-    m_filename = getSaveFileName(this,tr("Save measurement to geometry"), "", tr("Shapefile (*.shp)"));
+    m_filename = getSaveFileName(this,tr("Save measurement to geometry"), "", tr("Shapefile, csv (*.shp *.csv)"));
     slot_textFilenameChanged(m_filename);
 }
 
@@ -92,4 +94,13 @@ void MeasGeomExportDialog::slot_asciiChecked(bool _checked)
 {
     ui->xyz_btn->setDisabled(!_checked);
     ui->lat_lon_btn->setDisabled(!_checked);
+}
+
+void MeasGeomExportDialog::clear()
+{
+    m_point_selected = false;
+    m_line_selected = false;
+    m_area_selected = false;
+    m_xyz_selected = false;
+    m_lat_lon_selected = false;
 }

@@ -21,9 +21,3 @@ void MeasCategory::encodeASCII(QString &_string)
 {
     _string = m_val;
 }
-
-void MeasCategory::encodeASCIILatLon(QString &_string)
-{
-    _string = m_val;
-}
-
