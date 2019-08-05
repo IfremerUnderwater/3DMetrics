@@ -29,7 +29,7 @@ void EditTransparencyModel::slot_changeTransparencyValue(int _transparency_value
     emit signal_onChangedTransparencyValue(_transparency_value);
 }
 
-void EditTransparencyModel::setTransparencyValue(double _transparency_value)
+void EditTransparencyModel::setTransparency(double _transparency_value)
 {
     m_transparency_value = _transparency_value;
     ui->transparency_label->setText(QString::number((int)(100*m_transparency_value)));

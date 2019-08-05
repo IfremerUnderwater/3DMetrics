@@ -16,7 +16,7 @@ public:
     ~EditTransparencyModel();
 
     double getTransparencyValue() { return m_transparency_value; }
-    void setTransparencyValue(double _transparency_value);
+    void setTransparency(double _transparency_value);
 
 signals:
     void signal_onChangedTransparencyValue(int _transparency_value);

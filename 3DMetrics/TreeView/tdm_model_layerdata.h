@@ -20,7 +20,7 @@ public:
 
     osg::ref_ptr<osg::Node> node() const { return m_node; }
     QString fileName() const { return m_filename; }
-    double getTransparencyValue() const { return m_transparency_value; }
+    double getTransparency() const { return m_transparency_value; }
     void setTransparencyValue(const double _transparency_value) { m_transparency_value = _transparency_value; }
 
 private:

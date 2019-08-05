@@ -486,7 +486,6 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     material->setAlpha( osg::Material::FRONT, 1 );
     state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
 
-    //m_group->addChild(_node.get());
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
@@ -1163,7 +1162,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
         progress_dialog.setValue(height_pixel);
         geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
 
-        // Setup output coordinate system that is UTM 11 WGS84.
+        // Setup output coordinate system
         double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
         geotiff_dataset_alt->SetGeoTransform(geo_transform);
         char *geo_reference_alt = NULL;
@@ -1208,7 +1207,10 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
     osg::Material* material = dynamic_cast<osg::Material*>(attr);
 
+    // Changes the transparency of the node
     material->setAlpha(osg::Material::FRONT, _transparency_value );
+
+    // Turn on blending
     osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
     state_set->setAttributeAndModes(bf);
 

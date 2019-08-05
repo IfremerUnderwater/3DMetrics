@@ -3146,7 +3146,7 @@ void TDMGui::slot_exportMeasToGeom()
             return;
         }
 
-        //get and write header
+        // Get and write header
         for(int i=1; i<table->columnCount(); i++)
         {
             MeasTableWidgetItem *pwidget = (MeasTableWidgetItem *)table->item(0,i);
@@ -3188,11 +3188,11 @@ void TDMGui::slot_exportMeasToGeom()
             }
         }
 
-        // write end of line
+        // Write end of line
         csv_file.write(QString("\n").toUtf8());
 
 
-        // write fields data
+        // Write fields data
         for(int i=0; i < table->rowCount(); i++)
         {
             for(int j=1; j < table->columnCount(); j++)
@@ -3225,14 +3225,17 @@ void TDMGui::slot_exportMeasToGeom()
 
                 if( item->type() == "Point" && m_meas_geom_export_dialog.getPointSelected() == true )
                 {
+                    // Write point
                     csv_file.write(field_string.toUtf8());
                 }
                 if( item->type() == "Line" && m_meas_geom_export_dialog.getLineSelected() == true )
                 {
+                    // Write line
                     csv_file.write(field_string.toUtf8());
                 }
                 if( item->type() == "Area" && m_meas_geom_export_dialog.getAreaSelected() == true )
                 {
+                    // Write area
                     csv_file.write(field_string.toUtf8());
                 }
             }
@@ -3254,6 +3257,7 @@ void TDMGui::slot_exportMeasToGeom()
             printf( "Creation of output file failed.\n" );
         }
 
+        // Setup output coordinate system.
         OGRSpatialReference oSRS;
         QPointF lat_lon;
         double alt_org;
@@ -3271,6 +3275,8 @@ void TDMGui::slot_exportMeasToGeom()
         OGRLayer *po_layer_points;
         OGRLayer *po_layer_lines;
         OGRLayer *po_layer_area;
+
+        // Create the files
         for(int i=0; i<table->rowCount(); i++)
         {
             for(int j=1; j<table->columnCount(); j++)
@@ -3401,7 +3407,8 @@ void TDMGui::slot_editTransparency()
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        m_edit_trans_model.setTransparencyValue(layer_data.getTransparencyValue());
+        // Initializes the transparency
+        m_edit_trans_model.setTransparency(layer_data.getTransparency());
 
     }
     QObject::connect(&m_edit_trans_model, SIGNAL(signal_onChangedTransparencyValue(int)), this, SLOT(slot_Transparency(int)));
