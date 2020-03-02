@@ -11,6 +11,8 @@
 #include "decimation_dialog.h"
 #include "osg_axes.h"
 #include "file_open_thread.h"
+#include "meas_geom_export_dialog.h"
+#include "edit_transparency_model.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -67,9 +69,13 @@ private:
 
     QLabel *m_lat_label;
     QLabel *m_lon_label;
-    QLabel *m_depth_label;
+    QLabel *m_alt_label;
 
     DecimationDialog m_decimation_dialog;
+
+    MeasGeomExportDialog m_meas_geom_export_dialog;
+
+    EditTransparencyModel m_edit_trans_model;
 
     // Settings variable
     QSettings m_settings;
@@ -78,7 +84,7 @@ private:
     QString m_path_project;
     QString m_path_snapshot;
     QString m_path_ortho_map;
-    QString m_path_depth_map;
+    QString m_path_alt_map;
 
     OSGAxes m_axe;
 
@@ -88,6 +94,7 @@ private:
     QShortcut m_addline_shortcut;
     QShortcut m_stereo_shortcut;
     QShortcut m_delete_shortcut;
+    QShortcut m_light_shortcut;
 
 public slots:
 
@@ -98,7 +105,10 @@ public slots:
     void slot_saveMeasurementFile();
     void slot_saveMeasurementFileAs();
 
+    // Export
     void slot_saveAttribTableToASCII();
+    void slot_showExportMeasToGeom();
+    void slot_exportMeasToGeom();
 
     void slot_openProject();
     void slot_saveProject();
@@ -109,6 +119,7 @@ public slots:
     void slot_axeView();
     void slot_stereoShortcut();
     void slot_toggleStereoView();
+    void slot_lightShorcut();
     void slot_toggleLight();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
@@ -150,6 +161,7 @@ public slots:
     void slot_unselect();
     void slot_editMeasurement();
     void slot_computeTotalArea();
+    void slot_editTransparency();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
@@ -173,8 +185,8 @@ public slots:
     // generateOrthoMap 2D
     void slot_saveOrthoMap();
 
-    // generateDepthMap 2D
-    void slot_saveDepthMap();
+    // generateAltMap 2D
+    void slot_saveAltMap();
 
     // Settings
     void slot_applySettings();
@@ -182,6 +194,10 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
+
+    // Transparency
+    void slot_Transparency(int _percentage_transparency);
+
 
 private slots:
 

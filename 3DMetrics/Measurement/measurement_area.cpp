@@ -1,6 +1,10 @@
 #include <osg/Geometry>
 #include <osg/StateSet>
 #include <osg/Point>
+#include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/osg_widget.h"
+#include <GeographicLib/LocalCartesian.hpp>
+#include "QPointF"
 
 #include "measurement_area.h"
 
@@ -102,6 +106,42 @@ void MeasArea::encodeASCII(QString &_string)
     _string = QString::number(m_area,'f');
 }
 
+void MeasArea::encodeMeasASCIILatLon(QString &_string)
+{
+    _string = "area;" + QString::number(m_area,'f');
+
+    QPointF ref_lat_lon;
+    double ref_alt;
+    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_alt);
+
+    GeographicLib::LocalCartesian ltp_proj;
+    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_alt);
+
+    for(int i=0; i<m_array.length(); i++)
+    {
+        double lat,lon,alt;
+        ltp_proj.Reverse(m_array[i].x, m_array[i].y, m_array[i].z, lat, lon, alt);
+
+        _string = _string + ";"
+                + QString::number(lat,'f',8) + ";"
+                + QString::number(lon,'f',8) + ";"
+                + QString::number(alt,'f',3);
+    }
+}
+
+void MeasArea::encodeMeasASCIIXYZ(QString & _string)
+{
+    _string = "area;" + QString::number(m_area,'f');
+
+    for(int i=0; i<m_array.length(); i++)
+    {
+        _string = _string + ";"
+                + QString::number(m_array[i].x,'f',10) + ";"
+                + QString::number(m_array[i].y,'f',10) + ";"
+                + QString::number(m_array[i].z,'f',10);
+    }
+}
+
 void MeasArea::computeLengthAndArea()
 {
     computeLength();
@@ -134,6 +174,16 @@ void MeasArea::computeLengthAndArea()
     std::vector<Eigen::Vector3f> proj_pt_area_data;
     project3DPointsToPlane(plane_coeffs, pt_area_data, proj_pt_area_data);
     m_area = projPointToArea(plane_coeffs, proj_pt_area_data);
+}
+
+void MeasArea::encodeShapefile(QString &_string)
+{
+    for(int i=0; i<m_array.length(); i++)
+    {
+        _string = _string
+                + QString::number(m_array[i].x,'f',10) + "/"
+                + QString::number(m_array[i].y, 'f', 10) + "/";
+    }
 }
 
 void MeasArea::updateGeode()

@@ -1,6 +1,10 @@
 #include <osg/Geometry>
 #include <osg/StateSet>
 #include <osg/Point>
+#include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/osg_widget.h"
+#include <GeographicLib/LocalCartesian.hpp>
+#include "QPointF"
 
 #include "measurement_line.h"
 
@@ -94,6 +98,53 @@ void MeasLine::encode(QJsonObject & _obj)
 void MeasLine::encodeASCII(QString &_string)
 {
     _string = QString::number(m_length,'f');
+}
+
+void MeasLine::encodeMeasASCIILatLon(QString &_string)
+{
+    _string = "line;" + QString::number(m_length,'f');
+
+    QPointF ref_lat_lon;
+    double ref_alt;
+    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_alt);
+
+    GeographicLib::LocalCartesian ltp_proj;
+    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_alt);
+
+    for(int i=0; i<m_array.length(); i++)
+    {
+        double lat,lon,alt;
+        ltp_proj.Reverse(m_array[i].x, m_array[i].y, m_array[i].z, lat, lon, alt);
+
+        _string = _string + ";"
+                + QString::number(lat,'f',8) + ";"
+                + QString::number(lon,'f',8) + ";"
+                + QString::number(alt,'f',3);
+    }
+}
+
+void MeasLine::encodeMeasASCIIXYZ(QString & _string)
+{
+    _string = "line;" + QString::number(m_length,'f');
+
+    for(int i=0; i<m_array.length(); i++)
+    {
+        _string = _string + ";"
+                + QString::number(m_array[i].x,'f',10) + ";"
+                + QString::number(m_array[i].y,'f',10) + ";"
+                + QString::number(m_array[i].z,'f',10);
+    }
+}
+
+void MeasLine::encodeShapefile(QString &_string)
+{
+    for(int i=0; i<m_array.length(); i++)
+    {
+        _string = _string
+                + QString::number(m_array[i].x,'f',10) + "/"
+                + QString::number(m_array[i].y, 'f', 10) + "/";
+    }
+
 }
 
 void MeasLine::updateGeode()

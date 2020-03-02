@@ -47,8 +47,11 @@
 #include <math.h>
 #include <limits>
 
-#include "Measurement/box_visitor.h"
+#include <osg/AlphaFunc>
+#include <osg/BlendFunc>
 
+#include "Measurement/box_visitor.h"
+#include "edit_transparency_model.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -259,12 +262,13 @@ OSGWidget::OSGWidget(QWidget* parent)
     , m_viewer( new osgViewer::CompositeViewer )
     , m_ctrl_pressed(false)
     , m_fake_middle_click_activated(false)
+    , m_material( new osg::Material )
 
 {
 
     m_ref_lat_lon.setX(INVALID_VALUE);
     m_ref_lat_lon.setY(INVALID_VALUE);
-    m_ref_depth = INVALID_VALUE;
+    m_ref_alt = INVALID_VALUE;
 
     //osgDB::Registry::instance()->setLibraryFilePathList("/Users/tim/code/3DMetricWorkspace/Run/Release/3DMetrics.app/Contents/osgPlugins");
 
@@ -297,32 +301,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
     manipulator->setAllowThrow( false );
 
-
-
     view->setCameraManipulator( manipulator );
-
-
-
-
-    /*osg::Matrix myviewMatrix;
-    osg::Vec3d eye( 0, 0 , 0 );
-    osg::Vec3d center( 0, 0 , 0 );
-    osg::Vec3d up( 0, 0, 1 );
-    myviewMatrix.makeLookAt(eye,center,up);*/
-
-
-    //osg::Vec3d oeil( 0.0, m_ref_lat_lon.x(), m_ref_lat_lon.y());
-    //osg::Vec3d cible( 0.0, 0.0 , 0.0);
-    //osg::Vec3d normale(0.0, 0.0, 1.0);
-    // view->getCamera()->setViewMatrixAsLookAt(oeil, cible, normale);
-
-    //view->getCameraManipulator()->setByMatrix(myviewMatrix);
-
-    //view->getCamera()->setViewMatrixAsLookAt(eye,center,up);
-    //view->getCamera()->getViewMatrixAsLookAt(eye,center,up);
-    //view->getCameraManipulator()->setHomePosition(oeil,cible,normale);
-
-    //view->getCameraManipulator()->setByMatrix(myviewMatrix);
 
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
@@ -346,7 +325,6 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_group = new osg::Group;
     //    m_measurement_geode = new osg::Geode;
     //    m_group->addChild(m_measurement_geode);
-
 }
 
 OSGWidget::~OSGWidget()
@@ -368,19 +346,19 @@ bool OSGWidget::setSceneFromFile(std::string _scene_file)
     std::string sceneFile;
 
     QPointF local_lat_lon;
-    double local_depth;
+    double local_alt;
 
     if (sceneInfo.suffix()==QString("kml")){
         m_kml_handler.readFile(_sceneFile);
         sceneFile = sceneInfo.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
         local_lat_lon.setX(m_kml_handler.getModelLat());
         local_lat_lon.setY(m_kml_handler.getModelLon());
-        local_depth = m_kml_handler.getModelAlt();
+        local_alt = m_kml_handler.getModelAlt();
     }else{
         sceneFile = _sceneFile;
         local_lat_lon.setX(0);
         local_lat_lon.setY(0);
-        local_depth = 0;
+        local_alt = 0;
     }
 
     osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(sceneFile, new osgDB::Options("noRotation"));
@@ -393,17 +371,17 @@ bool OSGWidget::setSceneFromFile(std::string _scene_file)
 
     // Transform model
     osg::ref_ptr<osg::MatrixTransform> model_transform = new osg::MatrixTransform;
-    if (m_ref_depth == INVALID_VALUE){
+    if (m_ref_alt == INVALID_VALUE){
         m_ref_lat_lon = local_lat_lon;
-        m_ref_depth = local_depth;
-        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
+        m_ref_alt = local_alt;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
 
         model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
         model_transform->addChild(model_node);
     }else{
         double N,E,U;
-        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_depth, E, N, U);
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
 
         model_transform->setMatrix(osg::Matrix::translate(E,N,U));
         //model_transform->setMatrix(osg::Matrix::translate(N,-U,E));
@@ -444,19 +422,19 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
     std::string scene_file;
 
     QPointF local_lat_lon;
-    double local_depth;
+    double local_alt;
 
     if (scene_info.suffix()==QString("kml")){
         m_kml_handler.readFile(_scene_file);
         scene_file = scene_info.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
         local_lat_lon.setX(m_kml_handler.getModelLat());
         local_lat_lon.setY(m_kml_handler.getModelLon());
-        local_depth = m_kml_handler.getModelAlt();
+        local_alt = m_kml_handler.getModelAlt();
     }else{
         scene_file = _scene_file;
         local_lat_lon.setX(0);
         local_lat_lon.setY(0);
-        local_depth = 0;
+        local_alt = 0;
     }
 
     osg::ref_ptr<osg::Node> model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
@@ -469,17 +447,17 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
 
     // Transform model
     model_transform = new osg::MatrixTransform;
-    if (m_ref_depth == INVALID_VALUE){
+    if (m_ref_alt == INVALID_VALUE){
         m_ref_lat_lon = local_lat_lon;
-        m_ref_depth = local_depth;
-        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
+        m_ref_alt = local_alt;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
 
         model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
         model_transform->addChild(model_node);
     }else{
         double N,E,U;
-        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_depth, E, N, U);
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
 
         model_transform->setMatrix(osg::Matrix::translate(E,N,U));
         //model_transform->setMatrix(osg::Matrix::translate(N,-U,E));
@@ -501,7 +479,13 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    //m_group->addChild(_node.get());
+    state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    // Add the possibility of modify the transparence
+    osg::ref_ptr<osg::Material> material = new osg::Material;
+    // Put the 3D model totally opaque
+    material->setAlpha( osg::Material::FRONT, 1 );
+    state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
+
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
@@ -545,6 +529,32 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     view->getCameraManipulator()->setHomePosition(eye,target,normal);
 
     home();
+    //state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+   // state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    //state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
+    /*osg::AlphaFunc* alphaFunc = new osg::AlphaFunc;
+    alphaFunc->setFunction(osg::AlphaFunc::GREATER,0.2f);*/
+    //osg::ref_ptr<osg::BlendFunc> blendFunc = new osg::BlendFunc;
+    //blendFunc->setFunction( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+    //state_set->setAttributeAndModes( blendFunc, osg::StateAttribute::ON );
+
+    //Make sure blending is on.
+    /*state_set->setMode( GL_BLEND,osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    //Get the material if it exists
+    osg::ref_ptr<osg::Material> material = new osg::Material;
+
+
+    material->setAlpha( osg::Material::FRONT_AND_BACK, 0.5 );
+
+    //if ( m_fAlpha >= 1.0f ){
+    //Entity is opaque so turn off state attribute
+    //stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
+    //}else{
+    //Entity has transparency
+    state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);*/
+    //}
     return true;
 }
 
@@ -633,7 +643,7 @@ void OSGWidget::clearSceneData()
     // reinit georef
     m_ref_lat_lon.setX(INVALID_VALUE);
     m_ref_lat_lon.setY(INVALID_VALUE);
-    m_ref_depth = INVALID_VALUE;
+    m_ref_alt = INVALID_VALUE;
 
     this->initializeGL();
 }
@@ -895,20 +905,20 @@ osgGA::EventQueue* OSGWidget::getEventQueue() const
 //    m_group->addChild(m_measurement_geode);
 //}
 
-void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_depth)
+void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_alt)
 {
     _ref_lat_lon = m_ref_lat_lon;
-    _ref_depth = m_ref_depth;
+    _ref_alt = m_ref_alt;
 }
 
 // set initial values
-void OSGWidget::setGeoOrigin(QPointF _latlon, double _depth)
+void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
 {
     // Transform model
     osg::ref_ptr<osg::MatrixTransform> model_transform = new osg::MatrixTransform;
     m_ref_lat_lon = _latlon;
-    m_ref_depth = _depth;
-    m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_depth);
+    m_ref_alt = _alt;
+    m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
     model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
     osg::ref_ptr<osg::Node> node = new osg::Node();
@@ -971,14 +981,14 @@ void OSGWidget::cancelTool(QString &_message)
     emit signal_cancelTool(_message);
 }
 
-// convert x, y, z => lat, lon & depth
-// if(m_ref_depth == INVALID_VALUE) do nothing
-void OSGWidget::xyzToLatLonDepth(double _x, double _y, double _z, double &_lat, double &_lon, double &_depth)
+// convert x, y, z => lat, lon & alt
+// if(m_ref_alt == INVALID_VALUE) do nothing
+void OSGWidget::xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, double &_lon, double &_alt)
 {
-    if(m_ref_depth == INVALID_VALUE)
+    if(m_ref_alt == INVALID_VALUE)
         return;
 
-    m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _depth);
+    m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _alt);
 }
 
 
@@ -1104,23 +1114,23 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     viewer.home();
     viewer.frame();
-    if ( _map_type == map_type::DepthMap )
+    if ( _map_type == map_type::AltMap )
     {
         GDALAllRegister();
         CPLPushErrorHandler(CPLQuietErrorHandler);
 
-        GDALDataset *geotiff_dataset_depth;
-        GDALDriver *driver_geotiff_depth;
+        GDALDataset *geotiff_dataset_alt;
+        GDALDriver *driver_geotiff_alt;
 
         int no_data =  -9999;
         std::string file_prof = screen_capture_filename+".tif";
 
-        driver_geotiff_depth = GetGDALDriverManager()->GetDriverByName("GTiff");
-        geotiff_dataset_depth = driver_geotiff_depth->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
+        driver_geotiff_alt = GetGDALDriverManager()->GetDriverByName("GTiff");
+        geotiff_dataset_alt = driver_geotiff_alt->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
 
         float buffer[width_pixel];
 
-        QProgressDialog progress_dialog("Write depth map file...", "Abort depth map", 0, height_pixel, this);
+        QProgressDialog progress_dialog("Write altitude map file...", "Abort altitude map", 0, height_pixel, this);
         progress_dialog.setWindowModality(Qt::WindowModal);
 
         for(int i=0; i<height_pixel; i++) {
@@ -1138,32 +1148,32 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
                     // we get the intersections in a osg::Vec3d
                     _inter_point = hitr->getWorldIntersectPoint();
-                    float depth_point = _inter_point.z();
-                    buffer[j] = depth_point;
+                    float alt_point = _inter_point.z();
+                    buffer[j] = alt_point;
 
                 }else{
-                    float depth_point = no_data;
-                    buffer[j] = depth_point;
+                    float alt_point = no_data;
+                    buffer[j] = alt_point;
                 }
             }
             // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
-            geotiff_dataset_depth->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
+            geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
         }
         progress_dialog.setValue(height_pixel);
-        geotiff_dataset_depth->GetRasterBand(1)->SetNoDataValue(no_data);
+        geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
 
-        // Setup output coordinate system that is UTM 11 WGS84.
+        // Setup output coordinate system
         double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
-        geotiff_dataset_depth->SetGeoTransform(geo_transform);
-        char *geo_reference_depth = NULL;
-        OGRSpatialReference o_SRS_depth;
-        o_SRS_depth.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
-        o_SRS_depth.SetWellKnownGeogCS( "WGS84" );
-        o_SRS_depth.exportToWkt( &geo_reference_depth );
+        geotiff_dataset_alt->SetGeoTransform(geo_transform);
+        char *geo_reference_alt = NULL;
+        OGRSpatialReference o_SRS_alt;
+        o_SRS_alt.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
+        o_SRS_alt.SetWellKnownGeogCS( "WGS84" );
+        o_SRS_alt.exportToWkt( &geo_reference_alt );
 
-        geotiff_dataset_depth->SetProjection(geo_reference_depth);
-        CPLFree( geo_reference_depth );
-        GDALClose(geotiff_dataset_depth) ;
+        geotiff_dataset_alt->SetProjection(geo_reference_alt);
+        CPLFree( geo_reference_alt );
+        GDALClose(geotiff_dataset_alt) ;
 
         GDALDestroyDriverManager();
     }
@@ -1175,7 +1185,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
 void OSGWidget::enableLight(bool _state)
 {
-    if (_state)
+    if ( _state )
     {
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::ON);
     }
@@ -1187,8 +1197,23 @@ void OSGWidget::enableLight(bool _state)
 
 void OSGWidget::enableStereo(bool _state)
 {
-
     //osg::DisplaySettings::instance()->setStereoMode(osg::DisplaySettings::VERTICAL_INTERLACE);
     osg::DisplaySettings::instance()->setStereo(_state);
+}
+
+void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node)
+{
+    osg::StateSet* state_set = _node->getOrCreateStateSet();
+    osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+    osg::Material* material = dynamic_cast<osg::Material*>(attr);
+
+    // Changes the transparency of the node
+    material->setAlpha(osg::Material::FRONT, _transparency_value );
+
+    // Turn on blending
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);
+
+    state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
 
 }

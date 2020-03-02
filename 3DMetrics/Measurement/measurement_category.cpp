@@ -16,6 +16,7 @@ void MeasCategory::encode(QJsonObject & _obj)
     _obj.insert(fieldName(), QJsonValue(m_val));
 }
 
+// encode to ASCII
 void MeasCategory::encodeASCII(QString &_string)
 {
     _string = m_val;

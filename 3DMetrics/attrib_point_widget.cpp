@@ -45,20 +45,20 @@ void AttribPointWidget::update(bool _value_ok)
         OSGWidgetTool *tool = OSGWidgetTool::instance();
         OSGWidget *osg_widget = tool->getOSGWidget();
 
-        double lat=0, lon=0, depth=0;
+        double lat=0, lon=0, alt=0;
 
         // transform to lat/lon
         //        // *** TODO : put in OSGWidget (reference doesn't change often)
-        //        QPointF ref_lat_lon; double ref_depth;
-        //        osgWidget->getGeoOrigin(ref_lat_lon, ref_depth);
+        //        QPointF ref_lat_lon; double ref_alt;
+        //        osgWidget->getGeoOrigin(ref_lat_lon, ref_alt);
         //        GeographicLib::LocalCartesian ltp_proj;
-        //        ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
-        //        ltp_proj.Reverse(m_item->x(), m_item->y(), m_item->z(), lat, lon, depth);
-        osg_widget->xyzToLatLonDepth(m_point_item->x(), m_point_item->y(), m_point_item->z(), lat, lon, depth);
+        //        ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_alt);
+        //        ltp_proj.Reverse(m_item->x(), m_item->y(), m_item->z(), lat, lon, alt);
+        osg_widget->xyzToLatLonAlt(m_point_item->x(), m_point_item->y(), m_point_item->z(), lat, lon, alt);
 
         ui->x_label->setText(QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
         ui->y_label->setText(QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        ui->z_label->setText(QString::number(depth,'f',1) + " m");
+        ui->z_label->setText(QString::number(alt,'f',1) + " m");
 
         ui->tool_label->setStyleSheet("");
     }

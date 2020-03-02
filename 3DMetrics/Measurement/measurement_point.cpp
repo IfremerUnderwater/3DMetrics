@@ -41,21 +41,52 @@ void MeasPoint::encode(QJsonObject & _obj)
     _obj.insert(fieldName(), QJsonValue(point));
 }
 
-void MeasPoint::encodeASCII(QString &_string)
+void MeasPoint::encodeMeasASCIILatLon(QString &_string)
 {
     QPointF ref_lat_lon;
-    double ref_depth;
-    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_depth);
+    double ref_alt;
+    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_alt);
 
     GeographicLib::LocalCartesian ltp_proj;
-    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_depth);
+    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_alt);
 
     double lat,lon,alt;
     ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, alt);
 
-    _string = "lat=" + QString::number(lat,'f',8)+
-            "\tlon="+ QString::number(lon,'f',8)+
-            "\talt="+ QString::number(alt,'f',3);
+    _string = "point; ;" + QString::number(lat,'f',8)+
+            ";"+ QString::number(lon,'f',8)+
+            ";"+ QString::number(alt,'f',3);
+}
+
+void MeasPoint::encodeASCII(QString &_string)
+{
+    QPointF ref_lat_lon;
+    double ref_alt;
+    OSGWidgetTool::instance()->getOSGWidget()->getGeoOrigin(ref_lat_lon, ref_alt);
+
+    GeographicLib::LocalCartesian ltp_proj;
+    ltp_proj.Reset(ref_lat_lon.x(), ref_lat_lon.y(), ref_alt);
+
+    double lat,lon,alt;
+    ltp_proj.Reverse(m_point.x, m_point.y, m_point.z, lat, lon, alt);
+
+    _string = "x=" + QString::number(m_point.x,'f',8)+
+            "\ty="+ QString::number(m_point.y,'f',8)+
+            "\tz="+ QString::number(m_point.z,'f',3);
+}
+
+void MeasPoint::encodeMeasASCIIXYZ(QString & _string)
+{
+    _string = "point; ;"
+            + QString::number(m_point.x, 'f', 10) + ";"
+            + QString::number(m_point.y, 'f', 10) + ";"
+            + QString::number(m_point.z, 'f', 10);
+}
+
+void MeasPoint::encodeShapefile(QString &_string)
+{
+    _string = QString::number(m_point.x, 'f', 10) + "/"
+            + QString::number( m_point.y, 'f', 10);
 }
 
 void MeasPoint::updateGeode()

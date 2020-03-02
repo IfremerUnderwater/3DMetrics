@@ -25,6 +25,7 @@ public:
     // encode to ASCII
     virtual void encodeASCII(QString & _string);
 
+
     virtual void updateGeode() {}
 
 private:
