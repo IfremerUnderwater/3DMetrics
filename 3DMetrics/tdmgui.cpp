@@ -1153,6 +1153,8 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
                 menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
+                menu->addAction(tr("Edit Model Offset"),this,SLOT(slot_editModelOffset()));
+
                 menu->addSeparator();
                 menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
@@ -1228,9 +1230,21 @@ void TDMGui::slot_deleteRow()
             return;
         }
 
+        // close transparency tool
+        if(transpMap.contains(item))
+        {
+            QMap<TdmLayerItem*, EditTransparencyModel*>::const_iterator i = transpMap.find(item);
+            while(i != transpMap.end() && i.key() == item)
+            {
+                i.value()->close();
+                ++i;
+            }
+        }
+
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
         deleteTreeItemsData(item);
+
         // delete node in view
         model->removeRow(index.row(), index.parent());
     }
@@ -1610,7 +1624,7 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
             {
 
                 TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
-                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line (F1)"), this, SLOT(slot_addAttributeLine()));
+                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line (F2)"), this, SLOT(slot_addAttributeLine()));
             }
         }
     }
@@ -2424,6 +2438,14 @@ void TDMGui::slot_openProject()
         }
         if(res_btn == QMessageBox::Cancel)
             return;
+    }
+
+    // close transparency tool
+    QMap<TdmLayerItem*, EditTransparencyModel*>::const_iterator i = transpMap.begin();
+    while(i != transpMap.end())
+    {
+        i.value()->close();
+        ++i;
     }
 
     // delete all data
@@ -3404,19 +3426,26 @@ void TDMGui::slot_editTransparency()
         // get the 3D model selected
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
-        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TdmLayersModel* tdmmodel = static_cast<TdmLayersModel*>(model);
+        TdmLayerItem *item = tdmmodel->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        // Initializes the transparency
-        m_edit_trans_model.setTransparency(layer_data.getTransparency());
+        EditTransparencyModel *tmodel = new EditTransparencyModel(this, item, ui->display_widget);
 
+        QObject::connect(TdmLayersModel::instance(), SIGNAL(signal_itemRemoved(TdmLayerItem*)), tmodel, SLOT(closeIfDelete(TdmLayerItem*)));
+
+        // Initializes transparency
+        tmodel->setTransparency(layer_data.getTransparency());
+        tmodel->setWindowTitle(tr("Transparency : ") + item->getName());
+        tmodel->show();
+        tmodel->raise();
+        tmodel->activateWindow(); 
+
+        transpMap.insert(item, tmodel);
     }
-    QObject::connect(&m_edit_trans_model, SIGNAL(signal_onChangedTransparencyValue(int)), this, SLOT(slot_Transparency(int)));
-    m_edit_trans_model.show();
-
 }
 
-void TDMGui::slot_Transparency(int _percentage_transparency)
+void TDMGui::slot_editModelOffset()
 {
     QTreeView *view = ui->tree_widget;
 
@@ -3431,12 +3460,39 @@ void TDMGui::slot_Transparency(int _percentage_transparency)
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        osg::Node* const node = (layer_data.node().get());
-
-        double double_transparency = ( (double)_percentage_transparency )/100.0;
-
-        ui->display_widget->onTransparencyChange(double_transparency, node);
-        layer_data.setTransparencyValue(double_transparency);
-        item->setPrivateData<TDMModelLayerData>(layer_data);
+        // TODO
+        //m_edit_trans_model.setTransparency(layer_data.getTransparency());
+        QMessageBox::information(this, "slot_editModelOffset",item->getName());
     }
+    // TODO
+
+    //QObject::connect(&m_edit_trans_model, SIGNAL(signal_onChangedTransparencyValue(int)), this, SLOT(slot_Transparency(int)));
+    //m_edit_trans_model.show();
+
 }
+
+
+//void TDMGui::slot_Transparency(int _percentage_transparency)
+//{
+//    QTreeView *view = ui->tree_widget;
+
+//    bool has_selection = !view->selectionModel()->selection().isEmpty();
+//    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+//    if (has_selection && has_current)
+//    {
+//        // get the 3D model selected
+//        QModelIndex index = view->selectionModel()->currentIndex();
+//        QAbstractItemModel *model = view->model();
+//        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+//        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+//        osg::Node* const node = (layer_data.node().get());
+
+//        double double_transparency = ( (double)_percentage_transparency )/100.0;
+
+//        ui->display_widget->onTransparencyChange(double_transparency, node);
+//        layer_data.setTransparencyValue(double_transparency);
+//        item->setPrivateData<TDMModelLayerData>(layer_data);
+//    }
+//}

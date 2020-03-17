@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QShortcut>
+#include <QMap>
 #include "about_dialog.h"
 
 #include "Measurement/measurement_pattern.h"
@@ -41,6 +42,9 @@ private:
     Ui::TDMGui *ui;
     AboutDialog m_dialog;
 
+    // Map of opened transparency dialogs
+    QMap<TdmLayerItem*, EditTransparencyModel*> transpMap;
+
     // Treeview
     void deleteTreeItemsData(TdmLayerItem *_item);
     void manageCheckStateForChildren(TdmLayerItem *_item, bool _checked);
@@ -74,8 +78,6 @@ private:
     DecimationDialog m_decimation_dialog;
 
     MeasGeomExportDialog m_meas_geom_export_dialog;
-
-    EditTransparencyModel m_edit_trans_model;
 
     // Settings variable
     QSettings m_settings;
@@ -162,6 +164,7 @@ public slots:
     void slot_editMeasurement();
     void slot_computeTotalArea();
     void slot_editTransparency();
+    void slot_editModelOffset();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
@@ -194,10 +197,6 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
-
-    // Transparency
-    void slot_Transparency(int _percentage_transparency);
-
 
 private slots:
 
