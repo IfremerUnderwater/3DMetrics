@@ -17,7 +17,7 @@
    <item>
     <widget class="QLabel" name="transparency_label">
      <property name="text">
-      <string>TextLabel</string>
+      <string>00</string>
      </property>
     </widget>
    </item>
@@ -37,7 +37,7 @@
    <item>
     <widget class="QPushButton" name="valid_btn">
      <property name="text">
-      <string>Ok</string>
+      <string>Close</string>
      </property>
     </widget>
    </item>

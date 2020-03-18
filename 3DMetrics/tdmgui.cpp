@@ -44,6 +44,7 @@
 #include "gdal/ogrsf_frmts.h"
 
 #include "edit_transparency_model.h"
+#include "edit_offset_model.h"
 
 #include <GeographicLib/LocalCartesian.hpp>
 
@@ -1230,13 +1231,14 @@ void TDMGui::slot_deleteRow()
             return;
         }
 
-        // close transparency tool
-        if(transpMap.contains(item))
+        // close transparency and other tools
+        while(toolWindowsMap.contains(item))
         {
-            QMap<TdmLayerItem*, EditTransparencyModel*>::const_iterator i = transpMap.find(item);
-            while(i != transpMap.end() && i.key() == item)
+            QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
+            while(i != toolWindowsMap.end() && i.key() == item)
             {
                 i.value()->close();
+                toolWindowsMap.remove(i.key(), i.value());
                 ++i;
             }
         }
@@ -2440,13 +2442,15 @@ void TDMGui::slot_openProject()
             return;
     }
 
-    // close transparency tool
-    QMap<TdmLayerItem*, EditTransparencyModel*>::const_iterator i = transpMap.begin();
-    while(i != transpMap.end())
+    // close transparency and other tools
+    QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.begin();
+    while(i != toolWindowsMap.end())
     {
         i.value()->close();
+        //toolWindowsMap.remove(i.key(), i.value());
         ++i;
     }
+    toolWindowsMap.clear();
 
     // delete all data
     deleteTreeItemsData(root);
@@ -3002,7 +3006,7 @@ void TDMGui::slot_saveAltMap()
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
     QString name_file_alt = getSaveFileName(this, tr("Save altitude map"),m_path_alt_map,
-                                              tr("Images (*.tif)"));
+                                            tr("Images (*.tif)"));
     m_path_alt_map = name_file_alt;
     slot_applySettings();
 
@@ -3237,10 +3241,10 @@ void TDMGui::slot_exportMeasToGeom()
                 {
                     item->encodeMeasASCIIXYZ(field_string_xyz);
                     // write field
-                   if ( j<table->columnCount()-1 && field_string_xyz != "" )
+                    if ( j<table->columnCount()-1 && field_string_xyz != "" )
                         field_string_xyz = field_string_xyz + ",";
-                   if( j == table->columnCount()-1 && m_meas_geom_export_dialog.getLatLonSelected() == true )
-                       field_string_xyz = field_string_xyz + ",";
+                    if( j == table->columnCount()-1 && m_meas_geom_export_dialog.getLatLonSelected() == true )
+                        field_string_xyz = field_string_xyz + ",";
                 }
 
                 field_string = field_string_xyz + field_string_latlon;
@@ -3432,16 +3436,31 @@ void TDMGui::slot_editTransparency()
 
         EditTransparencyModel *tmodel = new EditTransparencyModel(this, item, ui->display_widget);
 
-        QObject::connect(TdmLayersModel::instance(), SIGNAL(signal_itemRemoved(TdmLayerItem*)), tmodel, SLOT(closeIfDelete(TdmLayerItem*)));
+        // check if existent
+        if(toolWindowsMap.contains(item))
+        {
+            QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
+            while(i != toolWindowsMap.end() && i.key() == item)
+            {
+                QString name = i.value()->metaObject()->className();
+                if(name == "EditTransparencyModel")
+                {
+                    i.value()->close();
+                    toolWindowsMap.remove(i.key(), i.value());
+                }
+                ++i;
+            }
+        }
 
         // Initializes transparency
         tmodel->setTransparency(layer_data.getTransparency());
         tmodel->setWindowTitle(tr("Transparency : ") + item->getName());
+        tmodel->move( QCursor::pos().x(), QCursor::pos().y());
         tmodel->show();
         tmodel->raise();
-        tmodel->activateWindow(); 
+        tmodel->activateWindow();
 
-        transpMap.insert(item, tmodel);
+        toolWindowsMap.insert(item, tmodel);
     }
 }
 
@@ -3460,15 +3479,33 @@ void TDMGui::slot_editModelOffset()
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        // TODO
-        //m_edit_trans_model.setTransparency(layer_data.getTransparency());
-        QMessageBox::information(this, "slot_editModelOffset",item->getName());
+        // check if existent and close
+        if(toolWindowsMap.contains(item))
+        {
+            QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
+            while(i != toolWindowsMap.end() && i.key() == item)
+            {
+                QString name = i.value()->metaObject()->className();
+                if(name == "EditOffsetModel")
+                {
+                    i.value()->close();
+                    toolWindowsMap.remove(i.key(), i.value());
+                }
+                ++i;
+            }
+        }
+
+        // create new
+        EditOffsetModel *offsetmodel = new EditOffsetModel(this, item, ui->display_widget);
+
+        offsetmodel->setWindowTitle(tr("Offset : ") + item->getName());
+        offsetmodel->move( QCursor::pos().x(), QCursor::pos().y());
+        offsetmodel->show();
+        offsetmodel->raise();
+        offsetmodel->activateWindow();
+
+        toolWindowsMap.insert(item, offsetmodel);
     }
-    // TODO
-
-    //QObject::connect(&m_edit_trans_model, SIGNAL(signal_onChangedTransparencyValue(int)), this, SLOT(slot_Transparency(int)));
-    //m_edit_trans_model.show();
-
 }
 
 

@@ -1217,3 +1217,12 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
     state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
 
 }
+
+void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node)
+{
+    osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
+
+    model_transform->setMatrix(osg::Matrix::translate(_x,_y,_z));
+}
+
+

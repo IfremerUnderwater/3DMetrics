@@ -5,7 +5,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QShortcut>
-#include <QMap>
+#include <QMultiMap>
 #include "about_dialog.h"
 
 #include "Measurement/measurement_pattern.h"
@@ -13,7 +13,7 @@
 #include "osg_axes.h"
 #include "file_open_thread.h"
 #include "meas_geom_export_dialog.h"
-#include "edit_transparency_model.h"
+//#include "edit_transparency_model.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -43,7 +43,7 @@ private:
     AboutDialog m_dialog;
 
     // Map of opened transparency dialogs
-    QMap<TdmLayerItem*, EditTransparencyModel*> transpMap;
+    QMultiMap<TdmLayerItem*, QWidget*> toolWindowsMap;
 
     // Treeview
     void deleteTreeItemsData(TdmLayerItem *_item);

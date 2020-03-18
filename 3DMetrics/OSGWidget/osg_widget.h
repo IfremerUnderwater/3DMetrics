@@ -143,6 +143,8 @@ public:
 
     void onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node);
 
+    void onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node);
+
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
     void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
