@@ -20,6 +20,9 @@ EditOffsetModel::EditOffsetModel(QWidget *parent, TdmLayerItem *_item , OSGWidge
 
     connect(ui->valid_btn, SIGNAL(clicked()), this, SLOT(accept()));
     connect(ui->apply_btn, SIGNAL(clicked()), this, SLOT(slot_apply()));
+    connect(ui->spinbox_x, SIGNAL(valueChanged(double)), this, SLOT(slot_apply()));
+    connect(ui->spinbox_y, SIGNAL(valueChanged(double)), this, SLOT(slot_apply()));
+    connect(ui->spinbox_z, SIGNAL(valueChanged(double)), this, SLOT(slot_apply()));
 
     // allways on top
     Qt::WindowFlags flags = windowFlags();
@@ -40,6 +43,12 @@ void EditOffsetModel::slot_apply()
     m_offsetZ = ui->spinbox_z->value();
 
     m_widget->onMoveNode(m_offsetX, m_offsetY ,m_offsetZ, m_node);
+
+    TDMModelLayerData layer_data = m_item->getPrivateData<TDMModelLayerData>();
+    layer_data.setOffsetX(m_offsetX);
+    layer_data.setOffsetY(m_offsetY);
+    layer_data.setOffsetZ(m_offsetZ);
+    m_item->setPrivateData<TDMModelLayerData>(layer_data);
 }
 
 void EditOffsetModel::setOffset(const double _x, const double _y, const double _z)

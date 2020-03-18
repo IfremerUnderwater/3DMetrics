@@ -3454,6 +3454,7 @@ void TDMGui::slot_editTransparency()
 
         // Initializes transparency
         tmodel->setTransparency(layer_data.getTransparency());
+
         tmodel->setWindowTitle(tr("Transparency : ") + item->getName());
         tmodel->move( QCursor::pos().x(), QCursor::pos().y());
         tmodel->show();
@@ -3476,8 +3477,11 @@ void TDMGui::slot_editModelOffset()
         // get the 3D model selected
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
-        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TdmLayersModel* tdmmodel = static_cast<TdmLayersModel*>(model);
+        TdmLayerItem *item = tdmmodel->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        EditOffsetModel *offsetmodel = new EditOffsetModel(this, item, ui->display_widget);
 
         // check if existent and close
         if(toolWindowsMap.contains(item))
@@ -3495,8 +3499,7 @@ void TDMGui::slot_editModelOffset()
             }
         }
 
-        // create new
-        EditOffsetModel *offsetmodel = new EditOffsetModel(this, item, ui->display_widget);
+        offsetmodel->setOffset(layer_data.getOffsetX(), layer_data.getOffsetY(), layer_data.getOffsetZ());
 
         offsetmodel->setWindowTitle(tr("Offset : ") + item->getName());
         offsetmodel->move( QCursor::pos().x(), QCursor::pos().y());
@@ -3508,28 +3511,3 @@ void TDMGui::slot_editModelOffset()
     }
 }
 
-
-//void TDMGui::slot_Transparency(int _percentage_transparency)
-//{
-//    QTreeView *view = ui->tree_widget;
-
-//    bool has_selection = !view->selectionModel()->selection().isEmpty();
-//    bool has_current = view->selectionModel()->currentIndex().isValid();
-
-//    if (has_selection && has_current)
-//    {
-//        // get the 3D model selected
-//        QModelIndex index = view->selectionModel()->currentIndex();
-//        QAbstractItemModel *model = view->model();
-//        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
-//        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
-
-//        osg::Node* const node = (layer_data.node().get());
-
-//        double double_transparency = ( (double)_percentage_transparency )/100.0;
-
-//        ui->display_widget->onTransparencyChange(double_transparency, node);
-//        layer_data.setTransparencyValue(double_transparency);
-//        item->setPrivateData<TDMModelLayerData>(layer_data);
-//    }
-//}
