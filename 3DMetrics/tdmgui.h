@@ -62,7 +62,7 @@ private:
     TDMMeasurementLayerData *m_current_item;
 
     // working helpers
-    bool loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _select_item);
+    bool loadMeasurementFromFile(QString _filename,  QString _name, TdmLayerItem *_parent, bool _select_item);
     bool saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data);
 
     bool checkAndSaveMeasurements(TdmLayerItem *_item);

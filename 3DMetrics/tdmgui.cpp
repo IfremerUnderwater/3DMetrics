@@ -428,8 +428,9 @@ void TDMGui::slot_openMeasurementFile()
                 parent = selected;
             }
         }
-
-        bool res = loadMeasurementFromFile(measurement_filename, parent, true);
+        QFileInfo info(measurement_filename);
+        QString name = info.fileName();
+        bool res = loadMeasurementFromFile(measurement_filename, name, parent, true);
         if(!res)
         {
             QMessageBox::critical(this, tr("Error : measurement file"), tr("Error : invalid file"));
@@ -445,7 +446,7 @@ void TDMGui::slot_openMeasurementFile()
     }
 }
 
-bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _select_item)
+bool TDMGui::loadMeasurementFromFile(QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item)
 {
     TdmLayersModel *model = TdmLayersModel::instance();
     QTreeView *view = ui->tree_widget;
@@ -468,7 +469,8 @@ bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, b
     ui->display_widget->getGeoOrigin(lat_lon, alt_org);
 
     QFileInfo file_measurement_info(measurement_filename.fileName());
-    QVariant data(file_measurement_info.fileName());
+    //QVariant data(file_measurement_info.fileName());
+    QVariant data(_name);
 
     osg::ref_ptr<osg::Group> group = new osg::Group();
     ui->display_widget->addGroup(group);
@@ -2471,6 +2473,9 @@ void TDMGui::slot_openProject()
         model->removeRows(0, model->rowCount());
     }
 
+    // reset osg widget
+    ui->display_widget->clearSceneData();
+
     // disallow measurement to be loaded
     //ui->open_measurement_file_action->setEnabled(false);
     ui->import_old_measurement_format_action->setEnabled(false);
@@ -2589,12 +2594,13 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
     if(_obj.contains("Measurement"))
     {
         QString filename = _obj["File"].toString();
+        QString name = _obj["Measurement"].toString();
         QFileInfo project_path(m_project_filename);
         QDir dir(project_path.absoluteDir());
         QString file_path = dir.absoluteFilePath(filename);
 
         // loadMeasurement
-        loadMeasurementFromFile(file_path, _parent ? _parent : root, false);
+        loadMeasurementFromFile(file_path, name, _parent ? _parent : root, false);
     }
 }
 

@@ -530,7 +530,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
 
     home();
     //state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-   // state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    // state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
     //state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
     /*osg::AlphaFunc* alphaFunc = new osg::AlphaFunc;
     alphaFunc->setFunction(osg::AlphaFunc::GREATER,0.2f);*/
@@ -921,7 +921,47 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
     model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
-    osg::ref_ptr<osg::Node> node = new osg::Node();
+    osg::ref_ptr<osg::Geode> node = new osg::Geode();
+
+    // test
+
+    osg::Vec3d point;
+    point[0] = m_ref_lat_lon.x();
+    point[1] =  m_ref_lat_lon.y();
+    point[2] = m_ref_alt;
+    // create point in geode
+    // point
+    osg::Geometry* shape_point_drawable = new osg::Geometry();
+    osg::Vec3Array* vertices = new osg::Vec3Array;
+    vertices->push_back(point);
+
+    // pass the created vertex array to the points geometry object.
+    shape_point_drawable->setVertexArray(vertices);
+
+    osg::Vec4Array* colors = new osg::Vec4Array;
+    // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
+    osg::Vec4 color(0.0f,0.0f,0.0f,0.0f);
+    colors->push_back(color);
+
+    // pass the color array to points geometry, note the binding to tell the geometry
+    // that only use one color for the whole object.
+    shape_point_drawable->setColorArray(colors, osg::Array::BIND_OVERALL);
+
+    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+    // in this case is POINTS (which has the same value GL_POINTS), the second
+    // parameter is the index position into the vertex array of the first point
+    // to draw, and the third parameter is the number of points to draw.
+    shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
+
+    // fixed size points
+    shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(4.f), osg::StateAttribute::ON);
+
+    node->removeDrawables(0);
+    node->addDrawable(shape_point_drawable);
+
+    // end test
+
     model_transform->addChild(node);
     addNodeToScene(model_transform);
 }
