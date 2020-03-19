@@ -101,7 +101,8 @@ private:
 public slots:
 
     void slot_open3dModel();
-    void slot_load3DModel(osg::Node*, QString _filename,TdmLayerItem *_parent, bool _select_item);
+    void slot_load3DModel(osg::Node*, QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item
+                          ,double _transp, double _offsetX, double _offsetY, double offsetZ);
 
     void slot_openMeasurementFile();
     void slot_saveMeasurementFile();

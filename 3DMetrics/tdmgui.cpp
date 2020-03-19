@@ -294,9 +294,12 @@ void TDMGui::slot_open3dModel()
     if(filename.length() > 0)
     {
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_load3DModel(osg::Node*,QString,TdmLayerItem*,bool)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
 
         thread_node->setFileName(filename);
+        QFileInfo info(filename);
+        thread_node->setName(info.fileName());
         thread_node->setTDMLayerItem(TdmLayersModel::instance()->rootItem());
         thread_node->setSelectItem(true);
         thread_node->setOSGWidget(ui->display_widget);
@@ -319,7 +322,8 @@ void TDMGui::slot_open3dModel()
 }
 
 
-void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *_parent, bool _select_item)
+void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item
+                              ,double _transp, double _offsetX, double _offsetY, double _offsetZ)
 {
     if(_node == 0)
     {
@@ -328,9 +332,13 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *
     }
     TDMModelLayerData model_data(_filename, _node);
 
+    model_data.setTransparencyValue(_transp);
+    model_data.setOffsetX(_offsetX);
+    model_data.setOffsetY(_offsetY);
+    model_data.setOffsetZ(_offsetZ);
+
     TdmLayersModel *model = TdmLayersModel::instance();
-    QFileInfo info(_filename);
-    QVariant name(info.fileName());
+    QVariant name(_name);
     QVariant data;
     data.setValue(model_data);
 
@@ -338,6 +346,9 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *
     added->setChecked(true);
 
     ui->display_widget->addNodeToScene(_node);
+
+    ui->display_widget->onTransparencyChange(_transp, _node);
+    ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node);
 
     if(_select_item)
     {
@@ -2541,12 +2552,28 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         // load 3D model
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_load3DModel(osg::Node*,QString,TdmLayerItem*,bool)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
 
         thread_node->setFileName(file_path);
+        QString name = _obj["Model3D"].toString();
+        thread_node->setName(name);
         thread_node->setTDMLayerItem(_parent ? _parent : root);
         thread_node->setSelectItem(false);
         thread_node->setOSGWidget(ui->display_widget);
+
+        double transp = _obj.value("Transparency").toDouble(0);
+        thread_node->setTransparencyValue(transp);
+
+        double offsetX = _obj.value("OffsetX").toDouble(0);;
+        thread_node->setOffsetX(offsetX);
+
+        double offsetY = _obj.value("OffsetY").toDouble(0);;
+        thread_node->setOffsetY(offsetY);
+
+        double offsetZ = _obj.value("OffsetZ").toDouble(0);;
+        thread_node->setOffsetZ(offsetZ);
+
         thread_node->start();
 
         // allow measurement to be loaded
@@ -2641,6 +2668,16 @@ QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *_item)
         {
             obj.insert("Model3D", _item->getName());
             obj.insert("File", rel_filename);
+
+            TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
+
+            // transparency
+            obj.insert("Transparency", layer_data.getTransparency());
+
+            //  offset
+            obj.insert("OffsetX", layer_data.getOffsetX());
+            obj.insert("OffsetY", layer_data.getOffsetY());
+            obj.insert("OffsetZ", layer_data.getOffsetZ());
         }
     }
 

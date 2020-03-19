@@ -3,7 +3,12 @@
 
 #include "OSGWidget/osg_widget.h"
 
-FileOpenThread::FileOpenThread()
+FileOpenThread::FileOpenThread() :
+    m_select_item(false),
+    m_transparency_value(0),
+    m_offsetX(0),
+    m_offsetY(0),
+    m_offsetZ(0)
 {
 
 }
@@ -14,6 +19,6 @@ void FileOpenThread::run()
     m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString());
 
     QApplication::restoreOverrideCursor();
-    emit signal_createNode(m_node.get(),m_filename,m_parent,m_select_item);
+    emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ);
 
 }
