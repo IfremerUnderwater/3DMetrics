@@ -35,6 +35,8 @@
 #include "tool_line_dialog.h"
 #include "tool_area_dialog.h"
 
+#include "slope_tool.h"
+
 #include "osg_axes.h"
 
 #include "Measurement/area_computation_visitor.h"
@@ -140,7 +142,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->line_tool->setEnabled(false);
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
+    ui->slope_tool->setEnabled(false);
     ui->cancel_measurement->setEnabled(false);
+    ui->cancel_last_point->setEnabled(false);
 
     // file menu
     ui->open_measurement_file_action->setEnabled(true);
@@ -156,10 +160,14 @@ TDMGui::TDMGui(QWidget *_parent) :
     connect(ui->display_widget, SIGNAL(signal_cancelTool(QString&)), this, SLOT(slot_messageCancelTool(QString&)));
     connect(ui->display_widget, SIGNAL(signal_endTool(QString&)), this, SLOT(slot_messageEndTool(QString&)));
     connect(ui->cancel_measurement, SIGNAL(triggered()), OSGWidgetTool::instance(), SLOT(slot_cancelTool()));
+    connect(ui->cancel_last_point, SIGNAL(triggered()), OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+
     // temporary tools
     connect(ui->line_tool, SIGNAL(triggered()), this, SLOT(slot_tempLineTool()));
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
+
+    connect(ui->slope_tool, SIGNAL(triggered()), this,  SLOT(slot_slopeTool()));
 
     connect(ui->display_widget, SIGNAL(signal_onMousePress(Qt::MouseButton, int, int)), this, SLOT(slot_mouseClickInOsgWidget(Qt::MouseButton, int,int)));
 
@@ -313,7 +321,7 @@ void TDMGui::slot_open3dModel()
         ui->line_tool->setEnabled(true);
         ui->surface_tool->setEnabled(true);
         ui->pick_point->setEnabled(true);
-
+        ui->slope_tool->setEnabled(true);
     }
     else
     {
@@ -349,6 +357,12 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
 
     ui->display_widget->onTransparencyChange(_transp, _node);
     ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node);
+
+    // test
+
+    // TODO
+
+    // end test
 
     if(_select_item)
     {
@@ -1942,6 +1956,8 @@ void TDMGui::selectItem(QModelIndex &_index)
 void TDMGui::slot_messageStartTool(QString&_msg)
 {
     ui->cancel_measurement->setEnabled(true);
+    ui->cancel_last_point->setEnabled(true);
+
     statusBar()->showMessage(_msg);
 }
 
@@ -1953,6 +1969,7 @@ void TDMGui::slot_messageCancelTool(QString&_msg)
 void TDMGui::slot_messageEndTool(QString&_msg)
 {
     ui->cancel_measurement->setEnabled(false);
+    ui->cancel_last_point->setEnabled(false);
     statusBar()->showMessage(_msg);
 }
 
@@ -2484,6 +2501,7 @@ void TDMGui::slot_openProject()
     ui->line_tool->setEnabled(false);
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
+    ui->slope_tool->setEnabled(false);
 
     // ask file name
     QString project_filename = getOpenFileName(this,tr("Select project to open"),m_path_project, tr("3DMetrics project (*.tdm)"));
@@ -2589,6 +2607,7 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         ui->line_tool->setEnabled(true);
         ui->surface_tool->setEnabled(true);
         ui->pick_point->setEnabled(true);
+        ui->slope_tool->setEnabled(true);
     }
 
     if(_obj.contains("Measurement"))
@@ -3554,3 +3573,13 @@ void TDMGui::slot_editModelOffset()
     }
 }
 
+
+void TDMGui::slot_slopeTool()
+{
+    SlopeTool *dialog = new SlopeTool(this);
+    QPoint point = QCursor::pos();
+    dialog->move(point.x()+20, point.y()+20);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}

@@ -98,7 +98,10 @@
    <addaction name="surface_tool"/>
    <addaction name="pick_point"/>
    <addaction name="separator"/>
+   <addaction name="slope_tool"/>
+   <addaction name="separator"/>
    <addaction name="cancel_measurement"/>
+   <addaction name="cancel_last_point"/>
    <addaction name="separator"/>
   </widget>
   <widget class="QToolBar" name="view_toolbar">
@@ -428,6 +431,30 @@
    </property>
    <property name="toolTip">
     <string>Add the light on the model</string>
+   </property>
+  </action>
+  <action name="slope_tool">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/image-filter-hdr.svg</normaloff>:/icons/ressources/image-filter-hdr.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Slope Tool</string>
+   </property>
+   <property name="toolTip">
+    <string>Tool to compute slope</string>
+   </property>
+  </action>
+  <action name="cancel_last_point">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/magnify-minus.svg</normaloff>:/icons/ressources/magnify-minus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Cancel last point</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove the last point</string>
    </property>
   </action>
  </widget>

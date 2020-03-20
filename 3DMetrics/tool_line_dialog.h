@@ -25,6 +25,7 @@ protected:
 
 public slots:
     void start();
+    void removelast();
     void slot_toolEnded(QString&);
 
 private:

@@ -26,7 +26,9 @@ ToolLineDialog::ToolLineDialog(QWidget *_parent) :
     OSGWidgetTool::instance()->getOSGWidget()->addGeode(m_geode);
 
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
+    QObject::connect(ui->removelast_btn, SIGNAL(clicked(bool)), this, SLOT(removelast()));
     QObject::connect(ui->start_btn, SIGNAL(clicked(bool)), this, SLOT(start()));
+
     QObject::connect(ui->line_widget, SIGNAL(signal_toolEnded(QString&)), this, SLOT(slot_toolEnded(QString&)));
     ui->msg_label->setText("");
 }
@@ -68,4 +70,9 @@ void ToolLineDialog::start()
 void ToolLineDialog::slot_toolEnded(QString&)
 {
     ui->msg_label->setText(tr(""));
+}
+
+void ToolLineDialog::removelast()
+{
+    ui->line_widget->slot_toolRemoveLastPoint();
 }

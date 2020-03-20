@@ -145,6 +145,8 @@ public slots:
     void slot_tempPointTool();
     void slot_tempAreaTool();
 
+    void slot_slopeTool();
+
     // measurment pattern dialog
     void slot_patternChanged(MeasPattern _pattern);
 

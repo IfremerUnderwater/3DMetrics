@@ -923,7 +923,7 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
     osg::ref_ptr<osg::Geode> node = new osg::Geode();
 
-    // test
+    // hack : create an invisible point
 
     osg::Vec3d point;
     point[0] = m_ref_lat_lon.x();
@@ -960,7 +960,7 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     node->removeDrawables(0);
     node->addDrawable(shape_point_drawable);
 
-    // end test
+    // end add invisible point
 
     model_transform->addChild(node);
     addNodeToScene(model_transform);
@@ -1264,5 +1264,3 @@ void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::No
 
     model_transform->setMatrix(osg::Matrix::translate(_x,_y,_z));
 }
-
-

@@ -15,7 +15,8 @@ public:
         None,
         Point,  // Point : one point clicked = end of tool
         Line,   // polyline : multiple points
-        Area    // polygon : id + closure of polyline -> polygon
+        Area,   // polygon : id + closure of polyline -> polygon
+        Slope   // Slope tool
     };
 
     // singleton

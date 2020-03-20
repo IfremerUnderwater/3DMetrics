@@ -34,6 +34,11 @@ void OSGWidgetTool::slot_mouseButtonDown(Qt::MouseButton _button, int _x, int _y
         endTool();
     }
 
+//    if(_button == Qt::MouseButton::MiddleButton)
+//    {
+//          slot_removeLastPointTool();
+//    }
+
     if(_button == Qt::MouseButton::LeftButton)
     {
         // clic
@@ -125,8 +130,6 @@ void OSGWidgetTool::slot_removeLastPointTool()
     if(m_current_type != None)
     {
         emit signal_removeLastPointTool();
-
-        //endTool();
     }
 }
 
