@@ -143,7 +143,7 @@ public:
 
     void onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node);
 
-    void onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node);
+    void onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans);
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);

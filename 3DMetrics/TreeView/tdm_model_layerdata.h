@@ -33,9 +33,12 @@ public:
     double getOffsetZ() const { return m_offsetZ; }
     void setOffsetZ(double offsetZ){ m_offsetZ = offsetZ; }
 
+    osg::Vec3d getOriginalTranslation() const { return m_trans; }
+
 private:
     QString m_filename;
     osg::ref_ptr<osg::Node> m_node;
+    osg::Vec3d m_trans;
 
     double m_transparency_value;
 

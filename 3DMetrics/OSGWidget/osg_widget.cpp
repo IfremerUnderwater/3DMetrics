@@ -929,7 +929,8 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     point[0] = m_ref_lat_lon.x();
     point[1] =  m_ref_lat_lon.y();
     point[2] = m_ref_alt;
-    // create point in geode
+
+    // create invisible point in geode
     // point
     osg::Geometry* shape_point_drawable = new osg::Geometry();
     osg::Vec3Array* vertices = new osg::Vec3Array;
@@ -1258,9 +1259,11 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
 
 }
 
-void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node)
+void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans)
 {
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
-    model_transform->setMatrix(osg::Matrix::translate(_x,_y,_z));
+    //osg::Vec3d trans = model_transform->getMatrix().getTrans();
+
+    model_transform->setMatrix(osg::Matrix::translate(_trans.x() + _x, _trans.y() + _y, _trans.z() + _z));
 }

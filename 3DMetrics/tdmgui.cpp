@@ -356,7 +356,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     ui->display_widget->addNodeToScene(_node);
 
     ui->display_widget->onTransparencyChange(_transp, _node);
-    ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node);
+    ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
     // test
 
