@@ -27,21 +27,26 @@ public slots:
     void start();
     void slot_toolEnded();
     void slot_toolClicked(Point3D&);
+    void slot_toolClickedXY(Point3D&,int, int);
+    void slot_mouse_moved(int, int);
+    void slot_toolCanceled();
+    void slot_toolRemoveLastPoint();
 
 signals:
     void signal_toolStarted(QString &_info);
     void signal_toolEnded(QString &_info);
+
 
 private:
     Ui::SlopeTool *ui;
 
     osg::ref_ptr<osg::Geode> m_geode;
 
-    bool centerSet;
+    bool m_centerSet;
 
-    double m_centerX;
-    double m_centerY;
-    double m_centerZ;
+    osg::Vec3d m_center;
+    int m_xcenter;
+    int m_ycenter;
 
     osg::Vec4f m_color;
 

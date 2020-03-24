@@ -52,6 +52,7 @@ void OSGWidgetTool::slot_mouseButtonDown(Qt::MouseButton _button, int _x, int _y
             point.y = vect[1];
             point.z = vect[2];
             emit signal_clicked(point);
+            emit signal_clickedXY(point, _x, _y);
         }
     }
 }

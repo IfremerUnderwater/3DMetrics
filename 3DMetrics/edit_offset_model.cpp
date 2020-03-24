@@ -42,9 +42,10 @@ void EditOffsetModel::slot_apply()
     m_offsetY = ui->spinbox_y->value();
     m_offsetZ = ui->spinbox_z->value();
 
-    m_widget->onMoveNode(m_offsetX, m_offsetY ,m_offsetZ, m_node);
-
     TDMModelLayerData layer_data = m_item->getPrivateData<TDMModelLayerData>();
+
+    m_widget->onMoveNode(m_offsetX, m_offsetY ,m_offsetZ, m_node, layer_data.getOriginalTranslation());
+
     layer_data.setOffsetX(m_offsetX);
     layer_data.setOffsetY(m_offsetY);
     layer_data.setOffsetZ(m_offsetZ);

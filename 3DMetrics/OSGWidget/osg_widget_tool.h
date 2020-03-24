@@ -33,6 +33,7 @@ public:
 
 signals:
     void signal_clicked(Point3D &_point);
+    void signal_clickedXY(Point3D &_point, int x, int y);
     void signal_endTool(); // to be used to remove connections
     void signal_cancelTool();
     void signal_removeLastPointTool();

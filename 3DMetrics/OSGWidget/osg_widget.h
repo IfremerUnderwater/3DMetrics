@@ -156,6 +156,7 @@ signals:
     void signal_cancelTool(QString &_message);
 
     void signal_activedLight(bool &_activated);
+
 public:
     // tools : emit correspondant signal
     void startTool(QString &_message);
@@ -168,6 +169,8 @@ public:
     //
     void enableLight(bool _state);
     void enableStereo(bool _state);
+
+    osg::Camera* getCamera() { return  m_viewer->getView(0)->getCamera(); }
 
 protected:
 

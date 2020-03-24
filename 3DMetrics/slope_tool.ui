@@ -6,18 +6,18 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>239</height>
+    <width>333</width>
+    <height>226</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Dialog</string>
+   <string>Slope Tool</string>
   </property>
   <widget class="QPushButton" name="start_btn">
    <property name="geometry">
     <rect>
-     <x>30</x>
-     <y>200</y>
+     <x>40</x>
+     <y>190</y>
      <width>97</width>
      <height>27</height>
     </rect>
@@ -42,8 +42,8 @@
   <widget class="QPushButton" name="close_btn">
    <property name="geometry">
     <rect>
-     <x>230</x>
-     <y>200</y>
+     <x>190</x>
+     <y>190</y>
      <width>97</width>
      <height>27</height>
     </rect>
