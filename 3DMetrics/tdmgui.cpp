@@ -39,7 +39,7 @@
 
 #include "osg_axes.h"
 
-#include "Measurement/area_computation_visitor.h"
+#include "OSGWidget/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
 
 #include "gdal/ogr_spatialref.h"
@@ -293,7 +293,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.gdal)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -329,6 +329,9 @@ void TDMGui::slot_open3dModel()
     }
 }
 
+//#include <osg/DepthRangeIndexed>
+//#include <osgTerrain/Terrain>
+//#include <osgVolume/Volume>
 
 void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item
                               ,double _transp, double _offsetX, double _offsetY, double _offsetZ)
@@ -338,7 +341,9 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
         QMessageBox::critical(this, tr("Error : model file"), tr("Error : model file is missing"));
         return;
     }
-    TDMModelLayerData model_data(_filename, _node);
+    osg::ref_ptr<osg::Node> node = _node;
+
+    TDMModelLayerData model_data(_filename, node);
 
     model_data.setTransparencyValue(_transp);
     model_data.setOffsetX(_offsetX);
@@ -353,16 +358,54 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
-    ui->display_widget->addNodeToScene(_node);
+
+    // test
+
+//    osg::Group *group = _node->asGroup();
+//    osg::Image *image = _node->asImage();
+
+//    osg::ref_ptr<osg::TransferFunction1D> trans = new osg::TransferFunction1D();
+
+//    trans->setColor(0.0, osg::Vec4(1.0,0.0,0.0,0.0));
+//    trans->setColor(0.5, osg::Vec4(1.0,1.0,0.0,0.5));
+//    trans->setColor(1.0, osg::Vec4(0.0,0.0,1.0,1.0));
+
+//    // TODO
+//     osg::ref_ptr<osgVolume::Volume> volume = new osgVolume::Volume;
+//    volume->addChild(_node);
+
+//    osg::ref_ptr<osgVolume::ImageLayer> layer = new osgVolume::ImageLayer(_node->asImage());
+
+//    osgVolume::SwitchProperty* sp = new osgVolume::SwitchProperty;
+//    sp->setActiveProperty(0);
+//    osgVolume::CompositeProperty* cp = new osgVolume::CompositeProperty;
+//    osgVolume::TransferFunctionProperty* tfp = trans.valid() ? new osgVolume::TransferFunctionProperty(trans.get()) : 0;
+//    cp->addProperty(tfp);
+//    sp->addProperty(cp);
+//    layer->setProperty(sp);
+//    volume->addChild(layer->asNode());
+//    node = volume.get();
+
+
+//    osg::StateSet* state_set = _node->getOrCreateStateSet();
+//    osg::StateAttribute* attrcolortable = state_set->getAttribute(osg::StateAttribute::COLORTABLE);
+//    osg::StateAttribute* attrdepthrange = state_set->getAttribute(osg::StateAttribute::DEPTHRANGEINDEXED);
+//    osg::DepthRangeIndexed* depthrange =      dynamic_cast<osg::DepthRangeIndexed*>(attrdepthrange);
+//    double far = depthrange->getZFar();
+//    double near = depthrange->getZNear();
+
+    //state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
+
+
+    //_node->asGeode()->setColorArray(colors,osg::Array::BIND_OVERALL);
+    // end test
+
+
+    ui->display_widget->addNodeToScene(node);
 
     ui->display_widget->onTransparencyChange(_transp, _node);
     ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
-    // test
-
-    // TODO
-
-    // end test
 
     if(_select_item)
     {
@@ -2816,7 +2859,7 @@ void TDMGui::slot_about()
     m_dialog.show();
 }
 
-void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton _button, int _x, int _y)
+void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton /* _button */, int _x, int _y)
 {
     // clic
     bool exists = false;
@@ -2994,13 +3037,18 @@ void TDMGui::slot_computeTotalArea()
 
         osg::Node* const node = (layer_data.node().get());
 
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+
         // compute the surface of the 3D model selected through his node
         AreaComputationVisitor total_area;
         node->accept(total_area);
         double total_area_double = total_area.getArea();
+
+        QApplication::restoreOverrideCursor();
+
         QString total_area_string = QString::number(total_area_double,'f',2);
         QStringList filename_split = layer_data.fileName().split("/");
-        QString name3D_mode = filename_split.at(filename_split.length()-1);
+        QString name3D_mode = filename_split.at(filename_split.length()-1);   
         QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3D_mode+tr(" is ")+total_area_string + " m²");
     }
 }

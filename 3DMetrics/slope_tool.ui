@@ -71,6 +71,52 @@
     <bool>true</bool>
    </property>
   </widget>
+  <widget class="QLabel" name="slope_label">
+   <property name="geometry">
+    <rect>
+     <x>130</x>
+     <y>120</y>
+     <width>191</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Slope=</string>
+   </property>
+  </widget>
+  <widget class="QWidget" name="">
+   <property name="geometry">
+    <rect>
+     <x>160</x>
+     <y>10</y>
+     <width>161</width>
+     <height>91</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QLabel" name="x_label">
+      <property name="text">
+       <string>X=</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="y_label">
+      <property name="text">
+       <string>Y=</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="z_label">
+      <property name="text">
+       <string>Z=</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
  </widget>
  <resources>
   <include location="ressources.qrc"/>

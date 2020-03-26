@@ -106,6 +106,9 @@ void OSGWidgetTool::endTool()
         case Area:
             msg += "Area";
             break;
+        case Slope:
+            msg += "Slope";
+            break;
         default:
             break;
         }

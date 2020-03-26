@@ -26,9 +26,8 @@ protected:
 public slots:
     void start();
     void slot_toolEnded();
-    void slot_toolClicked(Point3D&);
     void slot_toolClickedXY(Point3D&,int, int);
-    void slot_mouse_moved(int, int);
+    //void slot_mouse_moved(int, int);
     void slot_toolCanceled();
     void slot_toolRemoveLastPoint();
 
@@ -44,9 +43,15 @@ private:
 
     bool m_centerSet;
 
+    // center point
     osg::Vec3d m_center;
     int m_xcenter;
     int m_ycenter;
+
+    // clicked point (to compute radius)
+    osg::Vec3d m_clicked;
+    int m_xclicked;
+    int m_yclicked;
 
     osg::Vec4f m_color;
 

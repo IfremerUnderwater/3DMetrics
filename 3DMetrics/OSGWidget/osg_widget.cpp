@@ -50,8 +50,8 @@
 #include <osg/AlphaFunc>
 #include <osg/BlendFunc>
 
-#include "Measurement/box_visitor.h"
-#include "edit_transparency_model.h"
+#include "box_visitor.h"
+//#include "edit_transparency_model.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -412,12 +412,32 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
+    state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
+
     // Add the possibility of modify the transparence
     osg::ref_ptr<osg::Material> material = new osg::Material;
     // Put the 3D model totally opaque
-    material->setAlpha( osg::Material::FRONT, 1 );
-    state_set->setAttributeAndModes ( material,osg::StateAttribute::ON );
+    material->setAlpha( osg::Material::FRONT, 1.0 );
+    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
+
+    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+    state_set->setAttributeAndModes(bf);
+
+    //    osg::ref_ptr<osg::Material> material = new osg::Material;
+    //    material->setAmbient( osg::Material::FRONT_AND_BACK, //_AND_BACK,
+    //                          osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
+    //    material->setDiffuse( osg::Material::FRONT_AND_BACK, //_AND_BACK,
+    //                          osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f) );
+    //    material->setEmission(osg::Material::FRONT_AND_BACK, //_AND_BACK,
+    //                          osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
+    //    //material->setAlpha( osg::Material::FRONT_AND_BACK, 0.25 );
+    //    material->setColorMode((osg::Material::ColorMode::DIFFUSE)); //(osg::Material::ColorMode::EMISSION);
+    //    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE );
+
+    //    state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
+    //    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+    //    state_set->setAttributeAndModes(bf);
+
 
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
@@ -1181,15 +1201,37 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
     osg::Material* material = dynamic_cast<osg::Material*>(attr);
 
-    // Changes the transparency of the node
-    material->setAlpha(osg::Material::FRONT, _transparency_value );
+    state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    // Turn on blending
-    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-    state_set->setAttributeAndModes(bf);
+    if(_transparency_value == 0.0)
+    {
+        state_set->removeAttribute(osg::StateAttribute::MATERIAL);
+        state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
 
-    state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
+    }
+    else
+    {
+        state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
+        if(material == nullptr)
+        {
+            // Add the possibility of modify the transparence
+            material = new osg::Material;
+            // Put the 3D model totally opaque
+            material->setAlpha( osg::Material::FRONT, _transparency_value);
+            state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
+
+        }
+
+        // Changes the transparency of the node
+        material->setAlpha(osg::Material::FRONT, _transparency_value );
+
+        // Turn on blending
+        osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+        state_set->setAttributeAndModes(bf);
+
+        state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+    }
 }
 
 void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans)

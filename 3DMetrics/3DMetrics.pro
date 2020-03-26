@@ -44,7 +44,7 @@ DESTDIR = $${RUN_DIR}
 
 include(../Scripts/BasicProcessing.pri)
 
-LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic -lgdal
+LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic -lgdal -losgVolume
 
 INCLUDEPATH += Tools
 
@@ -79,8 +79,8 @@ SOURCES += main.cpp \
     tool_area_dialog.cpp \
     tool_line_dialog.cpp \
     tool_point_dialog.cpp \
-    Measurement/box_visitor.cpp \
-    Measurement/area_computation_visitor.cpp \
+    OSGWidget/box_visitor.cpp \
+    OSGWidget/area_computation_visitor.cpp \
     meas_table_widget_item.cpp \
     edit_meas_dialog.cpp \
     edit_meas_item.cpp \
@@ -88,7 +88,8 @@ SOURCES += main.cpp \
     meas_geom_export_dialog.cpp \
     edit_transparency_model.cpp \
     edit_offset_model.cpp \
-    slope_tool.cpp
+    slope_tool.cpp \
+    Tools/geometry.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -121,8 +122,8 @@ HEADERS  += \
     tool_area_dialog.h \
     tool_line_dialog.h \
     tool_point_dialog.h \
-    Measurement/box_visitor.h \
-    Measurement/area_computation_visitor.h \
+    OSGWidget/box_visitor.h \
+    OSGWidget/area_computation_visitor.h \
     meas_table_widget_item.h \
     edit_meas_dialog.h \
     edit_meas_item.h \
@@ -130,7 +131,8 @@ HEADERS  += \
     meas_geom_export_dialog.h \
     edit_transparency_model.h \
     edit_offset_model.h \
-    slope_tool.h
+    slope_tool.h \
+    Tools/geometry.h
 
 FORMS    += \
     tdmgui.ui \
