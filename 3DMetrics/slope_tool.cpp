@@ -204,12 +204,12 @@ void SlopeTool::slot_toolEnded()
             // draw geometry
             m_geode->removeDrawables(1, 3);
             osg::Vec3Array* circle = new osg::Vec3Array;
-            for(unsigned int i=0; i<pcircle.size(); i++)
+            for(unsigned int i=0; i<proj_points.size(); i++)
             {
                 osg::Vec3d p;
-                p[0] = pcircle[i][0];
-                p[1] = pcircle[i][1];
-                p[2] = pcircle[i][2];
+                p[0] = proj_points[i][0];
+                p[1] = proj_points[i][1];
+                p[2] = proj_points[i][2];
                 circle->push_back((p));
             }
             // line
