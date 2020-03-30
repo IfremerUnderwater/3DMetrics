@@ -129,7 +129,7 @@ void MeasArea::encodeShapefile(QString &_string)
 
 void MeasArea::updateGeode()
 {
-    m_geode->removeDrawables(0, 2);
+    m_geode->removeDrawables(0, 3);
 
     if(m_array.length() == 0)
         return;
@@ -189,6 +189,30 @@ void MeasArea::updateGeode()
     // to draw, and the third parameter is the number of points to draw.
     shape_line_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::LINE_LOOP,0,vertices->size()));
 
+    // fill polygon
+    osg::Geometry* shape_poly_drawable = new osg::Geometry();
+
+    // pass the created vertex array to the points geometry object.
+    shape_poly_drawable->setVertexArray(vertices);
+
+    osg::Vec4Array* colorsp = new osg::Vec4Array;
+    // add a red color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
+    osg::Vec4 colorp(m_color);
+    colorp[3] = 0.25f;
+    colorsp->push_back(colorp);
+
+    // pass the color array to points geometry, note the binding to tell the geometry
+    // that only use one color for the whole object.
+    shape_poly_drawable->setColorArray(colorsp, osg::Array::BIND_OVERALL);
+
+    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+    // in this case is POINTS (which has the same value GL_POINTS), the second
+    // parameter is the index position into the vertex array of the first point
+    // to draw, and the third parameter is the number of points to draw.
+    shape_poly_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POLYGON,0,vertices->size()));
+
+    m_geode->addDrawable(shape_poly_drawable);
     m_geode->addDrawable(shape_line_drawable);
     m_geode->addDrawable(shape_point_drawable);
 }
