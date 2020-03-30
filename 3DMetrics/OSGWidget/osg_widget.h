@@ -170,6 +170,7 @@ public:
     void enableLight(bool _state);
     void enableStereo(bool _state);
 
+    osgViewer::View* getView() { return  m_viewer->getView(0); }
     osg::Camera* getCamera() { return  m_viewer->getView(0)->getCamera(); }
 
 protected:
@@ -212,7 +213,7 @@ private:
     bool m_ctrl_pressed;
     bool m_fake_middle_click_activated;
 
-    osg::ref_ptr<osg::Material> m_material;
+    //osg::ref_ptr<osg::Material> m_material;
 
 };
 

@@ -262,7 +262,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     , m_viewer( new osgViewer::CompositeViewer )
     , m_ctrl_pressed(false)
     , m_fake_middle_click_activated(false)
-    , m_material( new osg::Material )
+    //, m_material( new osg::Material )
 
 {
 
@@ -374,8 +374,170 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
 
     if (!model_node)
     {
-        std::cout << "No data loaded" << std::endl;
-        return model_transform;
+        // check grd extension
+        if(scene_file.find_last_of(".grd") > 0)
+        {
+            GDALAllRegister();
+            GDALDataset *dataset = (GDALDataset *) GDALOpen( scene_file.c_str(), GA_ReadOnly );
+            if(dataset != NULL)
+            {
+                double        adfGeoTransform[6];
+                //                adfGeoTransform[0] /* top left x */
+                //                adfGeoTransform[1] /* w-e pixel resolution */
+                //                adfGeoTransform[2] /* 0 */
+                //                adfGeoTransform[3] /* top left y */
+                //                adfGeoTransform[4] /* 0 */
+                //                adfGeoTransform[5] /* n-s pixel resolution (negative value) */
+                printf( "Driver: %s/%s\n",
+                        dataset->GetDriver()->GetDescription(),
+                        dataset->GetDriver()->GetMetadataItem( GDAL_DMD_LONGNAME ) );
+                printf( "Size is %dx%dx%d\n",
+                        dataset->GetRasterXSize(), dataset->GetRasterYSize(),
+                        dataset->GetRasterCount() );
+                if( dataset->GetProjectionRef()  != NULL )
+                    printf( "Projection is `%s'\n", dataset->GetProjectionRef() );
+                if( dataset->GetGeoTransform( adfGeoTransform ) == CE_None )
+                {
+                    printf( "Origin = (%.6f,%.6f)\n",
+                            adfGeoTransform[0], adfGeoTransform[3] );
+                    printf( "Pixel Size = (%.6f,%.6f)\n",
+                            adfGeoTransform[1], adfGeoTransform[5] );
+                }
+
+                GDALRasterBand  *poBand;
+                int             nBlockXSize, nBlockYSize;
+                int             bGotMin, bGotMax;
+                double          adfMinMax[2];
+                poBand = dataset->GetRasterBand( 1 );
+                poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
+                printf( "Block=%dx%d Type=%s, ColorInterp=%s\n",
+                        nBlockXSize, nBlockYSize,
+                        GDALGetDataTypeName(poBand->GetRasterDataType()),
+                        GDALGetColorInterpretationName(
+                            poBand->GetColorInterpretation()) );
+                adfMinMax[0] = poBand->GetMinimum( &bGotMin );
+                adfMinMax[1] = poBand->GetMaximum( &bGotMax );
+                if( ! (bGotMin && bGotMax) )
+                    GDALComputeRasterMinMax((GDALRasterBandH)poBand, TRUE, adfMinMax);
+                printf( "Min=%.3fd, Max=%.3f\n", adfMinMax[0], adfMinMax[1] );
+                if( poBand->GetOverviewCount() > 0 )
+                    printf( "Band has %d overviews.\n", poBand->GetOverviewCount() );
+                if( poBand->GetColorTable() != NULL )
+                    printf( "Band has a color table with %d entries.\n",
+                            poBand->GetColorTable()->GetColorEntryCount() );
+
+                // read data
+                float *pafScanline;
+                int   nXSize = poBand->GetXSize();
+                int   nYSize = poBand->GetYSize();
+                float noData = poBand->GetNoDataValue();
+                pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
+
+                osg::ref_ptr<osg::Group> group = new osg::Group;
+
+                // test
+                GeographicLib::LocalCartesian proj(adfGeoTransform[3],  adfGeoTransform[0]);
+                local_lat_lon.setX(adfGeoTransform[3]);
+                local_lat_lon.setY(adfGeoTransform[0]);
+                local_alt = 0;
+
+                for(int y = 0; y < nYSize; y++)
+                {
+                    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+
+                    // read line
+                    poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                      pafScanline, nXSize, 1, GDT_Float32,
+                                      0, 0 );
+
+                    // build points
+
+                    // create point in geode
+                    // point
+                    osg::Vec3Array* vertices = new osg::Vec3Array;
+                    for(int x=0; x<nXSize; x++)
+                    {
+                        if( pafScanline[x] == noData) // check NAN
+                            continue;
+
+                        osg::Vec3f point;
+                        double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                        double lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                        double h = pafScanline[x];
+                        double px, py, pz;
+                        proj.Forward(lat, lon, h, px, py, pz);
+
+
+                        point[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
+                        point[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
+                        point[2] = pz; // pafScanline[x];
+
+                        vertices->push_back(point);
+                    }
+
+                    if(vertices->size() == 0)
+                        continue;
+
+                    osg::Geometry* shape_point_drawable = new osg::Geometry();
+
+                    // pass the created vertex array to the points geometry object.
+                    shape_point_drawable->setVertexArray(vertices);
+
+                    osg::Vec4Array* colors = new osg::Vec4Array;
+                    // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
+                    osg::Vec4 color(0.5f,0.5f,1.0f,1.0f);
+                    colors->push_back(color);
+
+                    // pass the color array to points geometry, note the binding to tell the geometry
+                    // that only use one color for the whole object.
+                    shape_point_drawable->setColorArray(colors, osg::Array::BIND_OVERALL);
+
+                    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+                    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+                    // in this case is POINTS (which has the same value GL_POINTS), the second
+                    // parameter is the index position into the vertex array of the first point
+                    // to draw, and the third parameter is the number of points to draw.
+                    shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
+
+                    // fixed size points
+                    shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(4.f), osg::StateAttribute::ON);
+
+                    geode->addDrawable(shape_point_drawable);
+                    group->addChild(geode);
+                }
+
+                CPLFree(pafScanline);
+
+                GDALClose(dataset);
+
+                GDALDestroyDriverManager();
+
+                model_node = group;
+                model_transform = new osg::MatrixTransform;
+                    m_ref_lat_lon = local_lat_lon;
+                    m_ref_alt = local_alt;
+                    m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
+
+
+                    model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
+                    model_transform->addChild(model_node);
+                return  model_transform;
+
+            }
+            else
+            {
+                std::cout << "GDAL error ; No data loaded" << std::endl;
+                return model_transform;
+            }
+
+
+        }
+
+        else
+        {
+            std::cout << "No data loaded" << std::endl;
+            return model_transform;
+        }
     }
 
     // Transform model
@@ -414,6 +576,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
 
     state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
+
     // Add the possibility of modify the transparence
     osg::ref_ptr<osg::Material> material = new osg::Material;
     // Put the 3D model totally opaque
@@ -423,20 +586,15 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
     state_set->setAttributeAndModes(bf);
 
-    //    osg::ref_ptr<osg::Material> material = new osg::Material;
-    //    material->setAmbient( osg::Material::FRONT_AND_BACK, //_AND_BACK,
-    //                          osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
-    //    material->setDiffuse( osg::Material::FRONT_AND_BACK, //_AND_BACK,
-    //                          osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f) );
-    //    material->setEmission(osg::Material::FRONT_AND_BACK, //_AND_BACK,
-    //                          osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
-    //    //material->setAlpha( osg::Material::FRONT_AND_BACK, 0.25 );
-    //    material->setColorMode((osg::Material::ColorMode::DIFFUSE)); //(osg::Material::ColorMode::EMISSION);
-    //    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE );
-
-    //    state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
-    //    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-    //    state_set->setAttributeAndModes(bf);
+//    // test
+//    osg::ref_ptr<osg::Material> material = new osg::Material;
+//    material->setAmbient( osg::Material::FRONT_AND_BACK,
+//                          osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
+//    material->setDiffuse( osg::Material::FRONT_AND_BACK,
+//                          osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f) );
+//    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON);
+//    state_set->setAttributeAndModes(new osg::BlendFunc);
+//    state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
 
 
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
@@ -727,15 +885,15 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
 
         osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
 
-        if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty()))
-        {
-            // the geodes are identified by name.
-            std::cout<<"Object \""<<hitr->nodePath.back()->getName()<<"\""<<std::endl;
-        }
-        else if (hitr->drawable.valid())
-        {
-            std::cout<<"Object \""<<hitr->drawable->className()<<"\""<<std::endl;
-        }
+//        if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty()))
+//        {
+//            // the geodes are identified by name.
+//            std::cout<<"Object \""<<hitr->nodePath.back()->getName()<<"\""<<std::endl;
+//        }
+//        else if (hitr->drawable.valid())
+//        {
+//            std::cout<<"Object \""<<hitr->drawable->className()<<"\""<<std::endl;
+//        }
 
 
         // we get the intersections in a osg::Vec3d
@@ -1232,6 +1390,14 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
 
         state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
     }
+
+
+//    // test
+//    osg::StateSet* state_set = _node->getOrCreateStateSet();
+//    osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+//    osg::Material* material = dynamic_cast<osg::Material*>(attr);
+//    material->setDiffuse( osg::Material::FRONT_AND_BACK, osg::Vec4(1.0f, 1.0f, 1.0f, _transparency_value) );
+//    state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
 }
 
 void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans)

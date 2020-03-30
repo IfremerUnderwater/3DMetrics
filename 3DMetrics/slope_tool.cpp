@@ -115,6 +115,7 @@ void SlopeTool::slot_toolEnded()
 {
     if(m_centerSet && (m_xcenter != m_xclicked || m_ycenter != m_yclicked))
     {
+        OSGWidgetTool::instance()->getOSGWidget()->getView()->requestContinuousUpdate(false);
         ui->message_label->setText("Please wait...");
         update();
         repaint();
@@ -257,6 +258,7 @@ void SlopeTool::slot_toolEnded()
             QApplication::restoreOverrideCursor();
 
             ui->message_label->setText("Computed");
+            OSGWidgetTool::instance()->getOSGWidget()->getView()->requestContinuousUpdate(true);
         }
     }
 

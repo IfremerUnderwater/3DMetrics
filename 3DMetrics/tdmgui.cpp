@@ -293,7 +293,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.gdal)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
