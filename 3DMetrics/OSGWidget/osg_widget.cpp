@@ -441,9 +441,13 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
                 local_lat_lon.setY(adfGeoTransform[0]);
                 local_alt = 0;
 
+                double deltaz = adfMinMax[1] - adfMinMax[0];
+
+
                 for(int y = 0; y < nYSize; y++)
                 {
                     osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+                    osg::Vec4Array* colors = new osg::Vec4Array;
 
                     // read line
                     poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
@@ -473,6 +477,16 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
                         point[2] = pz; // pafScanline[x];
 
                         vertices->push_back(point);
+
+                        // z color
+                        double dh = (h - adfMinMax[0]) / deltaz;
+                        float r = dh > 0.5 ? (dh - 0.5)*2: 0;
+                        float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
+                        float b = 1.0 -dh;
+
+                        // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
+                        osg::Vec4 color(r, g, b,1.0f);
+                        colors->push_back(color);
                     }
 
                     if(vertices->size() == 0)
@@ -483,14 +497,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
                     // pass the created vertex array to the points geometry object.
                     shape_point_drawable->setVertexArray(vertices);
 
-                    osg::Vec4Array* colors = new osg::Vec4Array;
-                    // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
-                    osg::Vec4 color(0.5f,0.5f,1.0f,1.0f);
-                    colors->push_back(color);
-
-                    // pass the color array to points geometry, note the binding to tell the geometry
-                    // that only use one color for the whole object.
-                    shape_point_drawable->setColorArray(colors, osg::Array::BIND_OVERALL);
+                    shape_point_drawable->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
 
                     // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
                     // parameter passed to the DrawArrays constructor is the Primitive::Mode which
@@ -500,7 +507,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
                     shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
 
                     // fixed size points
-                    shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(4.f), osg::StateAttribute::ON);
+                    shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
 
                     geode->addDrawable(shape_point_drawable);
                     group->addChild(geode);
