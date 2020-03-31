@@ -50,6 +50,8 @@
 
 #include <GeographicLib/LocalCartesian.hpp>
 
+#include "choose_loadingmode_dialog.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -305,6 +307,17 @@ void TDMGui::slot_open3dModel()
         connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
                 this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
 
+        // check grd files
+        if(filename.toStdString().find_last_of(".grd") == filename.toStdString().size() - 1)
+        {
+            ChooseLoadingModeDialog choose(this);
+            choose.setMode(LoadingModePoint);
+            if(choose.exec() == QDialog::Accepted)
+            {
+                thread_node->setLoadingMode((choose.mode()));
+            }
+        }
+
         thread_node->setFileName(filename);
         QFileInfo info(filename);
         thread_node->setName(info.fileName());
@@ -361,38 +374,38 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
 
     // test
 
-//    osg::Group *group = _node->asGroup();
-//    osg::Image *image = _node->asImage();
+    //    osg::Group *group = _node->asGroup();
+    //    osg::Image *image = _node->asImage();
 
-//    osg::ref_ptr<osg::TransferFunction1D> trans = new osg::TransferFunction1D();
+    //    osg::ref_ptr<osg::TransferFunction1D> trans = new osg::TransferFunction1D();
 
-//    trans->setColor(0.0, osg::Vec4(1.0,0.0,0.0,0.0));
-//    trans->setColor(0.5, osg::Vec4(1.0,1.0,0.0,0.5));
-//    trans->setColor(1.0, osg::Vec4(0.0,0.0,1.0,1.0));
+    //    trans->setColor(0.0, osg::Vec4(1.0,0.0,0.0,0.0));
+    //    trans->setColor(0.5, osg::Vec4(1.0,1.0,0.0,0.5));
+    //    trans->setColor(1.0, osg::Vec4(0.0,0.0,1.0,1.0));
 
-//    // TODO
-//     osg::ref_ptr<osgVolume::Volume> volume = new osgVolume::Volume;
-//    volume->addChild(_node);
+    //    // TODO
+    //     osg::ref_ptr<osgVolume::Volume> volume = new osgVolume::Volume;
+    //    volume->addChild(_node);
 
-//    osg::ref_ptr<osgVolume::ImageLayer> layer = new osgVolume::ImageLayer(_node->asImage());
+    //    osg::ref_ptr<osgVolume::ImageLayer> layer = new osgVolume::ImageLayer(_node->asImage());
 
-//    osgVolume::SwitchProperty* sp = new osgVolume::SwitchProperty;
-//    sp->setActiveProperty(0);
-//    osgVolume::CompositeProperty* cp = new osgVolume::CompositeProperty;
-//    osgVolume::TransferFunctionProperty* tfp = trans.valid() ? new osgVolume::TransferFunctionProperty(trans.get()) : 0;
-//    cp->addProperty(tfp);
-//    sp->addProperty(cp);
-//    layer->setProperty(sp);
-//    volume->addChild(layer->asNode());
-//    node = volume.get();
+    //    osgVolume::SwitchProperty* sp = new osgVolume::SwitchProperty;
+    //    sp->setActiveProperty(0);
+    //    osgVolume::CompositeProperty* cp = new osgVolume::CompositeProperty;
+    //    osgVolume::TransferFunctionProperty* tfp = trans.valid() ? new osgVolume::TransferFunctionProperty(trans.get()) : 0;
+    //    cp->addProperty(tfp);
+    //    sp->addProperty(cp);
+    //    layer->setProperty(sp);
+    //    volume->addChild(layer->asNode());
+    //    node = volume.get();
 
 
-//    osg::StateSet* state_set = _node->getOrCreateStateSet();
-//    osg::StateAttribute* attrcolortable = state_set->getAttribute(osg::StateAttribute::COLORTABLE);
-//    osg::StateAttribute* attrdepthrange = state_set->getAttribute(osg::StateAttribute::DEPTHRANGEINDEXED);
-//    osg::DepthRangeIndexed* depthrange =      dynamic_cast<osg::DepthRangeIndexed*>(attrdepthrange);
-//    double far = depthrange->getZFar();
-//    double near = depthrange->getZNear();
+    //    osg::StateSet* state_set = _node->getOrCreateStateSet();
+    //    osg::StateAttribute* attrcolortable = state_set->getAttribute(osg::StateAttribute::COLORTABLE);
+    //    osg::StateAttribute* attrdepthrange = state_set->getAttribute(osg::StateAttribute::DEPTHRANGEINDEXED);
+    //    osg::DepthRangeIndexed* depthrange =      dynamic_cast<osg::DepthRangeIndexed*>(attrdepthrange);
+    //    double far = depthrange->getZFar();
+    //    double near = depthrange->getZNear();
 
     //state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
 
@@ -3048,7 +3061,7 @@ void TDMGui::slot_computeTotalArea()
 
         QString total_area_string = QString::number(total_area_double,'f',2);
         QStringList filename_split = layer_data.fileName().split("/");
-        QString name3D_mode = filename_split.at(filename_split.length()-1);   
+        QString name3D_mode = filename_split.at(filename_split.length()-1);
         QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3D_mode+tr(" is ")+total_area_string + " m²");
     }
 }

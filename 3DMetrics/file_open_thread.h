@@ -5,6 +5,9 @@
 
 #include <osg/Node>
 #include "TreeView/tdm_layer_item.h"
+
+#include "OSGWidget/loading_mode.h"
+
 class OSGWidget;
 
 class FileOpenThread : public QThread
@@ -27,6 +30,8 @@ public:
     void setOffsetY(double _offsetY){ m_offsetY = _offsetY; }
     void setOffsetZ(double _offsetZ){ m_offsetZ = _offsetZ; }
 
+    void setLoadingMode(LoadingMode _loadingMode){ m_loadingMode = _loadingMode; }
+
 signals :
     void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool
                            ,double _transp, double _offsetX, double _offsetY, double offsetZ);
@@ -45,6 +50,8 @@ private:
     double m_offsetX;
     double m_offsetY;
     double m_offsetZ;
+
+    LoadingMode m_loadingMode;
 };
 
 #endif // FILE_OPEN_THREAD_H

@@ -89,7 +89,8 @@ SOURCES += main.cpp \
     edit_transparency_model.cpp \
     edit_offset_model.cpp \
     slope_tool.cpp \
-    Tools/geometry.cpp
+    Tools/geometry.cpp \
+    choose_loadingmode_dialog.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -132,7 +133,9 @@ HEADERS  += \
     edit_transparency_model.h \
     edit_offset_model.h \
     slope_tool.h \
-    Tools/geometry.h
+    Tools/geometry.h \
+    choose_loadingmode_dialog.h \
+    OSGWidget/loading_mode.h
 
 FORMS    += \
     tdmgui.ui \
@@ -150,7 +153,8 @@ FORMS    += \
     meas_geom_export_dialog.ui \
     edit_transparency_model.ui \
     edit_offset_model.ui \
-    slope_tool.ui
+    slope_tool.ui \
+    choose_loadingmode_dialog.ui
 
 RESOURCES += \
     ressources.qrc

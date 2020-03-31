@@ -32,6 +32,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <osg/Material>
 
 #include "kml_handler.h"
+#include "loading_mode.h"
 
 #ifdef _WIN32
 #include "gdal_priv.h"
@@ -67,6 +68,13 @@ public:
     /// \return node if loading succeded
     ///
     osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
+
+    ///
+    /// \brief createNodeFromFile load a scene from a 3D file
+    /// \param _sceneFile path to any 3D file supported by osg
+    /// \return node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode);
 
     ///
     /// \brief addNodeToScene add a node to the scene

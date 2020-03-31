@@ -55,6 +55,9 @@
 #include "box_visitor.h"
 //#include "edit_transparency_model.h"
 
+#include "loading_mode.h"
+#include "choose_loadingmode_dialog.h"
+
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
         m_filename( _filename ),
@@ -376,580 +379,9 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
 
     if (!model_node)
     {
-        // check grd extension
-        if(scene_file.find_last_of(".grd") > 0)
-        {
-            GDALAllRegister();
-            GDALDataset *dataset = (GDALDataset *) GDALOpen( scene_file.c_str(), GA_ReadOnly );
-            if(dataset != NULL)
-            {
-                double        adfGeoTransform[6];
-                //                adfGeoTransform[0] /* top left x */
-                //                adfGeoTransform[1] /* w-e pixel resolution */
-                //                adfGeoTransform[2] /* 0 */
-                //                adfGeoTransform[3] /* top left y */
-                //                adfGeoTransform[4] /* 0 */
-                //                adfGeoTransform[5] /* n-s pixel resolution (negative value) */
-                printf( "Driver: %s/%s\n",
-                        dataset->GetDriver()->GetDescription(),
-                        dataset->GetDriver()->GetMetadataItem( GDAL_DMD_LONGNAME ) );
-                printf( "Size is %dx%dx%d\n",
-                        dataset->GetRasterXSize(), dataset->GetRasterYSize(),
-                        dataset->GetRasterCount() );
-                if( dataset->GetProjectionRef()  != NULL )
-                    printf( "Projection is `%s'\n", dataset->GetProjectionRef() );
-                if( dataset->GetGeoTransform( adfGeoTransform ) == CE_None )
-                {
-                    printf( "Origin = (%.6f,%.6f)\n",
-                            adfGeoTransform[0], adfGeoTransform[3] );
-                    printf( "Pixel Size = (%.6f,%.6f)\n",
-                            adfGeoTransform[1], adfGeoTransform[5] );
-                }
+        std::cout << "No data loaded" << std::endl;
+        return model_transform;
 
-                GDALRasterBand  *poBand;
-                int             nBlockXSize, nBlockYSize;
-                int             bGotMin, bGotMax;
-                double          adfMinMax[2];
-                poBand = dataset->GetRasterBand( 1 );
-                poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
-                printf( "Block=%dx%d Type=%s, ColorInterp=%s\n",
-                        nBlockXSize, nBlockYSize,
-                        GDALGetDataTypeName(poBand->GetRasterDataType()),
-                        GDALGetColorInterpretationName(
-                            poBand->GetColorInterpretation()) );
-                adfMinMax[0] = poBand->GetMinimum( &bGotMin );
-                adfMinMax[1] = poBand->GetMaximum( &bGotMax );
-                if( ! (bGotMin && bGotMax) )
-                    GDALComputeRasterMinMax((GDALRasterBandH)poBand, TRUE, adfMinMax);
-                printf( "Min=%.3fd, Max=%.3f\n", adfMinMax[0], adfMinMax[1] );
-                if( poBand->GetOverviewCount() > 0 )
-                    printf( "Band has %d overviews.\n", poBand->GetOverviewCount() );
-                if( poBand->GetColorTable() != NULL )
-                    printf( "Band has a color table with %d entries.\n",
-                            poBand->GetColorTable()->GetColorEntryCount() );
-
-                // read data
-                float *pafScanline;
-                float *pafScanline2;
-                int   nXSize = poBand->GetXSize();
-                int   nYSize = poBand->GetYSize();
-                float noData = poBand->GetNoDataValue();
-
-                // projection
-                GeographicLib::LocalCartesian proj(adfGeoTransform[3],  adfGeoTransform[0]);
-                local_lat_lon.setX(adfGeoTransform[3]);
-                local_lat_lon.setY(adfGeoTransform[0]);
-                local_alt = 0;
-
-                double deltaz = adfMinMax[1] - adfMinMax[0];
-
-                enum Mode {
-                    ModePoint,
-                    ModeTriangle,
-                    ModeTrianglePoint
-                };
-
-                Mode mode = ModeTrianglePoint;
-                osg::ref_ptr<osg::Group> group = new osg::Group;
-
-                if(mode == ModePoint)
-                {
-
-                    pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
-
-                    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-                    osg::Vec3Array* vertices = new osg::Vec3Array;
-                    osg::Vec4Array* colors = new osg::Vec4Array;
-
-                    for(int y = 0; y < nYSize; y++)
-                    {
-
-                        // read line
-                        poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
-                                          pafScanline, nXSize, 1, GDT_Float32,
-                                          0, 0 );
-
-                        // build points
-
-                        // create point in geode
-                        // point
-                        for(int x=0; x<nXSize; x++)
-                        {
-                            if( pafScanline[x] == noData) // check NAN
-                                continue;
-
-                            osg::Vec3f point;
-                            double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            double lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            double h = pafScanline[x];
-                            double px, py, pz;
-                            proj.Forward(lat, lon, h, px, py, pz);
-
-
-                            point[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            point[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            point[2] = pz; // pafScanline[x];
-
-                            vertices->push_back(point);
-
-                            // z color
-                            double dh = (h - adfMinMax[0]) / deltaz;
-                            float r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            float b = 1.0 -dh;
-
-                            // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
-                            osg::Vec4 color(r, g, b,1.0f);
-                            colors->push_back(color);
-                        }
-                    }
-
-                    // points
-                    osg::Geometry* shape_point_drawable = new osg::Geometry();
-
-                    // pass the created vertex array to the points geometry object.
-                    shape_point_drawable->setVertexArray(vertices);
-
-                    shape_point_drawable->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
-
-                    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
-                    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
-                    // in this case is POINTS (which has the same value GL_POINTS), the second
-                    // parameter is the index position into the vertex array of the first point
-                    // to draw, and the third parameter is the number of points to draw.
-                    shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
-
-                    // fixed size points
-                    shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
-
-                    geode->addDrawable(shape_point_drawable);
-                    group->addChild(geode);
-
-                    // TOO SLOW!!!!!!!!
-                    //                osg::Geometry* geometry = new osg::Geometry();
-
-                    //                osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new
-                    //                osgUtil::DelaunayTriangulator(vertices);
-                    //                dt->triangulate(); // Generate the triangles
-                    //                geometry->setVertexArray(vertices);
-                    //                geometry->addPrimitiveSet(dt->getTriangles());
-                    //                geode->addDrawable(geometry);
-                    //                group->addChild(geode);
-
-                    CPLFree(pafScanline);
-                }
-                else if(mode == ModeTriangle)
-                {
-                    // triangles
-
-                    pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
-                    pafScanline2 = (float *) CPLMalloc(sizeof(float)*nXSize);
-
-                    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-
-                    // read first line
-                    poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
-                                      pafScanline, nXSize, 1, GDT_Float32,
-                                      0, 0 );
-
-                    for(int y = 1; y < nYSize; y++)
-                    {
-
-                        // read second line
-                        poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
-                                          pafScanline2, nXSize, 1, GDT_Float32,
-                                          0, 0 );
-
-                        // create triangles striip in geode
-                        // AD
-                        // BC
-                        //  triangle 1 = ABC
-                        //  triangle 2 = ACD
-
-
-                        osg::Vec3Array* vertices = new osg::Vec3Array;
-                        osg::Vec4Array* colors = new osg::Vec4Array;
-
-                        // point
-                        for(int x=0; x<nXSize-1; x++)
-                        {
-                            // check if 1 triangle is incomplète
-                            if( pafScanline2[x] == noData) // check NAN
-                                continue;
-                            if( pafScanline2[x+1] == noData) // check NAN
-                                continue;
-                            if( pafScanline[x] == noData) // check NAN
-                                continue;
-                            if( pafScanline[x+1] == noData) // check NAN
-                                continue;
-
-                            // build triangle
-                            osg::Vec3f pointA;
-                            osg::Vec3f pointB;
-                            osg::Vec3f pointC;
-                            osg::Vec3f pointD;
-                            //                            osg::Vec4 colorA;
-                            //                            osg::Vec4 colorB;
-                            //                            osg::Vec4 colorC;
-                            //                            osg::Vec4 colorD;
-
-
-                            // B
-                            double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            double lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
-                            double h = pafScanline2[x];
-                            double px, py, pz;
-                            proj.Forward(lat, lon, h, px, py, pz);
-                            pointB[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            pointB[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            pointB[2] = pz; // pafScanline[x];
-
-                            //                            // z color
-                            //                            double dh = (h - adfMinMax[0]) / deltaz;
-                            //                            float r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            //                            float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            //                            float b = 1.0 -dh;
-
-                            //                            // color
-                            //                            colorB = {r, g, b,1.0f};
-
-                            // C
-                            lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
-                            lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
-                            h = pafScanline2[x+1];
-                            proj.Forward(lat, lon, h, px, py, pz);
-                            pointC[0] = px;
-                            pointC[1] = py;
-                            pointC[2] = pz;
-
-                            //                            // z color
-                            //                            dh = (h - adfMinMax[0]) / deltaz;
-                            //                            r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            //                            g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            //                            b = 1.0 -dh;
-
-                            //                            // color
-                            //                            colorC = {r, g, b,1.0f};
-
-                            // A
-                            lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            h = pafScanline[x];
-                            proj.Forward(lat, lon, h, px, py, pz);
-
-                            pointA[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            pointA[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            pointA[2] = pz; // pafScanline[x];
-
-                            //                            // z color
-                            //                            dh = (h - adfMinMax[0]) / deltaz;
-                            //                            r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            //                            g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            //                            b = 1.0 -dh;
-
-                            //                            colorA = {r, g, b,1.0f};
-
-                            // D
-                            lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
-                            lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            h = pafScanline[x+1];
-                            proj.Forward(lat, lon, h, px, py, pz);
-
-                            pointD[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            pointD[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            pointD[2] = pz; // pafScanline[x];
-
-
-                            //                            // z color
-                            //                            dh = (h - adfMinMax[0]) / deltaz;
-                            //                            r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            //                            g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            //                            b = 1.0 -dh;
-
-                            //                            colorD = {r, g, b,1.0f};
-
-                            // triangles
-                            vertices->push_back(pointA);
-                            vertices->push_back(pointB);
-                            vertices->push_back(pointC);
-                            vertices->push_back(pointA);
-                            vertices->push_back(pointC);
-                            vertices->push_back(pointD);
-
-                            //                            colors->push_back(colorA);
-                            //                            colors->push_back(colorB);
-                            //                            colors->push_back(colorC);
-                            //                            colors->push_back(colorA);
-                            //                            colors->push_back(colorC);
-                            //                            colors->push_back(colorD);
-
-
-
-
-                        }
-
-                        // points
-                        osg::Geometry* geometry = new osg::Geometry();
-
-                        // pass the created vertex array to the points geometry object.
-                        geometry->setVertexArray(vertices);
-
-                        osg::Vec4 color(1.0,0.1,0.9,1.0);
-                        colors->push_back(color);
-                        geometry->setColorArray(colors, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
-
-                        // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
-                        // parameter passed to the DrawArrays constructor is the Primitive::Mode which
-                        // in this case is POINTS (which has the same value GL_POINTS), the second
-                        // parameter is the index position into the vertex array of the first point
-                        // to draw, and the third parameter is the number of points to draw.
-                        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices->size()));
-
-                        // fixed size points
-                        //shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
-
-                        geode->addDrawable(geometry);
-
-
-                        // swap line ponters
-                        float * tmp = pafScanline;
-                        pafScanline = pafScanline2;
-                        pafScanline2 = tmp;
-                    }
-
-                    group->addChild(geode);
-
-                    CPLFree(pafScanline);
-                    CPLFree(pafScanline2);
-
-                }
-                else if(mode == ModeTrianglePoint)
-                {
-                    // triangles
-
-                    pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
-                    pafScanline2 = (float *) CPLMalloc(sizeof(float)*nXSize);
-
-                    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-
-                    // read first line
-                    poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
-                                      pafScanline, nXSize, 1, GDT_Float32,
-                                      0, 0 );
-
-                    for(int y = 1; y < nYSize; y++)
-                    {
-
-                        // read second line
-                        poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
-                                          pafScanline2, nXSize, 1, GDT_Float32,
-                                          0, 0 );
-
-                        // create triangles striip in geode
-                        // AD
-                        // BC
-                        //  triangle 1 = ABC
-                        //  triangle 2 = ACD
-
-
-                        osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
-                        osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
-                        osg::ref_ptr<osg::Vec4Array> colorst = new osg::Vec4Array;
-
-                        // point
-                        for(int x=0; x<nXSize-1; x++)
-                        {
-                            // check if 1 triangle is incomplète
-                            if( pafScanline2[x] == noData) // check NAN
-                                continue;
-                            if( pafScanline2[x+1] == noData) // check NAN
-                                continue;
-                            if( pafScanline[x] == noData) // check NAN
-                                continue;
-                            if( pafScanline[x+1] == noData) // check NAN
-                                continue;
-
-                            // build triangle
-                            osg::Vec3f pointA;
-                            osg::Vec3f pointB;
-                            osg::Vec3f pointC;
-                            osg::Vec3f pointD;
-                            osg::Vec4 colorA;
-                            osg::Vec4 colorB;
-                            osg::Vec4 colorC;
-                            osg::Vec4 colorD;
-
-
-                            // B
-                            double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            double lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
-                            double h = pafScanline2[x];
-                            double px, py, pz;
-                            proj.Forward(lat, lon, h, px, py, pz);
-                            pointB[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            pointB[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            pointB[2] = pz; // pafScanline[x];
-
-                            // z color
-                            double dh = (h - adfMinMax[0]) / deltaz;
-                            float r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            float b = 1.0 -dh;
-
-                            // color
-                            colorB = {r, g, b,1.0f};
-
-                            // C
-                            lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
-                            lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
-                            h = pafScanline2[x+1];
-                            proj.Forward(lat, lon, h, px, py, pz);
-                            pointC[0] = px;
-                            pointC[1] = py;
-                            pointC[2] = pz;
-
-                            // z color
-                            dh = (h - adfMinMax[0]) / deltaz;
-                            r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            b = 1.0 -dh;
-
-                            // color
-                            colorC = {r, g, b,1.0f};
-
-                            // A
-                            lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            h = pafScanline[x];
-                            proj.Forward(lat, lon, h, px, py, pz);
-
-                            pointA[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            pointA[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            pointA[2] = pz; // pafScanline[x];
-
-                            // z color
-                            dh = (h - adfMinMax[0]) / deltaz;
-                            r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            b = 1.0 -dh;
-
-                            colorA = {r, g, b,1.0f};
-
-                            // D
-                            lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
-                            lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            h = pafScanline[x+1];
-                            proj.Forward(lat, lon, h, px, py, pz);
-
-                            pointD[0] = px; //adfGeoTransform[0] + adfGeoTransform[1]*x;
-                            pointD[1] = py; //adfGeoTransform[3] + adfGeoTransform[5]*y;
-                            pointD[2] = pz; // pafScanline[x];
-
-
-                            // z color
-                            dh = (h - adfMinMax[0]) / deltaz;
-                            r = dh > 0.5 ? (dh - 0.5)*2: 0;
-                            g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-                            b = 1.0 -dh;
-
-                            colorD = {r, g, b,1.0f};
-
-                            // triangles
-                            vertices->push_back(pointA);
-                            vertices->push_back(pointB);
-                            vertices->push_back(pointC);
-                            vertices->push_back(pointA);
-                            vertices->push_back(pointC);
-                            vertices->push_back(pointD);
-
-                            colors->push_back(colorA);
-                            colors->push_back(colorB);
-                            colors->push_back(colorC);
-                            colors->push_back(colorA);
-                            colors->push_back(colorC);
-                            colors->push_back(colorD);
-
-
-
-
-                        }
-
-                        // triangles
-                        osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-
-                        // pass the created vertex array to the points geometry object.
-                        geometry->setVertexArray(vertices);
-
-                        osg::Vec4 color(0.3,0.1,0.3,0.3);
-                        colorst->push_back(color);
-                        geometry->setColorArray(colorst, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
-
-                        // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
-                        // parameter passed to the DrawArrays constructor is the Primitive::Mode which
-                        // in this case is POINTS (which has the same value GL_POINTS), the second
-                        // parameter is the index position into the vertex array of the first point
-                        // to draw, and the third parameter is the number of points to draw.
-                        geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices->size()));
-
-                        // fixed size points
-                        //shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
-
-                        geode->addDrawable(geometry);
-
-                        // points
-                        osg::ref_ptr<osg::Geometry> geometryP = new osg::Geometry();
-
-                        // pass the created vertex array to the points geometry object.
-                        geometryP->setVertexArray(vertices);
-                        geometryP->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
-                        geometryP->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
-                        geometryP->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
-                        geode->addDrawable(geometryP);
-
-
-                        // swap line ponters
-                        float * tmp = pafScanline;
-                        pafScanline = pafScanline2;
-                        pafScanline2 = tmp;
-                    }
-
-                    group->addChild(geode);
-
-                    CPLFree(pafScanline);
-                    CPLFree(pafScanline2);
-
-                }
-
-                GDALClose(dataset);
-
-                GDALDestroyDriverManager();
-
-                model_node = group;
-                model_transform = new osg::MatrixTransform;
-                m_ref_lat_lon = local_lat_lon;
-                m_ref_alt = local_alt;
-                m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
-
-
-                model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
-                model_transform->addChild(model_node);
-                return  model_transform;
-
-            }
-            else
-            {
-                std::cout << "GDAL error ; No data loaded" << std::endl;
-                return model_transform;
-            }
-
-
-        }
-
-        else
-        {
-            std::cout << "No data loaded" << std::endl;
-            return model_transform;
-        }
     }
 
     // Transform model
@@ -972,6 +404,525 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
     }
 
     return model_transform;
+}
+
+
+///
+/// \brief createNodeFromFile load a scene from a 3D file
+/// \param _sceneFile path to any 3D file supported by osg
+/// \return node if loading succeded
+///
+osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode)
+{
+    osg::ref_ptr<osg::MatrixTransform> model_transform;
+
+    QPointF local_lat_lon;
+    double local_alt;
+
+    GDALAllRegister();
+    GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
+    if(dataset != NULL)
+    {
+        double        adfGeoTransform[6];
+        //                adfGeoTransform[0] /* top left x */
+        //                adfGeoTransform[1] /* w-e pixel resolution */
+        //                adfGeoTransform[2] /* 0 */
+        //                adfGeoTransform[3] /* top left y */
+        //                adfGeoTransform[4] /* 0 */
+        //                adfGeoTransform[5] /* n-s pixel resolution (negative value) */
+        printf( "Driver: %s/%s\n",
+                dataset->GetDriver()->GetDescription(),
+                dataset->GetDriver()->GetMetadataItem( GDAL_DMD_LONGNAME ) );
+        printf( "Size is %dx%dx%d\n",
+                dataset->GetRasterXSize(), dataset->GetRasterYSize(),
+                dataset->GetRasterCount() );
+        if( dataset->GetProjectionRef()  != NULL )
+            printf( "Projection is `%s'\n", dataset->GetProjectionRef() );
+        if( dataset->GetGeoTransform( adfGeoTransform ) == CE_None )
+        {
+            printf( "Origin = (%.6f,%.6f)\n",
+                    adfGeoTransform[0], adfGeoTransform[3] );
+            printf( "Pixel Size = (%.6f,%.6f)\n",
+                    adfGeoTransform[1], adfGeoTransform[5] );
+        }
+
+        GDALRasterBand  *poBand;
+        int             nBlockXSize, nBlockYSize;
+        int             bGotMin, bGotMax;
+        double          adfMinMax[2];
+        poBand = dataset->GetRasterBand( 1 );
+        poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
+        printf( "Block=%dx%d Type=%s, ColorInterp=%s\n",
+                nBlockXSize, nBlockYSize,
+                GDALGetDataTypeName(poBand->GetRasterDataType()),
+                GDALGetColorInterpretationName(
+                    poBand->GetColorInterpretation()) );
+        adfMinMax[0] = poBand->GetMinimum( &bGotMin );
+        adfMinMax[1] = poBand->GetMaximum( &bGotMax );
+        if( ! (bGotMin && bGotMax) )
+            GDALComputeRasterMinMax((GDALRasterBandH)poBand, TRUE, adfMinMax);
+        printf( "Min=%.3fd, Max=%.3f\n", adfMinMax[0], adfMinMax[1] );
+        if( poBand->GetOverviewCount() > 0 )
+            printf( "Band has %d overviews.\n", poBand->GetOverviewCount() );
+        if( poBand->GetColorTable() != NULL )
+            printf( "Band has a color table with %d entries.\n",
+                    poBand->GetColorTable()->GetColorEntryCount() );
+
+        // read data
+        float *pafScanline;
+        float *pafScanline2;
+        int   nXSize = poBand->GetXSize();
+        int   nYSize = poBand->GetYSize();
+        float noData = poBand->GetNoDataValue();
+
+        // projection
+        GeographicLib::LocalCartesian proj(adfGeoTransform[3],  adfGeoTransform[0]);
+        local_lat_lon.setX(adfGeoTransform[3]);
+        local_lat_lon.setY(adfGeoTransform[0]);
+        local_alt = 0;
+
+        double deltaz = adfMinMax[1] - adfMinMax[0];
+
+        osg::ref_ptr<osg::Group> group = new osg::Group;
+
+        if(_mode == LoadingModePoint)
+        {
+
+            pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
+
+            osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+            osg::Vec3Array* vertices = new osg::Vec3Array;
+            osg::Vec4Array* colors = new osg::Vec4Array;
+
+            for(int y = 0; y < nYSize; y++)
+            {
+
+                // read line
+                poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                  pafScanline, nXSize, 1, GDT_Float32,
+                                  0, 0 );
+
+                // build points
+
+                // create point in geode
+                // point
+                for(int x=0; x<nXSize; x++)
+                {
+                    if( pafScanline[x] == noData) // check NAN
+                        continue;
+
+                    osg::Vec3f point;
+                    double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    double lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    double h = pafScanline[x];
+                    double px, py, pz;
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    point[0] = px;
+                    point[1] = py;
+                    point[2] = pz;
+
+                    vertices->push_back(point);
+
+                    // z color
+                    double dh = (h - adfMinMax[0]) / deltaz;
+                    float r = dh > 0.5 ? (dh - 0.5)*2: 0;
+                    float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
+                    float b = 1.0 -dh;
+
+                    // add a white color, colors take the form r,g,b,a with 0.0 off, 1.0 full on.
+                    osg::Vec4 color(r, g, b,1.0f);
+                    colors->push_back(color);
+                }
+            }
+
+            // points
+            osg::Geometry* shape_point_drawable = new osg::Geometry();
+
+            // pass the created vertex array to the points geometry object.
+            shape_point_drawable->setVertexArray(vertices);
+
+            shape_point_drawable->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
+
+            // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+            // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+            // in this case is POINTS (which has the same value GL_POINTS), the second
+            // parameter is the index position into the vertex array of the first point
+            // to draw, and the third parameter is the number of points to draw.
+            shape_point_drawable->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,vertices->size()));
+
+            // fixed size points
+            shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
+
+            geode->addDrawable(shape_point_drawable);
+            group->addChild(geode);
+
+            // TOO SLOW!!!!!!!!
+            //                osg::Geometry* geometry = new osg::Geometry();
+
+            //                osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new
+            //                osgUtil::DelaunayTriangulator(vertices);
+            //                dt->triangulate(); // Generate the triangles
+            //                geometry->setVertexArray(vertices);
+            //                geometry->addPrimitiveSet(dt->getTriangles());
+            //                geode->addDrawable(geometry);
+            //                group->addChild(geode);
+
+            CPLFree(pafScanline);
+        }
+        else if(_mode == LoadingModeTriangle)
+        {
+            // triangles
+
+            pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
+            pafScanline2 = (float *) CPLMalloc(sizeof(float)*nXSize);
+
+            osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+
+            // read first line
+            poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
+                              pafScanline, nXSize, 1, GDT_Float32,
+                              0, 0 );
+
+            for(int y = 1; y < nYSize; y++)
+            {
+
+                // read second line
+                poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                  pafScanline2, nXSize, 1, GDT_Float32,
+                                  0, 0 );
+
+                // create triangles in geode
+                // AD
+                // BC
+                //  triangle 1 = ABC
+                //  triangle 2 = ACD
+
+
+                osg::Vec3Array* vertices = new osg::Vec3Array;
+
+                osg::Vec4Array* colors = new osg::Vec4Array;
+
+                // point
+                for(int x=0; x<nXSize-1; x++)
+                {
+                    // check if 1 triangle is incomplète
+                    if( pafScanline2[x] == noData) // check NAN
+                        continue;
+                    if( pafScanline2[x+1] == noData) // check NAN
+                        continue;
+                    if( pafScanline[x] == noData) // check NAN
+                        continue;
+                    if( pafScanline[x+1] == noData) // check NAN
+                        continue;
+
+                    // build triangle
+                    osg::Vec3f pointA;
+                    osg::Vec3f pointB;
+                    osg::Vec3f pointC;
+                    osg::Vec3f pointD;
+
+                    // B
+                    double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    double lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
+                    double h = pafScanline2[x];
+                    double px, py, pz;
+                    proj.Forward(lat, lon, h, px, py, pz);
+                    pointB[0] = px;
+                    pointB[1] = py;
+                    pointB[2] = pz;
+
+                    // C
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
+                    h = pafScanline2[x+1];
+                    proj.Forward(lat, lon, h, px, py, pz);
+                    pointC[0] = px;
+                    pointC[1] = py;
+                    pointC[2] = pz;
+
+                    // A
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    h = pafScanline[x];
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    pointA[0] = px;
+                    pointA[1] = py;
+                    pointA[2] = pz;
+
+
+                    // D
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    h = pafScanline[x+1];
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    pointD[0] = px;
+                    pointD[1] = py;
+                    pointD[2] = pz;
+
+
+                    // triangles
+                    vertices->push_back(pointA);
+                    vertices->push_back(pointB);
+                    vertices->push_back(pointC);
+
+                    vertices->push_back(pointA);
+                    vertices->push_back(pointC);
+                    vertices->push_back(pointD);
+
+
+                }
+
+                // points
+                osg::Geometry* geometry = new osg::Geometry();
+
+                // pass the created vertex array to the points geometry object.
+                geometry->setVertexArray(vertices);
+
+                osg::Vec4 color(1.0,0.1,0.9,1.0);
+                colors->push_back(color);
+                geometry->setColorArray(colors, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
+
+                // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+                // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+                // in this case is POINTS (which has the same value GL_POINTS), the second
+                // parameter is the index position into the vertex array of the first point
+                // to draw, and the third parameter is the number of points to draw.
+                geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices->size()));
+
+                // fixed size points
+                //shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
+
+                geode->addDrawable(geometry);
+
+
+                // swap line ponters
+                float * tmp = pafScanline;
+                pafScanline = pafScanline2;
+                pafScanline2 = tmp;
+            }
+
+            group->addChild(geode);
+
+            CPLFree(pafScanline);
+            CPLFree(pafScanline2);
+
+        }
+        else if(_mode == LoadingModeTrianglePoint)
+        {
+            // triangles + points
+
+            pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
+            pafScanline2 = (float *) CPLMalloc(sizeof(float)*nXSize);
+
+
+            osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+
+            // read first line
+            poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
+                              pafScanline, nXSize, 1, GDT_Float32,
+                              0, 0 );
+
+            for(int y = 1; y < nYSize; y++)
+            {
+
+                // read second line
+                poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                  pafScanline2, nXSize, 1, GDT_Float32,
+                                  0, 0 );
+
+                // create triangles in geode
+                // AD
+                // BC
+                //  triangle 1 = ABC
+                //  triangle 2 = ACD
+
+
+                osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+                osg::Vec3Array* verticesPoint = new osg::Vec3Array;
+                osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+                osg::ref_ptr<osg::Vec4Array> colorst = new osg::Vec4Array;
+
+                // point
+                for(int x=0; x<nXSize-1; x++)
+                {
+                    // check if 1 triangle is incomplète
+                    if( pafScanline2[x] == noData) // check NAN
+                        continue;
+                    if( pafScanline2[x+1] == noData) // check NAN
+                        continue;
+                    if( pafScanline[x] == noData) // check NAN
+                        continue;
+                    if( pafScanline[x+1] == noData) // check NAN
+                        continue;
+
+                    // build triangle
+                    osg::Vec3f pointA;
+                    osg::Vec3f pointB;
+                    osg::Vec3f pointC;
+                    osg::Vec3f pointD;
+                    osg::Vec4 colorA;
+//                    osg::Vec4 colorB;
+//                    osg::Vec4 colorC;
+//                    osg::Vec4 colorD;
+
+
+                    // B
+                    double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    double lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
+                    double h = pafScanline2[x];
+                    double px, py, pz;
+                    proj.Forward(lat, lon, h, px, py, pz);
+                    pointB[0] = px;
+                    pointB[1] = py;
+                    pointB[2] = pz;
+
+//                    // z color
+//                    double dh = (h - adfMinMax[0]) / deltaz;
+//                    float r = dh > 0.5 ? (dh - 0.5)*2: 0;
+//                    float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
+//                    float b = 1.0 -dh;
+
+//                    // color
+//                    colorB = {r, g, b,1.0f};
+
+                    // C
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
+                    h = pafScanline2[x+1];
+                    proj.Forward(lat, lon, h, px, py, pz);
+                    pointC[0] = px;
+                    pointC[1] = py;
+                    pointC[2] = pz;
+
+//                    // z color
+//                    dh = (h - adfMinMax[0]) / deltaz;
+//                    r = dh > 0.5 ? (dh - 0.5)*2: 0;
+//                    g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
+//                    b = 1.0 -dh;
+
+//                    // color
+//                    colorC = {r, g, b,1.0f};
+
+                    // A
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    h = pafScanline[x];
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    pointA[0] = px;
+                    pointA[1] = py;
+                    pointA[2] = pz;
+
+                    // z color
+                    float dh = (h - adfMinMax[0]) / deltaz;
+                    float r = dh > 0.5 ? (dh - 0.5)*2: 0;
+                    float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
+                    float b = 1.0 -dh;
+
+                    colorA = {r, g, b, 1.0f};
+
+                    // D
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    h = pafScanline[x+1];
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    pointD[0] = px;
+                    pointD[1] = py;
+                    pointD[2] = pz;
+
+//                    // z color
+//                    dh = (h - adfMinMax[0]) / deltaz;
+//                    r = dh > 0.5 ? (dh - 0.5)*2: 0;
+//                    g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
+//                    b = 1.0 -dh;
+
+//                    colorD = {r, g, b,1.0f};
+
+                    // triangles
+                    vertices->push_back(pointA);
+                    vertices->push_back(pointB);
+                    vertices->push_back(pointC);
+
+                    vertices->push_back(pointA);
+                    vertices->push_back(pointC);
+                    vertices->push_back(pointD);
+
+                    // Warning : Last row & last column ommitted
+                    // points
+                    verticesPoint->push_back(pointA);
+                    colors->push_back(colorA);
+                }
+
+                // triangles
+                osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+                // pass the created vertex array to the points geometry object.
+                geometry->setVertexArray(vertices);
+
+                osg::Vec4 color(0.3,0.1,0.3,0.3);
+                colorst->push_back(color);
+                geometry->setColorArray(colorst, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
+
+                // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+                // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+                // in this case is POINTS (which has the same value GL_POINTS), the second
+                // parameter is the index position into the vertex array of the first point
+                // to draw, and the third parameter is the number of points to draw.
+                geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices->size()));
+
+                // fixed size points
+                //shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
+
+                geode->addDrawable(geometry);
+
+                // points
+                osg::ref_ptr<osg::Geometry> geometryP = new osg::Geometry();
+
+                // pass the created vertex array to the points geometry object.
+                geometryP->setVertexArray(verticesPoint);
+                geometryP->setColorArray(colors, osg::Array::BIND_PER_VERTEX);
+                geometryP->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
+                geometryP->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::POINTS,0,verticesPoint->size()));
+                geode->addDrawable(geometryP);
+
+
+                // swap line poniters
+                float * tmp = pafScanline;
+                pafScanline = pafScanline2;
+                pafScanline2 = tmp;
+            }
+
+            group->addChild(geode);
+
+            CPLFree(pafScanline);
+            CPLFree(pafScanline2);
+
+        }
+
+        GDALClose(dataset);
+
+        GDALDestroyDriverManager();
+
+        model_transform = new osg::MatrixTransform;
+        m_ref_lat_lon = local_lat_lon;
+        m_ref_alt = local_alt;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
+
+
+        model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
+        model_transform->addChild(group);
+        return  model_transform;
+
+    }
+    else
+    {
+        std::cout << "GDAL error ; No data loaded" << std::endl;
+        return model_transform;
+    }
 }
 
 ///
