@@ -124,6 +124,7 @@ public slots:
     void slot_toggleStereoView();
     void slot_lightShorcut();
     void slot_toggleLight();
+    void slot_zScale();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);
@@ -200,6 +201,7 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
+
 
 private slots:
 

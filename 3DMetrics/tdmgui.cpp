@@ -52,6 +52,8 @@
 
 #include "choose_loadingmode_dialog.h"
 
+#include "z_scale_dialog.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -100,6 +102,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
     QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
     QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
+
+    QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -3647,6 +3652,16 @@ void TDMGui::slot_editModelOffset()
 void TDMGui::slot_slopeTool()
 {
     SlopeTool *dialog = new SlopeTool(this);
+    QPoint point = QCursor::pos();
+    dialog->move(point.x()+20, point.y()+20);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}
+
+void TDMGui::slot_zScale()
+{
+    ZScaleDialog *dialog = new ZScaleDialog(this);
     QPoint point = QCursor::pos();
     dialog->move(point.x()+20, point.y()+20);
     dialog->show();

@@ -53,10 +53,8 @@
 #include <osg/BlendFunc>
 
 #include "box_visitor.h"
-//#include "edit_transparency_model.h"
 
-#include "loading_mode.h"
-#include "choose_loadingmode_dialog.h"
+#include <osg/PositionAttitudeTransform>
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -267,8 +265,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     , m_viewer( new osgViewer::CompositeViewer )
     , m_ctrl_pressed(false)
     , m_fake_middle_click_activated(false)
-    //, m_material( new osg::Material )
-
+    , m_zScale(1.0)
 {
 
     m_ref_lat_lon.setX(INVALID_VALUE);
@@ -293,8 +290,6 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     camera->setGraphicsContext( m_graphicsWindow );
     camera->setProjectionMatrixAsPerspective( 30.0f, aspectRatio, 1.f, 1000.f );
-
-
 
     osgViewer::View* view = new osgViewer::View;
     view->setCamera( camera );
@@ -324,12 +319,16 @@ OSGWidget::OSGWidget(QWidget* parent)
     this->setMouseTracking( true );
 
     connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
-    m_timer.start( 10 );
+    m_timer.start( 40 ); //10 );
 
     // Create group that will contain measurement geode and 3D model
     m_group = new osg::Group;
-    //    m_measurement_geode = new osg::Geode;
-    //    m_group->addChild(m_measurement_geode);
+
+    // test TODO
+    //m_zScale = 2.0;
+    m_matrixTransform = new osg::MatrixTransform;
+    m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
+    m_matrixTransform->addChild(m_group);
 }
 
 OSGWidget::~OSGWidget()
@@ -391,17 +390,18 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
         m_ref_alt = local_alt;
         m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
-
-        model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
-        model_transform->addChild(model_node);
+        osg::Matrix matrix = osg::Matrix::identity();
+        //matrix.postMultScale(osg::Vec3f(1.0,1.0,m_zScale));
+        model_transform->setMatrix(matrix);
     }else{
         double N,E,U;
         m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
 
+        // TODO
         model_transform->setMatrix(osg::Matrix::translate(E,N,U));
-        //model_transform->setMatrix(osg::Matrix::translate(N,-U,E));
-        model_transform->addChild(model_node);
     }
+
+    model_transform->addChild(model_node);
 
     return model_transform;
 }
@@ -878,13 +878,23 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
         GDALDestroyDriverManager();
 
         model_transform = new osg::MatrixTransform;
-        m_ref_lat_lon = local_lat_lon;
-        m_ref_alt = local_alt;
-        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
+        if (m_ref_alt == INVALID_VALUE)
+        {
+            m_ref_lat_lon = local_lat_lon;
+            m_ref_alt = local_alt;
+            m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
+            model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
+        }else{
+            double N,E,U;
+            m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
 
-        model_transform->setMatrix(osg::Matrix::identity()); //translate(0,0,0));
+            model_transform->setMatrix(osg::Matrix::translate(E,N,U));
+        }
+
         model_transform->addChild(group);
+
+
         return  model_transform;
 
     }
@@ -936,41 +946,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osgUtil::Optimizer optimizer;
     optimizer.optimize(_node.get());
 
-    osgViewer::View *view = m_viewer->getView(0);
-
-    view->setSceneData( m_group );
-    // get the translation in the  node
-    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
-    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
-    BoxVisitor boxVisitor;
-    _node->accept(boxVisitor);
-
-    osg::BoundingBox box = boxVisitor.getBoundingBox();
-    double x_max = box.xMax();
-    double x_min = box.xMin();
-    double y_max = box.yMax();
-    double y_min = box.yMin();
-    double cam_center_x = (x_max+x_min)/2 +  translation.x();
-    double cam_center_y = (y_max+y_min)/2 +  translation.y();
-    double cam_center_z;
-    if( (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 )) > (y_max-y_min)/(2*tan(((30* M_PI )/ 180.0 )/2)) )
-    {
-        cam_center_z = (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
-    }
-    else
-    {
-        cam_center_z = (y_max-y_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
-    }
-
-    osg::Vec3d eye(cam_center_x,
-                   cam_center_y,
-                   box.zMin() + cam_center_z);
-    osg::Vec3d target( cam_center_x,
-                       cam_center_y,
-                       box.zMin());
-    osg::Vec3d normal(0,0,-1);
-
-    view->getCameraManipulator()->setHomePosition(eye,target,normal);
+    setCameraOnNode(_node);
 
     home();
     //state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
@@ -1002,6 +978,47 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     return true;
 }
 
+void OSGWidget::setCameraOnNode(osg::ref_ptr<osg::Node> _node)
+{
+    osgViewer::View *view = m_viewer->getView(0);
+
+    view->setSceneData( m_matrixTransform); //m_group );
+    // get the translation in the  node
+    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
+    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
+    BoxVisitor boxVisitor;
+    _node->accept(boxVisitor);
+
+    osg::BoundingBox box = boxVisitor.getBoundingBox();
+    double x_max = box.xMax();
+    double x_min = box.xMin();
+    double y_max = box.yMax();
+    double y_min = box.yMin();
+    double cam_center_x = (x_max+x_min)/2 +  translation.x();
+    double cam_center_y = (y_max+y_min)/2 +  translation.y();
+    double cam_center_z;
+    if( (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 )) > (y_max-y_min)/(2*tan(((30* M_PI )/ 180.0 )/2)) )
+    {
+        cam_center_z = (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
+    }
+    else
+    {
+        cam_center_z = (y_max-y_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
+    }
+
+    osg::Vec3d eye(cam_center_x,
+                   cam_center_y,
+                   (box.zMin() + cam_center_z)*m_zScale);
+    osg::Vec3d target( cam_center_x,
+                       cam_center_y,
+                       box.zMin()*m_zScale);
+    osg::Vec3d normal(0,0,-1);
+
+    view->getCameraManipulator()->setHomePosition(eye,target,normal);
+
+}
+
+
 ///
 /// \brief removeNodeFromScene remove a node from the scene
 /// \param _node node to be removed
@@ -1022,7 +1039,7 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
 
     osgViewer::View *view = m_viewer->getView(0);
 
-    view->setSceneData( m_group );
+    view->setSceneData( m_matrixTransform); //m_group );
 
     return true;
 }
@@ -1231,6 +1248,8 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
 
         // we get the intersections in a osg::Vec3d
         _inter_point = hitr->getWorldIntersectPoint();
+
+        _inter_point[2] /= m_zScale;
 
     }else{
         _inter_exists = false;
@@ -1446,8 +1465,12 @@ void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
 // reset view to home
 void OSGWidget::home()
 {
+    if(m_viewer == nullptr)
+        return;
+
     osgViewer::View *view = m_viewer->getView(0);
-    view->home();
+    if(view)
+        view->home();
 }
 
 // tools : emit correspondant signal
@@ -1737,7 +1760,24 @@ void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::No
 {
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
-    //osg::Vec3d trans = model_transform->getMatrix().getTrans();
-
-    model_transform->setMatrix(osg::Matrix::translate(_trans.x() + _x, _trans.y() + _y, _trans.z() + _z));
+    osg::Matrix matrix = osg::Matrix::translate(_trans.x() + _x, _trans.y() + _y, _trans.z() + _z);
+    ;
+    model_transform->setMatrix(matrix);
 }
+
+void OSGWidget::setZScale(double _newValue)
+{
+    // change
+    m_zScale = _newValue;
+
+    m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
+    if(m_models.size() > 0)
+    {
+        setCameraOnNode(m_models[0]);
+    }
+
+    home();
+}
+
+
+

@@ -181,6 +181,9 @@ public:
     osgViewer::View* getView() { return  m_viewer->getView(0); }
     osg::Camera* getCamera() { return  m_viewer->getView(0)->getCamera(); }
 
+    double getZScale() const { return m_zScale; }
+    void setZScale(double _newValue);
+
 protected:
 
     virtual void paintGL();
@@ -221,8 +224,13 @@ private:
     bool m_ctrl_pressed;
     bool m_fake_middle_click_activated;
 
-    //osg::ref_ptr<osg::Material> m_material;
+    // z scale
+    double m_zScale;
 
+    // global matrix transform (Z scale only)
+    osg::ref_ptr<osg::MatrixTransform> m_matrixTransform;
+
+    void setCameraOnNode(osg::ref_ptr<osg::Node> _node);
 };
 
 #endif // OSG_WIDGET_H

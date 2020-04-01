@@ -67,6 +67,8 @@
     <addaction name="add_axes_action"/>
     <addaction name="stereo_action"/>
     <addaction name="light_action"/>
+    <addaction name="separator"/>
+    <addaction name="z_scale_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -455,6 +457,11 @@
    </property>
    <property name="toolTip">
     <string>Remove the last point</string>
+   </property>
+  </action>
+  <action name="z_scale_action">
+   <property name="text">
+    <string>Z Scale</string>
    </property>
   </action>
  </widget>
