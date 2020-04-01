@@ -764,10 +764,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     osg::Vec3f pointC;
                     osg::Vec3f pointD;
                     osg::Vec4 colorA;
-//                    osg::Vec4 colorB;
-//                    osg::Vec4 colorC;
-//                    osg::Vec4 colorD;
-
 
                     // B
                     double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
@@ -779,15 +775,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     pointB[1] = py;
                     pointB[2] = pz;
 
-//                    // z color
-//                    double dh = (h - adfMinMax[0]) / deltaz;
-//                    float r = dh > 0.5 ? (dh - 0.5)*2: 0;
-//                    float g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-//                    float b = 1.0 -dh;
-
-//                    // color
-//                    colorB = {r, g, b,1.0f};
-
                     // C
                     lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
                     lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
@@ -796,15 +783,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     pointC[0] = px;
                     pointC[1] = py;
                     pointC[2] = pz;
-
-//                    // z color
-//                    dh = (h - adfMinMax[0]) / deltaz;
-//                    r = dh > 0.5 ? (dh - 0.5)*2: 0;
-//                    g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-//                    b = 1.0 -dh;
-
-//                    // color
-//                    colorC = {r, g, b,1.0f};
 
                     // A
                     lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
@@ -833,14 +811,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     pointD[0] = px;
                     pointD[1] = py;
                     pointD[2] = pz;
-
-//                    // z color
-//                    dh = (h - adfMinMax[0]) / deltaz;
-//                    r = dh > 0.5 ? (dh - 0.5)*2: 0;
-//                    g = dh > 0.5 ? (1.0 - dh) + 0.5 : (dh*2);
-//                    b = 1.0 -dh;
-
-//                    colorD = {r, g, b,1.0f};
 
                     // triangles
                     vertices->push_back(pointA);
@@ -963,8 +933,8 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
-    /*osgUtil::Optimizer optimizer;
-    optimizer.optimize(m_group.get());*/
+    osgUtil::Optimizer optimizer;
+    optimizer.optimize(_node.get());
 
     osgViewer::View *view = m_viewer->getView(0);
 

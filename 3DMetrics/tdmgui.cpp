@@ -354,6 +354,9 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
         QMessageBox::critical(this, tr("Error : model file"), tr("Error : model file is missing"));
         return;
     }
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
     osg::ref_ptr<osg::Node> node = _node;
 
     TDMModelLayerData model_data(_filename, node);
@@ -425,6 +428,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
         QModelIndex index = model->index(added);
         selectItem(index);
     }
+
+    QApplication::restoreOverrideCursor();
 }
 
 void TDMGui::slot_newMeasurement()
@@ -1275,6 +1280,8 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
         // delete node in osgwidget
         TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
         ui->display_widget->removeNodeFromScene(layer_data.node());
+        // free memory
+        layer_data.node()->unref();
     }
     if(_item->type() == TdmLayerItem::MeasurementLayer)
     {
@@ -1282,6 +1289,8 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
         {
             TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
             ui->display_widget->removeGroup(layer_data.group());
+            // free memory
+            layer_data.group()->unref();
         }
     }
     if(_item->type() == TdmLayerItem::GroupLayer)

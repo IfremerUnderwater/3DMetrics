@@ -60,6 +60,11 @@ void AreaComputationVisitor::apply( osg::Geode &geode )
                 {
                     return;
                 }
+                if(primitive_set->getNumIndices() < 3)
+                {
+                    // avoid segv
+                    continue;
+                }
                 for(unsigned int k = 0; k < primitive_set->getNumIndices()-2; k=k+inc)
                 {
                     osg::Vec3f point_a;
