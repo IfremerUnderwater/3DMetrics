@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>393</width>
-    <height>191</height>
+    <width>391</width>
+    <height>157</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,8 +16,8 @@
   <widget class="QPushButton" name="valid_btn">
    <property name="geometry">
     <rect>
-     <x>160</x>
-     <y>150</y>
+     <x>250</x>
+     <y>110</y>
      <width>85</width>
      <height>27</height>
     </rect>
@@ -117,22 +117,6 @@
    </property>
    <property name="maximum">
     <double>999.990000000000009</double>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="apply_btn">
-   <property name="geometry">
-    <rect>
-     <x>250</x>
-     <y>60</y>
-     <width>97</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Apply</string>
-   </property>
-   <property name="default">
-    <bool>true</bool>
    </property>
   </widget>
  </widget>

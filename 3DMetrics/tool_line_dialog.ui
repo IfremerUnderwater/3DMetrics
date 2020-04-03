@@ -49,7 +49,14 @@
        <item>
         <widget class="QPushButton" name="removelast_btn">
          <property name="text">
-          <string>Remove Last</string>
+          <string>Del. Last</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="profile_btn">
+         <property name="text">
+          <string>Profile</string>
          </property>
         </widget>
        </item>

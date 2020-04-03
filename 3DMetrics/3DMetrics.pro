@@ -91,7 +91,9 @@ SOURCES += main.cpp \
     slope_tool.cpp \
     Tools/geometry.cpp \
     choose_loadingmode_dialog.cpp \
-    z_scale_dialog.cpp
+    z_scale_dialog.cpp \
+    profile_depth_dialog.cpp \
+    paint_widget.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -137,7 +139,9 @@ HEADERS  += \
     Tools/geometry.h \
     choose_loadingmode_dialog.h \
     OSGWidget/loading_mode.h \
-    z_scale_dialog.h
+    z_scale_dialog.h \
+    profile_depth_dialog.h \
+    paint_widget.h
 
 FORMS    += \
     tdmgui.ui \
@@ -157,7 +161,8 @@ FORMS    += \
     edit_offset_model.ui \
     slope_tool.ui \
     choose_loadingmode_dialog.ui \
-    z_scale_dialog.ui
+    z_scale_dialog.ui \
+    profile_depth_dialog.ui
 
 RESOURCES += \
     ressources.qrc

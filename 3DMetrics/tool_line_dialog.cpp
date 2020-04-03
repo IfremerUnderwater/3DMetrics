@@ -8,6 +8,9 @@
 
 #include <Measurement/measurement_line.h>
 
+#include "profile_depth_dialog.h"
+
+
 ToolLineDialog::ToolLineDialog(QWidget *_parent) :
     QDialog(_parent),
     ui(new Ui::ToolLineDialog)
@@ -27,6 +30,7 @@ ToolLineDialog::ToolLineDialog(QWidget *_parent) :
 
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->removelast_btn, SIGNAL(clicked(bool)), this, SLOT(removelast()));
+    QObject::connect(ui->profile_btn, SIGNAL(clicked(bool)), this, SLOT(profile()));
     QObject::connect(ui->start_btn, SIGNAL(clicked(bool)), this, SLOT(start()));
 
     QObject::connect(ui->line_widget, SIGNAL(signal_toolEnded(QString&)), this, SLOT(slot_toolEnded(QString&)));
@@ -75,4 +79,11 @@ void ToolLineDialog::slot_toolEnded(QString&)
 void ToolLineDialog::removelast()
 {
     ui->line_widget->slot_toolRemoveLastPoint();
+}
+
+void ToolLineDialog::profile()
+{
+    ProfileDepthDialog *dialog = new ProfileDepthDialog(this);
+    dialog->setMeasLine( m_meas_line );
+    dialog->show();
 }

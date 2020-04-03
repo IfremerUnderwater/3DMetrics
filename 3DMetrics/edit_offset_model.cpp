@@ -19,7 +19,7 @@ EditOffsetModel::EditOffsetModel(QWidget *parent, TdmLayerItem *_item , OSGWidge
     ui->setupUi(this);
 
     connect(ui->valid_btn, SIGNAL(clicked()), this, SLOT(accept()));
-    connect(ui->apply_btn, SIGNAL(clicked()), this, SLOT(slot_apply()));
+    //connect(ui->apply_btn, SIGNAL(clicked()), this, SLOT(slot_apply()));
     connect(ui->spinbox_x, SIGNAL(valueChanged(double)), this, SLOT(slot_apply()));
     connect(ui->spinbox_y, SIGNAL(valueChanged(double)), this, SLOT(slot_apply()));
     connect(ui->spinbox_z, SIGNAL(valueChanged(double)), this, SLOT(slot_apply()));
