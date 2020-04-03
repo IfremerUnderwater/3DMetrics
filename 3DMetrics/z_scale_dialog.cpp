@@ -12,8 +12,10 @@ ZScaleDialog::ZScaleDialog(QWidget *parent) :
 
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->apply_btn, SIGNAL(clicked(bool)), this, SLOT(slot_apply()));
+    QObject::connect(ui->reset_btn, SIGNAL(clicked(bool)), this, SLOT(slot_reset()));
     connect(ui->zscale_slider,SIGNAL(valueChanged(int)), this, SLOT(slot_changeZScale(int)));
 
+    setZScale(OSGWidgetTool::instance()->getOSGWidget()->getZScale());
 }
 
 ZScaleDialog::~ZScaleDialog()
@@ -40,4 +42,9 @@ void ZScaleDialog::slot_changeZScale(int _val)
 void ZScaleDialog::slot_apply()
 {
     OSGWidgetTool::instance()->getOSGWidget()->setZScale(m_zscale);
+}
+
+void ZScaleDialog::slot_reset()
+{
+    ui->zscale_slider->setValue(10);
 }

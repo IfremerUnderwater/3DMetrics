@@ -20,6 +20,7 @@ public:
 public slots:
     void slot_apply();
     void slot_changeZScale(int);
+    void slot_reset();
 
 private:
     Ui::ZScaleDialog *ui;
