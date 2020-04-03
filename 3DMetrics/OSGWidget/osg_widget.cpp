@@ -1285,33 +1285,19 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
     vec = vec * transmat;
     vec = vec / vec.w();
 
-    //osg::Vec3d pp = osg::Matrixd::transform3x3(_world_point, transmat);
-
     float x = vec.x();
     float y = vec.y();
 
     osgUtil::LineSegmentIntersector::Intersections intersections;
 
 
-    // if we click on the object
     if (view->computeIntersections(x, y, intersections))
     {
         _inter_exists = true;
 
         osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
 
-        //        if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty()))
-        //        {
-        //            // the geodes are identified by name.
-        //            std::cout<<"Object \""<<hitr->nodePath.back()->getName()<<"\""<<std::endl;
-        //        }
-        //        else if (hitr->drawable.valid())
-        //        {
-        //            std::cout<<"Object \""<<hitr->drawable->className()<<"\""<<std::endl;
-        //        }
-
-
-        // we get the intersections in a osg::Vec3d
+         // we get the intersections in a osg::Vec3d
         _inter_point = hitr->getWorldIntersectPoint();
 
         _inter_point[2] /= m_zScale;

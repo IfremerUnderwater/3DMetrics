@@ -12,6 +12,8 @@ public:
     void setMainPolyLine(QVector<QPointF>  _pts);
     void setModelPolyLine(QVector<QPointF>  _pts);
 
+    void buildGraph();
+
 protected:
     void paintEvent(QPaintEvent *event);
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -32,6 +34,9 @@ private:
     float m_xmax;
     float m_ymin;
     float m_ymax;
+
+    QPolygon m_polygon;
+    QVector<QPoint> m_points;
 };
 
 #endif // PAINTWIDGET_H

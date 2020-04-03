@@ -49,6 +49,19 @@
     <string>d= z=</string>
    </property>
   </widget>
+  <widget class="QLabel" name="orientation_label">
+   <property name="geometry">
+    <rect>
+     <x>610</x>
+     <y>400</y>
+     <width>371</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Orientation : </string>
+   </property>
+  </widget>
  </widget>
  <customwidgets>
   <customwidget>

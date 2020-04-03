@@ -19,6 +19,8 @@ ProfileDepthDialog::ProfileDepthDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
+    ui->coords_label->setText("");
+
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->drawing_widget, SIGNAL(mousemoved(float,float)), this, SLOT(onCoordChanged(float,float)));
     QObject::connect(ui->drawing_widget, SIGNAL(mouseleaved()), this, SLOT(onWidgetLeaved()));
@@ -51,9 +53,54 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line)
     QVector<QPointF> mpts;
     mpts.append(QPointF(0,pts[0].z));
 
+    // Orientation ?
     OSGWidget *w = OSGWidgetTool::instance()->getOSGWidget();
+    osg::Camera *cam = w->getCamera();
 
-    const int NIP = 20;
+    const osg::Matrixd transmat
+           = cam->getViewMatrix()
+           * cam->getProjectionMatrix()
+           * cam->getViewport()->computeWindowMatrix();
+
+    osg::Vec4d up(0.0,  0.0, -1.0, 1.0);
+
+    up = up * transmat;
+    up = up / up.w();
+    up.normalize();
+    osg::Vec3 up3(up[0], up[1], up[2]);
+
+    QString upstr = "Orientation : ";
+    upstr +=  QString::number(up[0] ,'f',3);
+    upstr += " ; ";
+    upstr +=  QString::number(up[1] ,'f',3);
+    upstr += " ; ";
+    upstr +=  QString::number(up[2] ,'f',3);
+    ui->orientation_label->setText(upstr);
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    int NIP = 20;
+    switch(n)
+    {
+    case 2:
+        NIP = 100;
+        break;
+    case 3:
+        NIP = 50;
+        break;
+    case 4:
+        NIP = 40;
+        break;
+    case 5:
+        NIP = 35;
+        break;
+    case 6:
+        NIP = 30;
+        break;
+    case 7:
+        NIP = 25;
+        break;
+    }
 
     for(int i=1; i<n; i++)
     {
@@ -91,6 +138,9 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line)
 
     ui->drawing_widget->setMainPolyLine(fpts);
     ui->drawing_widget->setModelPolyLine(mpts);
+    ui->drawing_widget->buildGraph();
+
+    QApplication::restoreOverrideCursor();
 }
 
 void ProfileDepthDialog::onCoordChanged(float _d, float _z)
