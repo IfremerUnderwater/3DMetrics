@@ -54,11 +54,13 @@ void AttribLineWidget::update()
         else
             ui->tool_label->setStyleSheet("background-color: red");
     }
+
+    emit signal_nbPointsChanged();
 }
 
 void AttribLineWidget::slot_toolEnded()
 {
-    // ok si nb points >= 2
+    // ok if # points >= 2
     update();
 
     disconnect(OSGWidgetTool::instance(), 0, this, 0);

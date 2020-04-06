@@ -47,6 +47,16 @@
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="removelast_btn">
+         <property name="toolTip">
+          <string>Delete last point</string>
+         </property>
+         <property name="text">
+          <string>Del. Last</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="close_btn">
          <property name="toolTip">
           <string>Close dialog</string>

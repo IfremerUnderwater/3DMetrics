@@ -31,10 +31,16 @@ ToolLineDialog::ToolLineDialog(QWidget *_parent) :
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->removelast_btn, SIGNAL(clicked(bool)), this, SLOT(removelast()));
     QObject::connect(ui->profile_btn, SIGNAL(clicked(bool)), this, SLOT(profile()));
+    QObject::connect(ui->profile_z_btn, SIGNAL(clicked(bool)), this, SLOT(profile_z()));
     QObject::connect(ui->start_btn, SIGNAL(clicked(bool)), this, SLOT(start()));
 
     QObject::connect(ui->line_widget, SIGNAL(signal_toolEnded(QString&)), this, SLOT(slot_toolEnded(QString&)));
+    QObject::connect(ui->line_widget, SIGNAL(signal_nbPointsChanged()), this, SLOT(slot_nbPointsChanged()));
+
     ui->msg_label->setText("");
+
+    ui->profile_btn->setEnabled(false);
+    ui->profile_z_btn->setEnabled(false);
 }
 
 ToolLineDialog::~ToolLineDialog()
@@ -69,16 +75,22 @@ void ToolLineDialog::start()
     OSGWidgetTool::instance()->slot_cancelTool();
     ui->msg_label->setText(tr("Right button to end"));
     ui->line_widget->clicked();
+    ui->profile_btn->setEnabled(false);
+    ui->profile_z_btn->setEnabled(false);
 }
 
 void ToolLineDialog::slot_toolEnded(QString&)
 {
+    slot_nbPointsChanged();
+
     ui->msg_label->setText(tr(""));
 }
 
 void ToolLineDialog::removelast()
 {
     ui->line_widget->slot_toolRemoveLastPoint();
+
+    slot_nbPointsChanged();
 }
 
 void ToolLineDialog::profile()
@@ -86,4 +98,19 @@ void ToolLineDialog::profile()
     ProfileDepthDialog *dialog = new ProfileDepthDialog(this);
     dialog->setMeasLine( m_meas_line );
     dialog->show();
+}
+
+
+void ToolLineDialog::profile_z()
+{
+    ProfileDepthDialog *dialog = new ProfileDepthDialog(this);
+    dialog->setMeasLine( m_meas_line, true );
+    dialog->show();
+}
+
+void ToolLineDialog::slot_nbPointsChanged()
+{
+    ui->removelast_btn->setEnabled(m_meas_line->length() > 0);
+    ui->profile_btn->setEnabled(m_meas_line->length() >= 2);
+    ui->profile_z_btn->setEnabled(m_meas_line->length() >= 2);
 }

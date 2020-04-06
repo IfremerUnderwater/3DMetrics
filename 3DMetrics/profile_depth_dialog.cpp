@@ -12,6 +12,9 @@
 #include "OSGWidget/osg_widget.h"
 #include "OSGWidget/osg_widget_tool.h"
 
+#include <osgGA/TrackballManipulator>
+
+
 ProfileDepthDialog::ProfileDepthDialog(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ProfileDepthDialog),
@@ -31,7 +34,7 @@ ProfileDepthDialog::~ProfileDepthDialog()
     delete ui;
 }
 
-void ProfileDepthDialog::setMeasLine(MeasLine *_line)
+void ProfileDepthDialog::setMeasLine(MeasLine *_line, bool _topview)
 {
     m_measLine = _line;
 
@@ -39,46 +42,56 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line)
     if(n == 0)
         return;
 
+    OSGWidget *w = OSGWidgetTool::instance()->getOSGWidget();
+    osg::Camera *camera = w->getCamera();
+
     QVector<Point3D> pts = _line->getArray();
     float x0 = pts[0].x;
     float y0 = pts[0].y;
     float z0 = pts[0].z;
     float d0 = 0;
 
+    double lat, lon, alt;
+    w->xyzToLatLonAlt(x0, y0,z0, lat, lon, alt);
+
+    // model delta in Z axis
+    double delta = alt - z0;
+
     // polyline pts
     QVector<QPointF> fpts;
-    fpts.append(QPointF(0,pts[0].z));
+    fpts.append(QPointF(0,pts[0].z+delta));
 
     // model points (polyline + projeted inter pts)
     QVector<QPointF> mpts;
-    mpts.append(QPointF(0,pts[0].z));
+    mpts.append(QPointF(0,pts[0].z+delta));
 
-    // Orientation ?
-    OSGWidget *w = OSGWidgetTool::instance()->getOSGWidget();
-    osg::Camera *cam = w->getCamera();
+    // save camera parameters
+    osg::Vec3 eye, center, up;
+    camera->getViewMatrixAsLookAt(eye,center,up);
+    osg::Matrixd mat = w->getView()->getCameraManipulator()->getMatrix();
 
-    const osg::Matrixd transmat
-           = cam->getViewMatrix()
-           * cam->getProjectionMatrix()
-           * cam->getViewport()->computeWindowMatrix();
+    osg::Vec3 drawUp = up;
+    // set camera to top view
+    if(_topview)
+    {
+        w->home();
+        w->getView()->requestRedraw();
+        w->frame();
 
-    osg::Vec4d up(0.0,  0.0, -1.0, 1.0);
-
-    up = up * transmat;
-    up = up / up.w();
-    up.normalize();
-    osg::Vec3 up3(up[0], up[1], up[2]);
+        drawUp= {0.0, 1.0, 0.0};
+    }
 
     QString upstr = "Orientation : ";
-    upstr +=  QString::number(up[0] ,'f',3);
+    upstr +=  QString::number(drawUp[0] ,'f',3);
     upstr += " ; ";
-    upstr +=  QString::number(up[1] ,'f',3);
+    upstr +=  QString::number(drawUp[1] ,'f',3);
     upstr += " ; ";
-    upstr +=  QString::number(up[2] ,'f',3);
+    upstr +=  QString::number(drawUp[2] ,'f',3);
     ui->orientation_label->setText(upstr);
 
     QApplication::setOverrideCursor(Qt::WaitCursor);
 
+    // compure # of intermediary points
     int NIP = 20;
     switch(n)
     {
@@ -116,29 +129,39 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line)
 
             osg::Vec3d ip;
             bool exists;
+
             w->getIntersectionPoint(wp,ip, exists);
+
             if(exists)
             {
                 float dn = n * (d / NIP);
-                mpts.append(QPointF(d0 + dn,ip[2]));
+                mpts.append(QPointF(d0 + dn,ip[2]+delta));
             }
         }
 
         d0 += d;
-        fpts.append(QPointF(d0,pts[i].z));
+        fpts.append(QPointF(d0,pts[i].z+delta));
 
         // last
-        mpts.append(QPointF(d0,pts[i].z));
+        mpts.append(QPointF(d0,pts[i].z+delta));
 
         x0 = pts[i].x;
         y0 = pts[i].y;
         z0 = pts[i].z;
-
     }
 
     ui->drawing_widget->setMainPolyLine(fpts);
     ui->drawing_widget->setModelPolyLine(mpts);
     ui->drawing_widget->buildGraph();
+
+    // restore camera
+    if(_topview)
+    {
+        camera->setViewMatrixAsLookAt(eye,center,up);
+        w->getView()->setCamera(camera);
+        w->getView()->getCameraManipulator()->setByMatrix(mat);
+        w->getView()->requestRedraw();
+    }
 
     QApplication::restoreOverrideCursor();
 }

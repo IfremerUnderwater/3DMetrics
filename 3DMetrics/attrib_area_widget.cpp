@@ -53,6 +53,8 @@ void AttribAreaWidget::update()
         else
             ui->tool_label->setStyleSheet("background-color: red");
     }
+
+    emit signal_nbPointsChanged();
 }
 
 void AttribAreaWidget::slot_toolEnded()

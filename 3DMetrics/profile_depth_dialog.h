@@ -17,7 +17,7 @@ public:
     explicit ProfileDepthDialog(QWidget *parent = 0);
     ~ProfileDepthDialog();
 
-    void setMeasLine(MeasLine *_line);
+    void setMeasLine(MeasLine *_line, bool _topview = false);
 
 public slots:
     void onCoordChanged(float _d, float _z);

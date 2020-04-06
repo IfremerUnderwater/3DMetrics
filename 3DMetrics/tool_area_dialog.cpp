@@ -30,6 +30,7 @@ ToolAreaDialog::ToolAreaDialog(QWidget *_parent) :
     QObject::connect(ui->start_btn, SIGNAL(clicked(bool)), this, SLOT(start()));
     QObject::connect(ui->area_widget, SIGNAL(signal_toolEnded(QString&)), this, SLOT(slot_toolEnded(QString&)));
     ui->msg_label->setText("");
+    ui->removelast_btn->setEnabled(false);
 }
 
 ToolAreaDialog::~ToolAreaDialog()
@@ -69,4 +70,16 @@ void ToolAreaDialog::start()
 void ToolAreaDialog::slot_toolEnded(QString&)
 {
     ui->msg_label->setText(tr(""));
+}
+
+void ToolAreaDialog::removelast()
+{
+    ui->area_widget->slot_toolRemoveLastPoint();
+
+    slot_nbPointsChanged();
+}
+
+void ToolAreaDialog::slot_nbPointsChanged()
+{
+    ui->removelast_btn->setEnabled(m_meas_area->length() > 0);
 }

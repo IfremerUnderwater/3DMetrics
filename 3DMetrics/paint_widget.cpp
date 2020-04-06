@@ -16,6 +16,9 @@ PaintWidget::PaintWidget(QWidget *parent) : QWidget(parent)
 
 void PaintWidget::paintEvent(QPaintEvent * /*event*/)
 {
+    if(m_mainPts.size() < 2)
+        return;
+
     //create a QPainter and pass a pointer to the device.
     //A paint device can be a QWidget, a QPixmap or a QImage
     QPainter painter(this);

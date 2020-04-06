@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>346</width>
+    <width>380</width>
     <height>116</height>
    </rect>
   </property>
@@ -48,13 +48,29 @@
        </item>
        <item>
         <widget class="QPushButton" name="removelast_btn">
+         <property name="toolTip">
+          <string>Delete last point</string>
+         </property>
          <property name="text">
           <string>Del. Last</string>
          </property>
         </widget>
        </item>
        <item>
+        <widget class="QPushButton" name="profile_z_btn">
+         <property name="toolTip">
+          <string>Show profile from top view</string>
+         </property>
+         <property name="text">
+          <string>Z Profile</string>
+         </property>
+        </widget>
+       </item>
+       <item>
         <widget class="QPushButton" name="profile_btn">
+         <property name="toolTip">
+          <string>Show Profile from current view</string>
+         </property>
          <property name="text">
           <string>Profile</string>
          </property>

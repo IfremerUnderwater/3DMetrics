@@ -27,7 +27,9 @@ public slots:
     void start();
     void removelast();
     void profile();
+    void profile_z();
     void slot_toolEnded(QString&);
+    void slot_nbPointsChanged();
 
 private:
     Ui::ToolLineDialog *ui;
