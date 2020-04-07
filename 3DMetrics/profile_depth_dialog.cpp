@@ -44,6 +44,7 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line, bool _topview)
 
     OSGWidget *w = OSGWidgetTool::instance()->getOSGWidget();
     osg::Camera *camera = w->getCamera();
+    osg::StateAttribute::GLModeValue light = camera->getOrCreateStateSet()->getMode(GL_LIGHTING);
 
     QVector<Point3D> pts = _line->getArray();
     float x0 = pts[0].x;
@@ -161,6 +162,7 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line, bool _topview)
         w->getView()->setCamera(camera);
         w->getView()->getCameraManipulator()->setByMatrix(mat);
         w->getView()->requestRedraw();
+        camera->getOrCreateStateSet()->setMode(GL_LIGHTING, light);
     }
 
     QApplication::restoreOverrideCursor();

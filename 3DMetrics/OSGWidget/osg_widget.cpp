@@ -1267,6 +1267,12 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
     }else{
         _inter_exists = false;
     }
+
+    //test
+    if(!_inter_exists)
+    {
+        getIntersectionPointPoly(_x, _y, _inter_point, _inter_exists);
+    }
 }
 
 void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists)
@@ -1304,8 +1310,60 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
 
     }else{
         _inter_exists = false;
-    }
 
+        osgUtil::PolytopeIntersector::Intersections intersections;
+        osgUtil::PolytopeIntersector *polyintersector =
+                new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,x-3,y-3,x+3,y+3);
+        polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+        osgUtil::IntersectionVisitor iv(polyintersector);
+        polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+        cam->accept(iv);
+        intersections = polyintersector->getIntersections();
+
+        if(!intersections.empty())
+        {
+            _inter_exists = true;
+
+            osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+            // we get the intersections in a osg::Vec3d
+            _inter_point = hitr->localIntersectionPoint;
+
+            _inter_point[2] /= m_zScale;
+        }
+    }
+}
+
+void OSGWidget::getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists)
+{
+    osgUtil::PolytopeIntersector::Intersections intersections;
+    osgUtil::PolytopeIntersector *polyintersector =
+            new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,_x-3,this->size().height() -_y-3,_x+3,this->size().height() - _y+3);
+    polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+    osgUtil::IntersectionVisitor iv(polyintersector);
+
+    osgViewer::View *view = m_viewer->getView(0);
+
+    polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+    osg::Camera *cam = view->getCamera();
+    cam->accept(iv);
+    intersections = polyintersector->getIntersections();
+
+    if(!intersections.empty())
+    {
+        _inter_exists = true;
+
+        osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+        // we get the intersections in a osg::Vec3d
+        _inter_point = hitr->localIntersectionPoint;
+
+        _inter_point[2] /= m_zScale;
+    }
+    else
+    {
+        _inter_exists = false;
+    }
 }
 
 void OSGWidget::mouseReleaseEvent(QMouseEvent* _event)
