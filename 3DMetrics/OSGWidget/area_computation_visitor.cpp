@@ -8,6 +8,8 @@
 
 #include "math.h"
 
+static inline double sqr(const double _x) { return _x * _x; }
+
 AreaComputationVisitor::AreaComputationVisitor() : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
 {
     m_area=0;
@@ -58,6 +60,11 @@ void AreaComputationVisitor::apply( osg::Geode &geode )
                 {
                     return;
                 }
+                if(primitive_set->getNumIndices() < 3)
+                {
+                    // avoid segv
+                    continue;
+                }
                 for(unsigned int k = 0; k < primitive_set->getNumIndices()-2; k=k+inc)
                 {
                     osg::Vec3f point_a;
@@ -69,9 +76,9 @@ void AreaComputationVisitor::apply( osg::Geode &geode )
                     point_b = osg::Vec3f((* vertices)[primitive_set->index(k+1)].x(), (* vertices)[primitive_set->index(k+1)].y(), (* vertices)[primitive_set->index(k+1)].z()) ;
                     point_c = osg::Vec3f((* vertices)[primitive_set->index(k+2)].x(), (* vertices)[primitive_set->index(k+2)].y(), (* vertices)[primitive_set->index(k+2)].z()) ;
 
-                    double AB = sqrt( pow((point_a.x()-point_b.x()),2) + pow((point_a.y()-point_b.y()),2) + pow((point_a.z()-point_b.z()),2) );
-                    double BC = sqrt( pow((point_b.x()-point_c.x()),2) + pow((point_b.y()-point_c.y()),2) + pow((point_b.z()-point_c.z()),2) );
-                    double AC = sqrt( pow((point_a.x()-point_c.x()),2) + pow((point_a.y()-point_c.y()),2) + pow((point_a.z()-point_c.z()),2) );
+                    double AB = sqrt( sqr(point_a.x()-point_b.x()) + sqr(point_a.y()-point_b.y()) + sqr(point_a.z()-point_b.z()) );
+                    double BC = sqrt( sqr(point_b.x()-point_c.x()) + sqr(point_b.y()-point_c.y()) + sqr(point_b.z()-point_c.z()) );
+                    double AC = sqrt( sqr(point_a.x()-point_c.x()) + sqr(point_a.y()-point_c.y()) + sqr(point_a.z()-point_c.z()) );
 
                     double perimeter = (AB + BC + AC)/2;
 

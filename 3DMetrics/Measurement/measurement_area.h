@@ -6,7 +6,7 @@
 #include "Measurement/measurement_type.h"
 #include "Measurement/point3d.h"
 
-#include <QVector>
+//#include <QVector>
 
 // store one area (polygon) - persistance in json
 // fieldName: {

@@ -44,7 +44,7 @@ DESTDIR = $${RUN_DIR}
 
 include(../Scripts/BasicProcessing.pri)
 
-LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic -lgdal
+LIBS += -losgUtil -losgDB -losgViewer -losgGA -losgText -losg -lOpenThreads -lkmlbase -lkmldom -lGeographic -lgdal -losgVolume
 
 INCLUDEPATH += Tools
 
@@ -79,14 +79,21 @@ SOURCES += main.cpp \
     tool_area_dialog.cpp \
     tool_line_dialog.cpp \
     tool_point_dialog.cpp \
-    Measurement/box_visitor.cpp \
-    Measurement/area_computation_visitor.cpp \
+    OSGWidget/box_visitor.cpp \
+    OSGWidget/area_computation_visitor.cpp \
     meas_table_widget_item.cpp \
     edit_meas_dialog.cpp \
     edit_meas_item.cpp \
     about_dialog.cpp \
     meas_geom_export_dialog.cpp \
-    edit_transparency_model.cpp
+    edit_transparency_model.cpp \
+    edit_offset_model.cpp \
+    slope_tool.cpp \
+    Tools/geometry.cpp \
+    choose_loadingmode_dialog.cpp \
+    z_scale_dialog.cpp \
+    profile_depth_dialog.cpp \
+    paint_widget.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -119,14 +126,22 @@ HEADERS  += \
     tool_area_dialog.h \
     tool_line_dialog.h \
     tool_point_dialog.h \
-    Measurement/box_visitor.h \
-    Measurement/area_computation_visitor.h \
+    OSGWidget/box_visitor.h \
+    OSGWidget/area_computation_visitor.h \
     meas_table_widget_item.h \
     edit_meas_dialog.h \
     edit_meas_item.h \
     about_dialog.h \
     meas_geom_export_dialog.h \
-    edit_transparency_model.h
+    edit_transparency_model.h \
+    edit_offset_model.h \
+    slope_tool.h \
+    Tools/geometry.h \
+    choose_loadingmode_dialog.h \
+    OSGWidget/loading_mode.h \
+    z_scale_dialog.h \
+    profile_depth_dialog.h \
+    paint_widget.h
 
 FORMS    += \
     tdmgui.ui \
@@ -142,7 +157,12 @@ FORMS    += \
     edit_meas_item.ui \
     about_dialog.ui \
     meas_geom_export_dialog.ui \
-    edit_transparency_model.ui
+    edit_transparency_model.ui \
+    edit_offset_model.ui \
+    slope_tool.ui \
+    choose_loadingmode_dialog.ui \
+    z_scale_dialog.ui \
+    profile_depth_dialog.ui
 
 RESOURCES += \
     ressources.qrc

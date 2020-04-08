@@ -32,6 +32,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <osg/Material>
 
 #include "kml_handler.h"
+#include "loading_mode.h"
 
 #ifdef _WIN32
 #include "gdal_priv.h"
@@ -67,6 +68,13 @@ public:
     /// \return node if loading succeded
     ///
     osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
+
+    ///
+    /// \brief createNodeFromFile load a scene from a 3D file
+    /// \param _sceneFile path to any 3D file supported by osg
+    /// \return node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode);
 
     ///
     /// \brief addNodeToScene add a node to the scene
@@ -112,6 +120,9 @@ public:
     ///
     void getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
 
+    void getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists);
+
+
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
 
@@ -143,6 +154,8 @@ public:
 
     void onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node);
 
+    void onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans);
+
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
     void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
@@ -154,6 +167,7 @@ signals:
     void signal_cancelTool(QString &_message);
 
     void signal_activedLight(bool &_activated);
+
 public:
     // tools : emit correspondant signal
     void startTool(QString &_message);
@@ -166,6 +180,12 @@ public:
     //
     void enableLight(bool _state);
     void enableStereo(bool _state);
+
+    osgViewer::View* getView() { return  m_viewer->getView(0); }
+    osg::Camera* getCamera() { return  m_viewer->getView(0)->getCamera(); }
+
+    double getZScale() const { return m_zScale; }
+    void setZScale(double _newValue);
 
 protected:
 
@@ -207,8 +227,13 @@ private:
     bool m_ctrl_pressed;
     bool m_fake_middle_click_activated;
 
-    osg::ref_ptr<osg::Material> m_material;
+    // z scale
+    double m_zScale;
 
+    // global matrix transform (Z scale only)
+    osg::ref_ptr<osg::MatrixTransform> m_matrixTransform;
+
+    void setCameraOnNode(osg::ref_ptr<osg::Node> _node);
 };
 
 #endif // OSG_WIDGET_H

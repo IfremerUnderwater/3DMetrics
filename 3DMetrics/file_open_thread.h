@@ -5,6 +5,9 @@
 
 #include <osg/Node>
 #include "TreeView/tdm_layer_item.h"
+
+#include "OSGWidget/loading_mode.h"
+
 class OSGWidget;
 
 class FileOpenThread : public QThread
@@ -20,8 +23,18 @@ public:
     void setSelectItem(bool _select_item) {m_select_item = _select_item;}
     osg::ref_ptr<osg::Node> getNode() {return m_node;}
 
+    void setName(QString _name) { m_name = _name; }
+    void setTransparencyValue(const double _transparency_value) { m_transparency_value = _transparency_value; }
+
+    void setOffsetX(double _offsetX) { m_offsetX = _offsetX; }
+    void setOffsetY(double _offsetY){ m_offsetY = _offsetY; }
+    void setOffsetZ(double _offsetZ){ m_offsetZ = _offsetZ; }
+
+    void setLoadingMode(LoadingMode _loadingMode){ m_loadingMode = _loadingMode; }
+
 signals :
-    void signal_createNode(osg::Node*,QString ,TdmLayerItem*,bool);
+    void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool
+                           ,double _transp, double _offsetX, double _offsetY, double offsetZ);
 
 private:
     OSGWidget *m_osg_widget;
@@ -30,6 +43,15 @@ private:
     bool m_select_item;
     osg::ref_ptr<osg::Node> m_node;
 
+    QString m_name;
+
+    double m_transparency_value;
+
+    double m_offsetX;
+    double m_offsetY;
+    double m_offsetZ;
+
+    LoadingMode m_loadingMode;
 };
 
 #endif // FILE_OPEN_THREAD_H

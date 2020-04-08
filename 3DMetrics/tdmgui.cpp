@@ -35,17 +35,24 @@
 #include "tool_line_dialog.h"
 #include "tool_area_dialog.h"
 
+#include "slope_tool.h"
+
 #include "osg_axes.h"
 
-#include "Measurement/area_computation_visitor.h"
+#include "OSGWidget/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
 
 #include "gdal/ogr_spatialref.h"
 #include "gdal/ogrsf_frmts.h"
 
 #include "edit_transparency_model.h"
+#include "edit_offset_model.h"
 
 #include <GeographicLib/LocalCartesian.hpp>
+
+#include "choose_loadingmode_dialog.h"
+
+#include "z_scale_dialog.h"
 
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
@@ -95,6 +102,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
     QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
     QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
+
+    QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
     QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
@@ -139,7 +149,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->line_tool->setEnabled(false);
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
+    ui->slope_tool->setEnabled(false);
     ui->cancel_measurement->setEnabled(false);
+    ui->cancel_last_point->setEnabled(false);
 
     // file menu
     ui->open_measurement_file_action->setEnabled(true);
@@ -155,10 +167,14 @@ TDMGui::TDMGui(QWidget *_parent) :
     connect(ui->display_widget, SIGNAL(signal_cancelTool(QString&)), this, SLOT(slot_messageCancelTool(QString&)));
     connect(ui->display_widget, SIGNAL(signal_endTool(QString&)), this, SLOT(slot_messageEndTool(QString&)));
     connect(ui->cancel_measurement, SIGNAL(triggered()), OSGWidgetTool::instance(), SLOT(slot_cancelTool()));
+    connect(ui->cancel_last_point, SIGNAL(triggered()), OSGWidgetTool::instance(), SLOT(slot_removeLastPointTool()));
+
     // temporary tools
     connect(ui->line_tool, SIGNAL(triggered()), this, SLOT(slot_tempLineTool()));
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
+
+    connect(ui->slope_tool, SIGNAL(triggered()), this,  SLOT(slot_slopeTool()));
 
     connect(ui->display_widget, SIGNAL(signal_onMousePress(Qt::MouseButton, int, int)), this, SLOT(slot_mouseClickInOsgWidget(Qt::MouseButton, int,int)));
 
@@ -284,7 +300,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -293,9 +309,23 @@ void TDMGui::slot_open3dModel()
     if(filename.length() > 0)
     {
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_load3DModel(osg::Node*,QString,TdmLayerItem*,bool)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
+
+        // check grd files
+        if(filename.toStdString().find_last_of(".grd") == filename.toStdString().size() - 1)
+        {
+            ChooseLoadingModeDialog choose(this);
+            choose.setMode(LoadingModePoint);
+            if(choose.exec() == QDialog::Accepted)
+            {
+                thread_node->setLoadingMode((choose.mode()));
+            }
+        }
 
         thread_node->setFileName(filename);
+        QFileInfo info(filename);
+        thread_node->setName(info.fileName());
         thread_node->setTDMLayerItem(TdmLayersModel::instance()->rootItem());
         thread_node->setSelectItem(true);
         thread_node->setOSGWidget(ui->display_widget);
@@ -309,7 +339,7 @@ void TDMGui::slot_open3dModel()
         ui->line_tool->setEnabled(true);
         ui->surface_tool->setEnabled(true);
         ui->pick_point->setEnabled(true);
-
+        ui->slope_tool->setEnabled(true);
     }
     else
     {
@@ -317,32 +347,94 @@ void TDMGui::slot_open3dModel()
     }
 }
 
+//#include <osg/DepthRangeIndexed>
+//#include <osgTerrain/Terrain>
+//#include <osgVolume/Volume>
 
-void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,TdmLayerItem *_parent, bool _select_item)
+void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item
+                              ,double _transp, double _offsetX, double _offsetY, double _offsetZ)
 {
     if(_node == 0)
     {
         QMessageBox::critical(this, tr("Error : model file"), tr("Error : model file is missing"));
         return;
     }
-    TDMModelLayerData model_data(_filename, _node);
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+
+    osg::ref_ptr<osg::Node> node = _node;
+
+    TDMModelLayerData model_data(_filename, node);
+
+    model_data.setTransparencyValue(_transp);
+    model_data.setOffsetX(_offsetX);
+    model_data.setOffsetY(_offsetY);
+    model_data.setOffsetZ(_offsetZ);
 
     TdmLayersModel *model = TdmLayersModel::instance();
-    QFileInfo info(_filename);
-    QVariant name(info.fileName());
+    QVariant name(_name);
     QVariant data;
     data.setValue(model_data);
 
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
-    ui->display_widget->addNodeToScene(_node);
+
+    // test
+
+    //    osg::Group *group = _node->asGroup();
+    //    osg::Image *image = _node->asImage();
+
+    //    osg::ref_ptr<osg::TransferFunction1D> trans = new osg::TransferFunction1D();
+
+    //    trans->setColor(0.0, osg::Vec4(1.0,0.0,0.0,0.0));
+    //    trans->setColor(0.5, osg::Vec4(1.0,1.0,0.0,0.5));
+    //    trans->setColor(1.0, osg::Vec4(0.0,0.0,1.0,1.0));
+
+    //    // TODO
+    //     osg::ref_ptr<osgVolume::Volume> volume = new osgVolume::Volume;
+    //    volume->addChild(_node);
+
+    //    osg::ref_ptr<osgVolume::ImageLayer> layer = new osgVolume::ImageLayer(_node->asImage());
+
+    //    osgVolume::SwitchProperty* sp = new osgVolume::SwitchProperty;
+    //    sp->setActiveProperty(0);
+    //    osgVolume::CompositeProperty* cp = new osgVolume::CompositeProperty;
+    //    osgVolume::TransferFunctionProperty* tfp = trans.valid() ? new osgVolume::TransferFunctionProperty(trans.get()) : 0;
+    //    cp->addProperty(tfp);
+    //    sp->addProperty(cp);
+    //    layer->setProperty(sp);
+    //    volume->addChild(layer->asNode());
+    //    node = volume.get();
+
+
+    //    osg::StateSet* state_set = _node->getOrCreateStateSet();
+    //    osg::StateAttribute* attrcolortable = state_set->getAttribute(osg::StateAttribute::COLORTABLE);
+    //    osg::StateAttribute* attrdepthrange = state_set->getAttribute(osg::StateAttribute::DEPTHRANGEINDEXED);
+    //    osg::DepthRangeIndexed* depthrange =      dynamic_cast<osg::DepthRangeIndexed*>(attrdepthrange);
+    //    double far = depthrange->getZFar();
+    //    double near = depthrange->getZNear();
+
+    //state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
+
+
+    //_node->asGeode()->setColorArray(colors,osg::Array::BIND_OVERALL);
+    // end test
+
+
+    ui->display_widget->addNodeToScene(node);
+
+    ui->display_widget->onTransparencyChange(_transp, _node);
+    ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
+
 
     if(_select_item)
     {
         QModelIndex index = model->index(added);
         selectItem(index);
     }
+
+    QApplication::restoreOverrideCursor();
 }
 
 void TDMGui::slot_newMeasurement()
@@ -416,8 +508,9 @@ void TDMGui::slot_openMeasurementFile()
                 parent = selected;
             }
         }
-
-        bool res = loadMeasurementFromFile(measurement_filename, parent, true);
+        QFileInfo info(measurement_filename);
+        QString name = info.fileName();
+        bool res = loadMeasurementFromFile(measurement_filename, name, parent, true);
         if(!res)
         {
             QMessageBox::critical(this, tr("Error : measurement file"), tr("Error : invalid file"));
@@ -433,7 +526,7 @@ void TDMGui::slot_openMeasurementFile()
     }
 }
 
-bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _select_item)
+bool TDMGui::loadMeasurementFromFile(QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item)
 {
     TdmLayersModel *model = TdmLayersModel::instance();
     QTreeView *view = ui->tree_widget;
@@ -456,7 +549,8 @@ bool TDMGui::loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, b
     ui->display_widget->getGeoOrigin(lat_lon, alt_org);
 
     QFileInfo file_measurement_info(measurement_filename.fileName());
-    QVariant data(file_measurement_info.fileName());
+    //QVariant data(file_measurement_info.fileName());
+    QVariant data(_name);
 
     osg::ref_ptr<osg::Group> group = new osg::Group();
     ui->display_widget->addGroup(group);
@@ -1153,6 +1247,8 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
                 menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
+                menu->addAction(tr("Edit Model Offset"),this,SLOT(slot_editModelOffset()));
+
                 menu->addSeparator();
                 menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
@@ -1189,6 +1285,8 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
         // delete node in osgwidget
         TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
         ui->display_widget->removeNodeFromScene(layer_data.node());
+        // free memory
+        layer_data.node()->unref();
     }
     if(_item->type() == TdmLayerItem::MeasurementLayer)
     {
@@ -1196,6 +1294,8 @@ void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
         {
             TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
             ui->display_widget->removeGroup(layer_data.group());
+            // free memory
+            layer_data.group()->unref();
         }
     }
     if(_item->type() == TdmLayerItem::GroupLayer)
@@ -1228,9 +1328,22 @@ void TDMGui::slot_deleteRow()
             return;
         }
 
+        // close transparency and other tools
+        while(toolWindowsMap.contains(item))
+        {
+            QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
+            while(i != toolWindowsMap.end() && i.key() == item)
+            {
+                i.value()->close();
+                toolWindowsMap.remove(i.key(), i.value());
+                ++i;
+            }
+        }
+
         view->closePersistentEditor(view->selectionModel()->currentIndex());
 
         deleteTreeItemsData(item);
+
         // delete node in view
         model->removeRow(index.row(), index.parent());
     }
@@ -1610,7 +1723,7 @@ void TDMGui::slot_attribTableContextMenu(const QPoint &)
             {
 
                 TDMMeasurementLayerData layer_data = selected->getPrivateData<TDMMeasurementLayerData>();
-                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line (F1)"), this, SLOT(slot_addAttributeLine()));
+                if(layer_data.pattern().getNbFields() !=0 ) menu->addAction(tr("Add line (F2)"), this, SLOT(slot_addAttributeLine()));
             }
         }
     }
@@ -1913,6 +2026,8 @@ void TDMGui::selectItem(QModelIndex &_index)
 void TDMGui::slot_messageStartTool(QString&_msg)
 {
     ui->cancel_measurement->setEnabled(true);
+    ui->cancel_last_point->setEnabled(true);
+
     statusBar()->showMessage(_msg);
 }
 
@@ -1924,6 +2039,7 @@ void TDMGui::slot_messageCancelTool(QString&_msg)
 void TDMGui::slot_messageEndTool(QString&_msg)
 {
     ui->cancel_measurement->setEnabled(false);
+    ui->cancel_last_point->setEnabled(false);
     statusBar()->showMessage(_msg);
 }
 
@@ -2426,6 +2542,16 @@ void TDMGui::slot_openProject()
             return;
     }
 
+    // close transparency and other tools
+    QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.begin();
+    while(i != toolWindowsMap.end())
+    {
+        i.value()->close();
+        //toolWindowsMap.remove(i.key(), i.value());
+        ++i;
+    }
+    toolWindowsMap.clear();
+
     // delete all data
     deleteTreeItemsData(root);
     TdmLayersModel *model = TdmLayersModel::instance();
@@ -2433,6 +2559,9 @@ void TDMGui::slot_openProject()
     {
         model->removeRows(0, model->rowCount());
     }
+
+    // reset osg widget
+    ui->display_widget->clearSceneData();
 
     // disallow measurement to be loaded
     //ui->open_measurement_file_action->setEnabled(false);
@@ -2442,6 +2571,7 @@ void TDMGui::slot_openProject()
     ui->line_tool->setEnabled(false);
     ui->surface_tool->setEnabled(false);
     ui->pick_point->setEnabled(false);
+    ui->slope_tool->setEnabled(false);
 
     // ask file name
     QString project_filename = getOpenFileName(this,tr("Select project to open"),m_path_project, tr("3DMetrics project (*.tdm)"));
@@ -2515,12 +2645,28 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         // load 3D model
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,TdmLayerItem*,bool)), this, SLOT(slot_load3DModel(osg::Node*,QString,TdmLayerItem*,bool)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
 
         thread_node->setFileName(file_path);
+        QString name = _obj["Model3D"].toString();
+        thread_node->setName(name);
         thread_node->setTDMLayerItem(_parent ? _parent : root);
         thread_node->setSelectItem(false);
         thread_node->setOSGWidget(ui->display_widget);
+
+        double transp = _obj.value("Transparency").toDouble(0);
+        thread_node->setTransparencyValue(transp);
+
+        double offsetX = _obj.value("OffsetX").toDouble(0);;
+        thread_node->setOffsetX(offsetX);
+
+        double offsetY = _obj.value("OffsetY").toDouble(0);;
+        thread_node->setOffsetY(offsetY);
+
+        double offsetZ = _obj.value("OffsetZ").toDouble(0);;
+        thread_node->setOffsetZ(offsetZ);
+
         thread_node->start();
 
         // allow measurement to be loaded
@@ -2531,17 +2677,19 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         ui->line_tool->setEnabled(true);
         ui->surface_tool->setEnabled(true);
         ui->pick_point->setEnabled(true);
+        ui->slope_tool->setEnabled(true);
     }
 
     if(_obj.contains("Measurement"))
     {
         QString filename = _obj["File"].toString();
+        QString name = _obj["Measurement"].toString();
         QFileInfo project_path(m_project_filename);
         QDir dir(project_path.absoluteDir());
         QString file_path = dir.absoluteFilePath(filename);
 
         // loadMeasurement
-        loadMeasurementFromFile(file_path, _parent ? _parent : root, false);
+        loadMeasurementFromFile(file_path, name, _parent ? _parent : root, false);
     }
 }
 
@@ -2615,6 +2763,16 @@ QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *_item)
         {
             obj.insert("Model3D", _item->getName());
             obj.insert("File", rel_filename);
+
+            TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
+
+            // transparency
+            obj.insert("Transparency", layer_data.getTransparency());
+
+            //  offset
+            obj.insert("OffsetX", layer_data.getOffsetX());
+            obj.insert("OffsetY", layer_data.getOffsetY());
+            obj.insert("OffsetZ", layer_data.getOffsetZ());
         }
     }
 
@@ -2728,7 +2886,7 @@ void TDMGui::slot_about()
     m_dialog.show();
 }
 
-void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton _button, int _x, int _y)
+void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton /* _button */, int _x, int _y)
 {
     // clic
     bool exists = false;
@@ -2906,10 +3064,15 @@ void TDMGui::slot_computeTotalArea()
 
         osg::Node* const node = (layer_data.node().get());
 
+        QApplication::setOverrideCursor(Qt::WaitCursor);
+
         // compute the surface of the 3D model selected through his node
         AreaComputationVisitor total_area;
         node->accept(total_area);
         double total_area_double = total_area.getArea();
+
+        QApplication::restoreOverrideCursor();
+
         QString total_area_string = QString::number(total_area_double,'f',2);
         QStringList filename_split = layer_data.fileName().split("/");
         QString name3D_mode = filename_split.at(filename_split.length()-1);
@@ -2980,7 +3143,7 @@ void TDMGui::slot_saveAltMap()
     bool has_current = view->selectionModel()->currentIndex().isValid();
 
     QString name_file_alt = getSaveFileName(this, tr("Save altitude map"),m_path_alt_map,
-                                              tr("Images (*.tif)"));
+                                            tr("Images (*.tif)"));
     m_path_alt_map = name_file_alt;
     slot_applySettings();
 
@@ -3215,10 +3378,10 @@ void TDMGui::slot_exportMeasToGeom()
                 {
                     item->encodeMeasASCIIXYZ(field_string_xyz);
                     // write field
-                   if ( j<table->columnCount()-1 && field_string_xyz != "" )
+                    if ( j<table->columnCount()-1 && field_string_xyz != "" )
                         field_string_xyz = field_string_xyz + ",";
-                   if( j == table->columnCount()-1 && m_meas_geom_export_dialog.getLatLonSelected() == true )
-                       field_string_xyz = field_string_xyz + ",";
+                    if( j == table->columnCount()-1 && m_meas_geom_export_dialog.getLatLonSelected() == true )
+                        field_string_xyz = field_string_xyz + ",";
                 }
 
                 field_string = field_string_xyz + field_string_latlon;
@@ -3404,19 +3567,42 @@ void TDMGui::slot_editTransparency()
         // get the 3D model selected
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
-        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TdmLayersModel* tdmmodel = static_cast<TdmLayersModel*>(model);
+        TdmLayerItem *item = tdmmodel->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        // Initializes the transparency
-        m_edit_trans_model.setTransparency(layer_data.getTransparency());
+        EditTransparencyModel *tmodel = new EditTransparencyModel(this, item, ui->display_widget);
 
+        // check if existent
+        if(toolWindowsMap.contains(item))
+        {
+            QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
+            while(i != toolWindowsMap.end() && i.key() == item)
+            {
+                QString name = i.value()->metaObject()->className();
+                if(name == "EditTransparencyModel")
+                {
+                    i.value()->close();
+                    toolWindowsMap.remove(i.key(), i.value());
+                }
+                ++i;
+            }
+        }
+
+        // Initializes transparency
+        tmodel->setTransparency(layer_data.getTransparency());
+
+        tmodel->setWindowTitle(tr("Transparency : ") + item->getName());
+        tmodel->move( QCursor::pos().x(), QCursor::pos().y());
+        tmodel->show();
+        tmodel->raise();
+        tmodel->activateWindow();
+
+        toolWindowsMap.insert(item, tmodel);
     }
-    QObject::connect(&m_edit_trans_model, SIGNAL(signal_onChangedTransparencyValue(int)), this, SLOT(slot_Transparency(int)));
-    m_edit_trans_model.show();
-
 }
 
-void TDMGui::slot_Transparency(int _percentage_transparency)
+void TDMGui::slot_editModelOffset()
 {
     QTreeView *view = ui->tree_widget;
 
@@ -3428,15 +3614,57 @@ void TDMGui::slot_Transparency(int _percentage_transparency)
         // get the 3D model selected
         QModelIndex index = view->selectionModel()->currentIndex();
         QAbstractItemModel *model = view->model();
-        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TdmLayersModel* tdmmodel = static_cast<TdmLayersModel*>(model);
+        TdmLayerItem *item = tdmmodel->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        osg::Node* const node = (layer_data.node().get());
+        EditOffsetModel *offsetmodel = new EditOffsetModel(this, item, ui->display_widget);
 
-        double double_transparency = ( (double)_percentage_transparency )/100.0;
+        // check if existent and close
+        if(toolWindowsMap.contains(item))
+        {
+            QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
+            while(i != toolWindowsMap.end() && i.key() == item)
+            {
+                QString name = i.value()->metaObject()->className();
+                if(name == "EditOffsetModel")
+                {
+                    i.value()->close();
+                    toolWindowsMap.remove(i.key(), i.value());
+                }
+                ++i;
+            }
+        }
 
-        ui->display_widget->onTransparencyChange(double_transparency, node);
-        layer_data.setTransparencyValue(double_transparency);
-        item->setPrivateData<TDMModelLayerData>(layer_data);
+        offsetmodel->setOffset(layer_data.getOffsetX(), layer_data.getOffsetY(), layer_data.getOffsetZ());
+
+        offsetmodel->setWindowTitle(tr("Offset : ") + item->getName());
+        offsetmodel->move( QCursor::pos().x(), QCursor::pos().y());
+        offsetmodel->show();
+        offsetmodel->raise();
+        offsetmodel->activateWindow();
+
+        toolWindowsMap.insert(item, offsetmodel);
     }
+}
+
+
+void TDMGui::slot_slopeTool()
+{
+    SlopeTool *dialog = new SlopeTool(this);
+    QPoint point = QCursor::pos();
+    dialog->move(point.x()+20, point.y()+20);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}
+
+void TDMGui::slot_zScale()
+{
+    ZScaleDialog *dialog = new ZScaleDialog(this);
+    QPoint point = QCursor::pos();
+    dialog->move(point.x()+20, point.y()+20);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
 }

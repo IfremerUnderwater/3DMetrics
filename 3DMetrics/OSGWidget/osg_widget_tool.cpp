@@ -34,6 +34,11 @@ void OSGWidgetTool::slot_mouseButtonDown(Qt::MouseButton _button, int _x, int _y
         endTool();
     }
 
+//    if(_button == Qt::MouseButton::MiddleButton)
+//    {
+//          slot_removeLastPointTool();
+//    }
+
     if(_button == Qt::MouseButton::LeftButton)
     {
         // clic
@@ -47,6 +52,7 @@ void OSGWidgetTool::slot_mouseButtonDown(Qt::MouseButton _button, int _x, int _y
             point.y = vect[1];
             point.z = vect[2];
             emit signal_clicked(point);
+            emit signal_clickedXY(point, _x, _y);
         }
     }
 }
@@ -100,6 +106,9 @@ void OSGWidgetTool::endTool()
         case Area:
             msg += "Area";
             break;
+        case Slope:
+            msg += "Slope";
+            break;
         default:
             break;
         }
@@ -125,8 +134,6 @@ void OSGWidgetTool::slot_removeLastPointTool()
     if(m_current_type != None)
     {
         emit signal_removeLastPointTool();
-
-        //endTool();
     }
 }
 

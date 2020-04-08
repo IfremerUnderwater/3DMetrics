@@ -5,6 +5,7 @@
 #include <QLabel>
 #include <QSettings>
 #include <QShortcut>
+#include <QMultiMap>
 #include "about_dialog.h"
 
 #include "Measurement/measurement_pattern.h"
@@ -12,7 +13,7 @@
 #include "osg_axes.h"
 #include "file_open_thread.h"
 #include "meas_geom_export_dialog.h"
-#include "edit_transparency_model.h"
+//#include "edit_transparency_model.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -41,6 +42,9 @@ private:
     Ui::TDMGui *ui;
     AboutDialog m_dialog;
 
+    // Map of opened transparency dialogs
+    QMultiMap<TdmLayerItem*, QWidget*> toolWindowsMap;
+
     // Treeview
     void deleteTreeItemsData(TdmLayerItem *_item);
     void manageCheckStateForChildren(TdmLayerItem *_item, bool _checked);
@@ -58,7 +62,7 @@ private:
     TDMMeasurementLayerData *m_current_item;
 
     // working helpers
-    bool loadMeasurementFromFile(QString _filename, TdmLayerItem *_parent, bool _select_item);
+    bool loadMeasurementFromFile(QString _filename,  QString _name, TdmLayerItem *_parent, bool _select_item);
     bool saveMeasurementToFile(QString _filename, TDMMeasurementLayerData &_data);
 
     bool checkAndSaveMeasurements(TdmLayerItem *_item);
@@ -74,8 +78,6 @@ private:
     DecimationDialog m_decimation_dialog;
 
     MeasGeomExportDialog m_meas_geom_export_dialog;
-
-    EditTransparencyModel m_edit_trans_model;
 
     // Settings variable
     QSettings m_settings;
@@ -99,7 +101,8 @@ private:
 public slots:
 
     void slot_open3dModel();
-    void slot_load3DModel(osg::Node*, QString _filename,TdmLayerItem *_parent, bool _select_item);
+    void slot_load3DModel(osg::Node*, QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item
+                          ,double _transp, double _offsetX, double _offsetY, double offsetZ);
 
     void slot_openMeasurementFile();
     void slot_saveMeasurementFile();
@@ -121,6 +124,7 @@ public slots:
     void slot_toggleStereoView();
     void slot_lightShorcut();
     void slot_toggleLight();
+    void slot_zScale();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);
@@ -142,6 +146,8 @@ public slots:
     void slot_tempPointTool();
     void slot_tempAreaTool();
 
+    void slot_slopeTool();
+
     // measurment pattern dialog
     void slot_patternChanged(MeasPattern _pattern);
 
@@ -162,6 +168,7 @@ public slots:
     void slot_editMeasurement();
     void slot_computeTotalArea();
     void slot_editTransparency();
+    void slot_editModelOffset();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
@@ -194,9 +201,6 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
-
-    // Transparency
-    void slot_Transparency(int _percentage_transparency);
 
 
 private slots:
