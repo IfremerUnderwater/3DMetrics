@@ -670,19 +670,19 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     vertices->push_back(pointB);
                     vertices->push_back(pointC);
                     //*** test
-//                    osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
-//                    normals->push_back(N1);
-//                    normals->push_back(N1);
-//                    normals->push_back(N1);
+                    //                    osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
+                    //                    normals->push_back(N1);
+                    //                    normals->push_back(N1);
+                    //                    normals->push_back(N1);
 
                     vertices->push_back(pointA);
                     vertices->push_back(pointC);
                     vertices->push_back(pointD);
                     //*** test
-//                    osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
-//                    normals->push_back(N2);
-//                    normals->push_back(N2);
-//                    normals->push_back(N2);
+                    //                    osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
+                    //                    normals->push_back(N2);
+                    //                    normals->push_back(N2);
+                    //                    normals->push_back(N2);
 
                 }
 
@@ -1267,6 +1267,12 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
     }else{
         _inter_exists = false;
     }
+
+    //test
+    if(!_inter_exists)
+    {
+        getIntersectionPointPoly(_x, _y, _inter_point, _inter_exists);
+    }
 }
 
 void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists)
@@ -1276,16 +1282,14 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
     osg::Camera *cam = view->getCamera();
 
     const osg::Matrixd transmat
-           = cam->getViewMatrix()
-           * cam->getProjectionMatrix()
-           * cam->getViewport()->computeWindowMatrix();
+            = cam->getViewMatrix()
+            * cam->getProjectionMatrix()
+            * cam->getViewport()->computeWindowMatrix();
 
     osg::Vec4d vec(_world_point[0], _world_point[1], _world_point[2], 1.0);
 
     vec = vec * transmat;
     vec = vec / vec.w();
-
-    //osg::Vec3d pp = osg::Matrixd::transform3x3(_world_point, transmat);
 
     float x = vec.x();
     float y = vec.y();
@@ -1293,23 +1297,11 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
     osgUtil::LineSegmentIntersector::Intersections intersections;
 
 
-    // if we click on the object
     if (view->computeIntersections(x, y, intersections))
     {
         _inter_exists = true;
 
         osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
-
-        //        if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty()))
-        //        {
-        //            // the geodes are identified by name.
-        //            std::cout<<"Object \""<<hitr->nodePath.back()->getName()<<"\""<<std::endl;
-        //        }
-        //        else if (hitr->drawable.valid())
-        //        {
-        //            std::cout<<"Object \""<<hitr->drawable->className()<<"\""<<std::endl;
-        //        }
-
 
         // we get the intersections in a osg::Vec3d
         _inter_point = hitr->getWorldIntersectPoint();
@@ -1318,10 +1310,61 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
 
     }else{
         _inter_exists = false;
-    }
 
+        osgUtil::PolytopeIntersector::Intersections intersections;
+        osgUtil::PolytopeIntersector *polyintersector =
+                new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,x-3,y-3,x+3,y+3);
+        polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+        osgUtil::IntersectionVisitor iv(polyintersector);
+        polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+        cam->accept(iv);
+        intersections = polyintersector->getIntersections();
+
+        if(!intersections.empty())
+        {
+            _inter_exists = true;
+
+            osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+            // we get the intersections in a osg::Vec3d
+            _inter_point = hitr->localIntersectionPoint;
+
+            _inter_point[2] /= m_zScale;
+        }
+    }
 }
 
+void OSGWidget::getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists)
+{
+    osgUtil::PolytopeIntersector::Intersections intersections;
+    osgUtil::PolytopeIntersector *polyintersector =
+            new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,_x-3,this->size().height() -_y-3,_x+3,this->size().height() - _y+3);
+    polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+    osgUtil::IntersectionVisitor iv(polyintersector);
+
+    osgViewer::View *view = m_viewer->getView(0);
+
+    polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+    osg::Camera *cam = view->getCamera();
+    cam->accept(iv);
+    intersections = polyintersector->getIntersections();
+
+    if(!intersections.empty())
+    {
+        _inter_exists = true;
+
+        osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+        // we get the intersections in a osg::Vec3d
+        _inter_point = hitr->localIntersectionPoint;
+
+        _inter_point[2] /= m_zScale;
+    }
+    else
+    {
+        _inter_exists = false;
+    }
+}
 
 void OSGWidget::mouseReleaseEvent(QMouseEvent* _event)
 {
@@ -1835,12 +1878,12 @@ void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::No
 void OSGWidget::setZScale(double _newValue)
 {
 
-//    osgViewer::View *view = m_viewer->getView(0);
-//    osg::Vec3d eye1, center1, up1;
-//    osgGA::CameraManipulator *man = view->getCameraManipulator();
-//    man->getHomePosition(eye1,center1, up1);
+    //    osgViewer::View *view = m_viewer->getView(0);
+    //    osg::Vec3d eye1, center1, up1;
+    //    osgGA::CameraManipulator *man = view->getCameraManipulator();
+    //    man->getHomePosition(eye1,center1, up1);
 
-//    osg::Matrixd matrix = man->getMatrix();
+    //    osg::Matrixd matrix = man->getMatrix();
 
     // change
     //double oldScale = m_zScale;
@@ -1855,8 +1898,8 @@ void OSGWidget::setZScale(double _newValue)
     //view->getCameraManipulator()->setHomePosition(eye,target,normal);
     home();
 
-//    matrix.ptr()[14] *= m_zScale / oldScale;
-//    view->getCameraManipulator()->setByMatrix(matrix);
+    //    matrix.ptr()[14] *= m_zScale / oldScale;
+    //    view->getCameraManipulator()->setByMatrix(matrix);
 }
 
 

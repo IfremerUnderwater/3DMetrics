@@ -122,6 +122,8 @@ public:
 
     void getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists);
 
+    void getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
+
 
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
@@ -182,6 +184,8 @@ public:
     void enableStereo(bool _state);
 
     osgViewer::View* getView() { return  m_viewer->getView(0); }
+    void frame() { m_viewer->frame(); }
+
     osg::Camera* getCamera() { return  m_viewer->getView(0)->getCamera(); }
 
     double getZScale() const { return m_zScale; }

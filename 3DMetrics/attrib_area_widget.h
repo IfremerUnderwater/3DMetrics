@@ -32,6 +32,7 @@ public slots:
 signals:
     void signal_toolStarted(QString &_info);
     void signal_toolEnded(QString &_info);
+    void signal_nbPointsChanged();
 
 private:
     void update();
