@@ -1,3 +1,5 @@
+#include <QGLWidget>
+
 #include <QCloseEvent>
 #include <QProcess>
 #include <QMessageBox>
@@ -42,8 +44,13 @@
 #include "OSGWidget/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
 
+#ifdef _WIN32
+#include "ogr_spatialref.h"
+#include "ogrsf_frmts.h"
+#else
 #include "gdal/ogr_spatialref.h"
 #include "gdal/ogrsf_frmts.h"
+#endif
 
 #include "edit_transparency_model.h"
 #include "edit_offset_model.h"

@@ -1,3 +1,5 @@
+#include "OSGWidget/osg_widget.h"
+
 #include "attrib_line_widget.h"
 #include "ui_attrib_line_widget.h"
 

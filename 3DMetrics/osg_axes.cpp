@@ -1,3 +1,5 @@
+#include "OSGWidget/osg_widget.h"
+
 #include <osg/Geometry>
 #include <osg/StateSet>
 #include <osg/Point>
@@ -6,7 +8,6 @@
 #include "osg_axes.h"
 
 
-#include "OSGWidget/osg_widget.h"
 #include "OSGWidget/osg_widget_tool.h"
 #include "Measurement/measurement_point.h"
 

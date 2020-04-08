@@ -4,8 +4,8 @@
 
 #include <QMouseEvent>
 
-#include "OSGWidget/osg_widget_tool.h"
 #include "OSGWidget/osg_widget.h"
+#include "OSGWidget/osg_widget_tool.h"
 
 #include <Measurement/measurement_area.h>
 
