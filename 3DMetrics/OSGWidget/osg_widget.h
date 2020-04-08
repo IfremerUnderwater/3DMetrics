@@ -122,7 +122,7 @@ public:
 
     void getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists);
 
-    void getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
+    void getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node> &_inter_node, bool &_inter_exists);
 
 
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
@@ -218,7 +218,9 @@ private:
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> m_graphicsWindow;
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
 
-    osg::ref_ptr<osg::Group> m_group;
+    osg::ref_ptr<osg::Group> m_globalGroup;
+    osg::ref_ptr<osg::Group> m_modelsGroup;
+    osg::ref_ptr<osg::Group> m_geodesGroup;
 
     std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
     std::vector<osg::ref_ptr<osg::Node>> m_models;

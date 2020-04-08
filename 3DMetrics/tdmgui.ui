@@ -117,6 +117,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="focusing_tool_action"/>
+   <addaction name="measure_picker_action"/>
   </widget>
   <widget class="QDockWidget" name="tree_widget_dock">
    <property name="sizePolicy">
@@ -462,6 +463,18 @@
   <action name="z_scale_action">
    <property name="text">
     <string>Z Scale</string>
+   </property>
+  </action>
+  <action name="measure_picker_action">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/layers-outline.svg</normaloff>:/icons/ressources/layers-outline.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Measure Picker</string>
+   </property>
+   <property name="toolTip">
+    <string>Measure Picker</string>
    </property>
   </action>
  </widget>

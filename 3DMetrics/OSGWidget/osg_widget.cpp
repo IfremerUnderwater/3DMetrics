@@ -322,13 +322,18 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_timer.start( 40 ); //10 );
 
     // Create group that will contain measurement geode and 3D model
-    m_group = new osg::Group;
+    m_globalGroup = new osg::Group;
 
-    // test TODO
-    //m_zScale = 2.0;
+    m_modelsGroup = new osg::Group;
+    m_geodesGroup = new osg::Group;
+
+    m_globalGroup->addChild(m_modelsGroup);
+    m_globalGroup->addChild(m_geodesGroup);
+
+    // for Z scale management
     m_matrixTransform = new osg::MatrixTransform;
     m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
-    m_matrixTransform->addChild(m_group);
+    m_matrixTransform->addChild(m_globalGroup);
 }
 
 OSGWidget::~OSGWidget()
@@ -954,7 +959,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     //    state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
 
 
-    m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
+    m_modelsGroup->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
     osgUtil::Optimizer optimizer;
@@ -1044,15 +1049,15 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
     if (position != m_models.end()) // == myVector.end() means the element was not found
         m_models.erase(position);
 
-    m_group->removeChild(_node.get());
+    m_modelsGroup->removeChild(_node.get());
 
     // optimize the scene graph, remove redundant nodes and state etc.
-    /*osgUtil::Optimizer optimizer;
-    optimizer.optimize(m_group.get());*/
+    osgUtil::Optimizer optimizer;
+    optimizer.optimize(this->m_globalGroup.get());
 
     osgViewer::View *view = m_viewer->getView(0);
 
-    view->setSceneData( m_matrixTransform); //m_group );
+    view->setSceneData( m_matrixTransform);
 
     return true;
 }
@@ -1098,7 +1103,7 @@ void OSGWidget::clearSceneData()
 
     // remove all nodes from group
     for (unsigned int i=0; i<m_models.size(); i++){
-        m_group->removeChild(m_models[i]);
+        m_modelsGroup->removeChild(m_models[i]);
         //m_models[i] = NULL; useless
     }
 
@@ -1109,7 +1114,7 @@ void OSGWidget::clearSceneData()
     for (unsigned int i=0; i<m_geodes.size(); i++)
     {
         m_geodes[i]->removeDrawables(0,m_geodes[i]->getNumDrawables());
-        m_group->removeChild(m_geodes[i]);
+        m_geodesGroup->removeChild(m_geodes[i]);
         //m_models[i] = NULL; useless
     }
     m_geodes.clear();
@@ -1125,13 +1130,24 @@ void OSGWidget::clearSceneData()
 void OSGWidget::initializeGL(){
 
     // Init properties
-    osg::StateSet* state_set = m_group->getOrCreateStateSet();
+    osg::StateSet* state_set = m_modelsGroup->getOrCreateStateSet();
     osg::Material* material = new osg::Material;
     material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
     state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
     state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
+    state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::OFF);
+    state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    // to show measures too
+    state_set = m_geodesGroup->getOrCreateStateSet();
+    // material needed to sho colors in measure without light
+    material = new osg::Material;
+    material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
+    state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
+    state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
     state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
-    //stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    // if selected : only parts on top of all madels are shown
+    //state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 }
 
 void OSGWidget::paintGL()
@@ -1271,7 +1287,32 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
     //test
     if(!_inter_exists)
     {
-        getIntersectionPointPoly(_x, _y, _inter_point, _inter_exists);
+        osgUtil::PolytopeIntersector::Intersections intersections;
+        osgUtil::PolytopeIntersector *polyintersector =
+                new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,_x-3,this->size().height() -_y-3,_x+3,this->size().height() - _y+3);
+        polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+        osgUtil::IntersectionVisitor iv(polyintersector);
+
+        polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+        osg::Camera *cam = view->getCamera();
+        cam->accept(iv);
+        intersections = polyintersector->getIntersections();
+
+        if(!intersections.empty())
+        {
+            _inter_exists = true;
+
+            osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+            // we get the intersections in a osg::Vec3d
+            _inter_point = hitr->localIntersectionPoint;
+
+            _inter_point[2] /= m_zScale;
+        }
+        else
+        {
+            _inter_exists = false;
+        }
     }
 }
 
@@ -1334,14 +1375,16 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
     }
 }
 
-void OSGWidget::getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists)
+void OSGWidget::getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node> &_inter_node,  bool &_inter_exists)
 {
     osgUtil::PolytopeIntersector::Intersections intersections;
     osgUtil::PolytopeIntersector *polyintersector =
             new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,_x-3,this->size().height() -_y-3,_x+3,this->size().height() - _y+3);
-    polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+    polyintersector->setPrimitiveMask(
+                osgUtil::PolytopeIntersector::POINT_PRIMITIVES
+                | osgUtil::PolytopeIntersector::LINE_PRIMITIVES);
     osgUtil::IntersectionVisitor iv(polyintersector);
-
+    iv.apply(*m_geodesGroup);
     osgViewer::View *view = m_viewer->getView(0);
 
     polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
@@ -1349,16 +1392,27 @@ void OSGWidget::getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_poin
     cam->accept(iv);
     intersections = polyintersector->getIntersections();
 
+    m_geodesGroup->accept(iv);
+
     if(!intersections.empty())
     {
-        _inter_exists = true;
+
 
         osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
 
-        // we get the intersections in a osg::Vec3d
-        _inter_point = hitr->localIntersectionPoint;
+        osg::Vec3d p =  hitr->localIntersectionPoint;
 
-        _inter_point[2] /= m_zScale;
+        osg::ref_ptr<osg::Node> newnode = hitr->drawable->getParent(0);
+
+        if(newnode != nullptr)
+        {
+            _inter_exists = true;
+            _inter_node = newnode;
+        }
+        // we get the intersections in a osg::Vec3d
+        //_inter_point = hitr->localIntersectionPoint;
+
+        //_inter_point[2] /= m_zScale;
     }
     else
     {
@@ -1467,17 +1521,6 @@ osgGA::EventQueue* OSGWidget::getEventQueue() const
         throw std::runtime_error( "Unable to obtain valid event queue");
 }
 
-//osg::ref_ptr<osg::Geode> OSGWidget::getMeasurementGeode()
-//{
-//    return m_measurement_geode;
-//}
-
-//void OSGWidget::forceGeodeUpdate()
-//{
-//    m_group->removeChild(m_measurement_geode);
-//    m_group->addChild(m_measurement_geode);
-//}
-
 void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_alt)
 {
     _ref_lat_lon = m_ref_lat_lon;
@@ -1542,7 +1585,7 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
 
 void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
 {
-    m_group->addChild(_geode.get());
+    m_geodesGroup->addChild(_geode.get());
     m_geodes.push_back(_geode);
 }
 
@@ -1553,13 +1596,13 @@ void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
     if (position != m_geodes.end()) // == myVector.end() means the element was not found
         m_geodes.erase(position);
 
-    m_group->removeChild(_geode);
+    m_geodesGroup->removeChild(_geode);
 }
 
 void OSGWidget::addGroup(osg::ref_ptr<osg::Group> _group)
 {
     //m_groups.push_back(_group);
-    m_group->addChild(_group.get());
+    m_geodesGroup->addChild(_group.get());
 }
 
 void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
@@ -1569,7 +1612,7 @@ void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
     //    if (position != m_groups.end()) // == myVector.end() means the element was not found
     //        m_groups.erase(position);
 
-    m_group->removeChild(_group);
+    m_geodesGroup->removeChild(_group);
 }
 
 // reset view to home

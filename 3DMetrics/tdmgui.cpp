@@ -54,6 +54,8 @@
 
 #include "z_scale_dialog.h"
 
+#include "measure_picker_dialog.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -144,6 +146,7 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
+    connect(ui->measure_picker_action,SIGNAL(triggered()), this, SLOT(slot_measurePicker()));
 
     // measurement tools
     ui->line_tool->setEnabled(false);
@@ -3668,3 +3671,54 @@ void TDMGui::slot_zScale()
     dialog->raise();
     dialog->activateWindow();
 }
+
+void TDMGui::slot_measurePicker()
+{
+
+    MeasurePickerDialog *dialog = new MeasurePickerDialog(this);
+    QObject::connect(dialog, SIGNAL(signal_nodeClicked(osg::Node *)),this, SLOT(slot_nodeClicked(osg::Node*)));
+
+//    QPoint point = QCursor::pos();
+//    dialog->move(point.x()+20, point.y()+20);
+//    dialog->show();
+//    dialog->raise();
+//    dialog->activateWindow();
+
+}
+
+void TDMGui::slot_nodeClicked(osg::Node *_node)
+{
+    // TODO : find node in measures
+    if(m_current_item != nullptr && m_current_item->rows().size() > 0)
+    {
+        int nbFields = m_current_pattern.getNbFields();
+
+        // find item
+        for(int i=0; i<m_current_item->rows().size(); i++ )
+        {
+            osgMeasurementRow *row = m_current_item->rows()[i];
+            for(int f=0; f<nbFields; f++)
+            {
+                MeasType::type t = m_current_pattern.fieldType(f);
+                if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+                {
+                    osg::ref_ptr<osg::Geode> geode = row->get(f);
+                    if(geode.get() == _node)
+                    {
+                        // TODO
+                        printf("TROUVE\n");
+                        ui->attrib_table->selectRow(i);
+                        //ui->attrib_table->selectColumn(f+1);
+                    }
+                    //                    if(geode->containsNode(_node))
+                    //                    {
+                    //                        printf("TROUVE\n");
+                    //                    }
+                }
+
+            }
+        }
+    }
+
+}
+
