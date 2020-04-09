@@ -54,7 +54,7 @@
 
 #include "z_scale_dialog.h"
 
-#include "measure_picker_dialog.h"
+#include "OSGWidget/measure_picker_tool.h"
 
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
@@ -147,6 +147,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
     connect(ui->measure_picker_action,SIGNAL(triggered()), this, SLOT(slot_measurePicker()));
+    ui->measure_picker_action->setEnabled(false);
 
     // measurement tools
     ui->line_tool->setEnabled(false);
@@ -1085,6 +1086,7 @@ void TDMGui::slot_newGroup()
 void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSelection& _desel)
 {   
     OSGWidgetTool::instance()->endTool();
+    ui->measure_picker_action->setEnabled(false);
 
     if(_desel.length() > 0)
     {
@@ -1131,6 +1133,7 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
             }
             else if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
+                ui->measure_picker_action->setEnabled(true);
                 QTableWidget *table = ui->attrib_table;
                 table->setRowCount(0);
 
@@ -3674,27 +3677,20 @@ void TDMGui::slot_zScale()
 
 void TDMGui::slot_measurePicker()
 {
-
-    MeasurePickerDialog *dialog = new MeasurePickerDialog(this);
-    QObject::connect(dialog, SIGNAL(signal_nodeClicked(osg::Node *)),this, SLOT(slot_nodeClicked(osg::Node*)));
-
-//    QPoint point = QCursor::pos();
-//    dialog->move(point.x()+20, point.y()+20);
-//    dialog->show();
-//    dialog->raise();
-//    dialog->activateWindow();
-
+    MeasurePickerTool *tool = new MeasurePickerTool(this);
+    QObject::connect(tool, SIGNAL(signal_nodeClicked(osg::Node *)),this, SLOT(slot_nodeClicked(osg::Node*)));
+    QObject::connect(tool, SIGNAL(signal_noNodeClicked()),this, SLOT(slot_noNodeClicked()));
 }
 
 void TDMGui::slot_nodeClicked(osg::Node *_node)
 {
-    // TODO : find node in measures
+    // find node in measures
     if(m_current_item != nullptr && m_current_item->rows().size() > 0)
     {
         int nbFields = m_current_pattern.getNbFields();
 
         // find item
-        for(int i=0; i<m_current_item->rows().size(); i++ )
+        for(unsigned int i=0; i<m_current_item->rows().size(); i++ )
         {
             osgMeasurementRow *row = m_current_item->rows()[i];
             for(int f=0; f<nbFields; f++)
@@ -3705,20 +3701,31 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
                     osg::ref_ptr<osg::Geode> geode = row->get(f);
                     if(geode.get() == _node)
                     {
-                        // TODO
-                        printf("TROUVE\n");
                         ui->attrib_table->selectRow(i);
-                        //ui->attrib_table->selectColumn(f+1);
-                    }
-                    //                    if(geode->containsNode(_node))
-                    //                    {
-                    //                        printf("TROUVE\n");
-                    //                    }
-                }
 
+                        // message
+                        QString message = "Selected : ";
+                        message += "\"";
+                        message += m_current_pattern.fieldName(f);
+                        message += "\" ";
+                        message += "type:";
+                        message += MeasType::value(t);
+
+                        statusBar()->showMessage(message);
+
+                        return;
+                    }
+                }
             }
         }
     }
+    statusBar()->showMessage(tr("Selected : none"));
+    ui->attrib_table->clearSelection();
+}
 
+void TDMGui::slot_noNodeClicked()
+{
+    statusBar()->showMessage(tr("Selected : none"));
+    ui->attrib_table->clearSelection();
 }
 

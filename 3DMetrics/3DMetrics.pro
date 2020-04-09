@@ -94,7 +94,7 @@ SOURCES += main.cpp \
     z_scale_dialog.cpp \
     profile_depth_dialog.cpp \
     paint_widget.cpp \
-    measure_picker_dialog.cpp
+    OSGWidget/measure_picker_tool.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -143,7 +143,7 @@ HEADERS  += \
     z_scale_dialog.h \
     profile_depth_dialog.h \
     paint_widget.h \
-    measure_picker_dialog.h
+    OSGWidget/measure_picker_tool.h
 
 FORMS    += \
     tdmgui.ui \
@@ -164,8 +164,7 @@ FORMS    += \
     slope_tool.ui \
     choose_loadingmode_dialog.ui \
     z_scale_dialog.ui \
-    profile_depth_dialog.ui \
-    measure_picker_dialog.ui
+    profile_depth_dialog.ui
 
 RESOURCES += \
     ressources.qrc

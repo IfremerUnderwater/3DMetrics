@@ -191,6 +191,8 @@ public:
     double getZScale() const { return m_zScale; }
     void setZScale(double _newValue);
 
+    static const char *const MEASURE_NAME;
+
 protected:
 
     virtual void paintGL();

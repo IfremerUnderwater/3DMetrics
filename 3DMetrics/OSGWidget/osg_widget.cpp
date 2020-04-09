@@ -54,8 +54,6 @@
 
 #include "box_visitor.h"
 
-#include <osg/PositionAttitudeTransform>
-
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
         m_filename( _filename ),
@@ -255,6 +253,7 @@ public:
 };
 
 
+const char *const OSGWidget::MEASURE_NAME = "3DMeasure";
 
 OSGWidget::OSGWidget(QWidget* parent)
     : QOpenGLWidget( parent)
@@ -1284,7 +1283,6 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
         _inter_exists = false;
     }
 
-    //test
     if(!_inter_exists)
     {
         osgUtil::PolytopeIntersector::Intersections intersections;
@@ -1384,7 +1382,9 @@ void OSGWidget::getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node>
                 osgUtil::PolytopeIntersector::POINT_PRIMITIVES
                 | osgUtil::PolytopeIntersector::LINE_PRIMITIVES);
     osgUtil::IntersectionVisitor iv(polyintersector);
-    iv.apply(*m_geodesGroup);
+
+    // do not work to restrict seauch
+    //iv.apply(*m_geodesGroup);
     osgViewer::View *view = m_viewer->getView(0);
 
     polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
@@ -1394,30 +1394,35 @@ void OSGWidget::getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node>
 
     m_geodesGroup->accept(iv);
 
+    _inter_exists = false;
+
     if(!intersections.empty())
     {
-
-
         osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
 
-        osg::Vec3d p =  hitr->localIntersectionPoint;
-
-        osg::ref_ptr<osg::Node> newnode = hitr->drawable->getParent(0);
-
-        if(newnode != nullptr)
+        while(hitr != intersections.end())
         {
-            _inter_exists = true;
-            _inter_node = newnode;
-        }
-        // we get the intersections in a osg::Vec3d
-        //_inter_point = hitr->localIntersectionPoint;
+            osg::ref_ptr<osg::Node> newnode = hitr->drawable->getParent(0);
 
-        //_inter_point[2] /= m_zScale;
+            if(newnode != nullptr)
+            {
+                osg::Group *parent = newnode->getParent(0);
+                if(parent != nullptr)
+                {
+                    std::string name = parent->getName();
+                    if(name == MEASURE_NAME)
+                    {
+                        _inter_exists = true;
+                        _inter_node = newnode;
+                        break;
+                    }
+                }
+
+            }
+            ++hitr;
+        }
     }
-    else
-    {
-        _inter_exists = false;
-    }
+
 }
 
 void OSGWidget::mouseReleaseEvent(QMouseEvent* _event)
