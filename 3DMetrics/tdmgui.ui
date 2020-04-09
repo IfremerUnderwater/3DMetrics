@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1222</width>
+    <width>1277</width>
     <height>907</height>
    </rect>
   </property>
@@ -20,6 +20,12 @@
    <layout class="QHBoxLayout" name="horizontalLayout">
     <item>
      <widget class="OSGWidget" name="display_widget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>800</width>
@@ -35,7 +41,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1222</width>
+     <width>1277</width>
      <height>21</height>
     </rect>
    </property>
@@ -128,7 +134,7 @@
   <widget class="QDockWidget" name="tree_widget_dock">
    <property name="sizePolicy">
     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-     <horstretch>1</horstretch>
+     <horstretch>0</horstretch>
      <verstretch>1</verstretch>
     </sizepolicy>
    </property>
@@ -149,7 +155,7 @@
    </attribute>
    <widget class="QTreeView" name="tree_widget">
     <property name="sizePolicy">
-     <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
       <horstretch>0</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>

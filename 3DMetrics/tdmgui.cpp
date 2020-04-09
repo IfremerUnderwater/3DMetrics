@@ -76,6 +76,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     qRegisterMetaType<MeasPattern>();
 
     ui->setupUi(this);
+    ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
+
 
     // set icon
     this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
