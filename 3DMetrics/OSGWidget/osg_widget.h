@@ -26,6 +26,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <QPointF>
 
 #include <osg/ref_ptr>
+#include <osg/Referenced>
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 #include <GeographicLib/LocalCartesian.hpp>
@@ -49,6 +50,26 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 class OSGWidget : public QOpenGLWidget
 {
     Q_OBJECT
+
+private:
+
+    // models' user data
+    class NodeUserData : public osg::Referenced
+    {
+    public:
+        NodeUserData() : Referenced() {}
+        virtual ~NodeUserData() {}
+
+        // values zmin and zmax from model (without offset)
+        float zmin;
+        float zmax;
+
+        float zoffset;
+        float originalZoffset;
+
+        // use or not shader
+        bool useshader;
+    };
 
 public:
     OSGWidget( QWidget* parent = 0);
@@ -242,6 +263,14 @@ private:
     osg::ref_ptr<osg::MatrixTransform> m_matrixTransform;
 
     void setCameraOnNode(osg::ref_ptr<osg::Node> _node);
+
+    // for shaders
+    void configureShaders( osg::StateSet* stateSet );
+
+    // recompute global zmin and zmax for all models
+    void recomputeGlobalZMinMax();
+    float m_modelsZMin;
+    float m_modelsZMax;
 };
 
 #endif // OSG_WIDGET_H

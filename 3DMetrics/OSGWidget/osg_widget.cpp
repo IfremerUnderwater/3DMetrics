@@ -53,6 +53,7 @@
 #include <osg/BlendFunc>
 
 #include "box_visitor.h"
+#include "minmax_computation_visitor.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -962,7 +963,28 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
 
     // optimize the scene graph, remove redundant nodes and state etc.
     osgUtil::Optimizer optimizer;
-    optimizer.optimize(_node.get());
+    optimizer.optimize(_node.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+
+    // compute the surface of the 3D model selected through his node
+    MinMaxComputationVisitor minmax;
+    _node->accept(minmax);
+    float zmin = minmax.getMin();
+    float zmax = minmax.getMax();
+
+    // save original translation
+    osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
+
+    osg::ref_ptr<NodeUserData> data = new NodeUserData();
+    data->useshader = true;
+    data->zmin = zmin;
+    data->zmax = zmax;
+    data->zoffset = 0; // will be changed on z offset changed
+    data->originalZoffset = model_transform->getMatrix().getTrans().z();
+    _node->setUserData(data);
+
+    configureShaders( _node->getOrCreateStateSet() );
+    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
+    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
 
     setCameraOnNode(_node);
 
@@ -1585,7 +1607,10 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     // end add invisible point
 
     model_transform->addChild(node);
-    addNodeToScene(model_transform);
+
+    // Add model without userdata
+    m_models.push_back(node);
+    m_modelsGroup->insertChild(0, node.get()); // put at the beginning to be drawn first
 }
 
 void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
@@ -1879,7 +1904,6 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
     {
         state_set->removeAttribute(osg::StateAttribute::MATERIAL);
         state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
-
     }
     else
     {
@@ -1905,6 +1929,9 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
         state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
     }
 
+    // alpha on shader
+    state_set->addUniform( new osg::Uniform( "alpha", float(_transparency_value) ));
+
 
     //    // test
     //    osg::StateSet* state_set = _node->getOrCreateStateSet();
@@ -1919,8 +1946,17 @@ void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::No
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
     osg::Matrix matrix = osg::Matrix::translate(_trans.x() + _x, _trans.y() + _y, _trans.z() + _z);
-    ;
+
     model_transform->setMatrix(matrix);
+
+    // for shaders
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        data->zoffset = (float)_z;
+    }
+
+    recomputeGlobalZMinMax();
 }
 
 void OSGWidget::setZScale(double _newValue)
@@ -1950,5 +1986,143 @@ void OSGWidget::setZScale(double _newValue)
     //    view->getCameraManipulator()->setByMatrix(matrix);
 }
 
+void OSGWidget::configureShaders( osg::StateSet* stateSet )
+{
+    const std::string vertexSource =
+            "#version 130 \n"
+            "uniform float zmin;"
+            "uniform float deltaz;"
+            "uniform float alpha;"
 
+            "out vec4 fcolor;"
+
+            "void main(void)"
+            "{"
+            " vec4 v = vec4(gl_Vertex);"
+            "float r = (v.z-zmin) / deltaz;"
+            "float g = (v.z-zmin) / deltaz;"
+            "float b = 0.5;"
+            "fcolor = vec4( r, g, b, alpha);"
+            " gl_Position = gl_ModelViewProjectionMatrix*v;"
+            "}";
+
+
+
+    //        "#version 130 \n"
+    //        " \n"
+    //        "uniform mat4 osg_ModelViewProjectionMatrix; \n"
+    //        "uniform mat3 osg_NormalMatrix; \n"
+    //        "uniform vec3 ecLightDir; \n"
+    //        " \n"
+    //        "in vec4 osg_Vertex; \n"
+    //        "in vec3 osg_Normal; \n"
+    //        "out vec4 color; \n"
+    //        " \n"
+    //        "void main() \n"
+    //        "{ \n"
+    //        "    vec3 ecNormal = normalize( osg_NormalMatrix * osg_Normal ); \n"
+    //        "    float diffuse = max( dot( ecLightDir, ecNormal ), 0. ); \n"
+    //        "    color = vec4( vec3( diffuse ), 1. ); \n"
+    //        " \n"
+    //        "    gl_Position = osg_ModelViewProjectionMatrix * osg_Vertex; \n"
+    //        "} \n";
+    osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
+
+    const std::string fragmentSource =
+            "#version 130 \n"
+            "in vec4 fcolor;"
+            "void main()"
+            "{"
+            "   gl_FragColor = fcolor;"
+            "}";
+
+    //        "#version 130 \n"
+    //        " \n"
+    //        "in vec4 color; \n"
+    //        "out vec4 fragData; \n"
+    //        " \n"
+    //        "void main() \n"
+    //        "{ \n"
+    //        "    fragData = color; \n"
+    //        "} \n";
+    osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
+
+    osg::Program* program = new osg::Program;
+    program->setName("testShader");
+    program->addShader( fShader );
+    program->addShader( vShader );
+    stateSet->setAttribute( program, osg::StateAttribute::ON );
+
+    //    osg::Vec3f lightDir( 0., 0.5, 1. );
+    //    lightDir.normalize();
+    //    stateSet->addUniform( new osg::Uniform( "ecLightDir", lightDir ) );
+    //    stateSet->addUniform( new osg::Uniform( "color", osg::Vec4(1.0,1.0,0.0,1.0)));
+    //    stateSet->addUniform( new osg::Uniform( "plat", true));
+
+
+    // WARNING : values from model without translations.....
+    // to be done on init
+    //      stateSet->addUniform( new osg::Uniform( "zmin", -2495.0f + 800.0f));
+    //      stateSet->addUniform( new osg::Uniform( "deltaz", -2480.0f+2495.0f));
+    stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
+}
+
+
+// recompute global zmin and zmax for all models
+void OSGWidget::recomputeGlobalZMinMax()
+{
+    m_modelsZMin = 0;
+    m_modelsZMax = 0;
+
+    if(m_models.size() == 0)
+    {
+        return;
+    }
+
+    bool first = true;
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+        if(data != nullptr)
+        {
+            if(first)
+            {
+                m_modelsZMin = data->zmin + data->zoffset + data->originalZoffset;
+                m_modelsZMax = data->zmax + data->zoffset + data->originalZoffset;
+                first = false;
+                continue;
+            }
+
+            float zmin = data->zmin + data->zoffset + data->originalZoffset;
+            float zmax = data->zmax + data->zoffset + data->originalZoffset;
+
+            if(zmin < m_modelsZMin)
+                m_modelsZMin = zmin;
+
+            if(zmax > m_modelsZMax)
+                m_modelsZMax = zmax;
+        }
+    }
+
+    if(first)
+    {
+        // no 3D models loaded
+        return;
+    }
+    float delta = m_modelsZMax - m_modelsZMin;
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+
+        if(data == nullptr)
+            continue;
+
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "zmin", m_modelsZMin - data->zoffset - data->originalZoffset));
+        state_set->addUniform( new osg::Uniform( "deltaz", delta));
+    }
+
+}
 
