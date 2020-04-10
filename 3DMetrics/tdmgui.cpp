@@ -61,6 +61,8 @@
 
 #include "z_scale_dialog.h"
 
+#include "OSGWidget/measure_picker_tool.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -153,6 +155,8 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
+    connect(ui->measure_picker_action,SIGNAL(triggered()), this, SLOT(slot_measurePicker()));
+    ui->measure_picker_action->setEnabled(false);
 
     // measurement tools
     ui->line_tool->setEnabled(false);
@@ -1091,6 +1095,7 @@ void TDMGui::slot_newGroup()
 void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSelection& _desel)
 {   
     OSGWidgetTool::instance()->endTool();
+    ui->measure_picker_action->setEnabled(false);
 
     if(_desel.length() > 0)
     {
@@ -1137,6 +1142,7 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
             }
             else if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
+                ui->measure_picker_action->setEnabled(true);
                 QTableWidget *table = ui->attrib_table;
                 table->setRowCount(0);
 
@@ -3677,3 +3683,58 @@ void TDMGui::slot_zScale()
     dialog->raise();
     dialog->activateWindow();
 }
+
+void TDMGui::slot_measurePicker()
+{
+    MeasurePickerTool *tool = new MeasurePickerTool(this);
+    QObject::connect(tool, SIGNAL(signal_nodeClicked(osg::Node *)),this, SLOT(slot_nodeClicked(osg::Node*)));
+    QObject::connect(tool, SIGNAL(signal_noNodeClicked()),this, SLOT(slot_noNodeClicked()));
+}
+
+void TDMGui::slot_nodeClicked(osg::Node *_node)
+{
+    // find node in measures
+    if(m_current_item != nullptr && m_current_item->rows().size() > 0)
+    {
+        int nbFields = m_current_pattern.getNbFields();
+
+        // find item
+        for(unsigned int i=0; i<m_current_item->rows().size(); i++ )
+        {
+            osgMeasurementRow *row = m_current_item->rows()[i];
+            for(int f=0; f<nbFields; f++)
+            {
+                MeasType::type t = m_current_pattern.fieldType(f);
+                if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+                {
+                    osg::ref_ptr<osg::Geode> geode = row->get(f);
+                    if(geode.get() == _node)
+                    {
+                        ui->attrib_table->selectRow(i);
+
+                        // message
+                        QString message = "Selected : ";
+                        message += "\"";
+                        message += m_current_pattern.fieldName(f);
+                        message += "\" ";
+                        message += "type:";
+                        message += MeasType::value(t);
+
+                        statusBar()->showMessage(message);
+
+                        return;
+                    }
+                }
+            }
+        }
+    }
+    statusBar()->showMessage(tr("Selected : none"));
+    ui->attrib_table->clearSelection();
+}
+
+void TDMGui::slot_noNodeClicked()
+{
+    statusBar()->showMessage(tr("Selected : none"));
+    ui->attrib_table->clearSelection();
+}
+

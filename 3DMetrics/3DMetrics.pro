@@ -93,7 +93,9 @@ SOURCES += main.cpp \
     choose_loadingmode_dialog.cpp \
     z_scale_dialog.cpp \
     profile_depth_dialog.cpp \
-    paint_widget.cpp
+    paint_widget.cpp \
+    OSGWidget/measure_picker_tool.cpp \
+    OSGWidget/minmax_computation_visitor.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -141,7 +143,9 @@ HEADERS  += \
     OSGWidget/loading_mode.h \
     z_scale_dialog.h \
     profile_depth_dialog.h \
-    paint_widget.h
+    paint_widget.h \
+    OSGWidget/measure_picker_tool.h \
+    OSGWidget/minmax_computation_visitor.h
 
 FORMS    += \
     tdmgui.ui \

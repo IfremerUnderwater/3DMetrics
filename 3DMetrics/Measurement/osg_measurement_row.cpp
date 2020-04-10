@@ -1,8 +1,11 @@
 #include "osg_measurement_row.h"
+// for OSGWidget::MEASURE_NAME
+#include "OSGWidget/osg_widget.h"
 
 osgMeasurementRow::osgMeasurementRow(MeasPattern &_pattern) : m_visible(true)
 {
     m_group = new osg::Group();
+    m_group->setName(OSGWidget::MEASURE_NAME);
     for(int i=0; i<_pattern.getNbFields(); i++)
     {
         osg::ref_ptr<osg::Geode> geode = 0;

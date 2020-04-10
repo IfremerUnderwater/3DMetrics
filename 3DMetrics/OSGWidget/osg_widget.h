@@ -26,6 +26,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <QPointF>
 
 #include <osg/ref_ptr>
+#include <osg/Referenced>
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 #include <GeographicLib/LocalCartesian.hpp>
@@ -49,6 +50,26 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 class OSGWidget : public QOpenGLWidget
 {
     Q_OBJECT
+
+private:
+
+    // models' user data
+    class NodeUserData : public osg::Referenced
+    {
+    public:
+        NodeUserData() : Referenced() {}
+        virtual ~NodeUserData() {}
+
+        // values zmin and zmax from model (without offset)
+        float zmin;
+        float zmax;
+
+        float zoffset;
+        float originalZoffset;
+
+        // use or not shader
+        bool useshader;
+    };
 
 public:
     OSGWidget( QWidget* parent = 0);
@@ -122,7 +143,7 @@ public:
 
     void getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists);
 
-    void getIntersectionPointPoly(int _x, int _y, osg::Vec3d &_inter_point, bool &_inter_exists);
+    void getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node> &_inter_node, bool &_inter_exists);
 
 
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
@@ -191,6 +212,8 @@ public:
     double getZScale() const { return m_zScale; }
     void setZScale(double _newValue);
 
+    static const char *const MEASURE_NAME;
+
 protected:
 
     virtual void paintGL();
@@ -218,7 +241,9 @@ private:
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> m_graphicsWindow;
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
 
-    osg::ref_ptr<osg::Group> m_group;
+    osg::ref_ptr<osg::Group> m_globalGroup;
+    osg::ref_ptr<osg::Group> m_modelsGroup;
+    osg::ref_ptr<osg::Group> m_geodesGroup;
 
     std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
     std::vector<osg::ref_ptr<osg::Node>> m_models;
@@ -238,6 +263,14 @@ private:
     osg::ref_ptr<osg::MatrixTransform> m_matrixTransform;
 
     void setCameraOnNode(osg::ref_ptr<osg::Node> _node);
+
+    // for shaders
+    void configureShaders( osg::StateSet* stateSet );
+
+    // recompute global zmin and zmax for all models
+    void recomputeGlobalZMinMax();
+    float m_modelsZMin;
+    float m_modelsZMax;
 };
 
 #endif // OSG_WIDGET_H

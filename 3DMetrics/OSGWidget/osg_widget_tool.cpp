@@ -41,6 +41,13 @@ void OSGWidgetTool::slot_mouseButtonDown(Qt::MouseButton _button, int _x, int _y
 
     if(_button == Qt::MouseButton::LeftButton)
     {
+        if(m_current_type == MeasurePicker)
+        {
+            emit signal_clickedLMouse(_x, _y);
+
+            return;
+        }
+
         // clic
         bool exists = false;
         osg::Vec3d vect;
@@ -75,6 +82,12 @@ void OSGWidgetTool::startTool(const type _type)
     case Area:
         msg += "Area";
         break;
+    case Slope:
+        msg += "Slope";
+        break;
+    case MeasurePicker:
+        msg += "Measure Picker";
+        break;
     default:
         break;
     }
@@ -92,7 +105,6 @@ void OSGWidgetTool::endTool()
 
         m_osg_widget->setCursor(Qt::ArrowCursor);
 
-
         // cancel or end
         QString msg = tr("End tool ");
         switch(m_current_type)
@@ -108,6 +120,9 @@ void OSGWidgetTool::endTool()
             break;
         case Slope:
             msg += "Slope";
+            break;
+        case MeasurePicker:
+            msg += "Measure Picker";
             break;
         default:
             break;
@@ -129,6 +144,7 @@ void OSGWidgetTool::slot_cancelTool()
         endTool();
     }
 }
+
 void OSGWidgetTool::slot_removeLastPointTool()
 {
     if(m_current_type != None)

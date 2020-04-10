@@ -135,6 +135,9 @@ public slots:
 
     // general tools
     void slot_focussingTool();
+    void slot_measurePicker();
+    void slot_nodeClicked(osg::Node *_node);
+    void slot_noNodeClicked();
 
     // measurement tools
     void slot_messageStartTool(QString&_msg);
