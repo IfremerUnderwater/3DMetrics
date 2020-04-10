@@ -172,6 +172,7 @@ public slots:
     void slot_computeTotalArea();
     void slot_editTransparency();
     void slot_editModelOffset();
+    void slot_toggleUseShader(bool);
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);

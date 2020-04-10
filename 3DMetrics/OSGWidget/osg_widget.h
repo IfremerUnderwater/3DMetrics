@@ -214,6 +214,9 @@ public:
 
     static const char *const MEASURE_NAME;
 
+    bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
+    void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);
+
 protected:
 
     virtual void paintGL();

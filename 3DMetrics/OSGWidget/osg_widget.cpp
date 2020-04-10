@@ -1988,8 +1988,8 @@ void OSGWidget::setZScale(double _newValue)
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )
 {
-    const std::string vertexSource =
-            "#version 130 \n"
+    const std::string vertexSourceOrg =
+            "#version 330 compatibility \n"
             "uniform float zmin;"
             "uniform float deltaz;"
             "uniform float alpha;"
@@ -1999,12 +1999,65 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
             "void main(void)"
             "{"
             " vec4 v = vec4(gl_Vertex);"
-            "float r = (v.z-zmin) / deltaz;"
-            "float g = (v.z-zmin) / deltaz;"
-            "float b = 0.5;"
-            "fcolor = vec4( r, g, b, alpha);"
+            " float val = (v.z-zmin) / deltaz;"
+            " if(val < 0.0)"
+            "   val = 0.0;"
+            " if(val > 1.0)"
+            "   val = 1.0;"
+            " float r = val;"
+            " float g = val;"
+            " float b = 0.5;"
+            " fcolor = vec4( r, g, b, alpha);"
             " gl_Position = gl_ModelViewProjectionMatrix*v;"
             "}";
+
+    const std::string vertexSource =
+            "#version 330 compatibility \n"
+            "uniform float zmin;"
+            "uniform float deltaz;"
+            "uniform float alpha;"
+
+            "out vec4 fcolor;"
+
+            "vec3 HSVSpectrum(float x)"
+            "{"
+            " float y = 1.0;"
+            " float z = 1.0;"
+            " vec3 RGB = vec3(x, y, z);"
+            " float hi = floor(x * 6.0);"
+            " float f = x * 6.0 - hi;"
+            " float p = z * (1.0-y);"
+            " float q = z * (1.0-y*f);"
+            " float t = z * (1.0-y*(1.0-f));"
+            ""
+            " if(y != 0.0)"
+            " {"
+            " if (hi == 0.0 || hi == 6.0) { RGB = vec3(z, t, p); }"
+            " else if (hi == 1.0) { RGB = vec3(q, z, p); }"
+            " else if (hi == 2.0) { RGB = vec3(p, z, t); }"
+            " else if (hi == 3.0) { RGB = vec3(p, q, z); }"
+            " else if (hi == 4.0) { RGB = vec3(t, p, z); }"
+            " else { RGB = vec3(z, p, q); }"
+            " }"
+            " return RGB;"
+            "}"
+
+            "void main(void)"
+            "{"
+            " vec4 v = vec4(gl_Vertex);"
+            " float val = (v.z-zmin) / deltaz;"
+            " if(val < 0.0)"
+            "   val = 0.0;"
+            " if(val > 1.0)"
+            "   val = 1.0;"
+            " float v2 = (-val * 0.75) + 0.67;"
+            " if(v2 > 1.0)"
+            "  v2 = v2- 1.0;"
+            " vec3 RGB = HSVSpectrum(v2);"
+            " fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
+            " gl_Position = gl_ModelViewProjectionMatrix*v;"
+            "}";
+
 
 
 
@@ -2029,7 +2082,7 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
 
     const std::string fragmentSource =
-            "#version 130 \n"
+            "#version 330 compatibility \n"
             "in vec4 fcolor;"
             "void main()"
             "{"
@@ -2122,6 +2175,35 @@ void OSGWidget::recomputeGlobalZMinMax()
         osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
         state_set->addUniform( new osg::Uniform( "zmin", m_modelsZMin - data->zoffset - data->originalZoffset));
         state_set->addUniform( new osg::Uniform( "deltaz", delta));
+    }
+
+}
+
+bool OSGWidget::isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        return data->useshader;
+    }
+    return false;
+}
+
+void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        osg::StateSet *stateSet= _node->getOrCreateStateSet();
+        data->useshader = _enable;
+        if(_enable)
+        {
+            configureShaders(stateSet);
+        }
+        else
+        {
+            stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
+        }
     }
 
 }
