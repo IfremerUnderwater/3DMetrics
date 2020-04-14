@@ -10,6 +10,7 @@ ChooseLoadingModeDialog::ChooseLoadingModeDialog(QWidget *parent) :
     connect(ui->ok_button,SIGNAL(clicked()),this,SLOT(ok()));
     connect(ui->points_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->triangles_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->triangles_normals_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->triangles_points_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
 }
 
@@ -29,6 +30,10 @@ void ChooseLoadingModeDialog::setMode(LoadingMode _mode)
         ui->triangles_radio->setChecked(true);
         break;
 
+    case LoadingModeTriangleNormals:
+        ui->triangles_normals_radio->setChecked(true);
+        break;
+
     case LoadingModeTrianglePoint:
         ui->triangles_points_radio->setChecked(true);
         break;
@@ -44,6 +49,10 @@ void ChooseLoadingModeDialog::radioToggled()
     if(ui->triangles_radio->isChecked())
     {
         m_mode = LoadingModeTriangle;
+    }
+    if(ui->triangles_normals_radio->isChecked())
+    {
+        m_mode = LoadingModeTriangleNormals;
     }
     if(ui->triangles_points_radio->isChecked())
     {

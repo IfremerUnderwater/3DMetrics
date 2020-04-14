@@ -13,7 +13,7 @@ public :
     virtual void apply( osg::Node &node );
     virtual void apply( osg::Geode &geode );
 
-    double getArea() { return m_area; }
+    double getArea() const { return m_area; }
 
 private :
     double m_area;

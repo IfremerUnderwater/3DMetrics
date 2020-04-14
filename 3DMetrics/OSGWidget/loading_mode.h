@@ -3,6 +3,7 @@
 enum LoadingMode {
     LoadingModePoint,
     LoadingModeTriangle,
+    LoadingModeTriangleNormals,
     LoadingModeTrianglePoint
 };
 

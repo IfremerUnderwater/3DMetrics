@@ -95,7 +95,8 @@ SOURCES += main.cpp \
     profile_depth_dialog.cpp \
     paint_widget.cpp \
     OSGWidget/measure_picker_tool.cpp \
-    OSGWidget/minmax_computation_visitor.cpp
+    OSGWidget/minmax_computation_visitor.cpp \
+    OSGWidget/geometry_type_count_visitor.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -145,7 +146,8 @@ HEADERS  += \
     profile_depth_dialog.h \
     paint_widget.h \
     OSGWidget/measure_picker_tool.h \
-    OSGWidget/minmax_computation_visitor.h
+    OSGWidget/minmax_computation_visitor.h \
+    OSGWidget/geometry_type_count_visitor.h
 
 FORMS    += \
     tdmgui.ui \

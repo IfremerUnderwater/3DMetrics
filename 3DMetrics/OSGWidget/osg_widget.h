@@ -68,7 +68,8 @@ private:
         float originalZoffset;
 
         // use or not shader
-        bool useshader;
+        bool useShader;
+        bool hasMesh;
     };
 
 public:
