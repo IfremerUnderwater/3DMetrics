@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>314</width>
-    <height>176</height>
+    <height>187</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>100</x>
-     <y>130</y>
+     <y>150</y>
      <width>97</width>
      <height>27</height>
     </rect>
@@ -26,39 +26,51 @@
     <string>OK</string>
    </property>
   </widget>
-  <widget class="QSplitter" name="splitter">
+  <widget class="QWidget" name="">
    <property name="geometry">
     <rect>
      <x>30</x>
-     <y>30</y>
-     <width>245</width>
-     <height>69</height>
+     <y>20</y>
+     <width>261</width>
+     <height>112</height>
     </rect>
    </property>
-   <property name="orientation">
-    <enum>Qt::Vertical</enum>
-   </property>
-   <widget class="QRadioButton" name="points_radio">
-    <property name="text">
-     <string>Points in color</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="triangles_radio">
-    <property name="sizePolicy">
-     <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
-      <horstretch>0</horstretch>
-      <verstretch>0</verstretch>
-     </sizepolicy>
-    </property>
-    <property name="text">
-     <string>Triangles - monochrome</string>
-    </property>
-   </widget>
-   <widget class="QRadioButton" name="triangles_points_radio">
-    <property name="text">
-     <string>Triangle (mono) + points (color)</string>
-    </property>
-   </widget>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
+     <widget class="QRadioButton" name="points_radio">
+      <property name="text">
+       <string>Points in color</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="triangles_radio">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Minimum" vsizetype="MinimumExpanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="text">
+       <string>Triangles - monochrome</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="triangles_normals_radio">
+      <property name="text">
+       <string>Triangles with normals (slow)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="triangles_points_radio">
+      <property name="text">
+       <string>Triangle (mono) + points (color)</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
   </widget>
  </widget>
  <resources/>

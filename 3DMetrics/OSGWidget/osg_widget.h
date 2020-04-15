@@ -68,7 +68,8 @@ private:
         float originalZoffset;
 
         // use or not shader
-        bool useshader;
+        bool useShader;
+        bool hasMesh;
     };
 
 public:
@@ -213,6 +214,9 @@ public:
     void setZScale(double _newValue);
 
     static const char *const MEASURE_NAME;
+
+    bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
+    void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);
 
 protected:
 

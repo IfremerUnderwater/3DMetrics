@@ -54,6 +54,7 @@
 
 #include "box_visitor.h"
 #include "minmax_computation_visitor.h"
+#include "geometry_type_count_visitor.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -496,8 +497,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
 
             osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-            osg::Vec3Array* vertices = new osg::Vec3Array;
-            osg::Vec4Array* colors = new osg::Vec4Array;
+            osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+            osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
 
             for(int y = 0; y < nYSize; y++)
             {
@@ -542,7 +543,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             }
 
             // points
-            osg::Geometry* shape_point_drawable = new osg::Geometry();
+            osg::ref_ptr<osg::Geometry> shape_point_drawable = new osg::Geometry();
 
             // pass the created vertex array to the points geometry object.
             shape_point_drawable->setVertexArray(vertices);
@@ -575,7 +576,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
             CPLFree(pafScanline);
         }
-        else if(_mode == LoadingModeTriangle)
+        else if(_mode == LoadingModeTriangle || _mode == LoadingModeTriangleNormals)
         {
             // triangles
 
@@ -604,11 +605,16 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                 //  triangle 2 = ACD
 
 
-                osg::Vec3Array* vertices = new osg::Vec3Array;
-                //*** test
-                //osg::Vec3Array* normals = new osg::Vec3Array;
+                osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
 
-                osg::Vec4Array* colors = new osg::Vec4Array;
+                // for LoadingModeTriangleNormals
+                osg::ref_ptr<osg::Vec3Array> normals;
+                if(_mode == LoadingModeTriangleNormals)
+                {
+                    normals = new osg::Vec3Array;
+                }
+
+                osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
 
                 // point
                 for(int x=0; x<nXSize-1; x++)
@@ -674,33 +680,42 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     vertices->push_back(pointA);
                     vertices->push_back(pointB);
                     vertices->push_back(pointC);
-                    //*** test
-                    //                    osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
-                    //                    normals->push_back(N1);
-                    //                    normals->push_back(N1);
-                    //                    normals->push_back(N1);
+
+                    if(_mode == LoadingModeTriangleNormals)
+                    {
+                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
+                        normals->push_back(N1);
+                        normals->push_back(N1);
+                        normals->push_back(N1);
+                    }
 
                     vertices->push_back(pointA);
                     vertices->push_back(pointC);
                     vertices->push_back(pointD);
-                    //*** test
-                    //                    osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
-                    //                    normals->push_back(N2);
-                    //                    normals->push_back(N2);
-                    //                    normals->push_back(N2);
+
+
+                    if(_mode == LoadingModeTriangleNormals)
+                    {
+                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
+                        normals->push_back(N2);
+                        normals->push_back(N2);
+                        normals->push_back(N2);
+                    }
 
                 }
 
-                // points
-                osg::Geometry* geometry = new osg::Geometry();
+                // triangles
+                osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
                 // pass the created vertex array to the points geometry object.
                 geometry->setVertexArray(vertices);
-                //*** test
-                //geometry->setNormalArray(normals);
-                //geometry->setNormalArray(normals, osg::Array::BIND_PER_PRIMITIVE_SET);
 
-                osg::Vec4 color(0.5,0.1,0.6,1.0);
+                if(_mode == LoadingModeTriangleNormals)
+                {
+                    geometry->setNormalArray(normals, osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
+                }
+
+                osg::Vec4 color(1.0,1.0,1.0,1.0);
                 colors->push_back(color);
                 geometry->setColorArray(colors, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
 
@@ -715,7 +730,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                 //shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
 
                 geode->addDrawable(geometry);
-
 
                 // swap line ponters
                 float * tmp = pafScanline;
@@ -760,7 +774,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
 
                 osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
-                osg::Vec3Array* verticesPoint = new osg::Vec3Array;
+                osg::ref_ptr<osg::Vec3Array> verticesPoint = new osg::Vec3Array;
                 osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
                 osg::ref_ptr<osg::Vec4Array> colorst = new osg::Vec4Array;
 
@@ -852,7 +866,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                 // pass the created vertex array to the points geometry object.
                 geometry->setVertexArray(vertices);
 
-                osg::Vec4 color(0.3,0.1,0.3,0.3);
+                //osg::Vec4 color(0.3,0.1,0.3,0.3);
+                osg::Vec4 color(1.0,1.0,1.0,1.0);
                 colorst->push_back(color);
                 geometry->setColorArray(colorst, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
 
@@ -971,20 +986,25 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     float zmin = minmax.getMin();
     float zmax = minmax.getMax();
 
+    GeometryTypeCountVisitor geomcount;
+    _node->accept(geomcount);
+
     // save original translation
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
     osg::ref_ptr<NodeUserData> data = new NodeUserData();
-    data->useshader = true;
+    data->useShader = true;
     data->zmin = zmin;
     data->zmax = zmax;
     data->zoffset = 0; // will be changed on z offset changed
     data->originalZoffset = model_transform->getMatrix().getTrans().z();
+    data->hasMesh = geomcount.getNbTriangles() > 0;
     _node->setUserData(data);
 
     configureShaders( _node->getOrCreateStateSet() );
     _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
     _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
+    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "hasmesh", data->hasMesh));
 
     setCameraOnNode(_node);
 
@@ -1988,63 +2008,193 @@ void OSGWidget::setZScale(double _newValue)
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )
 {
+    //    const std::string vertexSourceOrg =
+    //            "#version 130 \n"
+    //            "uniform float zmin;"
+    //            "uniform float deltaz;"
+    //            "uniform float alpha;"
+    //            "uniform float pointsize;"
+
+    //            "out vec4 fcolor;"
+
+    //            "void main(void)"
+    //            "{"
+    //            " vec4 v = vec4(gl_Vertex);"
+    //            " float val = (v.z-zmin) / deltaz;"
+    //            " if(val < 0.0)"
+    //            "   val = 0.0;"
+    //            " if(val > 1.0)"
+    //            "   val = 1.0;"
+    //            " float r = val;"
+    //            " float g = val;"
+    //            " float b = 0.5;"
+    //            " fcolor = vec4( r, g, b, alpha);"
+    //            " gl_Position = gl_ModelViewProjectionMatrix*v;"
+    //            " gl_PointSize =pointsize;"
+    //            "}";
+
+    //    const std::string vertexSourceOKcolor =
+    //            "#version 130 \n"
+    //            "uniform float zmin;"
+    //            "uniform float deltaz;"
+    //            "uniform float alpha;"
+    //            "uniform float pointsize;"
+
+    //            "out vec4 fcolor;"
+
+    //            "vec3 HSVSpectrum(float x)"
+    //            "{"
+    //            " float y = 1.0;"
+    //            " float z = 1.0;"
+    //            " vec3 RGB = vec3(x, y, z);"
+    //            " float hi = floor(x * 6.0);"
+    //            " float f = x * 6.0 - hi;"
+    //            " float p = z * (1.0-y);"
+    //            " float q = z * (1.0-y*f);"
+    //            " float t = z * (1.0-y*(1.0-f));"
+    //            ""
+    //            " if(y != 0.0)"
+    //            " {"
+    //            "   if (hi == 0.0 || hi == 6.0) { RGB = vec3(z, t, p); }"
+    //            "   else if (hi == 1.0) { RGB = vec3(q, z, p); }"
+    //            "   else if (hi == 2.0) { RGB = vec3(p, z, t); }"
+    //            "   else if (hi == 3.0) { RGB = vec3(p, q, z); }"
+    //            "   else if (hi == 4.0) { RGB = vec3(t, p, z); }"
+    //            "   else { RGB = vec3(z, p, q); }"
+    //            " }"
+    //            " return RGB;"
+    //            "}"
+
+    //            "void main(void)"
+    //            "{"
+    //            " vec4 v = vec4(gl_Vertex);"
+    //            " float val = (v.z-zmin) / deltaz;"
+    //            " if(val < 0.0)"
+    //            "   val = 0.0;"
+    //            " if(val > 1.0)"
+    //            "   val = 1.0;"
+    //            ""
+    //            " float v2 = (-val * 0.75) + 0.67;"
+    //            " if(v2 > 1.0)"
+    //            "   v2 = v2- 1.0;"
+    //            " vec3 RGB = HSVSpectrum(v2);"
+    //            ""
+    //            " fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
+    //            " gl_Position = gl_ModelViewProjectionMatrix*v;"
+    //            " gl_PointSize = 4.0 * pointsize / gl_Position.w;"
+    //            "}";
+
     const std::string vertexSource =
             "#version 130 \n"
             "uniform float zmin;"
             "uniform float deltaz;"
             "uniform float alpha;"
+            "uniform float pointsize;"
 
+            "out vec3 vertex_light_position;"
+            "out vec3 vertex_light_half_vector;"
+            "out vec3 vertex_normal;"
             "out vec4 fcolor;"
+
+            "vec3 HSVSpectrum(float x)"
+            "{"
+            " float y = 1.0;"
+            " float z = 1.0;"
+            " vec3 RGB = vec3(x, y, z);"
+            " float hi = floor(x * 6.0);"
+            " float f = x * 6.0 - hi;"
+            " float p = z * (1.0-y);"
+            " float q = z * (1.0-y*f);"
+            " float t = z * (1.0-y*(1.0-f));"
+            ""
+            " if(y != 0.0)"
+            " {"
+            "   if (hi == 0.0 || hi == 6.0) { RGB = vec3(z, t, p); }"
+            "   else if (hi == 1.0) { RGB = vec3(q, z, p); }"
+            "   else if (hi == 2.0) { RGB = vec3(p, z, t); }"
+            "   else if (hi == 3.0) { RGB = vec3(p, q, z); }"
+            "   else if (hi == 4.0) { RGB = vec3(t, p, z); }"
+            "   else { RGB = vec3(z, p, q); }"
+            " }"
+            " return RGB;"
+            "}"
 
             "void main(void)"
             "{"
-            " vec4 v = vec4(gl_Vertex);"
-            "float r = (v.z-zmin) / deltaz;"
-            "float g = (v.z-zmin) / deltaz;"
-            "float b = 0.5;"
-            "fcolor = vec4( r, g, b, alpha);"
-            " gl_Position = gl_ModelViewProjectionMatrix*v;"
+            // Calculate the normal value for this vertex, in world coordinates (multiply by gl_NormalMatrix)
+            "    vertex_normal = normalize(gl_NormalMatrix * gl_Normal);"
+            // Calculate the light position for this vertex
+            "    vertex_light_position = normalize(gl_LightSource[0].position.xyz);"
+
+            // Calculate the light's half vector
+            "    vertex_light_half_vector = normalize(gl_LightSource[0].halfVector.xyz);"
+
+            "    vec4 v = vec4(gl_Vertex);"
+            "    float val = (v.z-zmin) / deltaz;"
+            "    if(val < 0.0)"
+            "      val = 0.0;"
+            "    if(val > 1.0)"
+            "      val = 1.0;"
+            "    float v2 = (-val * 0.75) + 0.67;"
+            "    if(v2 > 1.0)"
+            "      v2 = v2- 1.0;"
+            "    vec3 RGB = HSVSpectrum(v2);"
+            "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
+            "    gl_Position = gl_ModelViewProjectionMatrix*v;"
+            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
             "}";
 
-
-
-    //        "#version 130 \n"
-    //        " \n"
-    //        "uniform mat4 osg_ModelViewProjectionMatrix; \n"
-    //        "uniform mat3 osg_NormalMatrix; \n"
-    //        "uniform vec3 ecLightDir; \n"
-    //        " \n"
-    //        "in vec4 osg_Vertex; \n"
-    //        "in vec3 osg_Normal; \n"
-    //        "out vec4 color; \n"
-    //        " \n"
-    //        "void main() \n"
-    //        "{ \n"
-    //        "    vec3 ecNormal = normalize( osg_NormalMatrix * osg_Normal ); \n"
-    //        "    float diffuse = max( dot( ecLightDir, ecNormal ), 0. ); \n"
-    //        "    color = vec4( vec3( diffuse ), 1. ); \n"
-    //        " \n"
-    //        "    gl_Position = osg_ModelViewProjectionMatrix * osg_Vertex; \n"
-    //        "} \n";
     osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
+
+    //    const std::string fragmentSourceOld =
+    //            "#version 330 compatibility \n"
+    //            "in vec4 fcolor;"
+    //            "void main()"
+    //            "{"
+    //            "   gl_FragColor = fcolor;"
+    //            "}";
+
 
     const std::string fragmentSource =
             "#version 130 \n"
+            "uniform bool hasmesh;"
+
             "in vec4 fcolor;"
-            "void main()"
-            "{"
-            "   gl_FragColor = fcolor;"
+            "in vec3 vertex_light_position;"
+            "in vec3 vertex_light_half_vector;"
+            "in vec3 vertex_normal;"
+
+            "void main() {"
+
+            // Calculate the ambient term
+            "    vec4 ambient_color = gl_FrontMaterial.ambient * gl_LightSource[0].ambient + gl_LightModel.ambient * gl_FrontMaterial.ambient;"
+
+            // Calculate the diffuse term
+            "    vec4 diffuse_color = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;"
+
+            // Calculate the specular value
+            "    vec4 specular_color = gl_FrontMaterial.specular * gl_LightSource[0].specular * pow(max(dot(vertex_normal, vertex_light_half_vector), 0.0) , gl_FrontMaterial.shininess);"
+
+            // Set the diffuse value (darkness). This is done with a dot product between the normal and the light
+            // and the maths behind it is explained in the maths section of the site.
+            "    float diffuse_value = max(dot(vertex_normal, vertex_light_position), 0.0);"
+
+            // Set the output color of our current pixel
+            "   vec4 material_color = ambient_color + diffuse_color * diffuse_value + specular_color;"
+            "   vec4 color = fcolor;"
+            "   if(!hasmesh)"
+            "   {"
+            "      color = fcolor;"
+            "   }"
+            "   else"
+            "   {"
+            "      color.r = material_color.r * fcolor.r;"
+            "      color.g = material_color.g * fcolor.g;"
+            "      color.b  = material_color.b * fcolor.b;"
+            "   }"
+            "   gl_FragColor = color;"
             "}";
 
-    //        "#version 130 \n"
-    //        " \n"
-    //        "in vec4 color; \n"
-    //        "out vec4 fragData; \n"
-    //        " \n"
-    //        "void main() \n"
-    //        "{ \n"
-    //        "    fragData = color; \n"
-    //        "} \n";
     osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
 
     osg::Program* program = new osg::Program;
@@ -2053,18 +2203,9 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     program->addShader( vShader );
     stateSet->setAttribute( program, osg::StateAttribute::ON );
 
-    //    osg::Vec3f lightDir( 0., 0.5, 1. );
-    //    lightDir.normalize();
-    //    stateSet->addUniform( new osg::Uniform( "ecLightDir", lightDir ) );
-    //    stateSet->addUniform( new osg::Uniform( "color", osg::Vec4(1.0,1.0,0.0,1.0)));
-    //    stateSet->addUniform( new osg::Uniform( "plat", true));
-
-
-    // WARNING : values from model without translations.....
-    // to be done on init
-    //      stateSet->addUniform( new osg::Uniform( "zmin", -2495.0f + 800.0f));
-    //      stateSet->addUniform( new osg::Uniform( "deltaz", -2480.0f+2495.0f));
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
+    stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
+    stateSet->setMode(GL_VERTEX_PROGRAM_POINT_SIZE, osg::StateAttribute::ON);
 }
 
 
@@ -2123,6 +2264,33 @@ void OSGWidget::recomputeGlobalZMinMax()
         state_set->addUniform( new osg::Uniform( "zmin", m_modelsZMin - data->zoffset - data->originalZoffset));
         state_set->addUniform( new osg::Uniform( "deltaz", delta));
     }
+}
 
+bool OSGWidget::isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        return data->useShader;
+    }
+    return false;
+}
+
+void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        osg::StateSet *stateSet= _node->getOrCreateStateSet();
+        data->useShader = _enable;
+        if(_enable)
+        {
+            configureShaders(stateSet);
+        }
+        else
+        {
+            stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
+        }
+    }
 }
 

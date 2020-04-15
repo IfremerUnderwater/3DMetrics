@@ -1261,6 +1261,10 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             }
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
+
+                TDMModelLayerData layer_data = selected->getPrivateData<TDMModelLayerData>();
+                osg::ref_ptr<osg::Node> node = layer_data.node();
+
                 menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
                 menu->addAction(tr("Edit Model Offset"),this,SLOT(slot_editModelOffset()));
 
@@ -1269,7 +1273,12 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
-
+                QAction *action = new QAction(tr("Use shader"),this);
+                action->setCheckable(true);
+                bool enabled = ui->display_widget->isEnabledShaderOnNode(node);
+                action->setChecked(enabled);
+                QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(slot_toggleUseShader(bool)));
+                menu->addAction(action);
             }
         }
     }
@@ -3738,3 +3747,23 @@ void TDMGui::slot_noNodeClicked()
     ui->attrib_table->clearSelection();
 }
 
+
+void TDMGui::slot_toggleUseShader(bool _state)
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+        ui->display_widget->enableShaderOnNode(node, _state);
+    }
+}
