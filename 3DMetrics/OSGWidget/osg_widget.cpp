@@ -1896,13 +1896,24 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
 void OSGWidget::enableLight(bool _state)
 {
+    bool lighton = true;
     if ( _state )
     {
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::ON);
+        // disable shades on shader
+        lighton = false;
     }
     else
     {
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+        // enable shades on shader
+        lighton = true;
+    }
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "lighton", lighton));
     }
 }
 
@@ -2158,6 +2169,7 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     const std::string fragmentSource =
             "#version 130 \n"
             "uniform bool hasmesh;"
+            "uniform bool lighton;"
 
             "in vec4 fcolor;"
             "in vec3 vertex_light_position;"
@@ -2165,32 +2177,32 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
             "in vec3 vertex_normal;"
 
             "void main() {"
-
-            // Calculate the ambient term
-            "    vec4 ambient_color = gl_FrontMaterial.ambient * gl_LightSource[0].ambient + gl_LightModel.ambient * gl_FrontMaterial.ambient;"
-
-            // Calculate the diffuse term
-            "    vec4 diffuse_color = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;"
-
-            // Calculate the specular value
-            "    vec4 specular_color = gl_FrontMaterial.specular * gl_LightSource[0].specular * pow(max(dot(vertex_normal, vertex_light_half_vector), 0.0) , gl_FrontMaterial.shininess);"
-
-            // Set the diffuse value (darkness). This is done with a dot product between the normal and the light
-            // and the maths behind it is explained in the maths section of the site.
-            "    float diffuse_value = max(dot(vertex_normal, vertex_light_position), 0.0);"
-
-            // Set the output color of our current pixel
-            "   vec4 material_color = ambient_color + diffuse_color * diffuse_value + specular_color;"
             "   vec4 color = fcolor;"
-            "   if(!hasmesh)"
+            "   if(!hasmesh || lighton)"
             "   {"
             "      color = fcolor;"
             "   }"
             "   else"
             "   {"
+            // Calculate the ambient term
+            "      vec4 ambient_color = gl_FrontMaterial.ambient * gl_LightSource[0].ambient + gl_LightModel.ambient * gl_FrontMaterial.ambient;"
+
+            // Calculate the diffuse term
+            "      vec4 diffuse_color = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;"
+
+            // Calculate the specular value
+            "      vec4 specular_color = gl_FrontMaterial.specular * gl_LightSource[0].specular * pow(max(dot(vertex_normal, vertex_light_half_vector), 0.0) , gl_FrontMaterial.shininess);"
+
+            // Set the diffuse value (darkness). This is done with a dot product between the normal and the light
+            // and the maths behind it is explained in the maths section of the site.
+            "      float diffuse_value = max(dot(vertex_normal, vertex_light_position), 0.0);"
+
+            // Set the output color of our current pixel
+            "      vec4 material_color = ambient_color + diffuse_color * diffuse_value + specular_color;"
+
             "      color.r = material_color.r * fcolor.r;"
             "      color.g = material_color.g * fcolor.g;"
-            "      color.b  = material_color.b * fcolor.b;"
+            "      color.b = material_color.b * fcolor.b;"
             "   }"
             "   gl_FragColor = color;"
             "}";
@@ -2205,6 +2217,10 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
 
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
     stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
+
+    bool lighton = (m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->getMode(GL_LIGHTING) == osg::StateAttribute::OFF);
+
+    stateSet->addUniform( new osg::Uniform( "lighton", lighton));
     stateSet->setMode(GL_VERTEX_PROGRAM_POINT_SIZE, osg::StateAttribute::ON);
 }
 
