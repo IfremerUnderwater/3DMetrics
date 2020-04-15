@@ -3426,7 +3426,7 @@ void TDMGui::slot_exportMeasToGeom()
         const char *psz_driver_name = "ESRI Shapefile";
         OGRSFDriver *driver;
         OGRRegisterAll();
-        driver =OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
+        driver =(OGRSFDriver *)OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
         OGRDataSource *data_source;
         data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
 
