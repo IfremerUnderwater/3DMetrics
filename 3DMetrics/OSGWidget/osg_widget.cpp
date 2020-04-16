@@ -335,6 +335,9 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_matrixTransform = new osg::MatrixTransform;
     m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
     m_matrixTransform->addChild(m_globalGroup);
+
+    // use models' min max as default
+    m_useDisplayZMinMax = false;
 }
 
 OSGWidget::~OSGWidget()
@@ -2210,7 +2213,7 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
 
     osg::Program* program = new osg::Program;
-    program->setName("testShader");
+    program->setName("3dMetrixShader");
     program->addShader( fShader );
     program->addShader( vShader );
     stateSet->setAttribute( program, osg::StateAttribute::ON );
@@ -2268,6 +2271,12 @@ void OSGWidget::recomputeGlobalZMinMax()
         return;
     }
     float delta = m_modelsZMax - m_modelsZMin;
+    float min = m_modelsZMin;
+    if(m_useDisplayZMinMax)
+    {
+        delta = m_displayZMax - m_displayZMin;
+        min = m_displayZMin;
+    }
 
     for(unsigned int i=0; i<m_models.size(); i++)
     {
@@ -2277,7 +2286,7 @@ void OSGWidget::recomputeGlobalZMinMax()
             continue;
 
         osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
-        state_set->addUniform( new osg::Uniform( "zmin", m_modelsZMin - data->zoffset - data->originalZoffset));
+        state_set->addUniform( new osg::Uniform( "zmin", min - data->zoffset - data->originalZoffset));
         state_set->addUniform( new osg::Uniform( "deltaz", delta));
     }
 }
@@ -2310,3 +2319,29 @@ void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
     }
 }
 
+
+void OSGWidget::setUseDisplayZMinMaxAndUpdate(bool _use)
+{
+    m_useDisplayZMinMax = _use;
+
+    float delta = m_modelsZMax - m_modelsZMin;
+    float min = m_modelsZMin;
+    if(m_useDisplayZMinMax)
+    {
+        delta = m_displayZMax - m_displayZMin;
+        min = m_displayZMin;
+    }
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+
+        if(data == nullptr)
+            continue;
+
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "zmin", min - data->zoffset - data->originalZoffset));
+        state_set->addUniform( new osg::Uniform( "deltaz", delta));
+    }
+
+}

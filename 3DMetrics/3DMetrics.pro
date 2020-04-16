@@ -96,7 +96,9 @@ SOURCES += main.cpp \
     paint_widget.cpp \
     OSGWidget/measure_picker_tool.cpp \
     OSGWidget/minmax_computation_visitor.cpp \
-    OSGWidget/geometry_type_count_visitor.cpp
+    OSGWidget/geometry_type_count_visitor.cpp \
+    model_depth_colors_chooser.cpp \
+    color_widget.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -147,7 +149,9 @@ HEADERS  += \
     paint_widget.h \
     OSGWidget/measure_picker_tool.h \
     OSGWidget/minmax_computation_visitor.h \
-    OSGWidget/geometry_type_count_visitor.h
+    OSGWidget/geometry_type_count_visitor.h \
+    model_depth_colors_chooser.h \
+    color_widget.h
 
 FORMS    += \
     tdmgui.ui \
@@ -168,7 +172,8 @@ FORMS    += \
     slope_tool.ui \
     choose_loadingmode_dialog.ui \
     z_scale_dialog.ui \
-    profile_depth_dialog.ui
+    profile_depth_dialog.ui \
+    model_depth_colors_chooser.ui
 
 RESOURCES += \
     ressources.qrc

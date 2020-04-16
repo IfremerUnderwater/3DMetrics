@@ -56,6 +56,8 @@
 
 #include "OSGWidget/measure_picker_tool.h"
 
+#include "model_depth_colors_chooser.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -103,9 +105,10 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
     QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
-    QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
+    QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_depthColorsChooser()));
 
     QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+    QObject::connect(ui->depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
 
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
@@ -3684,6 +3687,28 @@ void TDMGui::slot_zScale()
     dialog->activateWindow();
 }
 
+void TDMGui::slot_depthColorsChooser()
+{
+    ModelDepthColorsChooser *dialog = new ModelDepthColorsChooser(this);
+    dialog->setZmin(ui->display_widget->getModelsZMin());
+    dialog->setZmax(ui->display_widget->getModelsZMax());
+    dialog->slot_reset();
+    if(ui->display_widget->isUseDisplayZMinMax())
+    {
+        dialog->setEdit_zmin(ui->display_widget->getDisplayZMin());
+        dialog->slot_zminvaluchanged();
+        dialog->setEdit_zmax(ui->display_widget->getDisplayZMax());
+        dialog->slot_zmaxvaluchanged();
+    }
+    connect(dialog, SIGNAL(signal_minmaxchanged(double,double,bool)), this, SLOT(slot_depthColorChanged(double,double,bool)));
+
+    QPoint point = QCursor::pos();
+    dialog->move(point.x()+20, point.y()+20);
+    dialog->show();
+    dialog->raise();
+    dialog->activateWindow();
+}
+
 void TDMGui::slot_measurePicker()
 {
     MeasurePickerTool *tool = new MeasurePickerTool(this);
@@ -3757,4 +3782,11 @@ void TDMGui::slot_toggleUseShader(bool _state)
         osg::Node* const node = (layer_data.node().get());
         ui->display_widget->enableShaderOnNode(node, _state);
     }
+}
+
+void TDMGui::slot_depthColorChanged(double _zmin, double _zmax, bool _useModelsDefault)
+{
+    ui->display_widget->setDisplayZMin(_zmin);
+    ui->display_widget->setDisplayZMax(_zmax);
+    ui->display_widget->setUseDisplayZMinMaxAndUpdate(!_useModelsDefault);
 }

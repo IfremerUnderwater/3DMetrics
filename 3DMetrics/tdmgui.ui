@@ -69,6 +69,7 @@
     <addaction name="light_action"/>
     <addaction name="separator"/>
     <addaction name="z_scale_action"/>
+    <addaction name="depth_colot_chooser_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -475,6 +476,11 @@
    </property>
    <property name="toolTip">
     <string>Measure Picker</string>
+   </property>
+  </action>
+  <action name="depth_colot_chooser_action">
+   <property name="text">
+    <string>Depth Color Chooser</string>
    </property>
   </action>
  </widget>

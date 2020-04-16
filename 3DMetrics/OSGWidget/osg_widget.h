@@ -218,6 +218,18 @@ public:
     bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
     void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);
 
+    double getModelsZMin() const { return m_modelsZMin; }
+    double getModelsZMax() const { return m_modelsZMax; }
+
+    double getDisplayZMin() const { return m_displayZMin; }
+    void setDisplayZMin(double _zmin) { m_displayZMin = _zmin; }
+
+    double getDisplayZMax() const { return m_displayZMax; }
+    void setDisplayZMax(double _zmax) { m_displayZMax = _zmax; }
+
+    bool isUseDisplayZMinMax() const { return m_useDisplayZMinMax; }
+    void setUseDisplayZMinMaxAndUpdate(bool _use);
+
 protected:
 
     virtual void paintGL();
@@ -235,7 +247,6 @@ protected:
 
     virtual void initializeGL();
     QTimer m_timer;
-
 
 private:
     virtual void onResize( int _width, int _height );
@@ -275,6 +286,12 @@ private:
     void recomputeGlobalZMinMax();
     float m_modelsZMin;
     float m_modelsZMax;
+
+    // for using
+    bool m_useDisplayZMinMax;
+
+    float m_displayZMin;
+    float m_displayZMax;
 };
 
 #endif // OSG_WIDGET_H
