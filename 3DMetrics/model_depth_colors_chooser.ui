@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>363</width>
+    <width>319</width>
     <height>611</height>
    </rect>
   </property>
@@ -26,7 +26,7 @@
   <widget class="QPushButton" name="close_btn">
    <property name="geometry">
     <rect>
-     <x>220</x>
+     <x>211</x>
      <y>570</y>
      <width>97</width>
      <height>27</height>
@@ -39,7 +39,7 @@
   <widget class="QPushButton" name="apply_btn">
    <property name="geometry">
     <rect>
-     <x>220</x>
+     <x>208</x>
      <y>400</y>
      <width>97</width>
      <height>27</height>
@@ -52,8 +52,8 @@
   <widget class="QPushButton" name="reset_btn">
    <property name="geometry">
     <rect>
-     <x>220</x>
-     <y>310</y>
+     <x>200</x>
+     <y>210</y>
      <width>97</width>
      <height>27</height>
     </rect>
@@ -62,12 +62,12 @@
     <string>Reset</string>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>200</x>
      <y>20</y>
-     <width>141</width>
+     <width>111</width>
      <height>81</height>
     </rect>
    </property>
@@ -98,12 +98,12 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>200</x>
-     <y>190</y>
-     <width>141</width>
+     <y>120</y>
+     <width>111</width>
      <height>81</height>
     </rect>
    </property>
@@ -133,6 +133,29 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QComboBox" name="palette_combo">
+   <property name="geometry">
+    <rect>
+     <x>193</x>
+     <y>291</y>
+     <width>121</width>
+     <height>27</height>
+    </rect>
+   </property>
+  </widget>
+  <widget class="QLabel" name="palette_label">
+   <property name="geometry">
+    <rect>
+     <x>202</x>
+     <y>271</y>
+     <width>67</width>
+     <height>17</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Palette</string>
+   </property>
   </widget>
  </widget>
  <customwidgets>

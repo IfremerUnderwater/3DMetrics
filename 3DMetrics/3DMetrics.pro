@@ -98,7 +98,8 @@ SOURCES += main.cpp \
     OSGWidget/minmax_computation_visitor.cpp \
     OSGWidget/geometry_type_count_visitor.cpp \
     model_depth_colors_chooser.cpp \
-    color_widget.cpp
+    color_widget.cpp \
+    OSGWidget/shader_color.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -151,7 +152,8 @@ HEADERS  += \
     OSGWidget/minmax_computation_visitor.h \
     OSGWidget/geometry_type_count_visitor.h \
     model_depth_colors_chooser.h \
-    color_widget.h
+    color_widget.h \
+    OSGWidget/shader_color.h
 
 FORMS    += \
     tdmgui.ui \

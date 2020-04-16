@@ -69,7 +69,9 @@
     <addaction name="light_action"/>
     <addaction name="separator"/>
     <addaction name="z_scale_action"/>
+    <addaction name="separator"/>
     <addaction name="depth_colot_chooser_action"/>
+    <addaction name="show_z_scale_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -481,6 +483,17 @@
   <action name="depth_colot_chooser_action">
    <property name="text">
     <string>Depth Color Chooser</string>
+   </property>
+  </action>
+  <action name="show_z_scale_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Z scale</string>
    </property>
   </action>
  </widget>

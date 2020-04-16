@@ -1,20 +1,27 @@
 #include "model_depth_colors_chooser.h"
 #include "ui_model_depth_colors_chooser.h"
 
+#include "OSGWidget/shader_color.h"
+
 ModelDepthColorsChooser::ModelDepthColorsChooser(QWidget *parent) :
     QDialog(parent),
     ui(new Ui::ModelDepthColorsChooser)
 {
     ui->setupUi(this);
 
-
-    connect(ui->close_btn, SIGNAL(clicked()), this, SLOT(close()));
+    connect(ui->close_btn, SIGNAL(clicked()), this, SLOT(hide()));
     connect(ui->apply_btn, SIGNAL(clicked()), this, SLOT(slot_apply()));
     connect(ui->reset_btn, SIGNAL(clicked()), this, SLOT(slot_reset()));
     connect(ui->zmin_spin, SIGNAL(valueChanged(double)), this, SLOT(slot_zminvaluchanged()));
     connect(ui->zmax_spin, SIGNAL(valueChanged(double)), this, SLOT(slot_zmaxvaluchanged()));
     connect(ui->zmin_check, SIGNAL(clicked(bool)), this, SLOT(slot_zmindefault()));
     connect(ui->zmax_check, SIGNAL(clicked(bool)), this, SLOT(slot_zmaxdefault()));
+
+    // fill ComboBox
+    ui->palette_combo->addItem(ShaderColor::paletteName(ShaderColor::Rainbow));
+    ui->palette_combo->addItem(ShaderColor::paletteName(ShaderColor::BlueToYellow));
+
+    connect(ui->palette_combo, SIGNAL(currentIndexChanged(int)), this, SLOT(slot_paletteChanged()));
 
     // allways on top
     Qt::WindowFlags flags = windowFlags();
@@ -25,6 +32,13 @@ ModelDepthColorsChooser::ModelDepthColorsChooser(QWidget *parent) :
 ModelDepthColorsChooser::~ModelDepthColorsChooser()
 {
     delete ui;
+}
+
+void ModelDepthColorsChooser::setPalette(ShaderColor::Palette _palette)
+{
+    m_palette = _palette;
+    ui->palette_combo->setCurrentText(ShaderColor::paletteName(m_palette));
+    slot_paletteChanged();
 }
 
 void ModelDepthColorsChooser::slot_zminvaluchanged()
@@ -103,5 +117,15 @@ void ModelDepthColorsChooser::slot_apply()
     if(!ui->zmax_check->isChecked())
         usedefault = false;
 
-    emit signal_minmaxchanged(m_edit_zmin, m_edit_zmax, usedefault);
+    emit signal_minmaxchanged(m_edit_zmin, m_edit_zmax, usedefault, m_palette);
+}
+
+void ModelDepthColorsChooser::slot_paletteChanged()
+{
+    if(ui->palette_combo->currentText() == ShaderColor::paletteName(ShaderColor::Rainbow))
+        m_palette = ShaderColor::Rainbow;
+    if(ui->palette_combo->currentText() == ShaderColor::paletteName(ShaderColor::BlueToYellow))
+        m_palette = ShaderColor::BlueToYellow;
+    ui->color_widget->setColorPalette(m_palette);
+    ui->color_widget->update();
 }

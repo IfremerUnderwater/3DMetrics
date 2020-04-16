@@ -2,6 +2,7 @@
 #define COLORWIDGET_H
 
 #include <QWidget>
+#include "OSGWidget/shader_color.h"
 
 class ColorWidget : public QWidget
 {
@@ -51,7 +52,7 @@ public:
         m_edit_zmax = edit_zmax;
     }
 
-
+    void setColorPalette(ShaderColor::Palette _palette) { m_colorPalette = _palette; }
 
 protected:
     void paintEvent(QPaintEvent *event);
@@ -66,6 +67,8 @@ private:
 
     double m_edit_zmin;
     double m_edit_zmax;
+
+    ShaderColor::Palette m_colorPalette;
 
 };
 

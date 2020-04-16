@@ -2,6 +2,7 @@
 #define OSG_WIDGET_H
 
 #include <QGLWidget>
+#include "shader_color.h"
 
 #ifdef __APPLE__
 /* FIX COMPILE BUG:
@@ -230,10 +231,16 @@ public:
     bool isUseDisplayZMinMax() const { return m_useDisplayZMinMax; }
     void setUseDisplayZMinMaxAndUpdate(bool _use);
 
-protected:
+    bool isZScaleShowing() const { return m_showZScale; }
+    void showZScale(bool _show);
 
+    ShaderColor::Palette getColorPalette() const { return m_colorPalette; }
+    void setColorPalette(ShaderColor::Palette _palette);
+
+protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );
+    void drawOverlay();
 
     virtual void keyPressEvent( QKeyEvent* _event );
     virtual void keyReleaseEvent( QKeyEvent* _event );
@@ -287,11 +294,14 @@ private:
     float m_modelsZMin;
     float m_modelsZMax;
 
-    // for using
+    // for using custom values
     bool m_useDisplayZMinMax;
 
     float m_displayZMin;
     float m_displayZMax;
+
+    bool m_showZScale;
+    ShaderColor::Palette m_colorPalette;
 };
 
 #endif // OSG_WIDGET_H

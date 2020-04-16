@@ -55,6 +55,7 @@
 #include "box_visitor.h"
 #include "minmax_computation_visitor.h"
 #include "geometry_type_count_visitor.h"
+#include "shader_color.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -338,6 +339,11 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     // use models' min max as default
     m_useDisplayZMinMax = false;
+
+    // show zscale by default
+    m_showZScale = true;
+
+    m_colorPalette = ShaderColor::Rainbow;
 }
 
 OSGWidget::~OSGWidget()
@@ -1197,7 +1203,53 @@ void OSGWidget::initializeGL(){
 void OSGWidget::paintGL()
 {
     m_viewer->frame();
+
+    // paint overlay
+    drawOverlay();
 }
+
+void OSGWidget::drawOverlay()
+{
+    if(!m_showZScale)
+        return;
+
+    QPainter painter(this);
+    painter.beginNativePainting();
+
+    QPen pen(Qt::gray, 1, Qt::SolidLine);
+    painter.setPen(pen);
+    QFont font = painter.font();
+    font.setPixelSize(12);
+    painter.setFont(font);
+
+    float minval = m_modelsZMin;
+    float maxval = m_modelsZMax;
+
+    if(m_useDisplayZMinMax)
+    {
+        minval = m_displayZMin;
+        maxval = m_displayZMax;
+    }
+
+    QString min = QString::number(minval ,'f',1);
+    painter.drawText( width() - 30 - 53, height() - 10, min + "m");
+
+    QString max = QString::number(maxval ,'f',1);
+    painter.drawText( width() - 30 - 53, height() - 10-255, max + "m");
+
+
+    // draw palette
+    for(int i=0; i<256; i++)
+    {
+        QColor color = ShaderColor::color(i / 255.0, m_colorPalette);
+        pen.setColor(color);
+        painter.setPen(pen);
+        int y = height() - 10 - i;
+        painter.drawLine( width() - 30,y , width() - 10, y);
+    }
+    painter.endNativePainting();
+}
+
 
 void OSGWidget::resizeGL( int _width, int _height )
 {
@@ -2021,84 +2073,8 @@ void OSGWidget::setZScale(double _newValue)
 }
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )
-{
-    //    const std::string vertexSourceOrg =
-    //            "#version 130 \n"
-    //            "uniform float zmin;"
-    //            "uniform float deltaz;"
-    //            "uniform float alpha;"
-    //            "uniform float pointsize;"
-
-    //            "out vec4 fcolor;"
-
-    //            "void main(void)"
-    //            "{"
-    //            " vec4 v = vec4(gl_Vertex);"
-    //            " float val = (v.z-zmin) / deltaz;"
-    //            " if(val < 0.0)"
-    //            "   val = 0.0;"
-    //            " if(val > 1.0)"
-    //            "   val = 1.0;"
-    //            " float r = val;"
-    //            " float g = val;"
-    //            " float b = 0.5;"
-    //            " fcolor = vec4( r, g, b, alpha);"
-    //            " gl_Position = gl_ModelViewProjectionMatrix*v;"
-    //            " gl_PointSize =pointsize;"
-    //            "}";
-
-    //    const std::string vertexSourceOKcolor =
-    //            "#version 130 \n"
-    //            "uniform float zmin;"
-    //            "uniform float deltaz;"
-    //            "uniform float alpha;"
-    //            "uniform float pointsize;"
-
-    //            "out vec4 fcolor;"
-
-    //            "vec3 HSVSpectrum(float x)"
-    //            "{"
-    //            " float y = 1.0;"
-    //            " float z = 1.0;"
-    //            " vec3 RGB = vec3(x, y, z);"
-    //            " float hi = floor(x * 6.0);"
-    //            " float f = x * 6.0 - hi;"
-    //            " float p = z * (1.0-y);"
-    //            " float q = z * (1.0-y*f);"
-    //            " float t = z * (1.0-y*(1.0-f));"
-    //            ""
-    //            " if(y != 0.0)"
-    //            " {"
-    //            "   if (hi == 0.0 || hi == 6.0) { RGB = vec3(z, t, p); }"
-    //            "   else if (hi == 1.0) { RGB = vec3(q, z, p); }"
-    //            "   else if (hi == 2.0) { RGB = vec3(p, z, t); }"
-    //            "   else if (hi == 3.0) { RGB = vec3(p, q, z); }"
-    //            "   else if (hi == 4.0) { RGB = vec3(t, p, z); }"
-    //            "   else { RGB = vec3(z, p, q); }"
-    //            " }"
-    //            " return RGB;"
-    //            "}"
-
-    //            "void main(void)"
-    //            "{"
-    //            " vec4 v = vec4(gl_Vertex);"
-    //            " float val = (v.z-zmin) / deltaz;"
-    //            " if(val < 0.0)"
-    //            "   val = 0.0;"
-    //            " if(val > 1.0)"
-    //            "   val = 1.0;"
-    //            ""
-    //            " float v2 = (-val * 0.75) + 0.67;"
-    //            " if(v2 > 1.0)"
-    //            "   v2 = v2- 1.0;"
-    //            " vec3 RGB = HSVSpectrum(v2);"
-    //            ""
-    //            " fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
-    //            " gl_Position = gl_ModelViewProjectionMatrix*v;"
-    //            " gl_PointSize = 4.0 * pointsize / gl_Position.w;"
-    //            "}";
-
-    const std::string vertexSource =
+{  
+    const std::string vertexSourceBegin =
             "#version 130 \n"
             "uniform float zmin;"
             "uniform float deltaz;"
@@ -2108,31 +2084,11 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
             "out vec3 vertex_light_position;"
             "out vec3 vertex_light_half_vector;"
             "out vec3 vertex_normal;"
-            "out vec4 fcolor;"
+            "out vec4 fcolor;";
 
-            "vec3 HSVSpectrum(float x)"
-            "{"
-            " float y = 1.0;"
-            " float z = 1.0;"
-            " vec3 RGB = vec3(x, y, z);"
-            " float hi = floor(x * 6.0);"
-            " float f = x * 6.0 - hi;"
-            " float p = z * (1.0-y);"
-            " float q = z * (1.0-y*f);"
-            " float t = z * (1.0-y*(1.0-f));"
-            ""
-            " if(y != 0.0)"
-            " {"
-            "   if (hi == 0.0 || hi == 6.0) { RGB = vec3(z, t, p); }"
-            "   else if (hi == 1.0) { RGB = vec3(q, z, p); }"
-            "   else if (hi == 2.0) { RGB = vec3(p, z, t); }"
-            "   else if (hi == 3.0) { RGB = vec3(p, q, z); }"
-            "   else if (hi == 4.0) { RGB = vec3(t, p, z); }"
-            "   else { RGB = vec3(z, p, q); }"
-            " }"
-            " return RGB;"
-            "}"
 
+
+    const std::string vertexSourceEnd =
             "void main(void)"
             "{"
             // Calculate the normal value for this vertex, in world coordinates (multiply by gl_NormalMatrix)
@@ -2145,21 +2101,20 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
 
             "    vec4 v = vec4(gl_Vertex);"
             "    float val = (v.z-zmin) / deltaz;"
-            "    if(val < 0.0)"
-            "      val = 0.0;"
-            "    if(val > 1.0)"
-            "      val = 1.0;"
-            "    float v2 = (-val * 0.75) + 0.67;"
-            "    if(v2 > 1.0)"
-            "      v2 = v2- 1.0;"
-            "    vec3 RGB = HSVSpectrum(v2);"
+            ""
+            "    vec3 RGB = colorPalette(val);"
             "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
             "    gl_Position = gl_ModelViewProjectionMatrix*v;"
             "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
             "}";
 
+    std::string vertexSource = vertexSourceBegin;
+    vertexSource += ShaderColor::shaderSource(m_colorPalette);
+    vertexSource += vertexSourceEnd;
+
     osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
 
+    // without shading
     //    const std::string fragmentSourceOld =
     //            "#version 330 compatibility \n"
     //            "in vec4 fcolor;"
@@ -2343,5 +2298,29 @@ void OSGWidget::setUseDisplayZMinMaxAndUpdate(bool _use)
         state_set->addUniform( new osg::Uniform( "zmin", min - data->zoffset - data->originalZoffset));
         state_set->addUniform( new osg::Uniform( "deltaz", delta));
     }
+}
 
+void OSGWidget::showZScale(bool _show)
+{
+    m_showZScale = _show;
+    update();
+}
+
+void OSGWidget::setColorPalette(ShaderColor::Palette _palette)
+{
+    m_colorPalette = _palette;
+
+    // process all models
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+        if(data != nullptr)
+        {
+            if(data->useShader)
+            {
+                osg::StateSet *stateSet= m_models[i]->getOrCreateStateSet();
+                configureShaders(stateSet);
+            }
+        }
+    }
 }

@@ -2,6 +2,7 @@
 #define MODEL_DEPTH_COLORS_CHOOSER_H
 
 #include <QDialog>
+#include "OSGWidget/shader_color.h"
 
 namespace Ui {
 class ModelDepthColorsChooser;
@@ -55,9 +56,11 @@ public:
         m_edit_zmax = edit_zmax;
     }
 
+    void setPalette(ShaderColor::Palette _palette);
+    ShaderColor::Palette getPalette() const { return m_palette; }
 
 signals:
-    void signal_minmaxchanged(double _zmin, double _zmax, bool _useModelsDefault);
+    void signal_minmaxchanged(double _zmin, double _zmax, bool _useModelsDefault, ShaderColor::Palette _palette);
 
 public slots:
     void slot_zminvaluchanged();
@@ -68,6 +71,8 @@ public slots:
     void slot_reset();
     void slot_apply();
 
+    void slot_paletteChanged();
+
 private:
     Ui::ModelDepthColorsChooser *ui;
 
@@ -76,6 +81,8 @@ private:
 
     double m_edit_zmin;
     double m_edit_zmax;
+
+    ShaderColor::Palette m_palette;
 };
 
 #endif // MODEL_DEPTH_COLORS_CHOOSER_H

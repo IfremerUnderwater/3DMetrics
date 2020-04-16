@@ -1,6 +1,7 @@
 #include "color_widget.h"
 #include <QPainter>
 
+#include "OSGWidget/shader_color.h"
 #include <osg/Vec3f>
 
 static const int MARGINX = 65; // left and right
@@ -9,34 +10,11 @@ static const int LEGENDY = 10;
 
 ColorWidget::ColorWidget(QWidget *parent) : QWidget(parent)
 {
-
+m_palette : ShaderColor::Rainbow;
 }
 
 void ColorWidget::redraw()
 {
-
-}
-
-static osg::Vec3f HSVSpectrum(float x)
-{
-    float y = 1.0;
-    float z = 1.0;
-    osg::Vec3f RGB(x, y, z);
-    float hi = floor(x * 6.0);
-    float f = x * 6.0 - hi;
-    float p = z * (1.0-y);
-    float q = z * (1.0-y*f);
-    float t = z * (1.0-y*(1.0-f));
-    if(y != 0.0)
-    {
-        if (hi == 0.0 || hi == 6.0) { RGB = osg::Vec3f(z, t, p); }
-        else if (hi == 1.0) { RGB = osg::Vec3f(q, z, p); }
-        else if (hi == 2.0) { RGB = osg::Vec3f(p, z, t); }
-        else if (hi == 3.0) { RGB = osg::Vec3f(p, q, z); }
-        else if (hi == 4.0) { RGB = osg::Vec3f(t, p, z); }
-        else { RGB = osg::Vec3f(z, p, q); }
-    }
-    return RGB;
 
 }
 
@@ -95,11 +73,8 @@ void ColorWidget::paintEvent(QPaintEvent * /*event*/)
             val = (z - m_edit_zmin) / (m_edit_zmax - m_edit_zmin);
         }
 
-        float v2 = (-val * 0.75) + 0.67;
-        if(v2 > 1.0)
-            v2 = v2- 1.0;
-        osg::Vec3f RGB = HSVSpectrum(v2);
-        QColor color(RGB[0]*255, RGB[1]*255, RGB[2]*255);
+        QColor color = ShaderColor::color(val, m_colorPalette);
+
         // draw line
         QPen pen(color, 1, Qt::SolidLine);
         painter.setPen(pen);
@@ -110,7 +85,8 @@ void ColorWidget::paintEvent(QPaintEvent * /*event*/)
     QPen pen(Qt::black, 1, Qt::SolidLine);
     painter.setPen(pen);
     QFont font = painter.font();
-    font.setPixelSize(7);
+    font.setPixelSize(14);
+    painter.setFont(font);
 
     painter.drawText(0, LEGENDY , "Models");
     painter.drawText(w+MARGINX, LEGENDY , "Edit");
@@ -121,12 +97,12 @@ void ColorWidget::paintEvent(QPaintEvent * /*event*/)
     painter.drawText(0, height() - zminpos , min + " m");
 
     QString max = QString::number(m_zmax ,'f',1);
-    painter.drawText(0, height() - zmaxpos , max + " m");
+    painter.drawText(0, height() - zmaxpos +3 , max + " m");
 
     // right : edited zmin and zmax
     min = QString::number(m_edit_zmin ,'f',1);
-    painter.drawText(w+MARGINX, height() - ezminpos , min + " m");
+    painter.drawText(w+MARGINX+1, height() - ezminpos , min + " m");
 
     max = QString::number(m_edit_zmax ,'f',1);
-    painter.drawText(w+MARGINX, height() - ezmaxpos , max + " m");
+    painter.drawText(w+MARGINX+1, height() - ezmaxpos +3, max + " m");
 }
