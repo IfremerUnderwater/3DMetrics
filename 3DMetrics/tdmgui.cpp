@@ -63,6 +63,8 @@
 
 #include "OSGWidget/measure_picker_tool.h"
 
+#include "model_depth_colors_chooser.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -113,8 +115,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
     QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
     QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
-
     QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+    QObject::connect(ui->depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
+    QObject::connect(ui->show_z_scale_action, SIGNAL(triggered()),this, SLOT(slot_toggleZScale()));
 
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
@@ -278,6 +281,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     // export measurement to geometry
     connect(&m_meas_geom_export_dialog, SIGNAL(accepted()),this,SLOT(slot_exportMeasToGeom()));
 
+    m_depth_color_chooser_dialog.setPalette(ShaderColor::Rainbow);
+    connect(&m_depth_color_chooser_dialog, SIGNAL(signal_minmaxchanged(double,double,bool,ShaderColor::Palette)), this, SLOT(slot_depthColorChanged(double,double,bool,ShaderColor::Palette)));
 }
 
 TDMGui::~TDMGui()
@@ -3304,6 +3309,18 @@ void TDMGui::slot_toggleLight()
     }
 }
 
+void TDMGui::slot_toggleZScale()
+{
+    if(ui->show_z_scale_action->isChecked())
+    {
+        ui->display_widget->showZScale(true);
+    }
+    else
+    {
+        ui->display_widget->showZScale(false);
+    }
+}
+
 void TDMGui::slot_showExportMeasToGeom()
 {
     m_meas_geom_export_dialog.show();
@@ -3693,6 +3710,22 @@ void TDMGui::slot_zScale()
     dialog->activateWindow();
 }
 
+void TDMGui::slot_depthColorsChooser()
+{
+    m_depth_color_chooser_dialog.setZmin(ui->display_widget->getModelsZMin());
+    m_depth_color_chooser_dialog.setZmax(ui->display_widget->getModelsZMax());
+    m_depth_color_chooser_dialog.slot_reset();
+    if(ui->display_widget->isUseDisplayZMinMax())
+    {
+        m_depth_color_chooser_dialog.setEdit_zmin(ui->display_widget->getDisplayZMin());
+        m_depth_color_chooser_dialog.slot_zminvaluchanged();
+        m_depth_color_chooser_dialog.setEdit_zmax(ui->display_widget->getDisplayZMax());
+        m_depth_color_chooser_dialog.slot_zmaxvaluchanged();
+    }
+
+    m_depth_color_chooser_dialog.show();
+}
+
 void TDMGui::slot_measurePicker()
 {
     MeasurePickerTool *tool = new MeasurePickerTool(this);
@@ -3766,4 +3799,13 @@ void TDMGui::slot_toggleUseShader(bool _state)
         osg::Node* const node = (layer_data.node().get());
         ui->display_widget->enableShaderOnNode(node, _state);
     }
+}
+
+
+void TDMGui::slot_depthColorChanged(double _zmin, double _zmax, bool _useModelsDefault, ShaderColor::Palette _palette)
+{
+    ui->display_widget->setDisplayZMin(_zmin);
+    ui->display_widget->setDisplayZMax(_zmax);
+    ui->display_widget->setUseDisplayZMinMaxAndUpdate(!_useModelsDefault);
+    ui->display_widget->setColorPalette(_palette);
 }

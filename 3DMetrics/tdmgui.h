@@ -13,7 +13,7 @@
 #include "osg_axes.h"
 #include "file_open_thread.h"
 #include "meas_geom_export_dialog.h"
-//#include "edit_transparency_model.h"
+#include "model_depth_colors_chooser.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -79,6 +79,8 @@ private:
 
     MeasGeomExportDialog m_meas_geom_export_dialog;
 
+    ModelDepthColorsChooser m_depth_color_chooser_dialog;
+
     // Settings variable
     QSettings m_settings;
     QString m_path_model3D;
@@ -125,6 +127,9 @@ public slots:
     void slot_lightShorcut();
     void slot_toggleLight();
     void slot_zScale();
+    void slot_depthColorsChooser();
+    void slot_depthColorChanged(double _zmin, double _zmax, bool _useModelsDefault, ShaderColor::Palette _palette);
+    void slot_toggleZScale();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);

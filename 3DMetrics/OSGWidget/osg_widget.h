@@ -2,6 +2,7 @@
 #define OSG_WIDGET_H
 
 #include <QGLWidget>
+#include "shader_color.h"
 
 #ifdef __APPLE__
 /* FIX COMPILE BUG:
@@ -218,10 +219,28 @@ public:
     bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
     void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);
 
-protected:
+    double getModelsZMin() const { return m_modelsZMin; }
+    double getModelsZMax() const { return m_modelsZMax; }
 
+    double getDisplayZMin() const { return m_displayZMin; }
+    void setDisplayZMin(double _zmin) { m_displayZMin = _zmin; }
+
+    double getDisplayZMax() const { return m_displayZMax; }
+    void setDisplayZMax(double _zmax) { m_displayZMax = _zmax; }
+
+    bool isUseDisplayZMinMax() const { return m_useDisplayZMinMax; }
+    void setUseDisplayZMinMaxAndUpdate(bool _use);
+
+    bool isZScaleShowing() const { return m_showZScale; }
+    void showZScale(bool _show);
+
+    ShaderColor::Palette getColorPalette() const { return m_colorPalette; }
+    void setColorPalette(ShaderColor::Palette _palette);
+
+protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );
+    void drawOverlay();
 
     virtual void keyPressEvent( QKeyEvent* _event );
     virtual void keyReleaseEvent( QKeyEvent* _event );
@@ -235,7 +254,6 @@ protected:
 
     virtual void initializeGL();
     QTimer m_timer;
-
 
 private:
     virtual void onResize( int _width, int _height );
@@ -275,6 +293,15 @@ private:
     void recomputeGlobalZMinMax();
     float m_modelsZMin;
     float m_modelsZMax;
+
+    // for using custom values
+    bool m_useDisplayZMinMax;
+
+    float m_displayZMin;
+    float m_displayZMax;
+
+    bool m_showZScale;
+    ShaderColor::Palette m_colorPalette;
 };
 
 #endif // OSG_WIDGET_H
