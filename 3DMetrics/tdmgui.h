@@ -100,6 +100,9 @@ private:
     QShortcut m_delete_shortcut;
     QShortcut m_light_shortcut;
 
+    void unselectAllMeasureGraph();
+    void selectMeasureGraph(osg::Geode *_geode);
+
 public slots:
 
     void slot_open3dModel();
@@ -181,8 +184,10 @@ public slots:
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
+    void slot_attribTableClick(int _row, int _column);
     void slot_attribTableDoubleClick(int _row, int _column);
     void slot_attribTableCellChanged(int _row, int _column);
+    void slot_attribTableKeyUpDown();
 
     // attribute table context menu
     void slot_addAttributeLine();

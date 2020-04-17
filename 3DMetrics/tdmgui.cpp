@@ -4,6 +4,9 @@
 #include <QProcess>
 #include <QMessageBox>
 
+#include <osg/Point>
+#include <osg/LineWidth>
+
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
 
@@ -64,6 +67,8 @@
 #include "OSGWidget/measure_picker_tool.h"
 
 #include "model_depth_colors_chooser.h"
+
+#include "qtable_arrowkey_detector.h"
 
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
@@ -153,8 +158,13 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->attrib_table->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(ui->attrib_table,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_attribTableContextMenu(const QPoint &)));
+    connect(ui->attrib_table,SIGNAL(cellClicked(int, int)), this, SLOT(slot_attribTableClick(int, int)));
     connect(ui->attrib_table,SIGNAL(cellDoubleClicked(int, int)), this, SLOT(slot_attribTableDoubleClick(int, int)));
     connect(ui->attrib_table, SIGNAL(cellChanged(int, int)), this, SLOT(slot_attribTableCellChanged(int, int)));
+
+    QTableArrowKeyDetector *arrowkey = new QTableArrowKeyDetector();
+    ui->attrib_table->installEventFilter(arrowkey);
+    connect(arrowkey, SIGNAL(signal_KeyUpDown()), this, SLOT(slot_attribTableKeyUpDown()));
 
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
@@ -176,6 +186,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->import_old_measurement_format_action->setEnabled(false);
 
     updateAttributeTable(0);
+
 
     // tools
     OSGWidgetTool::initialize(ui->display_widget);
@@ -1104,6 +1115,8 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
     OSGWidgetTool::instance()->endTool();
     ui->measure_picker_action->setEnabled(false);
 
+    unselectAllMeasureGraph();
+
     if(_desel.length() > 0)
     {
         if(!_desel.first().isEmpty() && _desel.first().isValid())
@@ -1479,6 +1492,7 @@ void TDMGui::slot_editMeasurement()
 void TDMGui::slot_patternChanged(MeasPattern _pattern)
 {    
     OSGWidgetTool::instance()->endTool();
+    unselectAllMeasureGraph();
 
     //** + confirmation
     QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
@@ -1661,6 +1675,8 @@ void TDMGui::slot_patternChanged(MeasPattern _pattern)
 
 void TDMGui::updateAttributeTable(TdmLayerItem *_item)
 {
+    unselectAllMeasureGraph();
+
     QTableWidget *table = ui->attrib_table;
     if(_item != nullptr && _item->type() == TdmLayerItem::MeasurementLayer)
     {
@@ -1956,6 +1972,25 @@ void TDMGui::slot_deleteAttributeLine()
     }
 }
 
+void TDMGui::slot_attribTableClick(int _row, int _column)
+{
+    if(_column == 0)
+    {
+        // select line
+        slot_attribTableKeyUpDown();
+        return;
+    }
+
+    if( m_current_item->rows().size() > 0)
+    {
+        unselectAllMeasureGraph();
+
+        osg::Geode *geode  = (m_current_item->rows()[_row])->get(_column-1);
+        if(geode != nullptr)
+            selectMeasureGraph(geode);
+    }
+}
+
 void TDMGui::slot_attribTableDoubleClick(int _row, int _column)
 {
     QTableWidget *table = ui->attrib_table;
@@ -2039,6 +2074,37 @@ void TDMGui::slot_attribTableCellChanged(int _row, int _column)
     }
     default:
         break;
+    }
+}
+
+void TDMGui::slot_attribTableKeyUpDown()
+{
+    unselectAllMeasureGraph();
+
+    int nbFields = m_current_pattern.getNbFields();
+
+    if(m_current_item->rows().size() > 0)
+    {
+        QTableWidget *table = ui->attrib_table;
+        QItemSelectionModel *select = table->selectionModel();
+        if(select->hasSelection())
+        {
+            QModelIndex index = select->selectedRows().at(0);
+            int row = index.row();
+            osgMeasurementRow *mrow = m_current_item->rows()[row];
+            for(int f=0; f<nbFields; f++)
+            {
+                MeasType::type t = m_current_pattern.fieldType(f);
+                if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+                {
+                    osg::ref_ptr<osg::Geode> geode = mrow->get(f);
+                    if(geode != nullptr)
+                    {
+                        selectMeasureGraph(geode);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -3739,6 +3805,8 @@ void TDMGui::slot_measurePicker()
 
 void TDMGui::slot_nodeClicked(osg::Node *_node)
 {
+    unselectAllMeasureGraph();
+
     // find node in measures
     if(m_current_item != nullptr && m_current_item->rows().size() > 0)
     {
@@ -3768,8 +3836,19 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
 
                         statusBar()->showMessage(message);
 
+                        //TEST
+                        int n = geode->getNumChildren();
+                        for(int i=0; i<n; i++)
+                        {
+                            osg::Node *node = geode->getChild(i);
+                            osg::Geometry *geo = node->asGeometry();
+                            geo->getOrCreateStateSet()->setAttribute(new osg::Point(8.0f), osg::StateAttribute::ON);
+                            geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
+                        }
+
                         return;
                     }
+
                 }
             }
         }
@@ -3778,10 +3857,61 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
     ui->attrib_table->clearSelection();
 }
 
+void TDMGui::unselectAllMeasureGraph()
+{
+    if(m_current_item == nullptr)
+        return;
+
+    int nbFields = m_current_pattern.getNbFields();
+
+    // find item
+    for(unsigned int i=0; i<m_current_item->rows().size(); i++ )
+    {
+        osgMeasurementRow *row = m_current_item->rows()[i];
+        for(int f=0; f<nbFields; f++)
+        {
+            MeasType::type t = m_current_pattern.fieldType(f);
+            if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+            {
+                osg::ref_ptr<osg::Geode> geode = row->get(f);
+
+                int n = geode->getNumChildren();
+                for(int i=0; i<n; i++)
+                {
+                    osg::Node *node = geode->getChild(i);
+                    osg::Geometry *geo = node->asGeometry();
+                    if(geo != nullptr)
+                    {
+                        geo->getOrCreateStateSet()->setAttribute(new osg::Point(4.0f), osg::StateAttribute::ON);
+                        geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(4.0f), osg::StateAttribute::ON);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void TDMGui::selectMeasureGraph(osg::Geode *_geode)
+{
+    int n = _geode->getNumChildren();
+    for(int i=0; i<n; i++)
+    {
+        osg::Node *node = _geode->getChild(i);
+
+        osg::Geometry *geo = node->asGeometry();
+        if(geo != nullptr)
+        {
+            geo->getOrCreateStateSet()->setAttribute(new osg::Point(8.0f), osg::StateAttribute::ON);
+            geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
+        }
+    }
+}
+
 void TDMGui::slot_noNodeClicked()
 {
     statusBar()->showMessage(tr("Selected : none"));
     ui->attrib_table->clearSelection();
+    unselectAllMeasureGraph();
 }
 
 

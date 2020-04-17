@@ -274,6 +274,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_ref_lat_lon.setY(INVALID_VALUE);
     m_ref_alt = INVALID_VALUE;
 
+
     //osgDB::Registry::instance()->setLibraryFilePathList("/Users/tim/code/3DMetricWorkspace/Run/Release/3DMetrics.app/Contents/osgPlugins");
 
     float aspectRatio = static_cast<float>( this->width() ) / static_cast<float>( this->height() );
@@ -342,6 +343,12 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     // show zscale by default
     m_showZScale = true;
+
+    m_modelsZMin = 0;
+    m_modelsZMax= 0;
+
+    m_displayZMin = 0;
+    m_displayZMax = 0;
 
     m_colorPalette = ShaderColor::Rainbow;
     m_overlay = new OverlayWidget(this);
