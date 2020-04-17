@@ -10,7 +10,7 @@ static const int LEGENDY = 10;
 
 ColorWidget::ColorWidget(QWidget *parent) : QWidget(parent)
 {
-m_palette : ShaderColor::Rainbow;
+    m_colorPalette = ShaderColor::Rainbow;
 }
 
 void ColorWidget::redraw()

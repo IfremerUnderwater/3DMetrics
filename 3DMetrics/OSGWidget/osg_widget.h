@@ -3,6 +3,7 @@
 
 #include <QGLWidget>
 #include "shader_color.h"
+#include "overlay_widget.h"
 
 #ifdef __APPLE__
 /* FIX COMPILE BUG:
@@ -237,10 +238,15 @@ public:
     ShaderColor::Palette getColorPalette() const { return m_colorPalette; }
     void setColorPalette(ShaderColor::Palette _palette);
 
+    double getRefAlt() const { return m_ref_alt == INVALID_VALUE ? 0 : m_ref_alt; }
+
 protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );
-    void drawOverlay();
+    virtual void paintOverlayGL();
+    //virtual void paintEvent(QPaintEvent*event);
+
+    //void drawOverlay();
 
     virtual void keyPressEvent( QKeyEvent* _event );
     virtual void keyReleaseEvent( QKeyEvent* _event );
@@ -302,6 +308,8 @@ private:
 
     bool m_showZScale;
     ShaderColor::Palette m_colorPalette;
+
+    OverlayWidget *m_overlay;
 };
 
 #endif // OSG_WIDGET_H
