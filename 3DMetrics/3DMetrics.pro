@@ -100,7 +100,8 @@ SOURCES += main.cpp \
     model_depth_colors_chooser.cpp \
     color_widget.cpp \
     OSGWidget/shader_color.cpp \
-    OSGWidget/overlay_widget.cpp
+    OSGWidget/overlay_widget.cpp \
+    qtable_arrowkey_detector.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -155,7 +156,8 @@ HEADERS  += \
     model_depth_colors_chooser.h \
     color_widget.h \
     OSGWidget/shader_color.h \
-    OSGWidget/overlay_widget.h
+    OSGWidget/overlay_widget.h \
+    qtable_arrowkey_detector.h
 
 FORMS    += \
     tdmgui.ui \
