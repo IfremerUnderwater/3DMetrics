@@ -46,6 +46,7 @@ public:
     {
         m_edit_zmin = edit_zmin;
     }
+
     double edit_zmax() const
     {
         return m_edit_zmax;

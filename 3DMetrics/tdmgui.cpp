@@ -286,7 +286,7 @@ TDMGui::TDMGui(QWidget *_parent) :
 }
 
 TDMGui::~TDMGui()
-{
+{    
     delete ui;
 }
 
@@ -305,6 +305,8 @@ void TDMGui::closeEvent(QCloseEvent *_event)
     {
         // to avoid SEGV on exit
         OSGWidgetTool::instance()->endTool();
+
+        m_depth_color_chooser_dialog.close();
 
         _event->accept();
     }
@@ -3712,14 +3714,16 @@ void TDMGui::slot_zScale()
 
 void TDMGui::slot_depthColorsChooser()
 {
-    m_depth_color_chooser_dialog.setZmin(ui->display_widget->getModelsZMin());
-    m_depth_color_chooser_dialog.setZmax(ui->display_widget->getModelsZMax());
+    double z_offset = ui->display_widget->getRefAlt();
+
+    m_depth_color_chooser_dialog.setZmin(ui->display_widget->getModelsZMin() + z_offset);
+    m_depth_color_chooser_dialog.setZmax(ui->display_widget->getModelsZMax() + z_offset);
     m_depth_color_chooser_dialog.slot_reset();
     if(ui->display_widget->isUseDisplayZMinMax())
     {
-        m_depth_color_chooser_dialog.setEdit_zmin(ui->display_widget->getDisplayZMin());
+        m_depth_color_chooser_dialog.setEdit_zmin(ui->display_widget->getDisplayZMin()+ z_offset);
         m_depth_color_chooser_dialog.slot_zminvaluchanged();
-        m_depth_color_chooser_dialog.setEdit_zmax(ui->display_widget->getDisplayZMax());
+        m_depth_color_chooser_dialog.setEdit_zmax(ui->display_widget->getDisplayZMax()+ z_offset);
         m_depth_color_chooser_dialog.slot_zmaxvaluchanged();
     }
 
@@ -3804,8 +3808,10 @@ void TDMGui::slot_toggleUseShader(bool _state)
 
 void TDMGui::slot_depthColorChanged(double _zmin, double _zmax, bool _useModelsDefault, ShaderColor::Palette _palette)
 {
-    ui->display_widget->setDisplayZMin(_zmin);
-    ui->display_widget->setDisplayZMax(_zmax);
+    double z_offset = ui->display_widget->getRefAlt();
+
+    ui->display_widget->setDisplayZMin(_zmin - z_offset);
+    ui->display_widget->setDisplayZMax(_zmax - z_offset);
     ui->display_widget->setUseDisplayZMinMaxAndUpdate(!_useModelsDefault);
     ui->display_widget->setColorPalette(_palette);
 }

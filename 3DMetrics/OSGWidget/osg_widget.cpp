@@ -344,6 +344,10 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_showZScale = true;
 
     m_colorPalette = ShaderColor::Rainbow;
+    m_overlay = new OverlayWidget(this);
+    m_overlay->setColorPalette(m_colorPalette);
+    m_overlay->setMinMax(m_displayZMin, m_displayZMax);
+    m_overlay->show();
 }
 
 OSGWidget::~OSGWidget()
@@ -1190,7 +1194,7 @@ void OSGWidget::initializeGL(){
 
     // to show measures too
     state_set = m_geodesGroup->getOrCreateStateSet();
-    // material needed to sho colors in measure without light
+    // material needed to show colors in measure without light
     material = new osg::Material;
     material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
     state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
@@ -1204,17 +1208,21 @@ void OSGWidget::paintGL()
 {
     m_viewer->frame();
 
-    // paint overlay
-    drawOverlay();
+    paintOverlayGL();
 }
 
-void OSGWidget::drawOverlay()
+void OSGWidget::paintOverlayGL()
 {
     if(!m_showZScale)
+    {
+        m_overlay->hide();
         return;
+    }
 
     QPainter painter(this);
     painter.beginNativePainting();
+    painter.setViewTransformEnabled(false);
+    painter.setWorldMatrixEnabled(false);
 
     QPen pen(Qt::gray, 1, Qt::SolidLine);
     painter.setPen(pen);
@@ -1222,32 +1230,23 @@ void OSGWidget::drawOverlay()
     font.setPixelSize(12);
     painter.setFont(font);
 
-    float minval = m_modelsZMin;
-    float maxval = m_modelsZMax;
+    float z_offset = m_ref_alt;
+    if(m_ref_alt == INVALID_VALUE)
+        z_offset = 0;
+
+    float minval = m_modelsZMin + z_offset;
+    float maxval = m_modelsZMax + z_offset;
 
     if(m_useDisplayZMinMax)
     {
-        minval = m_displayZMin;
-        maxval = m_displayZMax;
+        minval = m_displayZMin + z_offset;
+        maxval = m_displayZMax + z_offset;
     }
 
-    QString min = QString::number(minval ,'f',1);
-    painter.drawText( width() - 30 - 53, height() - 10, min + "m");
-
-    QString max = QString::number(maxval ,'f',1);
-    painter.drawText( width() - 30 - 53, height() - 10-255, max + "m");
-
-
-    // draw palette
-    for(int i=0; i<256; i++)
-    {
-        QColor color = ShaderColor::color(i / 255.0, m_colorPalette);
-        pen.setColor(color);
-        painter.setPen(pen);
-        int y = height() - 10 - i;
-        painter.drawLine( width() - 30,y , width() - 10, y);
-    }
-    painter.endNativePainting();
+    m_overlay->setMinMax(minval, maxval);
+    m_overlay->setColorPalette(m_colorPalette);
+    m_overlay->show();
+    m_overlay->update();
 }
 
 
@@ -1611,6 +1610,8 @@ void OSGWidget::onResize( int _width, int _height )
 
     cameras[0]->setViewport( 0, 0, _width, _height );
     //cameras[1]->setViewport( this->width() / 2, 0, this->width() / 2, this->height() );
+
+    m_overlay->move(_width - m_overlay->width() - 10, _height - m_overlay->height()- 10);
 }
 
 osgGA::EventQueue* OSGWidget::getEventQueue() const

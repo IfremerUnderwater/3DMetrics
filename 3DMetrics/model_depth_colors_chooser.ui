@@ -62,7 +62,7 @@
     <string>Reset</string>
    </property>
   </widget>
-  <widget class="QWidget" name="layoutWidget">
+  <widget class="QWidget" name="layoutWidgetZmax">
    <property name="geometry">
     <rect>
      <x>200</x>
@@ -71,7 +71,7 @@
      <height>81</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
+   <layout class="QVBoxLayout" name="verticalLayoutZmax">
     <item>
      <widget class="QLabel" name="zmax_label">
       <property name="text">
@@ -98,7 +98,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="layoutWidget">
+  <widget class="QWidget" name="layoutWidgetZmin">
    <property name="geometry">
     <rect>
      <x>200</x>
@@ -107,7 +107,7 @@
      <height>81</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <layout class="QVBoxLayout" name="verticalLayoutZmin">
     <item>
      <widget class="QLabel" name="zmin_label">
       <property name="text">
