@@ -3677,7 +3677,7 @@ void TDMGui::slot_editTransparency()
         if(toolWindowsMap.contains(item))
         {
             QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
-            while(i != toolWindowsMap.end() && i.key() == item)
+            while((i != 0) && i != toolWindowsMap.end() && i.key() == item)
             {
                 QString name = i.value()->metaObject()->className();
                 if(name == "EditTransparencyModel")
@@ -3923,6 +3923,8 @@ void TDMGui::slot_toggleUseShader(bool _state)
 
         osg::Node* const node = (layer_data.node().get());
         ui->display_widget->enableShaderOnNode(node, _state);
+        double transp = layer_data.getTransparency();
+        ui->display_widget->onTransparencyChange(transp,node);
     }
 }
 
