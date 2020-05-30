@@ -2,6 +2,9 @@
 #include <QProcess>
 #include <QMessageBox>
 
+#include <osg/Point>
+#include <osg/LineWidth>
+
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
 
@@ -54,6 +57,12 @@
 
 #include "z_scale_dialog.h"
 
+#include "OSGWidget/measure_picker_tool.h"
+
+#include "model_depth_colors_chooser.h"
+
+#include "qtable_arrowkey_detector.h"
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -102,8 +111,9 @@ TDMGui::TDMGui(QWidget *_parent) :
     QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
     QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
     QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
-
     QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+    QObject::connect(ui->depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
+    QObject::connect(ui->show_z_scale_action, SIGNAL(triggered()),this, SLOT(slot_toggleZScale()));
 
     QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
 
@@ -139,11 +149,18 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->attrib_table->setContextMenuPolicy(Qt::CustomContextMenu);
 
     connect(ui->attrib_table,SIGNAL(customContextMenuRequested(const QPoint &)),this,SLOT(slot_attribTableContextMenu(const QPoint &)));
+    connect(ui->attrib_table,SIGNAL(cellClicked(int, int)), this, SLOT(slot_attribTableClick(int, int)));
     connect(ui->attrib_table,SIGNAL(cellDoubleClicked(int, int)), this, SLOT(slot_attribTableDoubleClick(int, int)));
     connect(ui->attrib_table, SIGNAL(cellChanged(int, int)), this, SLOT(slot_attribTableCellChanged(int, int)));
 
+    QTableArrowKeyDetector *arrowkey = new QTableArrowKeyDetector();
+    ui->attrib_table->installEventFilter(arrowkey);
+    connect(arrowkey, SIGNAL(signal_KeyUpDown()), this, SLOT(slot_attribTableKeyUpDown()));
+
     // general tools
     connect(ui->focusing_tool_action,SIGNAL(triggered()), this, SLOT(slot_focussingTool()));
+    connect(ui->measure_picker_action,SIGNAL(triggered()), this, SLOT(slot_measurePicker()));
+    ui->measure_picker_action->setEnabled(false);
 
     // measurement tools
     ui->line_tool->setEnabled(false);
@@ -160,6 +177,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->import_old_measurement_format_action->setEnabled(false);
 
     updateAttributeTable(0);
+
 
     // tools
     OSGWidgetTool::initialize(ui->display_widget);
@@ -265,10 +283,12 @@ TDMGui::TDMGui(QWidget *_parent) :
     // export measurement to geometry
     connect(&m_meas_geom_export_dialog, SIGNAL(accepted()),this,SLOT(slot_exportMeasToGeom()));
 
+    m_depth_color_chooser_dialog.setPalette(ShaderColor::Rainbow);
+    connect(&m_depth_color_chooser_dialog, SIGNAL(signal_minmaxchanged(double,double,bool,ShaderColor::Palette)), this, SLOT(slot_depthColorChanged(double,double,bool,ShaderColor::Palette)));
 }
 
 TDMGui::~TDMGui()
-{
+{    
     delete ui;
 }
 
@@ -287,6 +307,8 @@ void TDMGui::closeEvent(QCloseEvent *_event)
     {
         // to avoid SEGV on exit
         OSGWidgetTool::instance()->endTool();
+
+        m_depth_color_chooser_dialog.close();
 
         _event->accept();
     }
@@ -1082,6 +1104,9 @@ void TDMGui::slot_newGroup()
 void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSelection& _desel)
 {   
     OSGWidgetTool::instance()->endTool();
+    ui->measure_picker_action->setEnabled(false);
+
+    unselectAllMeasureGraph();
 
     if(_desel.length() > 0)
     {
@@ -1128,6 +1153,7 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
             }
             else if(selected->type() == TdmLayerItem::MeasurementLayer)
             {
+                ui->measure_picker_action->setEnabled(true);
                 QTableWidget *table = ui->attrib_table;
                 table->setRowCount(0);
 
@@ -1246,6 +1272,10 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
             }
             if(selected->type() == TdmLayerItem::ModelLayer)
             {
+
+                TDMModelLayerData layer_data = selected->getPrivateData<TDMModelLayerData>();
+                osg::ref_ptr<osg::Node> node = layer_data.node();
+
                 menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
                 menu->addAction(tr("Edit Model Offset"),this,SLOT(slot_editModelOffset()));
 
@@ -1254,7 +1284,12 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
-
+                QAction *action = new QAction(tr("Use shader"),this);
+                action->setCheckable(true);
+                bool enabled = ui->display_widget->isEnabledShaderOnNode(node);
+                action->setChecked(enabled);
+                QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(slot_toggleUseShader(bool)));
+                menu->addAction(action);
             }
         }
     }
@@ -1448,6 +1483,7 @@ void TDMGui::slot_editMeasurement()
 void TDMGui::slot_patternChanged(MeasPattern _pattern)
 {    
     OSGWidgetTool::instance()->endTool();
+    unselectAllMeasureGraph();
 
     //** + confirmation
     QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Pattern changed Confirmation"),
@@ -1630,6 +1666,8 @@ void TDMGui::slot_patternChanged(MeasPattern _pattern)
 
 void TDMGui::updateAttributeTable(TdmLayerItem *_item)
 {
+    unselectAllMeasureGraph();
+
     QTableWidget *table = ui->attrib_table;
     if(_item != nullptr && _item->type() == TdmLayerItem::MeasurementLayer)
     {
@@ -1925,6 +1963,25 @@ void TDMGui::slot_deleteAttributeLine()
     }
 }
 
+void TDMGui::slot_attribTableClick(int _row, int _column)
+{
+    if(_column == 0)
+    {
+        // select line
+        slot_attribTableKeyUpDown();
+        return;
+    }
+
+    if( m_current_item->rows().size() > 0)
+    {
+        unselectAllMeasureGraph();
+
+        osg::Geode *geode  = (m_current_item->rows()[_row])->get(_column-1);
+        if(geode != nullptr)
+            selectMeasureGraph(geode);
+    }
+}
+
 void TDMGui::slot_attribTableDoubleClick(int _row, int _column)
 {
     QTableWidget *table = ui->attrib_table;
@@ -2008,6 +2065,37 @@ void TDMGui::slot_attribTableCellChanged(int _row, int _column)
     }
     default:
         break;
+    }
+}
+
+void TDMGui::slot_attribTableKeyUpDown()
+{
+    unselectAllMeasureGraph();
+
+    int nbFields = m_current_pattern.getNbFields();
+
+    if(m_current_item->rows().size() > 0)
+    {
+        QTableWidget *table = ui->attrib_table;
+        QItemSelectionModel *select = table->selectionModel();
+        if(select->hasSelection())
+        {
+            QModelIndex index = select->selectedRows().at(0);
+            int row = index.row();
+            osgMeasurementRow *mrow = m_current_item->rows()[row];
+            for(int f=0; f<nbFields; f++)
+            {
+                MeasType::type t = m_current_pattern.fieldType(f);
+                if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+                {
+                    osg::ref_ptr<osg::Geode> geode = mrow->get(f);
+                    if(geode != nullptr)
+                    {
+                        selectMeasureGraph(geode);
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -3280,6 +3368,18 @@ void TDMGui::slot_toggleLight()
     }
 }
 
+void TDMGui::slot_toggleZScale()
+{
+    if(ui->show_z_scale_action->isChecked())
+    {
+        ui->display_widget->showZScale(true);
+    }
+    else
+    {
+        ui->display_widget->showZScale(false);
+    }
+}
+
 void TDMGui::slot_showExportMeasToGeom()
 {
     m_meas_geom_export_dialog.show();
@@ -3577,7 +3677,7 @@ void TDMGui::slot_editTransparency()
         if(toolWindowsMap.contains(item))
         {
             QMap<TdmLayerItem*, QWidget*>::const_iterator i = toolWindowsMap.find(item);
-            while(i != toolWindowsMap.end() && i.key() == item)
+            while((i != 0) && i != toolWindowsMap.end() && i.key() == item)
             {
                 QString name = i.value()->metaObject()->className();
                 if(name == "EditTransparencyModel")
@@ -3667,4 +3767,174 @@ void TDMGui::slot_zScale()
     dialog->show();
     dialog->raise();
     dialog->activateWindow();
+}
+
+void TDMGui::slot_depthColorsChooser()
+{
+    double z_offset = ui->display_widget->getRefAlt();
+
+    m_depth_color_chooser_dialog.setZmin(ui->display_widget->getModelsZMin() + z_offset);
+    m_depth_color_chooser_dialog.setZmax(ui->display_widget->getModelsZMax() + z_offset);
+    m_depth_color_chooser_dialog.slot_reset();
+    if(ui->display_widget->isUseDisplayZMinMax())
+    {
+        m_depth_color_chooser_dialog.setEdit_zmin(ui->display_widget->getDisplayZMin()+ z_offset);
+        m_depth_color_chooser_dialog.slot_zminvaluchanged();
+        m_depth_color_chooser_dialog.setEdit_zmax(ui->display_widget->getDisplayZMax()+ z_offset);
+        m_depth_color_chooser_dialog.slot_zmaxvaluchanged();
+    }
+
+    m_depth_color_chooser_dialog.show();
+}
+
+void TDMGui::slot_measurePicker()
+{
+    MeasurePickerTool *tool = new MeasurePickerTool(this);
+    QObject::connect(tool, SIGNAL(signal_nodeClicked(osg::Node *)),this, SLOT(slot_nodeClicked(osg::Node*)));
+    QObject::connect(tool, SIGNAL(signal_noNodeClicked()),this, SLOT(slot_noNodeClicked()));
+}
+
+void TDMGui::slot_nodeClicked(osg::Node *_node)
+{
+    unselectAllMeasureGraph();
+
+    // find node in measures
+    if(m_current_item != nullptr && m_current_item->rows().size() > 0)
+    {
+        int nbFields = m_current_pattern.getNbFields();
+
+        // find item
+        for(unsigned int i=0; i<m_current_item->rows().size(); i++ )
+        {
+            osgMeasurementRow *row = m_current_item->rows()[i];
+            for(int f=0; f<nbFields; f++)
+            {
+                MeasType::type t = m_current_pattern.fieldType(f);
+                if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+                {
+                    osg::ref_ptr<osg::Geode> geode = row->get(f);
+                    if(geode.get() == _node)
+                    {
+                        ui->attrib_table->selectRow(i);
+
+                        // message
+                        QString message = "Selected : ";
+                        message += "\"";
+                        message += m_current_pattern.fieldName(f);
+                        message += "\" ";
+                        message += "type:";
+                        message += MeasType::value(t);
+
+                        statusBar()->showMessage(message);
+
+                        //TEST
+                        int n = geode->getNumChildren();
+                        for(int i=0; i<n; i++)
+                        {
+                            osg::Node *node = geode->getChild(i);
+                            osg::Geometry *geo = node->asGeometry();
+                            geo->getOrCreateStateSet()->setAttribute(new osg::Point(8.0f), osg::StateAttribute::ON);
+                            geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
+                        }
+
+                        return;
+                    }
+
+                }
+            }
+        }
+    }
+    statusBar()->showMessage(tr("Selected : none"));
+    ui->attrib_table->clearSelection();
+}
+
+void TDMGui::unselectAllMeasureGraph()
+{
+    if(m_current_item == nullptr)
+        return;
+
+    int nbFields = m_current_pattern.getNbFields();
+
+    // find item
+    for(unsigned int i=0; i<m_current_item->rows().size(); i++ )
+    {
+        osgMeasurementRow *row = m_current_item->rows()[i];
+        for(int f=0; f<nbFields; f++)
+        {
+            MeasType::type t = m_current_pattern.fieldType(f);
+            if( t== MeasType::Point || t == MeasType::Line || t == MeasType::Area)
+            {
+                osg::ref_ptr<osg::Geode> geode = row->get(f);
+
+                int n = geode->getNumChildren();
+                for(int i=0; i<n; i++)
+                {
+                    osg::Node *node = geode->getChild(i);
+                    osg::Geometry *geo = node->asGeometry();
+                    if(geo != nullptr)
+                    {
+                        geo->getOrCreateStateSet()->setAttribute(new osg::Point(4.0f), osg::StateAttribute::ON);
+                        geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(4.0f), osg::StateAttribute::ON);
+                    }
+                }
+            }
+        }
+    }
+}
+
+void TDMGui::selectMeasureGraph(osg::Geode *_geode)
+{
+    int n = _geode->getNumChildren();
+    for(int i=0; i<n; i++)
+    {
+        osg::Node *node = _geode->getChild(i);
+
+        osg::Geometry *geo = node->asGeometry();
+        if(geo != nullptr)
+        {
+            geo->getOrCreateStateSet()->setAttribute(new osg::Point(8.0f), osg::StateAttribute::ON);
+            geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
+        }
+    }
+}
+
+void TDMGui::slot_noNodeClicked()
+{
+    statusBar()->showMessage(tr("Selected : none"));
+    ui->attrib_table->clearSelection();
+    unselectAllMeasureGraph();
+}
+
+
+void TDMGui::slot_toggleUseShader(bool _state)
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+        ui->display_widget->enableShaderOnNode(node, _state);
+        double transp = layer_data.getTransparency();
+        ui->display_widget->onTransparencyChange(transp,node);
+    }
+}
+
+
+void TDMGui::slot_depthColorChanged(double _zmin, double _zmax, bool _useModelsDefault, ShaderColor::Palette _palette)
+{
+    double z_offset = ui->display_widget->getRefAlt();
+
+    ui->display_widget->setDisplayZMin(_zmin - z_offset);
+    ui->display_widget->setDisplayZMax(_zmax - z_offset);
+    ui->display_widget->setUseDisplayZMinMaxAndUpdate(!_useModelsDefault);
+    ui->display_widget->setColorPalette(_palette);
 }

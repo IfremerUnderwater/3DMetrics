@@ -25,7 +25,9 @@ protected:
 
 public slots:
     void start();
-    void slot_toolEnded(QString&);
+    void slot_toolEnded(QString&);  
+    void removelast();
+    void slot_nbPointsChanged();
 
 private:
     Ui::ToolAreaDialog *ui;

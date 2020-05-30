@@ -13,7 +13,7 @@
 #include "osg_axes.h"
 #include "file_open_thread.h"
 #include "meas_geom_export_dialog.h"
-//#include "edit_transparency_model.h"
+#include "model_depth_colors_chooser.h"
 
 class TdmLayerItem;
 class QCloseEvent;
@@ -79,6 +79,8 @@ private:
 
     MeasGeomExportDialog m_meas_geom_export_dialog;
 
+    ModelDepthColorsChooser m_depth_color_chooser_dialog;
+
     // Settings variable
     QSettings m_settings;
     QString m_path_model3D;
@@ -97,6 +99,9 @@ private:
     QShortcut m_stereo_shortcut;
     QShortcut m_delete_shortcut;
     QShortcut m_light_shortcut;
+
+    void unselectAllMeasureGraph();
+    void selectMeasureGraph(osg::Geode *_geode);
 
 public slots:
 
@@ -125,6 +130,9 @@ public slots:
     void slot_lightShorcut();
     void slot_toggleLight();
     void slot_zScale();
+    void slot_depthColorsChooser();
+    void slot_depthColorChanged(double _zmin, double _zmax, bool _useModelsDefault, ShaderColor::Palette _palette);
+    void slot_toggleZScale();
 
     void slot_layersTreeWindowVisibilityChanged(bool);
     void slot_attribTableWindowVisibilityChanged(bool);
@@ -135,6 +143,9 @@ public slots:
 
     // general tools
     void slot_focussingTool();
+    void slot_measurePicker();
+    void slot_nodeClicked(osg::Node *_node);
+    void slot_noNodeClicked();
 
     // measurement tools
     void slot_messageStartTool(QString&_msg);
@@ -169,11 +180,14 @@ public slots:
     void slot_computeTotalArea();
     void slot_editTransparency();
     void slot_editModelOffset();
+    void slot_toggleUseShader(bool);
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
+    void slot_attribTableClick(int _row, int _column);
     void slot_attribTableDoubleClick(int _row, int _column);
     void slot_attribTableCellChanged(int _row, int _column);
+    void slot_attribTableKeyUpDown();
 
     // attribute table context menu
     void slot_addAttributeLine();

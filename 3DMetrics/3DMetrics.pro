@@ -93,7 +93,15 @@ SOURCES += main.cpp \
     choose_loadingmode_dialog.cpp \
     z_scale_dialog.cpp \
     profile_depth_dialog.cpp \
-    paint_widget.cpp
+    paint_widget.cpp \
+    OSGWidget/measure_picker_tool.cpp \
+    OSGWidget/minmax_computation_visitor.cpp \
+    OSGWidget/geometry_type_count_visitor.cpp \
+    model_depth_colors_chooser.cpp \
+    color_widget.cpp \
+    OSGWidget/shader_color.cpp \
+    OSGWidget/overlay_widget.cpp \
+    qtable_arrowkey_detector.cpp
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
@@ -141,7 +149,15 @@ HEADERS  += \
     OSGWidget/loading_mode.h \
     z_scale_dialog.h \
     profile_depth_dialog.h \
-    paint_widget.h
+    paint_widget.h \
+    OSGWidget/measure_picker_tool.h \
+    OSGWidget/minmax_computation_visitor.h \
+    OSGWidget/geometry_type_count_visitor.h \
+    model_depth_colors_chooser.h \
+    color_widget.h \
+    OSGWidget/shader_color.h \
+    OSGWidget/overlay_widget.h \
+    qtable_arrowkey_detector.h
 
 FORMS    += \
     tdmgui.ui \
@@ -162,7 +178,8 @@ FORMS    += \
     slope_tool.ui \
     choose_loadingmode_dialog.ui \
     z_scale_dialog.ui \
-    profile_depth_dialog.ui
+    profile_depth_dialog.ui \
+    model_depth_colors_chooser.ui
 
 RESOURCES += \
     ressources.qrc

@@ -2,6 +2,8 @@
 #define OSG_WIDGET_H
 
 #include <QGLWidget>
+#include "shader_color.h"
+#include "overlay_widget.h"
 
 #ifdef __APPLE__
 /* FIX COMPILE BUG:
@@ -26,6 +28,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <QPointF>
 
 #include <osg/ref_ptr>
+#include <osg/Referenced>
 #include <osgViewer/GraphicsWindow>
 #include <osgViewer/CompositeViewer>
 #include <GeographicLib/LocalCartesian.hpp>
@@ -49,6 +52,27 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 class OSGWidget : public QOpenGLWidget
 {
     Q_OBJECT
+
+private:
+
+    // models' user data
+    class NodeUserData : public osg::Referenced
+    {
+    public:
+        NodeUserData() : Referenced() {}
+        virtual ~NodeUserData() {}
+
+        // values zmin and zmax from model (without offset)
+        float zmin;
+        float zmax;
+
+        float zoffset;
+        float originalZoffset;
+
+        // use or not shader
+        bool useShader;
+        bool hasMesh;
+    };
 
 public:
     OSGWidget( QWidget* parent = 0);
@@ -122,6 +146,8 @@ public:
 
     void getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists);
 
+    void getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node> &_inter_node, bool &_inter_exists);
+
 
     void addGeode(osg::ref_ptr<osg::Geode> _geode);
     void removeGeode(osg::ref_ptr<osg::Geode> _geode);
@@ -182,15 +208,45 @@ public:
     void enableStereo(bool _state);
 
     osgViewer::View* getView() { return  m_viewer->getView(0); }
+    void frame() { m_viewer->frame(); }
+
     osg::Camera* getCamera() { return  m_viewer->getView(0)->getCamera(); }
 
     double getZScale() const { return m_zScale; }
     void setZScale(double _newValue);
 
-protected:
+    static const char *const MEASURE_NAME;
 
+    bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
+    void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);
+
+    double getModelsZMin() const { return m_modelsZMin; }
+    double getModelsZMax() const { return m_modelsZMax; }
+
+    double getDisplayZMin() const { return m_displayZMin; }
+    void setDisplayZMin(double _zmin) { m_displayZMin = _zmin; }
+
+    double getDisplayZMax() const { return m_displayZMax; }
+    void setDisplayZMax(double _zmax) { m_displayZMax = _zmax; }
+
+    bool isUseDisplayZMinMax() const { return m_useDisplayZMinMax; }
+    void setUseDisplayZMinMaxAndUpdate(bool _use);
+
+    bool isZScaleShowing() const { return m_showZScale; }
+    void showZScale(bool _show);
+
+    ShaderColor::Palette getColorPalette() const { return m_colorPalette; }
+    void setColorPalette(ShaderColor::Palette _palette);
+
+    double getRefAlt() const { return m_ref_alt == INVALID_VALUE ? 0 : m_ref_alt; }
+
+protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );
+    virtual void paintOverlayGL();
+    //virtual void paintEvent(QPaintEvent*event);
+
+    //void drawOverlay();
 
     virtual void keyPressEvent( QKeyEvent* _event );
     virtual void keyReleaseEvent( QKeyEvent* _event );
@@ -205,7 +261,6 @@ protected:
     virtual void initializeGL();
     QTimer m_timer;
 
-
 private:
     virtual void onResize( int _width, int _height );
 
@@ -214,7 +269,9 @@ private:
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> m_graphicsWindow;
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
 
-    osg::ref_ptr<osg::Group> m_group;
+    osg::ref_ptr<osg::Group> m_globalGroup;
+    osg::ref_ptr<osg::Group> m_modelsGroup;
+    osg::ref_ptr<osg::Group> m_geodesGroup;
 
     std::vector<osg::ref_ptr<osg::Geode>> m_geodes;
     std::vector<osg::ref_ptr<osg::Node>> m_models;
@@ -234,6 +291,25 @@ private:
     osg::ref_ptr<osg::MatrixTransform> m_matrixTransform;
 
     void setCameraOnNode(osg::ref_ptr<osg::Node> _node);
+
+    // for shaders
+    void configureShaders( osg::StateSet* stateSet );
+
+    // recompute global zmin and zmax for all models
+    void recomputeGlobalZMinMax();
+    float m_modelsZMin;
+    float m_modelsZMax;
+
+    // for using custom values
+    bool m_useDisplayZMinMax;
+
+    float m_displayZMin;
+    float m_displayZMax;
+
+    bool m_showZScale;
+    ShaderColor::Palette m_colorPalette;
+
+    OverlayWidget *m_overlay;
 };
 
 #endif // OSG_WIDGET_H

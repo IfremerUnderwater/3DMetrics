@@ -53,8 +53,9 @@
 #include <osg/BlendFunc>
 
 #include "box_visitor.h"
-
-#include <osg/PositionAttitudeTransform>
+#include "minmax_computation_visitor.h"
+#include "geometry_type_count_visitor.h"
+#include "shader_color.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -255,6 +256,7 @@ public:
 };
 
 
+const char *const OSGWidget::MEASURE_NAME = "3DMeasure";
 
 OSGWidget::OSGWidget(QWidget* parent)
     : QOpenGLWidget( parent)
@@ -271,6 +273,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_ref_lat_lon.setX(INVALID_VALUE);
     m_ref_lat_lon.setY(INVALID_VALUE);
     m_ref_alt = INVALID_VALUE;
+
 
     //osgDB::Registry::instance()->setLibraryFilePathList("/Users/tim/code/3DMetricWorkspace/Run/Release/3DMetrics.app/Contents/osgPlugins");
 
@@ -322,13 +325,36 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_timer.start( 40 ); //10 );
 
     // Create group that will contain measurement geode and 3D model
-    m_group = new osg::Group;
+    m_globalGroup = new osg::Group;
 
-    // test TODO
-    //m_zScale = 2.0;
+    m_modelsGroup = new osg::Group;
+    m_geodesGroup = new osg::Group;
+
+    m_globalGroup->addChild(m_modelsGroup);
+    m_globalGroup->addChild(m_geodesGroup);
+
+    // for Z scale management
     m_matrixTransform = new osg::MatrixTransform;
     m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
-    m_matrixTransform->addChild(m_group);
+    m_matrixTransform->addChild(m_globalGroup);
+
+    // use models' min max as default
+    m_useDisplayZMinMax = false;
+
+    // show zscale by default
+    m_showZScale = true;
+
+    m_modelsZMin = 0;
+    m_modelsZMax= 0;
+
+    m_displayZMin = 0;
+    m_displayZMax = 0;
+
+    m_colorPalette = ShaderColor::Rainbow;
+    m_overlay = new OverlayWidget(this);
+    m_overlay->setColorPalette(m_colorPalette);
+    m_overlay->setMinMax(m_displayZMin, m_displayZMax);
+    m_overlay->show();
 }
 
 OSGWidget::~OSGWidget()
@@ -491,8 +517,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
 
             osg::ref_ptr<osg::Geode> geode = new osg::Geode;
-            osg::Vec3Array* vertices = new osg::Vec3Array;
-            osg::Vec4Array* colors = new osg::Vec4Array;
+            osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
+            osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
 
             for(int y = 0; y < nYSize; y++)
             {
@@ -537,7 +563,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             }
 
             // points
-            osg::Geometry* shape_point_drawable = new osg::Geometry();
+            osg::ref_ptr<osg::Geometry> shape_point_drawable = new osg::Geometry();
 
             // pass the created vertex array to the points geometry object.
             shape_point_drawable->setVertexArray(vertices);
@@ -570,7 +596,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
             CPLFree(pafScanline);
         }
-        else if(_mode == LoadingModeTriangle)
+        else if(_mode == LoadingModeTriangle || _mode == LoadingModeTriangleNormals)
         {
             // triangles
 
@@ -599,11 +625,16 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                 //  triangle 2 = ACD
 
 
-                osg::Vec3Array* vertices = new osg::Vec3Array;
-                //*** test
-                //osg::Vec3Array* normals = new osg::Vec3Array;
+                osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
 
-                osg::Vec4Array* colors = new osg::Vec4Array;
+                // for LoadingModeTriangleNormals
+                osg::ref_ptr<osg::Vec3Array> normals;
+                if(_mode == LoadingModeTriangleNormals)
+                {
+                    normals = new osg::Vec3Array;
+                }
+
+                osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
 
                 // point
                 for(int x=0; x<nXSize-1; x++)
@@ -669,33 +700,42 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                     vertices->push_back(pointA);
                     vertices->push_back(pointB);
                     vertices->push_back(pointC);
-                    //*** test
-//                    osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
-//                    normals->push_back(N1);
-//                    normals->push_back(N1);
-//                    normals->push_back(N1);
+
+                    if(_mode == LoadingModeTriangleNormals)
+                    {
+                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
+                        normals->push_back(N1);
+                        normals->push_back(N1);
+                        normals->push_back(N1);
+                    }
 
                     vertices->push_back(pointA);
                     vertices->push_back(pointC);
                     vertices->push_back(pointD);
-                    //*** test
-//                    osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
-//                    normals->push_back(N2);
-//                    normals->push_back(N2);
-//                    normals->push_back(N2);
+
+
+                    if(_mode == LoadingModeTriangleNormals)
+                    {
+                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
+                        normals->push_back(N2);
+                        normals->push_back(N2);
+                        normals->push_back(N2);
+                    }
 
                 }
 
-                // points
-                osg::Geometry* geometry = new osg::Geometry();
+                // triangles
+                osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
                 // pass the created vertex array to the points geometry object.
                 geometry->setVertexArray(vertices);
-                //*** test
-                //geometry->setNormalArray(normals);
-                //geometry->setNormalArray(normals, osg::Array::BIND_PER_PRIMITIVE_SET);
 
-                osg::Vec4 color(0.5,0.1,0.6,1.0);
+                if(_mode == LoadingModeTriangleNormals)
+                {
+                    geometry->setNormalArray(normals, osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
+                }
+
+                osg::Vec4 color(1.0,1.0,1.0,1.0);
                 colors->push_back(color);
                 geometry->setColorArray(colors, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
 
@@ -710,7 +750,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                 //shape_point_drawable->getOrCreateStateSet()->setAttribute(new osg::Point(1.f), osg::StateAttribute::ON);
 
                 geode->addDrawable(geometry);
-
 
                 // swap line ponters
                 float * tmp = pafScanline;
@@ -755,7 +794,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
 
                 osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
-                osg::Vec3Array* verticesPoint = new osg::Vec3Array;
+                osg::ref_ptr<osg::Vec3Array> verticesPoint = new osg::Vec3Array;
                 osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
                 osg::ref_ptr<osg::Vec4Array> colorst = new osg::Vec4Array;
 
@@ -847,7 +886,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
                 // pass the created vertex array to the points geometry object.
                 geometry->setVertexArray(vertices);
 
-                osg::Vec4 color(0.3,0.1,0.3,0.3);
+                //osg::Vec4 color(0.3,0.1,0.3,0.3);
+                osg::Vec4 color(1.0,1.0,1.0,1.0);
                 colorst->push_back(color);
                 geometry->setColorArray(colorst, osg::Array::BIND_OVERALL); //BIND_PER_VERTEX);
 
@@ -954,11 +994,37 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     //    state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
 
 
-    m_group->insertChild(0, _node.get()); // put at the beginning to be drawn first
+    m_modelsGroup->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
     osgUtil::Optimizer optimizer;
-    optimizer.optimize(_node.get());
+    optimizer.optimize(_node.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+
+    // compute the surface of the 3D model selected through his node
+    MinMaxComputationVisitor minmax;
+    _node->accept(minmax);
+    float zmin = minmax.getMin();
+    float zmax = minmax.getMax();
+
+    GeometryTypeCountVisitor geomcount;
+    _node->accept(geomcount);
+
+    // save original translation
+    osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
+
+    osg::ref_ptr<NodeUserData> data = new NodeUserData();
+    data->useShader = true;
+    data->zmin = zmin;
+    data->zmax = zmax;
+    data->zoffset = 0; // will be changed on z offset changed
+    data->originalZoffset = model_transform->getMatrix().getTrans().z();
+    data->hasMesh = geomcount.getNbTriangles() > 0;
+    _node->setUserData(data);
+
+    configureShaders( _node->getOrCreateStateSet() );
+    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
+    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
+    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "hasmesh", data->hasMesh));
 
     setCameraOnNode(_node);
 
@@ -1044,15 +1110,15 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
     if (position != m_models.end()) // == myVector.end() means the element was not found
         m_models.erase(position);
 
-    m_group->removeChild(_node.get());
+    m_modelsGroup->removeChild(_node.get());
 
     // optimize the scene graph, remove redundant nodes and state etc.
-    /*osgUtil::Optimizer optimizer;
-    optimizer.optimize(m_group.get());*/
+    osgUtil::Optimizer optimizer;
+    optimizer.optimize(this->m_globalGroup.get());
 
     osgViewer::View *view = m_viewer->getView(0);
 
-    view->setSceneData( m_matrixTransform); //m_group );
+    view->setSceneData( m_matrixTransform);
 
     return true;
 }
@@ -1098,7 +1164,7 @@ void OSGWidget::clearSceneData()
 
     // remove all nodes from group
     for (unsigned int i=0; i<m_models.size(); i++){
-        m_group->removeChild(m_models[i]);
+        m_modelsGroup->removeChild(m_models[i]);
         //m_models[i] = NULL; useless
     }
 
@@ -1109,7 +1175,7 @@ void OSGWidget::clearSceneData()
     for (unsigned int i=0; i<m_geodes.size(); i++)
     {
         m_geodes[i]->removeDrawables(0,m_geodes[i]->getNumDrawables());
-        m_group->removeChild(m_geodes[i]);
+        m_geodesGroup->removeChild(m_geodes[i]);
         //m_models[i] = NULL; useless
     }
     m_geodes.clear();
@@ -1125,19 +1191,71 @@ void OSGWidget::clearSceneData()
 void OSGWidget::initializeGL(){
 
     // Init properties
-    osg::StateSet* state_set = m_group->getOrCreateStateSet();
+    osg::StateSet* state_set = m_modelsGroup->getOrCreateStateSet();
     osg::Material* material = new osg::Material;
     material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
     state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
     state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
+    state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::OFF);
+    state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    // to show measures too
+    state_set = m_geodesGroup->getOrCreateStateSet();
+    // material needed to show colors in measure without light
+    material = new osg::Material;
+    material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
+    state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
+    state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
     state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
-    //stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    // if selected : only parts on top of all madels are shown
+    //state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 }
 
 void OSGWidget::paintGL()
 {
     m_viewer->frame();
+
+    paintOverlayGL();
 }
+
+void OSGWidget::paintOverlayGL()
+{
+    if(!m_showZScale)
+    {
+        m_overlay->hide();
+        return;
+    }
+
+    QPainter painter(this);
+    painter.beginNativePainting();
+    painter.setViewTransformEnabled(false);
+    painter.setWorldMatrixEnabled(false);
+
+    QPen pen(Qt::gray, 1, Qt::SolidLine);
+    painter.setPen(pen);
+    QFont font = painter.font();
+    font.setPixelSize(12);
+    painter.setFont(font);
+
+    float z_offset = m_ref_alt;
+    if(m_ref_alt == INVALID_VALUE)
+        z_offset = 0;
+
+    float minval = m_modelsZMin + z_offset;
+    float maxval = m_modelsZMax + z_offset;
+
+    if(m_useDisplayZMinMax)
+    {
+        minval = m_displayZMin + z_offset;
+        maxval = m_displayZMax + z_offset;
+    }
+
+    m_overlay->setMinMax(minval, maxval);
+    m_overlay->setColorPalette(m_colorPalette);
+    m_overlay->show();
+    m_overlay->update();
+}
+
 
 void OSGWidget::resizeGL( int _width, int _height )
 {
@@ -1267,6 +1385,36 @@ void OSGWidget::getIntersectionPoint(int _x, int _y, osg::Vec3d &_inter_point, b
     }else{
         _inter_exists = false;
     }
+
+    if(!_inter_exists)
+    {
+        osgUtil::PolytopeIntersector::Intersections intersections;
+        osgUtil::PolytopeIntersector *polyintersector =
+                new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,_x-3,this->size().height() -_y-3,_x+3,this->size().height() - _y+3);
+        polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+        osgUtil::IntersectionVisitor iv(polyintersector);
+
+        polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+        osg::Camera *cam = view->getCamera();
+        cam->accept(iv);
+        intersections = polyintersector->getIntersections();
+
+        if(!intersections.empty())
+        {
+            _inter_exists = true;
+
+            osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+            // we get the intersections in a osg::Vec3d
+            _inter_point = hitr->localIntersectionPoint;
+
+            _inter_point[2] /= m_zScale;
+        }
+        else
+        {
+            _inter_exists = false;
+        }
+    }
 }
 
 void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter_point, bool &_inter_exists)
@@ -1276,16 +1424,14 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
     osg::Camera *cam = view->getCamera();
 
     const osg::Matrixd transmat
-           = cam->getViewMatrix()
-           * cam->getProjectionMatrix()
-           * cam->getViewport()->computeWindowMatrix();
+            = cam->getViewMatrix()
+            * cam->getProjectionMatrix()
+            * cam->getViewport()->computeWindowMatrix();
 
     osg::Vec4d vec(_world_point[0], _world_point[1], _world_point[2], 1.0);
 
     vec = vec * transmat;
     vec = vec / vec.w();
-
-    //osg::Vec3d pp = osg::Matrixd::transform3x3(_world_point, transmat);
 
     float x = vec.x();
     float y = vec.y();
@@ -1293,23 +1439,11 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
     osgUtil::LineSegmentIntersector::Intersections intersections;
 
 
-    // if we click on the object
     if (view->computeIntersections(x, y, intersections))
     {
         _inter_exists = true;
 
         osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
-
-        //        if (!hitr->nodePath.empty() && !(hitr->nodePath.back()->getName().empty()))
-        //        {
-        //            // the geodes are identified by name.
-        //            std::cout<<"Object \""<<hitr->nodePath.back()->getName()<<"\""<<std::endl;
-        //        }
-        //        else if (hitr->drawable.valid())
-        //        {
-        //            std::cout<<"Object \""<<hitr->drawable->className()<<"\""<<std::endl;
-        //        }
-
 
         // we get the intersections in a osg::Vec3d
         _inter_point = hitr->getWorldIntersectPoint();
@@ -1318,10 +1452,81 @@ void OSGWidget::getIntersectionPoint(osg::Vec3d _world_point, osg::Vec3d &_inter
 
     }else{
         _inter_exists = false;
+
+        osgUtil::PolytopeIntersector::Intersections intersections;
+        osgUtil::PolytopeIntersector *polyintersector =
+                new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,x-3,y-3,x+3,y+3);
+        polyintersector->setPrimitiveMask(osgUtil::PolytopeIntersector::POINT_PRIMITIVES);
+        osgUtil::IntersectionVisitor iv(polyintersector);
+        polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+        cam->accept(iv);
+        intersections = polyintersector->getIntersections();
+
+        if(!intersections.empty())
+        {
+            _inter_exists = true;
+
+            osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+            // we get the intersections in a osg::Vec3d
+            _inter_point = hitr->localIntersectionPoint;
+
+            _inter_point[2] /= m_zScale;
+        }
+    }
+}
+
+void OSGWidget::getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node> &_inter_node,  bool &_inter_exists)
+{
+    osgUtil::PolytopeIntersector::Intersections intersections;
+    osgUtil::PolytopeIntersector *polyintersector =
+            new osgUtil::PolytopeIntersector(osgUtil::Intersector::CoordinateFrame::WINDOW,_x-3,this->size().height() -_y-3,_x+3,this->size().height() - _y+3);
+    polyintersector->setPrimitiveMask(
+                osgUtil::PolytopeIntersector::POINT_PRIMITIVES
+                | osgUtil::PolytopeIntersector::LINE_PRIMITIVES);
+    osgUtil::IntersectionVisitor iv(polyintersector);
+
+    // do not work to restrict seauch
+    //iv.apply(*m_geodesGroup);
+    osgViewer::View *view = m_viewer->getView(0);
+
+    polyintersector->setIntersectionLimit(osgUtil::PolytopeIntersector::LIMIT_NEAREST);
+    osg::Camera *cam = view->getCamera();
+    cam->accept(iv);
+    intersections = polyintersector->getIntersections();
+
+    m_geodesGroup->accept(iv);
+
+    _inter_exists = false;
+
+    if(!intersections.empty())
+    {
+        osgUtil::PolytopeIntersector::Intersections::iterator hitr = intersections.begin();
+
+        while(hitr != intersections.end())
+        {
+            osg::ref_ptr<osg::Node> newnode = hitr->drawable->getParent(0);
+
+            if(newnode != nullptr)
+            {
+                osg::Group *parent = newnode->getParent(0);
+                if(parent != nullptr)
+                {
+                    std::string name = parent->getName();
+                    if(name == MEASURE_NAME)
+                    {
+                        _inter_exists = true;
+                        _inter_node = newnode;
+                        break;
+                    }
+                }
+
+            }
+            ++hitr;
+        }
     }
 
 }
-
 
 void OSGWidget::mouseReleaseEvent(QMouseEvent* _event)
 {
@@ -1412,6 +1617,8 @@ void OSGWidget::onResize( int _width, int _height )
 
     cameras[0]->setViewport( 0, 0, _width, _height );
     //cameras[1]->setViewport( this->width() / 2, 0, this->width() / 2, this->height() );
+
+    m_overlay->move(_width - m_overlay->width() - 10, _height - m_overlay->height()- 10);
 }
 
 osgGA::EventQueue* OSGWidget::getEventQueue() const
@@ -1423,17 +1630,6 @@ osgGA::EventQueue* OSGWidget::getEventQueue() const
     else
         throw std::runtime_error( "Unable to obtain valid event queue");
 }
-
-//osg::ref_ptr<osg::Geode> OSGWidget::getMeasurementGeode()
-//{
-//    return m_measurement_geode;
-//}
-
-//void OSGWidget::forceGeodeUpdate()
-//{
-//    m_group->removeChild(m_measurement_geode);
-//    m_group->addChild(m_measurement_geode);
-//}
 
 void OSGWidget::getGeoOrigin(QPointF &_ref_lat_lon, double &_ref_alt)
 {
@@ -1494,12 +1690,15 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     // end add invisible point
 
     model_transform->addChild(node);
-    addNodeToScene(model_transform);
+
+    // Add model without userdata
+    m_models.push_back(node);
+    m_modelsGroup->insertChild(0, node.get()); // put at the beginning to be drawn first
 }
 
 void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
 {
-    m_group->addChild(_geode.get());
+    m_geodesGroup->addChild(_geode.get());
     m_geodes.push_back(_geode);
 }
 
@@ -1510,13 +1709,13 @@ void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
     if (position != m_geodes.end()) // == myVector.end() means the element was not found
         m_geodes.erase(position);
 
-    m_group->removeChild(_geode);
+    m_geodesGroup->removeChild(_geode);
 }
 
 void OSGWidget::addGroup(osg::ref_ptr<osg::Group> _group)
 {
     //m_groups.push_back(_group);
-    m_group->addChild(_group.get());
+    m_geodesGroup->addChild(_group.get());
 }
 
 void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
@@ -1526,7 +1725,7 @@ void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
     //    if (position != m_groups.end()) // == myVector.end() means the element was not found
     //        m_groups.erase(position);
 
-    m_group->removeChild(_group);
+    m_geodesGroup->removeChild(_group);
 }
 
 // reset view to home
@@ -1760,13 +1959,24 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
 void OSGWidget::enableLight(bool _state)
 {
+    bool lighton = true;
     if ( _state )
     {
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::ON);
+        // disable shades on shader
+        lighton = false;
     }
     else
     {
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+        // enable shades on shader
+        lighton = true;
+    }
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "lighton", lighton));
     }
 }
 
@@ -1788,7 +1998,6 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
     {
         state_set->removeAttribute(osg::StateAttribute::MATERIAL);
         state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
-
     }
     else
     {
@@ -1814,6 +2023,9 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
         state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
     }
 
+    // alpha on shader
+    state_set->addUniform( new osg::Uniform( "alpha", float(_transparency_value) ));
+
 
     //    // test
     //    osg::StateSet* state_set = _node->getOrCreateStateSet();
@@ -1828,19 +2040,28 @@ void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::No
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
     osg::Matrix matrix = osg::Matrix::translate(_trans.x() + _x, _trans.y() + _y, _trans.z() + _z);
-    ;
+
     model_transform->setMatrix(matrix);
+
+    // for shaders
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        data->zoffset = (float)_z;
+    }
+
+    recomputeGlobalZMinMax();
 }
 
 void OSGWidget::setZScale(double _newValue)
 {
 
-//    osgViewer::View *view = m_viewer->getView(0);
-//    osg::Vec3d eye1, center1, up1;
-//    osgGA::CameraManipulator *man = view->getCameraManipulator();
-//    man->getHomePosition(eye1,center1, up1);
+    //    osgViewer::View *view = m_viewer->getView(0);
+    //    osg::Vec3d eye1, center1, up1;
+    //    osgGA::CameraManipulator *man = view->getCameraManipulator();
+    //    man->getHomePosition(eye1,center1, up1);
 
-//    osg::Matrixd matrix = man->getMatrix();
+    //    osg::Matrixd matrix = man->getMatrix();
 
     // change
     //double oldScale = m_zScale;
@@ -1855,9 +2076,259 @@ void OSGWidget::setZScale(double _newValue)
     //view->getCameraManipulator()->setHomePosition(eye,target,normal);
     home();
 
-//    matrix.ptr()[14] *= m_zScale / oldScale;
-//    view->getCameraManipulator()->setByMatrix(matrix);
+    //    matrix.ptr()[14] *= m_zScale / oldScale;
+    //    view->getCameraManipulator()->setByMatrix(matrix);
+}
+
+void OSGWidget::configureShaders( osg::StateSet* stateSet )
+{  
+    const std::string vertexSourceBegin =
+            "#version 130 \n"
+            "uniform float zmin;"
+            "uniform float deltaz;"
+            "uniform float alpha;"
+            "uniform float pointsize;"
+
+            "out vec3 vertex_light_position;"
+            "out vec3 vertex_light_half_vector;"
+            "out vec3 vertex_normal;"
+            "out vec4 fcolor;";
+
+
+
+    const std::string vertexSourceEnd =
+            "void main(void)"
+            "{"
+            // Calculate the normal value for this vertex, in world coordinates (multiply by gl_NormalMatrix)
+            "    vertex_normal = normalize(gl_NormalMatrix * gl_Normal);"
+            // Calculate the light position for this vertex
+            "    vertex_light_position = normalize(gl_LightSource[0].position.xyz);"
+
+            // Calculate the light's half vector
+            "    vertex_light_half_vector = normalize(gl_LightSource[0].halfVector.xyz);"
+
+            "    vec4 v = vec4(gl_Vertex);"
+            "    float val = (v.z-zmin) / deltaz;"
+            ""
+            "    vec3 RGB = colorPalette(val);"
+            "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
+            "    gl_Position = gl_ModelViewProjectionMatrix*v;"
+            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
+            "}";
+
+    std::string vertexSource = vertexSourceBegin;
+    vertexSource += ShaderColor::shaderSource(m_colorPalette);
+    vertexSource += vertexSourceEnd;
+
+    osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
+
+    // without shading
+    //    const std::string fragmentSourceOld =
+    //            "#version 330 compatibility \n"
+    //            "in vec4 fcolor;"
+    //            "void main()"
+    //            "{"
+    //            "   gl_FragColor = fcolor;"
+    //            "}";
+
+
+    const std::string fragmentSource =
+            "#version 130 \n"
+            "uniform bool hasmesh;"
+            "uniform bool lighton;"
+
+            "in vec4 fcolor;"
+            "in vec3 vertex_light_position;"
+            "in vec3 vertex_light_half_vector;"
+            "in vec3 vertex_normal;"
+
+            "void main() {"
+            "   vec4 color = fcolor;"
+            "   if(!hasmesh || lighton)"
+            "   {"
+            "      color = fcolor;"
+            "   }"
+            "   else"
+            "   {"
+            // Calculate the ambient term
+            "      vec4 ambient_color = gl_FrontMaterial.ambient * gl_LightSource[0].ambient + gl_LightModel.ambient * gl_FrontMaterial.ambient;"
+
+            // Calculate the diffuse term
+            "      vec4 diffuse_color = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;"
+
+            // Calculate the specular value
+            "      vec4 specular_color = gl_FrontMaterial.specular * gl_LightSource[0].specular * pow(max(dot(vertex_normal, vertex_light_half_vector), 0.0) , gl_FrontMaterial.shininess);"
+
+            // Set the diffuse value (darkness). This is done with a dot product between the normal and the light
+            // and the maths behind it is explained in the maths section of the site.
+            "      float diffuse_value = max(dot(vertex_normal, vertex_light_position), 0.0);"
+
+            // Set the output color of our current pixel
+            "      vec4 material_color = ambient_color + diffuse_color * diffuse_value + specular_color;"
+
+            "      color.r = material_color.r * fcolor.r;"
+            "      color.g = material_color.g * fcolor.g;"
+            "      color.b = material_color.b * fcolor.b;"
+            "   }"
+            "   gl_FragColor = color;"
+            "}";
+
+    osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
+
+    osg::Program* program = new osg::Program;
+    program->setName("3dMetrixShader");
+    program->addShader( fShader );
+    program->addShader( vShader );
+    stateSet->setAttribute( program, osg::StateAttribute::ON );
+
+    stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
+    stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
+
+    bool lighton = (m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->getMode(GL_LIGHTING) == osg::StateAttribute::OFF);
+
+    stateSet->addUniform( new osg::Uniform( "lighton", lighton));
+    stateSet->setMode(GL_VERTEX_PROGRAM_POINT_SIZE, osg::StateAttribute::ON);
 }
 
 
+// recompute global zmin and zmax for all models
+void OSGWidget::recomputeGlobalZMinMax()
+{
+    m_modelsZMin = 0;
+    m_modelsZMax = 0;
 
+    if(m_models.size() == 0)
+    {
+        return;
+    }
+
+    bool first = true;
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+        if(data != nullptr)
+        {
+            if(first)
+            {
+                m_modelsZMin = data->zmin + data->zoffset + data->originalZoffset;
+                m_modelsZMax = data->zmax + data->zoffset + data->originalZoffset;
+                first = false;
+                continue;
+            }
+
+            float zmin = data->zmin + data->zoffset + data->originalZoffset;
+            float zmax = data->zmax + data->zoffset + data->originalZoffset;
+
+            if(zmin < m_modelsZMin)
+                m_modelsZMin = zmin;
+
+            if(zmax > m_modelsZMax)
+                m_modelsZMax = zmax;
+        }
+    }
+
+    if(first)
+    {
+        // no 3D models loaded
+        return;
+    }
+    float delta = m_modelsZMax - m_modelsZMin;
+    float min = m_modelsZMin;
+    if(m_useDisplayZMinMax)
+    {
+        delta = m_displayZMax - m_displayZMin;
+        min = m_displayZMin;
+    }
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+
+        if(data == nullptr)
+            continue;
+
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "zmin", min - data->zoffset - data->originalZoffset));
+        state_set->addUniform( new osg::Uniform( "deltaz", delta));
+    }
+}
+
+bool OSGWidget::isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        return data->useShader;
+    }
+    return false;
+}
+
+void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        osg::StateSet *stateSet= _node->getOrCreateStateSet();
+        data->useShader = _enable;
+        if(_enable)
+        {
+            configureShaders(stateSet);
+        }
+        else
+        {
+            stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
+        }
+    }
+}
+
+
+void OSGWidget::setUseDisplayZMinMaxAndUpdate(bool _use)
+{
+    m_useDisplayZMinMax = _use;
+
+    float delta = m_modelsZMax - m_modelsZMin;
+    float min = m_modelsZMin;
+    if(m_useDisplayZMinMax)
+    {
+        delta = m_displayZMax - m_displayZMin;
+        min = m_displayZMin;
+    }
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+
+        if(data == nullptr)
+            continue;
+
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "zmin", min - data->zoffset - data->originalZoffset));
+        state_set->addUniform( new osg::Uniform( "deltaz", delta));
+    }
+}
+
+void OSGWidget::showZScale(bool _show)
+{
+    m_showZScale = _show;
+    update();
+}
+
+void OSGWidget::setColorPalette(ShaderColor::Palette _palette)
+{
+    m_colorPalette = _palette;
+
+    // process all models
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::ref_ptr<NodeUserData> data = (NodeUserData*)m_models[i]->getUserData();
+        if(data != nullptr)
+        {
+            if(data->useShader)
+            {
+                osg::StateSet *stateSet= m_models[i]->getOrCreateStateSet();
+                configureShaders(stateSet);
+            }
+        }
+    }
+}

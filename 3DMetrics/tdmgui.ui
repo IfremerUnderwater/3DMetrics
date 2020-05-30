@@ -69,6 +69,9 @@
     <addaction name="light_action"/>
     <addaction name="separator"/>
     <addaction name="z_scale_action"/>
+    <addaction name="separator"/>
+    <addaction name="depth_colot_chooser_action"/>
+    <addaction name="show_z_scale_action"/>
    </widget>
    <widget class="QMenu" name="menuHelp_2">
     <property name="title">
@@ -117,6 +120,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="focusing_tool_action"/>
+   <addaction name="measure_picker_action"/>
   </widget>
   <widget class="QDockWidget" name="tree_widget_dock">
    <property name="sizePolicy">
@@ -462,6 +466,34 @@
   <action name="z_scale_action">
    <property name="text">
     <string>Z Scale</string>
+   </property>
+  </action>
+  <action name="measure_picker_action">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/layers-outline.svg</normaloff>:/icons/ressources/layers-outline.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Measure Picker</string>
+   </property>
+   <property name="toolTip">
+    <string>Measure Picker</string>
+   </property>
+  </action>
+  <action name="depth_colot_chooser_action">
+   <property name="text">
+    <string>Depth Color Chooser</string>
+   </property>
+  </action>
+  <action name="show_z_scale_action">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show Z scale</string>
    </property>
   </action>
  </widget>
