@@ -1,10 +1,11 @@
+#include "OSGWidget/osg_widget.h"
+
 #include "tool_line_dialog.h"
 #include "ui_tool_line_dialog.h"
 
 #include <QMouseEvent>
 
 #include "OSGWidget/osg_widget_tool.h"
-#include "OSGWidget/osg_widget.h"
 
 #include <Measurement/measurement_line.h>
 

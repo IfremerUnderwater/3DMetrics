@@ -1,5 +1,7 @@
 #include <osg/Geometry>
 #include <osg/StateSet>
+#include "OSGWidget/osg_widget.h"
+
 #include <osg/Point>
 
 #include "Measurement/point3d.h"
@@ -8,8 +10,6 @@
 #include "profile_depth_dialog.h"
 #include "ui_profile_depth_dialog.h"
 
-
-#include "OSGWidget/osg_widget.h"
 #include "OSGWidget/osg_widget_tool.h"
 
 #include <osgGA/TrackballManipulator>

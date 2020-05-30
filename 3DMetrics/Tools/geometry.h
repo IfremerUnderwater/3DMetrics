@@ -2,6 +2,7 @@
 #define GEOMETRY_H
 
 #include <Eigen/Dense>
+#include <vector>
 
 class Geometry
 {

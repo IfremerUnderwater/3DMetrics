@@ -1,10 +1,11 @@
+#include "OSGWidget/osg_widget.h"
+
 #include "attrib_point_widget.h"
 #include "ui_attrib_point_widget.h"
 
 #include "Measurement/measurement_point.h"
 
 #include "OSGWidget/osg_widget_tool.h"
-#include "OSGWidget/osg_widget.h"
 
 #include <GeographicLib/LocalCartesian.hpp>
 

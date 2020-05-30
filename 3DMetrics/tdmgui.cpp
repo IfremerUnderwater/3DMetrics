@@ -1,3 +1,5 @@
+#include <QGLWidget>
+
 #include <QCloseEvent>
 #include <QProcess>
 #include <QMessageBox>
@@ -45,8 +47,13 @@
 #include "OSGWidget/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
 
+#ifdef _WIN32
+#include "ogr_spatialref.h"
+#include "ogrsf_frmts.h"
+#else
 #include "gdal/ogr_spatialref.h"
 #include "gdal/ogrsf_frmts.h"
+#endif
 
 #include "edit_transparency_model.h"
 #include "edit_offset_model.h"
@@ -78,6 +85,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     qRegisterMetaType<MeasPattern>();
 
     ui->setupUi(this);
+    ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
+
 
     // set icon
     this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
@@ -3511,7 +3520,7 @@ void TDMGui::slot_exportMeasToGeom()
         const char *psz_driver_name = "ESRI Shapefile";
         OGRSFDriver *driver;
         OGRRegisterAll();
-        driver =OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
+        driver =(OGRSFDriver *)OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
         OGRDataSource *data_source;
         data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
 

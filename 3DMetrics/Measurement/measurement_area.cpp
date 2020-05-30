@@ -1,8 +1,8 @@
 #include <osg/Geometry>
 #include <osg/StateSet>
 #include <osg/Point>
-#include "OSGWidget/osg_widget_tool.h"
 #include "OSGWidget/osg_widget.h"
+#include "OSGWidget/osg_widget_tool.h"
 #include <GeographicLib/LocalCartesian.hpp>
 #include "QPointF"
 
