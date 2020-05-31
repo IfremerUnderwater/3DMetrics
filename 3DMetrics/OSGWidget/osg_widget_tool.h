@@ -3,7 +3,7 @@
 
 #include <QObject>
 
-#include "Measurement/point3d.h"
+#include "OSGWidget/point3d.h"
 
 class OSGWidget;
 

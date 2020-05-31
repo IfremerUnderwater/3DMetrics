@@ -1,14 +1,14 @@
-#ifndef MEASUREPICKERTOOL_H
-#define MEASUREPICKERTOOL_H
+#ifndef MEASUREMENTPICKERTOOL_H
+#define MEASUREMENTPICKERTOOL_H
 
 #include <QObject>
 #include <osg/Node>
 
-class MeasurePickerTool : public QObject
+class MeasurementPickerTool : public QObject
 {
     Q_OBJECT
 public:
-    explicit MeasurePickerTool(QObject *parent = 0);
+    explicit MeasurementPickerTool(QObject *parent = 0);
 
 public slots:
     void start();
@@ -20,6 +20,6 @@ signals:
     void signal_noNodeClicked();
 };
 
-#endif // MEASUREPICKERTOOL_H
+#endif // MEASUREMENTPICKERTOOL_H
 
 

@@ -262,7 +262,7 @@ public:
 };
 
 
-const char *const OSGWidget::MEASURE_NAME = "3DMeasure";
+const char *const OSGWidget::MEASUREMENT_NAME = "3DMeasurement";
 
 OSGWidget::OSGWidget(QWidget* parent)
     : QOpenGLWidget( parent)
@@ -1519,7 +1519,7 @@ void OSGWidget::getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node>
                 if(parent != nullptr)
                 {
                     std::string name = parent->getName();
-                    if(name == MEASURE_NAME)
+                    if(name == MEASUREMENT_NAME)
                     {
                         _inter_exists = true;
                         _inter_node = newnode;

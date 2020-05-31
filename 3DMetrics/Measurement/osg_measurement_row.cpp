@@ -5,7 +5,7 @@
 osgMeasurementRow::osgMeasurementRow(MeasPattern &_pattern) : m_visible(true)
 {
     m_group = new osg::Group();
-    m_group->setName(OSGWidget::MEASURE_NAME);
+    m_group->setName(OSGWidget::MEASUREMENT_NAME);
     for(int i=0; i<_pattern.getNbFields(); i++)
     {
         osg::ref_ptr<osg::Geode> geode = 0;

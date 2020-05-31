@@ -215,7 +215,7 @@ public:
     double getZScale() const { return m_zScale; }
     void setZScale(double _newValue);
 
-    static const char *const MEASURE_NAME;
+    static const char *const MEASUREMENT_NAME;
 
     bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
     void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);

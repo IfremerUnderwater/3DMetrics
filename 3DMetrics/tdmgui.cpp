@@ -64,7 +64,7 @@
 
 #include "z_scale_dialog.h"
 
-#include "OSGWidget/measure_picker_tool.h"
+#include "OSGWidget/measurement_picker_tool.h"
 
 #include "model_depth_colors_chooser.h"
 
@@ -3798,7 +3798,7 @@ void TDMGui::slot_depthColorsChooser()
 
 void TDMGui::slot_measurePicker()
 {
-    MeasurePickerTool *tool = new MeasurePickerTool(this);
+    MeasurementPickerTool *tool = new MeasurementPickerTool(this);
     QObject::connect(tool, SIGNAL(signal_nodeClicked(osg::Node *)),this, SLOT(slot_nodeClicked(osg::Node*)));
     QObject::connect(tool, SIGNAL(signal_noNodeClicked()),this, SLOT(slot_noNodeClicked()));
 }

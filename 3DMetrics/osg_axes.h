@@ -3,7 +3,7 @@
 
 #include <QWidget>
 #include <osg/Geode>
-#include "Measurement/point3d.h"
+#include "OSGWidget/point3d.h"
 
 
 class OSGAxes : public QWidget

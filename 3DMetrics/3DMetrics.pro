@@ -50,8 +50,9 @@ INCLUDEPATH += Tools
 
 SOURCES += main.cpp \
     OSGWidget/kml_handler.cpp \
+    OSGWidget/measurement_picker_tool.cpp \
     tdmgui.cpp \
-    Measurement/point3d.cpp \
+    OSGWidget/point3d.cpp \
     Measurement/measurement_area.cpp \
     Measurement/measurement_item.cpp \
     Measurement/measurement_point.cpp \
@@ -94,7 +95,6 @@ SOURCES += main.cpp \
     z_scale_dialog.cpp \
     profile_depth_dialog.cpp \
     paint_widget.cpp \
-    OSGWidget/measure_picker_tool.cpp \
     OSGWidget/minmax_computation_visitor.cpp \
     OSGWidget/geometry_type_count_visitor.cpp \
     model_depth_colors_chooser.cpp \
@@ -105,8 +105,9 @@ SOURCES += main.cpp \
 
 HEADERS  += \
     OSGWidget/kml_handler.h \
+    OSGWidget/measurement_picker_tool.h \
     tdmgui.h \
-    Measurement/point3d.h \
+    OSGWidget/point3d.h \
     Measurement/measurement_area.h \
     Measurement/measurement_line.h \
     Measurement/measurement_item.h \
@@ -150,7 +151,6 @@ HEADERS  += \
     z_scale_dialog.h \
     profile_depth_dialog.h \
     paint_widget.h \
-    OSGWidget/measure_picker_tool.h \
     OSGWidget/minmax_computation_visitor.h \
     OSGWidget/geometry_type_count_visitor.h \
     model_depth_colors_chooser.h \

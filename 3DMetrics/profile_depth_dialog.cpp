@@ -4,7 +4,7 @@
 
 #include <osg/Point>
 
-#include "Measurement/point3d.h"
+#include "OSGWidget/point3d.h"
 #include "Measurement/measurement_line.h"
 
 #include "profile_depth_dialog.h"

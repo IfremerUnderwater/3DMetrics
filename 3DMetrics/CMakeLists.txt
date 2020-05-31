@@ -3,7 +3,7 @@ add_executable(3DMetrics
     main.cpp
     OSGWidget/kml_handler.cpp
     tdmgui.cpp
-    Measurement/point3d.cpp
+    OSGWidget/point3d.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp
@@ -46,7 +46,7 @@ add_executable(3DMetrics
     z_scale_dialog.cpp
     profile_depth_dialog.cpp
     paint_widget.cpp
-    OSGWidget/measure_picker_tool.cpp
+    OSGWidget/measurement_picker_tool.cpp
     OSGWidget/minmax_computation_visitor.cpp
     OSGWidget/geometry_type_count_visitor.cpp
     model_depth_colors_chooser.cpp

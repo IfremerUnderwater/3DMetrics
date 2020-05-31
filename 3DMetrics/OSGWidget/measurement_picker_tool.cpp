@@ -1,13 +1,13 @@
-#include "measure_picker_tool.h"
+#include "measurement_picker_tool.h"
 #include "OSGWidget/osg_widget.h"
 #include "OSGWidget/osg_widget_tool.h"
 
-MeasurePickerTool::MeasurePickerTool(QObject *parent) : QObject(parent)
+MeasurementPickerTool::MeasurementPickerTool(QObject *parent) : QObject(parent)
 {
     start();
 }
 
-void MeasurePickerTool::start()
+void MeasurementPickerTool::start()
 {
     OSGWidgetTool *tool = OSGWidgetTool::instance();
     tool->slot_cancelTool();
@@ -19,7 +19,7 @@ void MeasurePickerTool::start()
     tool->startTool(OSGWidgetTool::MeasurePicker);
 }
 
-void MeasurePickerTool::slot_toolEnded()
+void MeasurementPickerTool::slot_toolEnded()
 {
     disconnect(OSGWidgetTool::instance(), 0, this, 0);
     disconnect(OSGWidgetTool::instance()->getOSGWidget(), 0, this, 0);
@@ -29,7 +29,7 @@ void MeasurePickerTool::slot_toolEnded()
     delete this;
 }
 
-void MeasurePickerTool::slot_toolClicked(int _x, int _y)
+void MeasurementPickerTool::slot_toolClicked(int _x, int _y)
 {
     OSGWidget* w = OSGWidgetTool::instance()->getOSGWidget();
 

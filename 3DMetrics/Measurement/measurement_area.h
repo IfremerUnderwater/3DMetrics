@@ -4,7 +4,7 @@
 #include "Measurement/measurement_item.h"
 #include "Measurement/measurement_line.h"
 #include "Measurement/measurement_type.h"
-#include "Measurement/point3d.h"
+#include "OSGWidget/point3d.h"
 
 //#include <QVector>
 
