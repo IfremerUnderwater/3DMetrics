@@ -1293,7 +1293,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
                 menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
-                QAction *action = new QAction(tr("Use shader"),this);
+                QAction *action = new QAction(tr("Depth to colormap"),this);
                 action->setCheckable(true);
                 bool enabled = ui->display_widget->isEnabledShaderOnNode(node);
                 action->setChecked(enabled);

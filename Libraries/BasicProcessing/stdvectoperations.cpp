@@ -1,6 +1,14 @@
 #include "stdvectoperations.h"
 #include <algorithm>
-#include <cmath>
+#include <math.h>
+#ifdef WIN32
+#ifndef round
+inline double round(double number)
+{
+    return number < 0.0 ? ceil(number - 0.5) : floor(number + 0.5);
+}
+#endif
+#endif
 
 double doubleVectorMean(vector<double> & _v )
 {

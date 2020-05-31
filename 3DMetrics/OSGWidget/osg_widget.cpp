@@ -99,11 +99,12 @@ struct SnapImage : public osg::Camera::DrawCallback {
             geotiff_dataset = driver_geotiff->Create(tiff_name.c_str(),width,height,4,GDT_Byte,NULL);
 
             int size = height*width;
+			unsigned char *buffer_R = new unsigned char[width];
+            unsigned char *buffer_G = new unsigned char[width];
+            unsigned char *buffer_B = new unsigned char[width];
+            unsigned char *buffer_A = new unsigned char[width];
+			
             for(int i=0; i<height; i++) {
-                unsigned char buffer_R[width];
-                unsigned char buffer_G[width];
-                unsigned char buffer_B[width];
-                unsigned char buffer_A[width];
                 for(int j=0; j<(width); j++) {
                     buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
                     buffer_G[width-j] = m_image->data(size - ((width*i)+j))[1];
@@ -118,6 +119,11 @@ struct SnapImage : public osg::Camera::DrawCallback {
                 geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
                 geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
             }
+
+			delete buffer_R;
+            delete buffer_G;
+            delete buffer_B;
+            delete buffer_A;
 
             // Setup output coordinate system.
             double geo_transform[6] = { x_min, m_pixel_size, 0, y_max, 0, -m_pixel_size };
@@ -1902,7 +1908,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
         driver_geotiff_alt = GetGDALDriverManager()->GetDriverByName("GTiff");
         geotiff_dataset_alt = driver_geotiff_alt->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
 
-        float buffer[width_pixel];
+        float *buffer= new float[width_pixel];
 
         QProgressDialog progress_dialog("Write altitude map file...", "Abort altitude map", 0, height_pixel, this);
         progress_dialog.setWindowModality(Qt::WindowModal);
@@ -1933,6 +1939,9 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
             // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
             geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
         }
+		
+		delete buffer;
+		
         progress_dialog.setValue(height_pixel);
         geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
 
@@ -2176,7 +2185,7 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
 
     osg::Program* program = new osg::Program;
-    program->setName("3dMetrixShader");
+    program->setName("3dMetricsShader");
     program->addShader( fShader );
     program->addShader( vShader );
     stateSet->setAttribute( program, osg::StateAttribute::ON );
