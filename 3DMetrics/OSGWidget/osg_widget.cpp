@@ -347,8 +347,8 @@ OSGWidget::OSGWidget(QWidget* parent)
     // use models' min max as default
     m_useDisplayZMinMax = false;
 
-    // show zscale by default
-    m_showZScale = true;
+    // don't show zscale by default
+    m_showZScale = false;
 
     m_modelsZMin = 0;
     m_modelsZMax= 0;
@@ -1019,7 +1019,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
     osg::ref_ptr<NodeUserData> data = new NodeUserData();
-    data->useShader = true;
+    data->useShader = false;
     data->zmin = zmin;
     data->zmax = zmax;
     data->zoffset = 0; // will be changed on z offset changed
@@ -1027,7 +1027,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     data->hasMesh = geomcount.getNbTriangles() > 0;
     _node->setUserData(data);
 
-    configureShaders( _node->getOrCreateStateSet() );
+    //configureShaders( _node->getOrCreateStateSet() );
     _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
     _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
     _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "hasmesh", data->hasMesh));

@@ -85,7 +85,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     qRegisterMetaType<MeasPattern>();
 
     ui->setupUi(this);
-    ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
+    //ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
 
 
     // set icon
@@ -1286,18 +1286,18 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 osg::ref_ptr<osg::Node> node = layer_data.node();
 
                 menu->addAction(tr("Edit transparency"),this,SLOT(slot_editTransparency()));
-                menu->addAction(tr("Edit Model Offset"),this,SLOT(slot_editModelOffset()));
+                menu->addAction(tr("Edit layer offset"),this,SLOT(slot_editModelOffset()));
 
                 menu->addSeparator();
-                menu->addAction(tr("Make an orthographic map"),this,SLOT(slot_saveOrthoMap()));
-                menu->addAction(tr("Make an altitude map"),this,SLOT(slot_saveAltMap()));
-                menu->addAction(tr("Compute total area"),this,SLOT(slot_computeTotalArea()));
+                menu->addAction(tr("Orthoproject this layer"),this,SLOT(slot_saveOrthoMap()));
+                menu->addAction(tr("Elevation map from this layer"),this,SLOT(slot_saveAltMap()));
+                menu->addAction(tr("Compute total layer area"),this,SLOT(slot_computeTotalArea()));
                 menu->addSeparator();
                 QAction *action = new QAction(tr("Depth to colormap"),this);
                 action->setCheckable(true);
                 bool enabled = ui->display_widget->isEnabledShaderOnNode(node);
                 action->setChecked(enabled);
-                QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(slot_toggleUseShader(bool)));
+                QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(slot_toggleDepthToColor(bool)));
                 menu->addAction(action);
             }
         }
@@ -2173,7 +2173,7 @@ void TDMGui::slot_tempAreaTool()
 void TDMGui::slot_importOldMeasurementFile()
 {
     // open file
-    QString old_meas_fileName = getOpenFileName(this,tr("Select old measurement file to open"), m_path_measurement, tr("Json files (*.json)"));
+    QString old_meas_fileName = getOpenFileName(this,tr("Select old measurement file format"), m_path_measurement, tr("Json files (*.json)"));
 
     // save Path Measurement
     m_path_measurement = old_meas_fileName;
@@ -2627,7 +2627,7 @@ void TDMGui::slot_openProject()
     // ask to save project (if not empty)
     if(root->childCount() > 0)
     {
-        QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Save project file"),
+        QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Saving project file"),
                                                                      tr("Do you want to save current project?"),
                                                                      QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
                                                                      QMessageBox::Yes);
@@ -2703,7 +2703,7 @@ void TDMGui::slot_openProject()
     }
     else
     {
-        QMessageBox::critical(this, tr("Error : project file"), tr("Error : you didn't open a project"));
+        QMessageBox::critical(this, tr("Error : project file"), tr("Error : you didn't open any project"));
         return;
     }
 }
@@ -2886,7 +2886,7 @@ void TDMGui::slot_saveProject()
     if(root->childCount() > 0)
     {
         QMessageBox::StandardButton res_btn = QMessageBox::question( this, tr("Save project file"),
-                                                                     tr("Saving f_nodemeasurement is mandatory before\nProceed?"),
+                                                                     tr("Saving measurement is mandatory before\nProceed?"),
                                                                      QMessageBox::Cancel | QMessageBox::No | QMessageBox::Yes,
                                                                      QMessageBox::Yes);
         if (res_btn != QMessageBox::Yes)
@@ -2902,7 +2902,7 @@ void TDMGui::slot_saveProject()
     bool status = checkAndSaveMeasurements(TdmLayersModel::instance()->rootItem());
     if(!status)
     {
-        QMessageBox::information(this, tr("Save project file"), tr("Not all measurements are saved"));
+        QMessageBox::information(this, tr("Save project file"), tr("Not all measurements have been saved"));
         return;
     }
 
@@ -2927,7 +2927,7 @@ void TDMGui::slot_saveProject()
     QFile project_file(project_filename);
     if(!project_file.open(QIODevice::WriteOnly))
     {
-        QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing rights"));
+        QMessageBox::critical(this, tr("Error : save measurement file"), tr("Error : cannot open file for saving, check path writing permissions"));
         return;
     }
 
@@ -3130,9 +3130,9 @@ void TDMGui::slot_axeView()
     {
         //scale
         bool ok;
-        double scale = QInputDialog::getDouble(this,tr("Scale") , tr("Enter the scale size in meter ?"), 0.0, 0, 99999,4, &ok);
+        double scale = QInputDialog::getDouble(this,tr("Scale") , tr("Enter the frame scale in meter ?"), 1.0, 0, 99999,4, &ok);
         if( !ok ) return;
-        QMessageBox::information(this,tr("Information"), tr("Double click where you want to put your axe"));
+        QMessageBox::information(this,tr("Information"), tr("Double click where you want to put your frame"));
         m_axe.setScale(scale);
         m_axe.start();
         m_axe.show();
@@ -3194,7 +3194,7 @@ void TDMGui::slot_saveOrthoMap()
 
     // check filename is not empty
     if(ortho2D_file_info.fileName().isEmpty()){
-        QMessageBox::critical(this, tr("Error : save orthographic map"), tr("Error : you didn't give a name to the file"));
+        QMessageBox::critical(this, tr("Error : save orthographic map"), tr("Error : you didn't give any name to the file"));
         return;
     }
 
@@ -3248,7 +3248,7 @@ void TDMGui::slot_saveAltMap()
 
     // check filename is not empty
     if(alt_file_info.fileName().isEmpty()){
-        QMessageBox::critical(this, tr("Error : save altitude map"), tr("Error : you didn't give a name to the file"));
+        QMessageBox::critical(this, tr("Error : save altitude map"), tr("Error : you didn't give any name to the file"));
         return;
     }
 
@@ -3915,7 +3915,7 @@ void TDMGui::slot_noNodeClicked()
 }
 
 
-void TDMGui::slot_toggleUseShader(bool _state)
+void TDMGui::slot_toggleDepthToColor(bool _state)
 {
     QTreeView *view = ui->tree_widget;
 
@@ -3934,6 +3934,12 @@ void TDMGui::slot_toggleUseShader(bool _state)
         ui->display_widget->enableShaderOnNode(node, _state);
         double transp = layer_data.getTransparency();
         ui->display_widget->onTransparencyChange(transp,node);
+
+        if(_state)
+        {
+            ui->show_z_scale_action->setChecked(true);
+            this->slot_toggleZScale();
+        }
     }
 }
 
