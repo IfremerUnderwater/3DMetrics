@@ -44,7 +44,7 @@ void EditOffsetModel::slot_apply()
 
     TDMModelLayerData layer_data = m_item->getPrivateData<TDMModelLayerData>();
 
-    m_widget->onMoveNode(m_offsetX, m_offsetY ,m_offsetZ, m_node, layer_data.getOriginalTranslation());
+    m_widget->setNodeTranslationOffset(m_offsetX, m_offsetY ,m_offsetZ, m_node, layer_data.getOriginalTranslation());
 
     layer_data.setOffsetX(m_offsetX);
     layer_data.setOffsetY(m_offsetY);

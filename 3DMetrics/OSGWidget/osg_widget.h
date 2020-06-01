@@ -105,7 +105,7 @@ public:
     /// \param _node node to be added
     /// \return true if loading succeded
     ///
-    bool addNodeToScene(osg::ref_ptr<osg::Node> _node);
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0);
 
     ///
     /// \brief removeNodeFromScene remove a node from the scene
@@ -178,9 +178,9 @@ public:
         AltMap = 1
     };
 
-    void onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node);
+    void setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _transparency_value=0.0);
 
-    void onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans);
+    void setNodeTranslationOffset(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans);
 
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);

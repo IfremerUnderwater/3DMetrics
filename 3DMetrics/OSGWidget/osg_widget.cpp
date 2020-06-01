@@ -970,35 +970,22 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 /// \param _node node to be added
 /// \return true if loading succeded
 ///
-bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency)
 {
     // Add model
     m_models.push_back(_node);
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+//    state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
-    state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
+//    // Add the possibility of modifying the transparence
+//    osg::ref_ptr<osg::Material> material = new osg::Material;
+//    // Put the 3D model totally opaque
+//    material->setAlpha( osg::Material::FRONT, 1.0 );
+//    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
 
-
-    // Add the possibility of modify the transparence
-    osg::ref_ptr<osg::Material> material = new osg::Material;
-    // Put the 3D model totally opaque
-    material->setAlpha( osg::Material::FRONT, 1.0 );
-    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
-
-    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-    state_set->setAttributeAndModes(bf);
-
-    //    // test
-    //    osg::ref_ptr<osg::Material> material = new osg::Material;
-    //    material->setAmbient( osg::Material::FRONT_AND_BACK,
-    //                          osg::Vec4(0.0f, 0.0f, 0.0f, 1.0f) );
-    //    material->setDiffuse( osg::Material::FRONT_AND_BACK,
-    //                          osg::Vec4(1.0f, 1.0f, 1.0f, 1.0f) );
-    //    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON);
-    //    state_set->setAttributeAndModes(new osg::BlendFunc);
-    //    state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
-
+//    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+//    state_set->setAttributeAndModes(bf);
 
     m_modelsGroup->insertChild(0, _node.get()); // put at the beginning to be drawn first
 
@@ -1006,7 +993,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     osgUtil::Optimizer optimizer;
     optimizer.optimize(_node.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
-    // compute the surface of the 3D model selected through his node
+    // compute z min/max of 3D model
     MinMaxComputationVisitor minmax;
     _node->accept(minmax);
     float zmin = minmax.getMin();
@@ -1035,32 +1022,10 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node)
     setCameraOnNode(_node);
 
     home();
-    //state_set->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
-    // state_set->setMode( GL_BLEND, osg::StateAttribute::ON );
-    //state_set->setRenderingHint( osg::StateSet::TRANSPARENT_BIN );
-    /*osg::AlphaFunc* alphaFunc = new osg::AlphaFunc;
-    alphaFunc->setFunction(osg::AlphaFunc::GREATER,0.2f);*/
-    //osg::ref_ptr<osg::BlendFunc> blendFunc = new osg::BlendFunc;
-    //blendFunc->setFunction( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-    //state_set->setAttributeAndModes( blendFunc, osg::StateAttribute::ON );
 
-    //Make sure blending is on.
-    /*state_set->setMode( GL_BLEND,osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
-    //Get the material if it exists
-    osg::ref_ptr<osg::Material> material = new osg::Material;
+    // set transparency
+    setNodeTransparency(_node, _transparency);
 
-
-    material->setAlpha( osg::Material::FRONT_AND_BACK, 0.5 );
-
-    //if ( m_fAlpha >= 1.0f ){
-    //Entity is opaque so turn off state attribute
-    //stateSet->setAttributeAndModes( material,osg::StateAttribute::OVERRIDE | osg::StateAttribute::OFF );
-    //}else{
-    //Entity has transparency
-    state_set->setAttributeAndModes( material.get(),osg::StateAttribute::OVERRIDE | osg::StateAttribute::ON );
-    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::SRC_ALPHA, osg::BlendFunc::ONE_MINUS_SRC_ALPHA );
-    state_set->setAttributeAndModes(bf);*/
-    //}
     return true;
 }
 
@@ -1995,7 +1960,7 @@ void OSGWidget::enableStereo(bool _state)
     osg::DisplaySettings::instance()->setStereo(_state);
 }
 
-void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<osg::Node> _node)
+void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _transparency_value)
 {
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
@@ -2014,7 +1979,7 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
 
         if(material == nullptr)
         {
-            // Add the possibility of modify the transparence
+            // Add the possibility of modifying the transparence
             material = new osg::Material;
             // Put the 3D model totally opaque
             material->setAlpha( osg::Material::FRONT, _transparency_value);
@@ -2044,11 +2009,11 @@ void OSGWidget::onTransparencyChange(double _transparency_value, osg::ref_ptr<os
     //    state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
 }
 
-void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans)
+void OSGWidget::setNodeTranslationOffset(double _offset_x, double _offset_y, double _offset_z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans)
 {
     osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
 
-    osg::Matrix matrix = osg::Matrix::translate(_trans.x() + _x, _trans.y() + _y, _trans.z() + _z);
+    osg::Matrix matrix = osg::Matrix::translate(_trans.x() + _offset_x, _trans.y() + _offset_y, _trans.z() + _offset_z);
 
     model_transform->setMatrix(matrix);
 
@@ -2056,7 +2021,7 @@ void OSGWidget::onMoveNode(double _x, double _y, double _z, osg::ref_ptr<osg::No
     osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
     if(data != nullptr)
     {
-        data->zoffset = (float)_z;
+        data->zoffset = (float)_offset_z;
     }
 
     recomputeGlobalZMinMax();

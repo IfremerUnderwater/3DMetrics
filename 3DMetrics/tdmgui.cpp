@@ -453,10 +453,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     // end test
 
 
-    ui->display_widget->addNodeToScene(node);
-
-    ui->display_widget->onTransparencyChange(_transp, _node);
-    ui->display_widget->onMoveNode(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
+    ui->display_widget->addNodeToScene(node, _transp);
+    ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
 
     if(_select_item)
@@ -3933,7 +3931,7 @@ void TDMGui::slot_toggleDepthToColor(bool _state)
         osg::Node* const node = (layer_data.node().get());
         ui->display_widget->enableShaderOnNode(node, _state);
         double transp = layer_data.getTransparency();
-        ui->display_widget->onTransparencyChange(transp,node);
+        ui->display_widget->setNodeTransparency(node, transp);
 
         if(_state)
         {

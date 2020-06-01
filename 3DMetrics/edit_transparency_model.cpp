@@ -49,7 +49,7 @@ void EditTransparencyModel::slot_changeTransparencyValue(int _transparency_value
         close();
         return;
     }
-    m_widget->onTransparencyChange(double_transparency, m_node);
+    m_widget->setNodeTransparency(m_node, double_transparency);
 
     TDMModelLayerData layer_data = m_item->getPrivateData<TDMModelLayerData>();
     layer_data.setTransparencyValue(double_transparency);
