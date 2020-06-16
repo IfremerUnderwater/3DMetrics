@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Package>
+    <DisplayName>3DMetrics</DisplayName>
+    <Description>3DMetrics is a tool optimized to open huge 3D georeferenced models and makes measurements on them</Description>
+    <Version>@3DMetricsProject_VERSION_MAJOR@.@3DMetricsProject_VERSION_MINOR@.@3DMetricsProject_VERSION_PATCH@</Version>
+    <ReleaseDate>@BUILD_DATE@</ReleaseDate>
+    <Default>true</Default>
+    <Script>installscript.qs</Script>
+</Package>

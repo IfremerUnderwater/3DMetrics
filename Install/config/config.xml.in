@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Installer>
+    <Name>3DMetrics</Name>
+    <Version>@3DMetricsProject_VERSION_MAJOR@.@3DMetricsProject_VERSION_MINOR@.@3DMetricsProject_VERSION_PATCH@</Version>
+    <Title>3DMetrics</Title>
+    <Publisher>IFREMER</Publisher>
+    <StartMenuDir>3DMetrics</StartMenuDir>
+    <TargetDir>@BINARYTOOL_HOMEDIR@/3DMetrics</TargetDir>
+</Installer>
