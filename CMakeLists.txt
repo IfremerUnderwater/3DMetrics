@@ -36,3 +36,4 @@ endif()
 
 add_subdirectory(Libraries)
 add_subdirectory(3DMetrics)
+add_subdirectory(Tools)
