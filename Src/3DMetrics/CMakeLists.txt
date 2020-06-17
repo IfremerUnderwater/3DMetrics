@@ -54,7 +54,8 @@ add_executable(3DMetrics
     model_depth_colors_chooser.cpp
     color_widget.cpp
     qtable_arrowkey_detector.cpp
-	ressources.qrc)
+	ressources.qrc
+	3DMetrics.rc)
 	
 	
 set_target_properties(3DMetrics PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TDM_RUNTIME_ROOT}/$<0:>)
