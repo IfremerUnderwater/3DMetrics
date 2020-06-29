@@ -57,17 +57,18 @@ add_executable(3DMetrics
 	ressources.qrc
 	3DMetrics.rc)
 	
-	
 set_target_properties(3DMetrics PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TDM_RUNTIME_ROOT}/$<0:>)
 	
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(3DMetrics PUBLIC
      BasicProcessing
+     Eigen3::Eigen
      Qt5::Core
      Qt5::Widgets
      Qt5::OpenGL
-	 GDAL::GDAL
+	 ${GDAL_LIBRARY}
 	 ${GeographicLib_LIBRARIES}
      ${OPENSCENEGRAPH_LIBRARIES}
 	 kmldom kmlbase)
+# GDAL::GDAL

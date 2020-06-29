@@ -7,6 +7,23 @@ project(3DMetricsProject VERSION 0.5.1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+
+#path to OpenSceneGraph
+list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/OpenSceneGraph-3.6.2/CMakeModules)
+
+#path to Geographic lib
+list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
+#set(GeographicLib_DIR /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
+
+#path to libkml
+list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/libkml-master/build)
+
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+
+#list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/eigen-3.3.7/build/cmake)
+set(Eigen3_DIR /home/data/ThirdPartyLibs/eigen-3.3.7/build/cmake)
+find_package (Eigen3 3.3 REQUIRED NO_MODULE)
+
 if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4005")
 endif(MSVC)
