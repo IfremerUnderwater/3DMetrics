@@ -2302,6 +2302,22 @@ void OSGWidget::setColorPalette(ShaderColor::Palette _palette)
             {
                 osg::StateSet *stateSet= m_models[i]->getOrCreateStateSet();
                 configureShaders(stateSet);
+
+                // correct transparency if using shaders
+                osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+                osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
+                double transp = 0;
+                if(attr != nullptr)
+                {
+                    osg::Material* material = dynamic_cast<osg::Material*>(attr);
+                    if(material != nullptr)
+                    {
+                        osg::Vec4 color= material->getDiffuse(osg::Material::FRONT);
+                        transp = color.a();
+                    }
+                }
+
+                setNodeTransparency(m_models[i], transp);
             }
         }
     }
