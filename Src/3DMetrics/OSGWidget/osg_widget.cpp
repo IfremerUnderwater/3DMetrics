@@ -25,6 +25,7 @@
 #include <osgUtil/IntersectionVisitor>
 #include <osgUtil/PolytopeIntersector>
 #include <osgUtil/Optimizer>
+#include <osgUtil/Simplifier>
 // too slow
 //#include <osgUtil/DelaunayTriangulator>
 
@@ -972,9 +973,29 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 ///
 bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency)
 {
+    // LOD processing
+    osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+    osg::ref_ptr<osg::Node> modelL3 = matrix->getChild(0);
+    osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL3->clone(osg::CopyOp::DEEP_COPY_ALL));
+    osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(modelL3->clone(osg::CopyOp::DEEP_COPY_ALL));
+
+    osgUtil::Simplifier simplifer;
+    simplifer.setSampleRatio(0.1f);
+    modelL2->accept(simplifer);
+    simplifer.setSampleRatio(0.01f);
+    modelL1->accept(simplifer);
+    osg::ref_ptr<osg::LOD> root = new osg::LOD;
+    root->addChild(modelL1.get(), 200.0f, FLT_MAX);
+    root->addChild(modelL2.get(), 40.0f, 200.0f);
+    root->addChild(modelL3.get(), 0.0f, 40.0f);
+    // put root in _node in place of first child
+    matrix->replaceChild(modelL3,root);
+    //matrix->removeChild(0,1);
+    //matrix->addChild(root);
+
     // Add model
-    m_models.push_back(_node);
-    osg::StateSet* state_set = _node->getOrCreateStateSet();
+    m_models.push_back(matrix);
+    osg::StateSet* state_set = root->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 //    state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
@@ -987,44 +1008,44 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 //    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
 //    state_set->setAttributeAndModes(bf);
 
-    m_modelsGroup->insertChild(0, _node.get()); // put at the beginning to be drawn first
+    m_modelsGroup->insertChild(0, matrix.get()); // put at the beginning to be drawn first
 
     // optimize the scene graph, remove redundant nodes and state etc.
     osgUtil::Optimizer optimizer;
-    optimizer.optimize(_node.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
     // compute z min/max of 3D model
     MinMaxComputationVisitor minmax;
-    _node->accept(minmax);
+    matrix->accept(minmax);
     float zmin = minmax.getMin();
     float zmax = minmax.getMax();
 
     GeometryTypeCountVisitor geomcount;
-    _node->accept(geomcount);
+    matrix->accept(geomcount);
 
     // save original translation
-    osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(_node.get());
+    //osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(root.get());
 
     osg::ref_ptr<NodeUserData> data = new NodeUserData();
     data->useShader = false;
     data->zmin = zmin;
     data->zmax = zmax;
     data->zoffset = 0; // will be changed on z offset changed
-    data->originalZoffset = model_transform->getMatrix().getTrans().z();
+    data->originalZoffset = matrix->getMatrix().getTrans().z();
     data->hasMesh = geomcount.getNbTriangles() > 0;
-    _node->setUserData(data);
+    matrix->setUserData(data);
 
-    //configureShaders( _node->getOrCreateStateSet() );
-    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
-    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
-    _node->getOrCreateStateSet()->addUniform( new osg::Uniform( "hasmesh", data->hasMesh));
+    //configureShaders( root->getOrCreateStateSet() );
+    matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
+    matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
+    matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "hasmesh", data->hasMesh));
 
-    setCameraOnNode(_node);
+    setCameraOnNode(matrix);
 
     home();
 
     // set transparency
-    setNodeTransparency(_node, _transparency);
+    setNodeTransparency(matrix, _transparency);
 
     return true;
 }
