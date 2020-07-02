@@ -103,9 +103,11 @@ public:
     ///
     /// \brief addNodeToScene add a node to the scene
     /// \param _node node to be added
+    /// \param _transparency transparency (default to 0
     /// \return true if loading succeded
     ///
-    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0);
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0, bool _buildLOD = false, std::string _pathToLodFile = "");
+
 
     ///
     /// \brief removeNodeFromScene remove a node from the scene

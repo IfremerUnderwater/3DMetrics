@@ -100,11 +100,11 @@ struct SnapImage : public osg::Camera::DrawCallback {
             geotiff_dataset = driver_geotiff->Create(tiff_name.c_str(),width,height,4,GDT_Byte,NULL);
 
             int size = height*width;
-			unsigned char *buffer_R = new unsigned char[width];
+            unsigned char *buffer_R = new unsigned char[width];
             unsigned char *buffer_G = new unsigned char[width];
             unsigned char *buffer_B = new unsigned char[width];
             unsigned char *buffer_A = new unsigned char[width];
-			
+
             for(int i=0; i<height; i++) {
                 for(int j=0; j<(width); j++) {
                     buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
@@ -121,7 +121,7 @@ struct SnapImage : public osg::Camera::DrawCallback {
                 geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
             }
 
-			delete buffer_R;
+            delete buffer_R;
             delete buffer_G;
             delete buffer_B;
             delete buffer_A;
@@ -531,9 +531,9 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             {
 
                 // read line
-                poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
-                                  pafScanline, nXSize, 1, GDT_Float32,
-                                  0, 0 );
+                CPLErr err = poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                               pafScanline, nXSize, 1, GDT_Float32,
+                                               0, 0 );
 
                 // build points
 
@@ -613,17 +613,17 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 
             // read first line
-            poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
-                              pafScanline, nXSize, 1, GDT_Float32,
-                              0, 0 );
+            CPLErr err = poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
+                                           pafScanline, nXSize, 1, GDT_Float32,
+                                           0, 0 );
 
             for(int y = 1; y < nYSize; y++)
             {
 
                 // read second line
-                poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
-                                  pafScanline2, nXSize, 1, GDT_Float32,
-                                  0, 0 );
+                err = poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                        pafScanline2, nXSize, 1, GDT_Float32,
+                                        0, 0 );
 
                 // create triangles in geode
                 // AD
@@ -781,17 +781,17 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
             osg::ref_ptr<osg::Geode> geode = new osg::Geode;
 
             // read first line
-            poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
-                              pafScanline, nXSize, 1, GDT_Float32,
-                              0, 0 );
+            CPLErr err = poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
+                                           pafScanline, nXSize, 1, GDT_Float32,
+                                           0, 0 );
 
             for(int y = 1; y < nYSize; y++)
             {
 
                 // read second line
-                poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
-                                  pafScanline2, nXSize, 1, GDT_Float32,
-                                  0, 0 );
+                err = poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                        pafScanline2, nXSize, 1, GDT_Float32,
+                                        0, 0 );
 
                 // create triangles in geode
                 // AD
@@ -967,46 +967,64 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 }
 
 ///
-/// \brief addNodeToScene add a node to the scene
+/// \brief addNodeToScene add a binary OSG node to the scene
 /// \param _node node to be added
+/// \param _transparency transparency (default to 0
 /// \return true if loading succeded
 ///
-bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency)
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency, bool _buildLOD, std::string _pathToLodFile)
 {
-    // LOD processing
     osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
-    osg::ref_ptr<osg::Node> modelL3 = matrix->getChild(0);
-    osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL3->clone(osg::CopyOp::DEEP_COPY_ALL));
-    osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(modelL3->clone(osg::CopyOp::DEEP_COPY_ALL));
+    osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+    if(_buildLOD)
+    {
+        // LOD processing
+        osg::ref_ptr<osg::LOD> lodroot = new osg::LOD;
+        lodroot->addChild(root.get(), 0.0f, 40.0f);
 
-    osgUtil::Simplifier simplifer;
-    simplifer.setSampleRatio(0.1f);
-    modelL2->accept(simplifer);
-    simplifer.setSampleRatio(0.01f);
-    modelL1->accept(simplifer);
-    osg::ref_ptr<osg::LOD> root = new osg::LOD;
-    root->addChild(modelL1.get(), 200.0f, FLT_MAX);
-    root->addChild(modelL2.get(), 40.0f, 200.0f);
-    root->addChild(modelL3.get(), 0.0f, 40.0f);
-    // put root in _node in place of first child
-    matrix->replaceChild(modelL3,root);
-    //matrix->removeChild(0,1);
-    //matrix->addChild(root);
+        //osg::ref_ptr<osg::Node> modelL3 = root;
+
+        osgUtil::Simplifier simplifer;
+
+        simplifer.setSampleRatio(0.1f);
+        osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
+        modelL2->accept(simplifer);
+        lodroot->addChild(modelL2.get(), 40.0f, 200.0f);
+
+        simplifer.setSampleRatio(0.2f);
+        osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(modelL2->clone(osg::CopyOp::DEEP_COPY_ALL));
+        modelL1->accept(simplifer);
+        lodroot->addChild(modelL1.get(), 200.0f, FLT_MAX);
+
+        // put root in _node in place of first child
+        matrix->replaceChild(root,lodroot);
+
+        // optimize the scene graph, remove redundant nodes and state etc.
+        osgUtil::Optimizer optimizer;
+        optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+
+        // save file
+        osg::ref_ptr<osg::Node> nodeToSave = dynamic_cast<osg::Node *>(matrix.get());
+        osgDB::writeNodeFile(*nodeToSave,
+                             _pathToLodFile,
+                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+        root = lodroot;
+    }
 
     // Add model
     m_models.push_back(matrix);
     osg::StateSet* state_set = root->getOrCreateStateSet();
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
-//    state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
+    //    state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
-//    // Add the possibility of modifying the transparence
-//    osg::ref_ptr<osg::Material> material = new osg::Material;
-//    // Put the 3D model totally opaque
-//    material->setAlpha( osg::Material::FRONT, 1.0 );
-//    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
+    //    // Add the possibility of modifying the transparence
+    //    osg::ref_ptr<osg::Material> material = new osg::Material;
+    //    // Put the 3D model totally opaque
+    //    material->setAlpha( osg::Material::FRONT, 1.0 );
+    //    state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
 
-//    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-//    state_set->setAttributeAndModes(bf);
+    //    osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+    //    state_set->setAttributeAndModes(bf);
 
     m_modelsGroup->insertChild(0, matrix.get()); // put at the beginning to be drawn first
 
@@ -1049,6 +1067,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 
     return true;
 }
+
 
 void OSGWidget::setCameraOnNode(osg::ref_ptr<osg::Node> _node)
 {
@@ -1925,9 +1944,9 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
             // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
             geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
         }
-		
-		delete buffer;
-		
+
+        delete buffer;
+
         progress_dialog.setValue(height_pixel);
         geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
 

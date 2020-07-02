@@ -331,7 +331,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd *.osgb)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -453,7 +453,41 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     // end test
 
 
-    ui->display_widget->addNodeToScene(node, _transp);
+    // process precomputed LOD
+
+    // check osgb extension
+    if(_filename.endsWith(".osgb", Qt::CaseInsensitive))
+    {
+        // precomputed simplified layers
+        ui->display_widget->addNodeToScene(node, _transp, false);
+    }
+    else
+    {
+        bool buildLOD = true;
+        std::string pathToLodFile = _filename.toStdString();
+        pathToLodFile = pathToLodFile + ".osgb";
+        if(_filename.endsWith(".kml", Qt::CaseInsensitive))
+        {
+
+
+            KMLHandler kh;
+            kh.readFile(_filename.toStdString());
+            if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+            {
+                // precomputed simplified layers
+                buildLOD = false;
+            }
+            else
+            {
+                pathToLodFile = kh.getModelPath();
+                pathToLodFile = pathToLodFile + ".osgb";
+                // TODO : edit kml and replace model path
+            }
+        }
+
+        // normal loading : build lod
+        ui->display_widget->addNodeToScene(node, _transp, buildLOD, pathToLodFile);
+    }
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
 

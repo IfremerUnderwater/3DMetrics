@@ -84,13 +84,15 @@ bool KMLHandler::readFile(std::string _kmlfile) {
 
 std::string KMLHandler::getModelPath()
 {
-    std::string filepath, base_directory, filename;
+// not used
+//    std::string filepath, base_directory, filename;
 
-    kmlbase::File::SplitFilePath(filepath,
-                                &base_directory,
-                                &filename);
+//    kmlbase::File::SplitFilePath(filepath,
+//                                &base_directory,
+//                                &filename);
 
     //return base_directory+std::string("/")+m_model->get_link()->get_href();
+
     return m_model->get_link()->get_href();
 
 }
