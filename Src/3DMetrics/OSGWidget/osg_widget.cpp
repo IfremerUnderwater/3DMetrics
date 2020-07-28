@@ -15,6 +15,8 @@
 #include <osg/Shape>
 #include <osg/ShapeDrawable>
 #include <osg/StateSet>
+#include <osg/LOD>
+#include <osg/PagedLOD>
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
@@ -57,6 +59,8 @@
 #include "minmax_computation_visitor.h"
 #include "geometry_type_count_visitor.h"
 #include "shader_color.h"
+
+#include "smartlod.h"
 
 struct SnapImage : public osg::Camera::DrawCallback {
     SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
@@ -315,6 +319,7 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
+    //m_viewer->setThreadingModel( osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext);
     m_viewer->realize();
 
     // This ensures that the widget will receive keyboard events. This focus
@@ -330,6 +335,8 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
     m_timer.start( 40 ); //10 );
+    // TODO : call update() all modification or visibility changed
+    //m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
 
     // Create group that will contain measurement geode and 3D model
     m_globalGroup = new osg::Group;
@@ -978,36 +985,54 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     osg::ref_ptr<osg::Node> root = matrix->getChild(0);
     if(_buildLOD)
     {
-        // LOD processing
-        osg::ref_ptr<osg::LOD> lodroot = new osg::LOD;
-        lodroot->addChild(root.get(), 0.0f, 40.0f);
 
-        //osg::ref_ptr<osg::Node> modelL3 = root;
+        std::string name = _pathToLodFile.substr(0, _pathToLodFile.find_last_of("."));
+
+        // LOD processing
+        osg::ref_ptr<SmartLOD> lodroot = new SmartLOD;
+        //lodroot->addChild(root.get(), 0.0f, 40.0f);
+        std::string path0 = name;
+        path0 = path0 + "-0.osgb";
+        lodroot->addChild(path0, 0.0f, 40.0f);
+        osgDB::writeNodeFile(*root,
+                             path0,
+                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+        //lodroot->setFileName(0, path0);
 
         osgUtil::Simplifier simplifer;
 
         simplifer.setSampleRatio(0.1f);
-        osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
-        modelL2->accept(simplifer);
-        lodroot->addChild(modelL2.get(), 40.0f, 200.0f);
+        osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
+        modelL1->accept(simplifer);
+        //lodroot->addChild(modelL1.get(), 40.0f, 200.0f);
+        std::string path1 = name;
+        path1 = path1 + "-1.osgb";
+        lodroot->addChild(path1, 40.0f, 200.0f);
+        osgDB::writeNodeFile(*modelL1,
+                             path1,
+                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+        //lodroot->setFileName(1, path1);
 
         simplifer.setSampleRatio(0.2f);
-        osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(modelL2->clone(osg::CopyOp::DEEP_COPY_ALL));
-        modelL1->accept(simplifer);
-        lodroot->addChild(modelL1.get(), 200.0f, FLT_MAX);
-
-        // put root in _node in place of first child
-        matrix->replaceChild(root,lodroot);
-
-        // optimize the scene graph, remove redundant nodes and state etc.
-        osgUtil::Optimizer optimizer;
-        optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
-
-        // save file
-        osg::ref_ptr<osg::Node> nodeToSave = dynamic_cast<osg::Node *>(matrix.get());
-        osgDB::writeNodeFile(*nodeToSave,
-                             _pathToLodFile,
+        osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
+        modelL2->accept(simplifer);
+        //lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
+        std::string path2 = name;
+        path2 = path2 + "-2.osgb";
+        // load 1 node explicitely to have matrix values
+        lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
+        lodroot->setFileName(2, path2);
+        //
+        //lodroot->addChild(path2, 200.0f, FLT_MAX);
+        osgDB::writeNodeFile(*modelL2,
+                             path2,
                              new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+        //lodroot->setFileName(2, path2);
+
+        // SmartLOD
+        lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
+        matrix->replaceChild(root,lodroot);
         root = lodroot;
     }
 
@@ -1862,6 +1887,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     // Create the viewer
     osgViewer::Viewer viewer;
     viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
+
     viewer.setCamera( mrt_camera.get() );
     viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
 

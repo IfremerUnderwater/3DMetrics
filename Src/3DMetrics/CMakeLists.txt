@@ -13,6 +13,7 @@ add_executable(3DMetrics
     OSGWidget/geometry_type_count_visitor.cpp
     OSGWidget/shader_color.cpp
     OSGWidget/overlay_widget.cpp
+    OSGWidget/smartlod.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp

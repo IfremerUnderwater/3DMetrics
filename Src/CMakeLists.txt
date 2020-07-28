@@ -54,6 +54,11 @@ find_package(OpenSceneGraph REQUIRED osgDB osgUtil osgGA osgViewer)
 
 find_package(LibKML REQUIRED)
 
+##X11
+#find_package(X11 REQUIRED)
+#link_libraries(${X11_LIBRARIES})
+#include_directories(${X11_INCLUDE_DIR})
+
 # qt
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)

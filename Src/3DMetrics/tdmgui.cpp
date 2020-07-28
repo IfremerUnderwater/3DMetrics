@@ -468,8 +468,6 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
         pathToLodFile = pathToLodFile + ".osgb";
         if(_filename.endsWith(".kml", Qt::CaseInsensitive))
         {
-
-
             KMLHandler kh;
             kh.readFile(_filename.toStdString());
             if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
@@ -481,6 +479,17 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
             {
                 pathToLodFile = kh.getModelPath();
                 pathToLodFile = pathToLodFile + ".osgb";
+
+                // check relative path
+                if(pathToLodFile.size() > 0 && (!(pathToLodFile[0] == '/')))
+                {
+                    std::string base_directory, filename;
+                    kmlbase::File::SplitFilePath(_filename.toStdString(),
+                                                 &base_directory,
+                                                 &filename);
+                    pathToLodFile = base_directory + string("/") + pathToLodFile;
+                }
+
                 // TODO : edit kml and replace model path
             }
         }
