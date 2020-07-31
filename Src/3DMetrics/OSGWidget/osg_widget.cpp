@@ -393,7 +393,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
 {
     osg::ref_ptr<osg::MatrixTransform> model_transform;
     // load the data
-    setlocale(LC_ALL, "C");
+    // in main.cpp
+    // setlocale(LC_ALL, "C");
 
     QFileInfo scene_info(QString::fromStdString(_scene_file));
     std::string scene_file;
@@ -1159,8 +1160,8 @@ osg::ref_ptr<osg::Node>  OSGWidget::createLODNodeFromFiles(std::string _scene_fi
     osg::ref_ptr<osg::MatrixTransform> model_transform;
 
     // load the data
-    setlocale(LC_ALL, "C");
-
+    // in main.cpp
+    //setlocale(LC_ALL, "C");
     QFileInfo scene_info(QString::fromStdString(_scene_file_basename));
     std::string scene_file;
 
@@ -1208,7 +1209,6 @@ osg::ref_ptr<osg::Node>  OSGWidget::createLODNodeFromFiles(std::string _scene_fi
     {
         std::cout << "No data loaded" << std::endl;
         return model_transform;
-
     }
 
     // Transform model
