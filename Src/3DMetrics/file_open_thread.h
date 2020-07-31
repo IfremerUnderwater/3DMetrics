@@ -16,7 +16,7 @@ class FileOpenThread : public QThread
 public:
     explicit FileOpenThread();
     void run();
-    bool Stop;
+    //bool Stop;
     void setOSGWidget(OSGWidget *_osg_widget) {m_osg_widget = _osg_widget;}
     void setFileName(QString _filename) {m_filename = _filename;}
     void setTDMLayerItem(TdmLayerItem *_parent) {m_parent = _parent;}
@@ -31,6 +31,15 @@ public:
     void setOffsetZ(double _offsetZ){ m_offsetZ = _offsetZ; }
 
     void setLoadingMode(LoadingMode _loadingMode){ m_loadingMode = _loadingMode; }
+
+    bool getUseExistingLOD() const;
+    void setUseExistingLOD(bool useExistingLOD);
+
+    bool getBuildLOD() const;
+    void setBuildLOD(bool buildLOD);
+
+    bool getSaveCompLOD() const;
+    void setSaveCompLOD(bool saveCompLOD);
 
 signals :
     void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool
@@ -52,6 +61,11 @@ private:
     double m_offsetZ;
 
     LoadingMode m_loadingMode;
+
+    // LOD processing
+    bool m_useExistingLOD;
+    bool m_buildLOD;
+    bool m_saveCompLOD;
 };
 
 #endif // FILE_OPEN_THREAD_H

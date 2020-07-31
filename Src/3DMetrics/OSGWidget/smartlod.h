@@ -15,7 +15,10 @@ public:
 
     virtual void traverse(osg::NodeVisitor& nv);
 
-    // using osg::Group::addChild;
+    // extensions
+    static constexpr const char *const EXTLOD0 = "-0.osgb";
+    static constexpr const char *const EXTLOD1 = "-1.osgb";
+    static constexpr const char *const EXTLOD2 = "-2.osgb";
 
     virtual bool addChild(Node *child);
 

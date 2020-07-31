@@ -83,6 +83,8 @@ void SmartLOD::traverse(osg::NodeVisitor& nv)
         bool discard = false;
         for(unsigned int i=0;i<numChildren;++i)
         {
+            //qDebug() << "range " << i << "" << _rangeList[i].first << " < " << _rangeList[i].second;
+
             if (_rangeList[i].first<=required_range && required_range<_rangeList[i].second)
             {
                 if( i != m_lastIndex)
@@ -91,7 +93,6 @@ void SmartLOD::traverse(osg::NodeVisitor& nv)
                     qDebug() << "Child=" << i << "/" << numChildren << " "
                              << m_perRangeDataList[i]._filename.c_str();
 
-                    //nv.getDatabaseRequestHandler()->requestNodeFile(_perRangeDataList[numChildren]._filename,nv.getNodePath(),priority,nv.getFrameStamp(), _perRangeDataList[numChildren]._databaseRequest, _databaseOptions.get());
                     if(!m_perRangeDataList[i]._nodeLoaded)
                     {
                         QDateTime start = QDateTime::currentDateTime();

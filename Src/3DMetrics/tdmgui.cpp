@@ -65,10 +65,13 @@
 #include "z_scale_dialog.h"
 
 #include "OSGWidget/measurement_picker_tool.h"
+#include "OSGWidget/smartlod.h"
 
 #include "model_depth_colors_chooser.h"
 
 #include "qtable_arrowkey_detector.h"
+
+#include "ask_for_lod_dialog.h"
 
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
@@ -343,14 +346,87 @@ void TDMGui::slot_open3dModel()
         connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
                 this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
 
+        // default : do nothing
+        thread_node->setBuildLOD(false);
+        thread_node->setSaveCompLOD(false);
+        thread_node->setUseExistingLOD(false);
+
+        bool processLOD = false;
+
+        std::string pathToFile = filename.toStdString();
+
         // check grd files
-        if(filename.toStdString().find_last_of(".grd") == filename.toStdString().size() - 1)
+        if(pathToFile.find_last_of(".grd") == pathToFile.size() - 1)
         {
             ChooseLoadingModeDialog choose(this);
             choose.setMode(LoadingModePoint);
             if(choose.exec() == QDialog::Accepted)
             {
                 thread_node->setLoadingMode((choose.mode()));
+            }
+            // TODO LOD processing...
+        }
+
+        // check for LOD
+        else if (pathToFile.find_last_of(".osgb") == pathToFile.size() - 1)
+        {
+            // do nothing on osgb files
+            processLOD = false;
+        }
+        else
+        {
+            processLOD = true;
+            if(pathToFile.find_last_of(".kml") == pathToFile.size() - 1)
+            {
+                KMLHandler kh;
+                kh.readFile(filename.toStdString());
+                if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                {
+                    processLOD = false;
+                }
+                else
+                {
+                    pathToFile = kh.getModelPath();
+
+                    // check relative path
+                    if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                    {
+                        std::string base_directory, lfname;
+                        kmlbase::File::SplitFilePath(filename.toStdString(),
+                                                     &base_directory,
+                                                     &lfname);
+                        pathToFile = base_directory + string("/") + pathToFile;
+                    }
+                }
+            }
+        }
+
+        bool lodFilesExist = false;
+        if(processLOD)
+        {
+            // check existant LOD levels
+            std::string fname0 = pathToFile + SmartLOD::EXTLOD0;
+            std::string fname1 = pathToFile + SmartLOD::EXTLOD1;
+            std::string fname2 = pathToFile + SmartLOD::EXTLOD2;
+
+            if(QFileInfo::exists(fname0.c_str())
+                    && QFileInfo::exists(fname1.c_str())
+                    && QFileInfo::exists(fname2.c_str()))
+            {
+                lodFilesExist = true;
+            }
+
+            // ask for LOD
+            AskForLODDialog choose(this);
+            choose.setBuildLOD(false);
+            choose.setSaveCompLOD(false);
+            choose.setUseLOD(lodFilesExist);
+            choose.enableUseLOD(lodFilesExist);
+            if(choose.exec() == QDialog::Accepted)
+            {
+                thread_node->setBuildLOD(choose.buildLOD());
+                thread_node->setSaveCompLOD(choose.saveCompLOD());
+                thread_node->setUseExistingLOD(choose.useLOD());
             }
         }
 
@@ -459,7 +535,11 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     if(_filename.endsWith(".osgb", Qt::CaseInsensitive))
     {
         // precomputed simplified layers
-        ui->display_widget->addNodeToScene(node, _transp, false);
+        ui->display_widget->addNodeToScene(node, _transp);
+    }
+    else if(std::string(_node->className()) == "SmartLOD")
+    {
+        ui->display_widget->addNodeToScene(node, _transp);
     }
     else
     {
@@ -495,7 +575,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
         }
 
         // normal loading : build lod
-        ui->display_widget->addNodeToScene(node, _transp, buildLOD, pathToLodFile);
+        ui->display_widget->addNodeToScene(node, _transp); //, buildLOD, pathToLodFile);
     }
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 

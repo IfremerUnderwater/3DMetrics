@@ -94,6 +94,23 @@ public:
     osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
 
     ///
+    /// \brief createLODNodeFromFiles load a scene from a 3D file
+    /// \param _scene_file_basename path base file name (without "-0.osgb" "-1.osgb" "-2.osgb")
+    /// \return SmartLOD node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createLODNodeFromFiles(std::string _scene_file_basename);
+
+    ///
+    /// \brief createLODNodeFromFiles load a scene from a 3D file
+    /// \param _node node to process
+    /// \param _scene_file_basename
+    /// \param _buildCompoundLOD
+    /// \return true if succeded
+    ///
+    bool createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, bool _buildCompoundLOD = false);
+
+
+    ///
     /// \brief createNodeFromFile load a scene from a 3D file
     /// \param _sceneFile path to any 3D file supported by osg
     /// \return node if loading succeded
@@ -106,7 +123,7 @@ public:
     /// \param _transparency transparency (default to 0
     /// \return true if loading succeded
     ///
-    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0, bool _buildLOD = false, std::string _pathToLodFile = "");
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0); //, bool _buildLOD = false, std::string _pathToLodFile = "");
 
 
     ///

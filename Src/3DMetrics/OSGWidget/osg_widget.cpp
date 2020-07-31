@@ -16,7 +16,7 @@
 #include <osg/ShapeDrawable>
 #include <osg/StateSet>
 #include <osg/LOD>
-#include <osg/PagedLOD>
+//#include <osg/PagedLOD>
 
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
@@ -118,11 +118,11 @@ struct SnapImage : public osg::Camera::DrawCallback {
 
                 }
                 // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
-
-                geotiff_dataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer_R,width,1,GDT_Byte,0,0);
-                geotiff_dataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer_G,width,1,GDT_Byte,0,0);
-                geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
-                geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
+                CPLErr res;
+                res = geotiff_dataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer_R,width,1,GDT_Byte,0,0);
+                res = geotiff_dataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer_G,width,1,GDT_Byte,0,0);
+                res = geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
+                res = geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
             }
 
             delete buffer_R;
@@ -431,13 +431,11 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
         m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
 
         osg::Matrix matrix = osg::Matrix::identity();
-        //matrix.postMultScale(osg::Vec3f(1.0,1.0,m_zScale));
         model_transform->setMatrix(matrix);
     }else{
         double N,E,U;
         m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
 
-        // TODO
         model_transform->setMatrix(osg::Matrix::translate(E,N,U));
     }
 
@@ -979,62 +977,62 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 /// \param _transparency transparency (default to 0
 /// \return true if loading succeded
 ///
-bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency, bool _buildLOD, std::string _pathToLodFile)
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency) //, bool _buildLOD, std::string _pathToLodFile)
 {
     osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
     osg::ref_ptr<osg::Node> root = matrix->getChild(0);
-    if(_buildLOD)
-    {
+    //    if(_buildLOD)
+    //    {
 
-        std::string name = _pathToLodFile.substr(0, _pathToLodFile.find_last_of("."));
+    //        std::string name = _pathToLodFile.substr(0, _pathToLodFile.find_last_of("."));
 
-        // LOD processing
-        osg::ref_ptr<SmartLOD> lodroot = new SmartLOD;
-        //lodroot->addChild(root.get(), 0.0f, 40.0f);
-        std::string path0 = name;
-        path0 = path0 + "-0.osgb";
-        lodroot->addChild(path0, 0.0f, 40.0f);
-        osgDB::writeNodeFile(*root,
-                             path0,
-                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-        //lodroot->setFileName(0, path0);
+    //        // LOD processing
+    //        osg::ref_ptr<SmartLOD> lodroot = new SmartLOD;
+    //        //lodroot->addChild(root.get(), 0.0f, 40.0f);
+    //        std::string path0 = name;
+    //        path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+    //        lodroot->addChild(path0, 0.0f, 40.0f);
+    //        osgDB::writeNodeFile(*root,
+    //                             path0,
+    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+    //        //lodroot->setFileName(0, path0);
 
-        osgUtil::Simplifier simplifer;
+    //        osgUtil::Simplifier simplifer;
 
-        simplifer.setSampleRatio(0.1f);
-        osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
-        modelL1->accept(simplifer);
-        //lodroot->addChild(modelL1.get(), 40.0f, 200.0f);
-        std::string path1 = name;
-        path1 = path1 + "-1.osgb";
-        lodroot->addChild(path1, 40.0f, 200.0f);
-        osgDB::writeNodeFile(*modelL1,
-                             path1,
-                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-        //lodroot->setFileName(1, path1);
+    //        simplifer.setSampleRatio(0.1f);
+    //        osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
+    //        modelL1->accept(simplifer);
+    //        //lodroot->addChild(modelL1.get(), 40.0f, 200.0f);
+    //        std::string path1 = name;
+    //        path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+    //        lodroot->addChild(path1, 40.0f, 200.0f);
+    //        osgDB::writeNodeFile(*modelL1,
+    //                             path1,
+    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+    //        //lodroot->setFileName(1, path1);
 
-        simplifer.setSampleRatio(0.2f);
-        osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
-        modelL2->accept(simplifer);
-        //lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
-        std::string path2 = name;
-        path2 = path2 + "-2.osgb";
-        // load 1 node explicitely to have matrix values
-        lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
-        lodroot->setFileName(2, path2);
-        //
-        //lodroot->addChild(path2, 200.0f, FLT_MAX);
-        osgDB::writeNodeFile(*modelL2,
-                             path2,
-                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+    //        simplifer.setSampleRatio(0.2f);
+    //        osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
+    //        modelL2->accept(simplifer);
+    //        //lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
+    //        std::string path2 = name;
+    //        path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+    //        // load 1 node explicitely to have matrix values
+    //        lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
+    //        lodroot->setFileName(2, path2);
+    //        //
+    //        //lodroot->addChild(path2, 200.0f, FLT_MAX);
+    //        osgDB::writeNodeFile(*modelL2,
+    //                             path2,
+    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
 
-        //lodroot->setFileName(2, path2);
+    //        //lodroot->setFileName(2, path2);
 
-        // SmartLOD
-        lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
-        matrix->replaceChild(root,lodroot);
-        root = lodroot;
-    }
+    //        // SmartLOD
+    //        lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
+    //        matrix->replaceChild(root,lodroot);
+    //        root = lodroot;
+    //    }
 
     // Add model
     m_models.push_back(matrix);
@@ -1091,6 +1089,147 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     setNodeTransparency(matrix, _transparency);
 
     return true;
+}
+
+///
+/// \brief createLODNodeFromFiles load a scene from a 3D file
+/// \param _node node to process
+/// \param _scene_file_basename
+/// \param _buildCompoundLOD
+/// \return true if succeded
+///
+bool OSGWidget::createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, bool _buildCompoundLOD)
+{
+    osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+    osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+
+
+    std::string name = _scene_file_basename;
+
+    // LOD processing
+    std::string path0 = name;
+    path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+    osgDB::writeNodeFile(*root,
+                         path0,
+                         new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+
+    osgUtil::Simplifier simplifer;
+
+    simplifer.setSampleRatio(0.1f);
+    osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
+    modelL1->accept(simplifer);
+    std::string path1 = name;
+    path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+    osgDB::writeNodeFile(*modelL1,
+                         path1,
+                         new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+    simplifer.setSampleRatio(0.2f);
+    osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
+    modelL2->accept(simplifer);
+    std::string path2 = name;
+    path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+    osgDB::writeNodeFile(*modelL2,
+                         path2,
+                         new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+    // coumpound LOD
+    if(_buildCompoundLOD)
+    {
+        osg::ref_ptr<osg::LOD> lod = new osg::LOD;
+        lod->addChild(root, 0,40.0f);
+        lod->addChild(modelL1.get(), 40.0f, 200.0f);
+        lod->addChild(modelL2, 200.0f, FLT_MAX);
+        std::string path = name;
+        path = path + ".osgb";
+        osgDB::writeNodeFile(*lod,
+                             path,
+                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+    }
+}
+
+///
+/// \brief createLODNodeFromFiles load a scene from a 3D file
+/// \param _scene_file_basename path base file name (without "-0.osgb" "-1.osgb" "-2.osgb")
+/// \return SmartLOD node if loading succeded
+///
+osg::ref_ptr<osg::Node>  OSGWidget::createLODNodeFromFiles(std::string _scene_file_basename)
+{
+    osg::ref_ptr<osg::MatrixTransform> model_transform;
+
+    // load the data
+    setlocale(LC_ALL, "C");
+
+    QFileInfo scene_info(QString::fromStdString(_scene_file_basename));
+    std::string scene_file;
+
+    QPointF local_lat_lon;
+    double local_alt;
+
+    if (scene_info.suffix()==QString("kml")){
+        m_kml_handler.readFile(_scene_file_basename);
+        scene_file = scene_info.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
+        local_lat_lon.setX(m_kml_handler.getModelLat());
+        local_lat_lon.setY(m_kml_handler.getModelLon());
+        local_alt = m_kml_handler.getModelAlt();
+    }else{
+        scene_file = _scene_file_basename;
+        local_lat_lon.setX(0);
+        local_lat_lon.setY(0);
+        local_alt = 0;
+    }
+
+    std::string name = scene_file; //_scene_file_basename.substr(0, _scene_file_basename.find_last_of("."));
+
+    // LOD processing
+    osg::ref_ptr<SmartLOD> lodroot = new SmartLOD;
+    lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
+
+    std::string path0 = name;
+    path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+    lodroot->addChild(path0, 0.0f, 40.0f);
+
+    std::string path1 = name;
+    path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+    lodroot->addChild(path1, 40.0f, 200.0f);
+
+    std::string path2 = name;
+    path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+    osg::ref_ptr<osg::Node> modelL2 =
+            osgDB::readRefNodeFile(path2, new osgDB::Options("noRotation"));
+    lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
+    lodroot->setFileName(2, path2);
+
+    // SmartLOD
+    lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
+
+    if (!modelL2)
+    {
+        std::cout << "No data loaded" << std::endl;
+        return model_transform;
+
+    }
+
+    // Transform model
+    model_transform = new osg::MatrixTransform;
+    if (m_ref_alt == INVALID_VALUE){
+        m_ref_lat_lon = local_lat_lon;
+        m_ref_alt = local_alt;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
+
+        osg::Matrix matrix = osg::Matrix::identity();
+        model_transform->setMatrix(matrix);
+    }else{
+        double N,E,U;
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
+
+        model_transform->setMatrix(osg::Matrix::translate(E,N,U));
+    }
+
+    model_transform->addChild(lodroot);
+
+    return model_transform;
 }
 
 
@@ -1968,7 +2107,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
                 }
             }
             // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
-            geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
+            CPLErr res = geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
         }
 
         delete buffer;
