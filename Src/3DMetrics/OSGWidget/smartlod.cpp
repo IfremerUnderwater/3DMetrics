@@ -25,7 +25,7 @@ SmartLOD::PerRangeData::PerRangeData() : _nodeLoaded(false), _doNotDiscard(false
 }
 
 SmartLOD::PerRangeData::PerRangeData(const PerRangeData& prd):
-    _filename(prd._filename)
+    _filename(prd._filename), _nodeLoaded(prd._nodeLoaded), _doNotDiscard(prd._doNotDiscard)
 {
 }
 

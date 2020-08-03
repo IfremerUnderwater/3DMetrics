@@ -454,10 +454,6 @@ void TDMGui::slot_open3dModel()
     }
 }
 
-//#include <osg/DepthRangeIndexed>
-//#include <osgTerrain/Terrain>
-//#include <osgVolume/Volume>
-
 void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item
                               ,double _transp, double _offsetX, double _offsetY, double _offsetZ)
 {
@@ -486,99 +482,53 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
+    // process precomputed LOD if necessary
+    // processind in file_open_thread
+    ui->display_widget->addNodeToScene(node, _transp);
 
-    // test
+    //    // check osgb extension
+    //    if(_filename.endsWith(".osgb", Qt::CaseInsensitive))
+    //    {
+    //        // precomputed simplified layers
+    //        ui->display_widget->addNodeToScene(node, _transp);
+    //    }
+    //    else if(std::string(_node->className()) == "SmartLOD")
+    //    {
+    //        ui->display_widget->addNodeToScene(node, _transp);
+    //    }
+    //    else
+    //    {
+    //        std::string pathToLodFile = _filename.toStdString();
+    //        pathToLodFile = pathToLodFile + ".osgb";
+    //        if(_filename.endsWith(".kml", Qt::CaseInsensitive))
+    //        {
+    //            KMLHandler kh;
+    //            kh.readFile(_filename.toStdString());
+    //            if(!QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+    //            {
+    //                pathToLodFile = kh.getModelPath();
+    //                pathToLodFile = pathToLodFile + ".osgb";
 
-    //    osg::Group *group = _node->asGroup();
-    //    osg::Image *image = _node->asImage();
+    //                // check relative path
+    //                if(pathToLodFile.size() > 0 && (!(pathToLodFile[0] == '/')))
+    //                {
+    //                    std::string base_directory, filename;
+    //                    kmlbase::File::SplitFilePath(_filename.toStdString(),
+    //                                                 &base_directory,
+    //                                                 &filename);
+    //                    pathToLodFile = base_directory + string("/") + pathToLodFile;
+    //                }
 
-    //    osg::ref_ptr<osg::TransferFunction1D> trans = new osg::TransferFunction1D();
+    //                // TODO : edit kml and replace model path
+    //            }
+    //        }
 
-    //    trans->setColor(0.0, osg::Vec4(1.0,0.0,0.0,0.0));
-    //    trans->setColor(0.5, osg::Vec4(1.0,1.0,0.0,0.5));
-    //    trans->setColor(1.0, osg::Vec4(0.0,0.0,1.0,1.0));
-
-    //    // TODO
-    //     osg::ref_ptr<osgVolume::Volume> volume = new osgVolume::Volume;
-    //    volume->addChild(_node);
-
-    //    osg::ref_ptr<osgVolume::ImageLayer> layer = new osgVolume::ImageLayer(_node->asImage());
-
-    //    osgVolume::SwitchProperty* sp = new osgVolume::SwitchProperty;
-    //    sp->setActiveProperty(0);
-    //    osgVolume::CompositeProperty* cp = new osgVolume::CompositeProperty;
-    //    osgVolume::TransferFunctionProperty* tfp = trans.valid() ? new osgVolume::TransferFunctionProperty(trans.get()) : 0;
-    //    cp->addProperty(tfp);
-    //    sp->addProperty(cp);
-    //    layer->setProperty(sp);
-    //    volume->addChild(layer->asNode());
-    //    node = volume.get();
+    //        // normal loading : build lod
+    //        ui->display_widget->addNodeToScene(node, _transp); //, buildLOD, pathToLodFile);
+    //    }
 
 
-    //    osg::StateSet* state_set = _node->getOrCreateStateSet();
-    //    osg::StateAttribute* attrcolortable = state_set->getAttribute(osg::StateAttribute::COLORTABLE);
-    //    osg::StateAttribute* attrdepthrange = state_set->getAttribute(osg::StateAttribute::DEPTHRANGEINDEXED);
-    //    osg::DepthRangeIndexed* depthrange =      dynamic_cast<osg::DepthRangeIndexed*>(attrdepthrange);
-    //    double far = depthrange->getZFar();
-    //    double near = depthrange->getZNear();
-
-    //state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
-
-
-    //_node->asGeode()->setColorArray(colors,osg::Array::BIND_OVERALL);
-    // end test
-
-
-    // process precomputed LOD
-
-    // check osgb extension
-    if(_filename.endsWith(".osgb", Qt::CaseInsensitive))
-    {
-        // precomputed simplified layers
-        ui->display_widget->addNodeToScene(node, _transp);
-    }
-    else if(std::string(_node->className()) == "SmartLOD")
-    {
-        ui->display_widget->addNodeToScene(node, _transp);
-    }
-    else
-    {
-        bool buildLOD = true;
-        std::string pathToLodFile = _filename.toStdString();
-        pathToLodFile = pathToLodFile + ".osgb";
-        if(_filename.endsWith(".kml", Qt::CaseInsensitive))
-        {
-            KMLHandler kh;
-            kh.readFile(_filename.toStdString());
-            if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
-            {
-                // precomputed simplified layers
-                buildLOD = false;
-            }
-            else
-            {
-                pathToLodFile = kh.getModelPath();
-                pathToLodFile = pathToLodFile + ".osgb";
-
-                // check relative path
-                if(pathToLodFile.size() > 0 && (!(pathToLodFile[0] == '/')))
-                {
-                    std::string base_directory, filename;
-                    kmlbase::File::SplitFilePath(_filename.toStdString(),
-                                                 &base_directory,
-                                                 &filename);
-                    pathToLodFile = base_directory + string("/") + pathToLodFile;
-                }
-
-                // TODO : edit kml and replace model path
-            }
-        }
-
-        // normal loading : build lod
-        ui->display_widget->addNodeToScene(node, _transp); //, buildLOD, pathToLodFile);
-    }
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
-
 
     if(_select_item)
     {
@@ -2872,6 +2822,76 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         thread_node->setTDMLayerItem(_parent ? _parent : root);
         thread_node->setSelectItem(false);
         thread_node->setOSGWidget(ui->display_widget);
+
+        // check presence of LOD elements
+        std::string pathToFile = file_path.toStdString();
+        bool processLOD = false;
+
+        // check grd files
+        if(pathToFile.find_last_of(".grd") == pathToFile.size() - 1)
+        {
+            // TODO : hack to choose loading mode for grd files
+            ChooseLoadingModeDialog choose(this);
+            choose.windowTitle() = file_path;
+            choose.setMode(LoadingModePoint);
+            if(choose.exec() == QDialog::Accepted)
+            {
+                thread_node->setLoadingMode((choose.mode()));
+            }
+            // TODO LOD processing...
+        }
+
+        // check for LOD
+        else if (pathToFile.find_last_of(".osgb") == pathToFile.size() - 1)
+        {
+            // do nothing on osgb files
+            processLOD = false;
+        }
+        else
+        {
+            processLOD = true;
+            if(pathToFile.find_last_of(".kml") == pathToFile.size() - 1)
+            {
+                KMLHandler kh;
+                kh.readFile(pathToFile);
+                if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                {
+                    processLOD = false;
+                }
+                else
+                {
+                    pathToFile = kh.getModelPath();
+
+                    // check relative path
+                    if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                    {
+                        std::string base_directory, lfname;
+                        kmlbase::File::SplitFilePath(filename.toStdString(),
+                                                     &base_directory,
+                                                     &lfname);
+                        pathToFile = dir.absolutePath().toStdString() + string("/") + pathToFile;
+                    }
+                }
+            }
+        }
+        bool lodFilesExist = false;
+        if(processLOD)
+        {
+            // check existant LOD levels
+            std::string fname0 = pathToFile + OSGWidget::EXTLOD0;
+            std::string fname1 = pathToFile + OSGWidget::EXTLOD1;
+            std::string fname2 = pathToFile + OSGWidget::EXTLOD2;
+
+            if(QFileInfo::exists(fname0.c_str())
+                    && QFileInfo::exists(fname1.c_str())
+                    && QFileInfo::exists(fname2.c_str()))
+            {
+                // in project : force using precomputed LOD files
+                lodFilesExist = true;
+            }
+        }
+
+        thread_node->setUseExistingLOD(lodFilesExist);
 
         double transp = _obj.value("Transparency").toDouble(0);
         thread_node->setTransparencyValue(transp);
