@@ -20,7 +20,7 @@ SmartLOD::~SmartLOD()
 {
 }
 
-SmartLOD::PerRangeData::PerRangeData() : _nodeLoaded(false)
+SmartLOD::PerRangeData::PerRangeData() : _nodeLoaded(false), _doNotDiscard(false)
 {
 }
 
@@ -32,7 +32,11 @@ SmartLOD::PerRangeData::PerRangeData(const PerRangeData& prd):
 SmartLOD::PerRangeData& SmartLOD::PerRangeData::operator = (const PerRangeData& prd)
 {
     if (this==&prd) return *this;
+
     _filename = prd._filename;
+    _nodeLoaded = prd._nodeLoaded;
+    _doNotDiscard = prd._doNotDiscard;
+
     return *this;
 }
 
@@ -118,10 +122,17 @@ void SmartLOD::traverse(osg::NodeVisitor& nv)
             {
                 if(i != m_lastIndex && m_perRangeDataList[i]._nodeLoaded)
                 {
-                    // test : discard other nodes
-                    qDebug() << "Discard " << m_perRangeDataList[i]._filename.c_str();
-                    _children[i] = new osg::Node;
-                    m_perRangeDataList[i]._nodeLoaded = false;
+                    // discard other nodes if not tagged
+                    if(!m_perRangeDataList[i]._doNotDiscard)
+                    {
+                        qDebug() << "Discard " << m_perRangeDataList[i]._filename.c_str();
+                        _children[i] = new osg::Node;
+                        m_perRangeDataList[i]._nodeLoaded = false;
+                    }
+                    else
+                    {
+                        qDebug() << "Level " << i << " not discarded";
+                    }
                 }
             }
         }
@@ -152,6 +163,8 @@ bool SmartLOD::addChild(Node *child, float min, float max)
     if (LOD::addChild(child,min,max))
     {
         expandPerRangeDataTo(_children.size()-1);
+        m_lastIndex = _children.size()-1;
+        m_perRangeDataList[m_lastIndex]._nodeLoaded = true;
         return true;
     }
     return false;
@@ -178,4 +191,14 @@ bool SmartLOD::removeChildren( unsigned int pos,unsigned int numChildrenToRemove
     m_lastIndex = -1;
 
     return Group::removeChildren(pos,numChildrenToRemove);
+}
+
+void SmartLOD::doNotDiscardChild(int _pos, bool _state)
+{
+    if(_pos < 0 || _pos >= _rangeList.size())
+    {
+        // error
+        return;
+    }
+    m_perRangeDataList[_pos]._doNotDiscard = _state;
 }

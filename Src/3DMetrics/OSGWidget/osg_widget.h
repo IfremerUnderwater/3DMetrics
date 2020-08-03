@@ -79,6 +79,11 @@ public:
 
     virtual ~OSGWidget();
 
+    // extensions for SmartLOD
+    static constexpr const char *const EXTLOD0 = "-0.osgb";
+    static constexpr const char *const EXTLOD1 = "-1.osgb";
+    static constexpr const char *const EXTLOD2 = "-2.osgb";
+
     ///
     /// \brief setSceneFromFile load a scene from a 3D file
     /// \param _sceneFile path to any 3D file supported by osg

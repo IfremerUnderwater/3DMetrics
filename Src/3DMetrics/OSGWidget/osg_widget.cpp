@@ -1109,7 +1109,7 @@ bool OSGWidget::createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene
 
     // LOD processing
     std::string path0 = name;
-    path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+    path0 = path0 + EXTLOD0; // "-0.osgb";
     osgDB::writeNodeFile(*root,
                          path0,
                          new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -1121,7 +1121,7 @@ bool OSGWidget::createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene
     osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
     modelL1->accept(simplifer);
     std::string path1 = name;
-    path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+    path1 = path1 + EXTLOD1; //"-1.osgb";
     osgDB::writeNodeFile(*modelL1,
                          path1,
                          new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -1130,7 +1130,7 @@ bool OSGWidget::createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene
     osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
     modelL2->accept(simplifer);
     std::string path2 = name;
-    path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+    path2 = path2 + EXTLOD2; //"-2.osgb";
     osgDB::writeNodeFile(*modelL2,
                          path2,
                          new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -1188,19 +1188,20 @@ osg::ref_ptr<osg::Node>  OSGWidget::createLODNodeFromFiles(std::string _scene_fi
     lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
 
     std::string path0 = name;
-    path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+    path0 = path0 + EXTLOD0; // "-0.osgb";
     lodroot->addChild(path0, 0.0f, 40.0f);
 
     std::string path1 = name;
-    path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+    path1 = path1 + EXTLOD1; //"-1.osgb";
     lodroot->addChild(path1, 40.0f, 200.0f);
 
     std::string path2 = name;
-    path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+    path2 = path2 + EXTLOD2; //"-2.osgb";
     osg::ref_ptr<osg::Node> modelL2 =
             osgDB::readRefNodeFile(path2, new osgDB::Options("noRotation"));
     lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
     lodroot->setFileName(2, path2);
+    lodroot->doNotDiscardChild(2);
 
     // SmartLOD
     lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));

@@ -15,11 +15,6 @@ public:
 
     virtual void traverse(osg::NodeVisitor& nv);
 
-    // extensions
-    static constexpr const char *const EXTLOD0 = "-0.osgb";
-    static constexpr const char *const EXTLOD1 = "-1.osgb";
-    static constexpr const char *const EXTLOD2 = "-2.osgb";
-
     virtual bool addChild(Node *child);
 
     virtual bool addChild(Node *child, float rmin, float rmax);
@@ -30,6 +25,7 @@ public:
 
     virtual bool removeChildren(unsigned int pos,unsigned int numChildrenToRemove=1);
 
+    void doNotDiscardChild(int _pos, bool _state = true);
 
     struct OSG_EXPORT PerRangeData
     {
@@ -39,6 +35,7 @@ public:
 
         std::string                     _filename;
         bool                            _nodeLoaded;
+        bool                            _doNotDiscard;
     };
 
     typedef std::vector<PerRangeData> PerRangeDataList;

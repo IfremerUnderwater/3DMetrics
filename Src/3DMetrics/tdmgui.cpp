@@ -405,9 +405,9 @@ void TDMGui::slot_open3dModel()
         if(processLOD)
         {
             // check existant LOD levels
-            std::string fname0 = pathToFile + SmartLOD::EXTLOD0;
-            std::string fname1 = pathToFile + SmartLOD::EXTLOD1;
-            std::string fname2 = pathToFile + SmartLOD::EXTLOD2;
+            std::string fname0 = pathToFile + OSGWidget::EXTLOD0;
+            std::string fname1 = pathToFile + OSGWidget::EXTLOD1;
+            std::string fname2 = pathToFile + OSGWidget::EXTLOD2;
 
             if(QFileInfo::exists(fname0.c_str())
                     && QFileInfo::exists(fname1.c_str())
