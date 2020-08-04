@@ -14,6 +14,7 @@ add_executable(3DMetrics
     OSGWidget/shader_color.cpp
     OSGWidget/overlay_widget.cpp
     OSGWidget/smartlod.cpp
+    OSGWidget/grid_file_processor.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp

@@ -106,7 +106,7 @@ public:
     osg::ref_ptr<osg::Node> createLODNodeFromFiles(std::string _scene_file_basename);
 
     ///
-    /// \brief createLODNodeFromFiles load a scene from a 3D file
+    /// \brief createLODFiles load a scene from a 3D file
     /// \param _node node to process
     /// \param _scene_file_basename
     /// \param _buildCompoundLOD
@@ -114,10 +114,10 @@ public:
     ///
     bool createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, bool _buildCompoundLOD = false);
 
-
     ///
-    /// \brief createNodeFromFile load a scene from a 3D file
-    /// \param _sceneFile path to any 3D file supported by osg
+    /// \brief createNodeFromFileWithGDAL load a scene from a 3D file
+    /// \param _scene_file path to netcdf grid file
+    /// \param _mode
     /// \return node if loading succeded
     ///
     osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode);
@@ -129,7 +129,6 @@ public:
     /// \return true if loading succeded
     ///
     bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0); //, bool _buildLOD = false, std::string _pathToLodFile = "");
-
 
     ///
     /// \brief removeNodeFromScene remove a node from the scene
