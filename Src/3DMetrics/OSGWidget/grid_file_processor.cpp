@@ -3,6 +3,10 @@
 #include <osg/Geode>
 #include <osg/Point>
 
+#include <osgDB/WriteFile>
+#include <osg/LOD>
+#include <osgUtil/Simplifier>
+
 #ifdef _WIN32
 #include "gdal_priv.h"
 #include "cpl_conv.h"
@@ -537,6 +541,373 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
             CPLFree(pafScanline);
             CPLFree(pafScanline2);
 
+        }
+
+        GDALClose(dataset);
+
+        GDALDestroyDriverManager();
+    }
+
+    return group;
+}
+
+static const int TILESIZE = 2000;
+
+osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _normals, bool _lod)
+{
+    osg::ref_ptr<osg::Group> group;
+
+    GDALAllRegister();
+    GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
+    if(dataset != NULL)
+    {
+        char buffer[1024];
+        double        adfGeoTransform[6];
+        //                adfGeoTransform[0] /* top left x */
+        //                adfGeoTransform[1] /* w-e pixel resolution */
+        //                adfGeoTransform[2] /* 0 */
+        //                adfGeoTransform[3] /* top left y */
+        //                adfGeoTransform[4] /* 0 */
+        //                adfGeoTransform[5] /* n-s pixel resolution (negative value) */
+        sprintf(buffer, "Driver: %s/%s\n",
+                dataset->GetDriver()->GetDescription(),
+                dataset->GetDriver()->GetMetadataItem( GDAL_DMD_LONGNAME ) );
+        qDebug() << buffer;
+        sprintf(buffer, "Size is %dx%dx%d\n",
+                dataset->GetRasterXSize(), dataset->GetRasterYSize(),
+                dataset->GetRasterCount() );
+        qDebug() << buffer;
+        if( dataset->GetProjectionRef()  != NULL )
+        {
+            sprintf(buffer, "Projection is `%s'\n", dataset->GetProjectionRef() );
+            qDebug() << buffer;
+        }
+        if( dataset->GetGeoTransform( adfGeoTransform ) == CE_None )
+        {
+            sprintf(buffer, "Origin = (%.6f,%.6f)\n",
+                    adfGeoTransform[0], adfGeoTransform[3] );
+            qDebug() << buffer;
+            sprintf(buffer, "Pixel Size = (%.6f,%.6f)\n",
+                    adfGeoTransform[1], adfGeoTransform[5] );
+            qDebug() << buffer;
+        }
+
+        GDALRasterBand  *poBand;
+        int             nBlockXSize, nBlockYSize;
+        int             bGotMin, bGotMax;
+        double          adfMinMax[2];
+        poBand = dataset->GetRasterBand( 1 );
+        poBand->GetBlockSize( &nBlockXSize, &nBlockYSize );
+        sprintf(buffer, "Block=%dx%d Type=%s, ColorInterp=%s\n",
+                nBlockXSize, nBlockYSize,
+                GDALGetDataTypeName(poBand->GetRasterDataType()),
+                GDALGetColorInterpretationName(
+                    poBand->GetColorInterpretation()) );
+        qDebug() << buffer;
+
+        adfMinMax[0] = poBand->GetMinimum( &bGotMin );
+        adfMinMax[1] = poBand->GetMaximum( &bGotMax );
+        if( ! (bGotMin && bGotMax) )
+            GDALComputeRasterMinMax((GDALRasterBandH)poBand, TRUE, adfMinMax);
+        sprintf(buffer, "Min=%.3fd, Max=%.3f\n", adfMinMax[0], adfMinMax[1] );
+        qDebug() << buffer;
+
+        if( poBand->GetOverviewCount() > 0 )
+        {
+            sprintf(buffer, "Band has %d overviews.\n", poBand->GetOverviewCount() );
+            qDebug() << buffer;
+        }
+
+        if( poBand->GetColorTable() != NULL )
+        {
+            printf(buffer, "Band has a color table with %d entries.\n",
+                   poBand->GetColorTable()->GetColorEntryCount() );
+            qDebug() << buffer;
+        }
+        // read data
+        float *pafScanline;
+        float *pafScanline2;
+        int   nXSize = poBand->GetXSize();
+        int   nYSize = poBand->GetYSize();
+        float noData = poBand->GetNoDataValue();
+
+        // projection
+        GeographicLib::LocalCartesian proj(adfGeoTransform[3],  adfGeoTransform[0]);
+        _local_lat_lon.setX(adfGeoTransform[3]);
+        _local_lat_lon.setY(adfGeoTransform[0]);
+        _local_alt = 0;
+
+        //double deltaz = adfMinMax[1] - adfMinMax[0];
+
+        group = new osg::Group;
+
+        // LoadingModeTriangle || _mode == LoadingModeTriangleNormals)
+        {
+            // triangles
+
+            pafScanline = (float *) CPLMalloc(sizeof(float)*nXSize);
+            pafScanline2 = (float *) CPLMalloc(sizeof(float)*nXSize);
+
+
+            const int ntilesX = nXSize / TILESIZE + (nXSize  % TILESIZE > 0 ? 1 : 0);
+            const int ntilesY = nYSize / TILESIZE + (nYSize  % TILESIZE > 0 ? 1 : 0);
+
+            osg::ref_ptr<osg::Geode> geode[ntilesX];
+            for(int i=0; i<ntilesX; i++)
+                geode[i] = new osg::Geode;
+
+            // read first line
+            CPLErr err = poBand->RasterIO( GF_Read, 0, 0, nXSize, 1,
+                                           pafScanline, nXSize, 1, GDT_Float32,
+                                           0, 0 );
+
+            for(int y = 1; y < nYSize; y++)
+            {
+                // read second line
+                err = poBand->RasterIO( GF_Read, 0, y, nXSize, 1,
+                                        pafScanline2, nXSize, 1, GDT_Float32,
+                                        0, 0 );
+
+                // create triangles in geode
+                // AD
+                // BC
+                //  triangle 1 = ABC
+                //  triangle 2 = ACD
+
+
+                osg::ref_ptr<osg::Vec3Array> vertices[ntilesX];
+                for(int i=0; i<ntilesX; i++)
+                {
+                    vertices[i] = new osg::Vec3Array;
+                }
+
+                // for LoadingModeTriangleNormals
+                osg::ref_ptr<osg::Vec3Array> normals[ntilesX];
+                if(_normals)
+                {
+                    for(int i=0; i<ntilesX; i++)
+                    {
+                        normals[i] = new osg::Vec3Array;
+                    }
+                }
+
+                // point
+                for(int x=0; x<nXSize-1; x++)
+                {
+                    int index = x / TILESIZE;
+
+                    // check if 1 triangle is incomplète
+                    if( pafScanline2[x] == noData) // check NAN
+                        continue;
+                    if( pafScanline2[x+1] == noData) // check NAN
+                        continue;
+                    if( pafScanline[x] == noData) // check NAN
+                        continue;
+                    if( pafScanline[x+1] == noData) // check NAN
+                        continue;
+
+                    // build triangle
+                    osg::Vec3f pointA;
+                    osg::Vec3f pointB;
+                    osg::Vec3f pointC;
+                    osg::Vec3f pointD;
+
+                    // B
+                    double lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    double lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
+                    double h = pafScanline2[x];
+                    double px, py, pz;
+                    proj.Forward(lat, lon, h, px, py, pz);
+                    pointB[0] = px;
+                    pointB[1] = py;
+                    pointB[2] = pz;
+
+                    // C
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*(y+1);
+                    h = pafScanline2[x+1];
+                    proj.Forward(lat, lon, h, px, py, pz);
+                    pointC[0] = px;
+                    pointC[1] = py;
+                    pointC[2] = pz;
+
+                    // A
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*x;
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    h = pafScanline[x];
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    pointA[0] = px;
+                    pointA[1] = py;
+                    pointA[2] = pz;
+
+
+                    // D
+                    lon = adfGeoTransform[0] + adfGeoTransform[1]*(x+1);
+                    lat = adfGeoTransform[3] + adfGeoTransform[5]*y;
+                    h = pafScanline[x+1];
+                    proj.Forward(lat, lon, h, px, py, pz);
+
+                    pointD[0] = px;
+                    pointD[1] = py;
+                    pointD[2] = pz;
+
+
+                    // triangles
+                    vertices[index]->push_back(pointA);
+                    vertices[index]->push_back(pointB);
+                    vertices[index]->push_back(pointC);
+
+                    if(_normals)
+                    {
+                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
+                        normals[index]->push_back(N1);
+                        normals[index]->push_back(N1);
+                        normals[index]->push_back(N1);
+                    }
+
+                    vertices[index]->push_back(pointA);
+                    vertices[index]->push_back(pointC);
+                    vertices[index]->push_back(pointD);
+
+
+                    if(_normals)
+                    {
+                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
+                        normals[index]->push_back(N2);
+                        normals[index]->push_back(N2);
+                        normals[index]->push_back(N2);
+                    }
+                }
+
+                for(int i=0; i<ntilesX; i++)
+                {
+                    if(vertices[i]->size() == 0)
+                        continue;
+
+                    // triangles
+                    osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+
+                    // pass the created vertex array to the points geometry object.
+                    geometry->setVertexArray(vertices[i]);
+
+                    if(_normals)
+                    {
+                        geometry->setNormalArray(normals[i], osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
+                    }
+
+                    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+                    osg::Vec4 color(1.0,1.0,1.0,1.0);
+                    colors->push_back(color);
+                    geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
+
+                    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+                    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+                    // in this case is POINTS (which has the same value GL_POINTS), the second
+                    // parameter is the index position into the vertex array of the first point
+                    // to draw, and the third parameter is the number of points to draw.
+                    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices[i]->size()));
+
+                    geode[i]->addDrawable(geometry);
+                }
+                // swap line ponters
+                float * tmp = pafScanline;
+                pafScanline = pafScanline2;
+                pafScanline2 = tmp;
+
+                // check next tile in y
+                if((y % TILESIZE == 0) || (y == nYSize-1))
+                {
+                    for(int i=0; i<ntilesX; i++)
+                    {
+                        // TODO check and do not save empty files
+                        unsigned int n = geode[i]->getNumDrawables();
+                        if(n == 0)
+                        {
+                            qDebug() << "tile " << i << " " << ((y == nYSize-1) ? (y / TILESIZE) : (y / TILESIZE - 1))
+                                     << " empty";
+                            continue;
+                        }
+                        // write
+                        osg::ref_ptr<osg::Group> towrite = new osg::Group;
+                        towrite->addChild(geode[i]);
+                        std::string path = _scene_file;
+                        // add tile number
+                        char buffer[80];
+                        sprintf(buffer, ".%03d_%03d",i, (y == nYSize-1) ? (y / TILESIZE) : (y / TILESIZE - 1));
+                        path = path + buffer;
+                        path = path + "-0.osgb";
+                        osgDB::writeNodeFile(*towrite,
+                                             path,
+                                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+                        qDebug() << "written " << geode[i]->getNumDrawables() << " " << path.c_str();
+
+                        // LOD
+                        if(_lod)
+                        {
+                            osgUtil::Simplifier simplifer;
+
+                            simplifer.setSampleRatio(0.1f);
+                            osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(towrite->clone(osg::CopyOp::DEEP_COPY_ALL));
+                            modelL1->accept(simplifer);
+
+                            path = _scene_file;
+                            path = path + buffer;
+                            path = path + "-1.osgb";
+                            osgDB::writeNodeFile(*modelL1,
+                                                 path,
+                                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+
+                            simplifer.setSampleRatio(0.2f);
+                            osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
+                            modelL2->accept(simplifer);
+
+                            path = _scene_file;
+                            path = path + buffer;
+                            path = path + "-2.osgb";
+                            osgDB::writeNodeFile(*modelL2,
+                                                 path,
+                                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+
+                            // coumpound LOD
+                            bool _buildCompoundLOD = true;
+                            if(_buildCompoundLOD)
+                            {
+                                osg::ref_ptr<osg::LOD> lod = new osg::LOD;
+                                lod->addChild(towrite, 0,40.0f);
+                                lod->addChild(modelL1.get(), 40.0f, 200.0f);
+                                lod->addChild(modelL2, 200.0f, FLT_MAX);
+                                path = _scene_file;
+                                path = path + buffer;
+                                path = path + ".osgb";
+                                osgDB::writeNodeFile(*lod,
+                                                     path,
+                                                     new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+                                group->addChild(lod);
+                            }
+                            else
+                            {
+                                group->addChild(modelL2);
+                            }
+
+                        }
+                        else
+                        {
+                            // add to group
+                            group->addChild(geode[i]);
+                        }
+                        // next
+                        geode[i] = new osg::Geode;
+                    }
+                }
+
+            }
+
+            CPLFree(pafScanline);
+            CPLFree(pafScanline2);
         }
 
         GDALClose(dataset);
