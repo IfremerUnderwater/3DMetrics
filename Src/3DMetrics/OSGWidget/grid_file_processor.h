@@ -26,9 +26,18 @@ public:
     /// \param _scene_file
     /// \param _local_lat_lon
     /// \param _local_alt
+    /// \param _lod
     /// \return
     ///
-    osg::ref_ptr<osg::Group>  loadFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _normals = false, bool _lod = false);
+    osg::ref_ptr<osg::Group>  loadFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _lod = false);
+
+    ///
+    /// \brief loadTiles
+    /// \param _scene_file
+    /// \param _subdir
+    /// \return
+    ///
+    osg::ref_ptr<osg::Group> loadTiles(std::string _scene_file, std::string _subdir = "");
 
 };
 

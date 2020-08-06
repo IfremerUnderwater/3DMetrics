@@ -4,8 +4,11 @@
 #include <osg/Point>
 
 #include <osgDB/WriteFile>
+#include <osgDB/ReadFile>
 #include <osg/LOD>
 #include <osgUtil/Simplifier>
+#include <osgUtil/Optimizer>
+#include <osgUtil/SmoothingVisitor>
 
 #ifdef _WIN32
 #include "gdal_priv.h"
@@ -20,6 +23,10 @@
 #include <GeographicLib/LocalCartesian.hpp>
 #include <stdio.h>
 #include <QDebug>
+#include <QFileInfo>
+#include <QDir>
+#include <QStringList>
+#include <QFileInfoList>
 
 GridFileProcessor::GridFileProcessor()
 {
@@ -551,9 +558,10 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
     return group;
 }
 
-static const int TILESIZE = 2000;
+// tile size in x and y
+static const int TILESIZE = 256;
 
-osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _normals, bool _lod)
+osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _lod)
 {
     osg::ref_ptr<osg::Group> group;
 
@@ -661,6 +669,28 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                                            pafScanline, nXSize, 1, GDT_Float32,
                                            0, 0 );
 
+            osg::ref_ptr<osg::Geometry> geometry[ntilesX];
+            for(int i=0; i<ntilesX; i++)
+            {
+                geometry[i] = new osg::Geometry;
+            }
+
+            //            // for LoadingModeTriangleNormals
+            //            osg::ref_ptr<osg::Vec3Array> normals[ntilesX];
+            //            if(_normals)
+            //            {
+            //                for(int i=0; i<ntilesX; i++)
+            //                {
+            //                    normals[i] = new osg::Vec3Array;
+            //                }
+            //            }
+
+            osg::ref_ptr<osg::Vec3Array> vertices[ntilesX];
+            for(int i=0; i<ntilesX; i++)
+            {
+                vertices[i] = new osg::Vec3Array;
+            }
+
             for(int y = 1; y < nYSize; y++)
             {
                 // read second line
@@ -673,23 +703,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                 // BC
                 //  triangle 1 = ABC
                 //  triangle 2 = ACD
-
-
-                osg::ref_ptr<osg::Vec3Array> vertices[ntilesX];
-                for(int i=0; i<ntilesX; i++)
-                {
-                    vertices[i] = new osg::Vec3Array;
-                }
-
-                // for LoadingModeTriangleNormals
-                osg::ref_ptr<osg::Vec3Array> normals[ntilesX];
-                if(_normals)
-                {
-                    for(int i=0; i<ntilesX; i++)
-                    {
-                        normals[i] = new osg::Vec3Array;
-                    }
-                }
 
                 // point
                 for(int x=0; x<nXSize-1; x++)
@@ -758,58 +771,58 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                     vertices[index]->push_back(pointB);
                     vertices[index]->push_back(pointC);
 
-                    if(_normals)
-                    {
-                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
-                        normals[index]->push_back(N1);
-                        normals[index]->push_back(N1);
-                        normals[index]->push_back(N1);
-                    }
+                    //                    if(_normals)
+                    //                    {
+                    //                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
+                    //                        normals[index]->push_back(N1);
+                    //                        normals[index]->push_back(N1);
+                    //                        normals[index]->push_back(N1);
+                    //                    }
 
                     vertices[index]->push_back(pointA);
                     vertices[index]->push_back(pointC);
                     vertices[index]->push_back(pointD);
 
 
-                    if(_normals)
-                    {
-                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
-                        normals[index]->push_back(N2);
-                        normals[index]->push_back(N2);
-                        normals[index]->push_back(N2);
-                    }
+                    //                    if(_normals)
+                    //                    {
+                    //                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
+                    //                        normals[index]->push_back(N2);
+                    //                        normals[index]->push_back(N2);
+                    //                        normals[index]->push_back(N2);
+                    //                    }
                 }
 
-                for(int i=0; i<ntilesX; i++)
-                {
-                    if(vertices[i]->size() == 0)
-                        continue;
+                //                for(int i=0; i<ntilesX; i++)
+                //                {
+                //                    if(vertices[i]->size() == 0)
+                //                        continue;
 
-                    // triangles
-                    osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
+                //                    // triangles
+                //                    //osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
 
-                    // pass the created vertex array to the points geometry object.
-                    geometry->setVertexArray(vertices[i]);
+                //                    // pass the created vertex array to the points geometry object.
+                //                    geometry->setVertexArray(vertices[i]);
 
-                    if(_normals)
-                    {
-                        geometry->setNormalArray(normals[i], osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
-                    }
+                //                    if(_normals)
+                //                    {
+                //                        geometry->setNormalArray(normals[i], osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
+                //                    }
 
-                    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
-                    osg::Vec4 color(1.0,1.0,1.0,1.0);
-                    colors->push_back(color);
-                    geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
+                //                    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+                //                    osg::Vec4 color(1.0,1.0,1.0,1.0);
+                //                    colors->push_back(color);
+                //                    geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
 
-                    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
-                    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
-                    // in this case is POINTS (which has the same value GL_POINTS), the second
-                    // parameter is the index position into the vertex array of the first point
-                    // to draw, and the third parameter is the number of points to draw.
-                    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices[i]->size()));
+                //                    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+                //                    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+                //                    // in this case is POINTS (which has the same value GL_POINTS), the second
+                //                    // parameter is the index position into the vertex array of the first point
+                //                    // to draw, and the third parameter is the number of points to draw.
+                //                    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices[i]->size()));
 
-                    geode[i]->addDrawable(geometry);
-                }
+                //                    geode[i]->addDrawable(geometry);
+                //                }
                 // swap line ponters
                 float * tmp = pafScanline;
                 pafScanline = pafScanline2;
@@ -820,6 +833,31 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                 {
                     for(int i=0; i<ntilesX; i++)
                     {
+                        if(vertices[i]->size() == 0)
+                            continue;
+
+                        // pass the created vertex array to the points geometry object.
+                        geometry[i]->setVertexArray(vertices[i]);
+
+                        //                        if(_normals)
+                        //                        {
+                        //                            geometry[i]->setNormalArray(normals[i], osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
+                        //                        }
+
+                        osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
+                        osg::Vec4 color(1.0,1.0,1.0,1.0);
+                        colors->push_back(color);
+                        geometry[i]->setColorArray(colors, osg::Array::BIND_OVERALL);
+
+                        // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
+                        // parameter passed to the DrawArrays constructor is the Primitive::Mode which
+                        // in this case is POINTS (which has the same value GL_POINTS), the second
+                        // parameter is the index position into the vertex array of the first point
+                        // to draw, and the third parameter is the number of points to draw.
+                        geometry[i]->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices[i]->size()));
+
+                        geode[i]->addDrawable(geometry[i]);
+
                         // TODO check and do not save empty files
                         unsigned int n = geode[i]->getNumDrawables();
                         if(n == 0)
@@ -828,9 +866,15 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                                      << " empty";
                             continue;
                         }
+
+                        // recalculate normals with the smoothing visitor
+                        osgUtil::SmoothingVisitor sv;
+                        geode[i]->accept(sv);
+
                         // write
                         osg::ref_ptr<osg::Group> towrite = new osg::Group;
                         towrite->addChild(geode[i]);
+
                         std::string path = _scene_file;
                         // add tile number
                         char buffer[80];
@@ -901,9 +945,11 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                         }
                         // next
                         geode[i] = new osg::Geode;
+                        geometry[i] = new osg::Geometry;
+                        vertices[i] = new osg::Vec3Array;
+                        //normals[i] = new osg::Vec3Array;
                     }
                 }
-
             }
 
             CPLFree(pafScanline);
@@ -915,6 +961,40 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
         GDALDestroyDriverManager();
     }
 
+    return group;
+}
+
+osg::ref_ptr<osg::Group> GridFileProcessor::loadTiles(std::string _scene_file, std::string _subdir)
+{
+    osg::ref_ptr<osg::Group> group = new osg::Group;
+
+    // build path to search
+    std::string path;
+    QFileInfo scene_info(QString::fromStdString(_scene_file));
+
+    if(_subdir.size() > 0)
+    {
+        // use subdir
+        path = scene_info.absoluteDir().absolutePath().toStdString();
+        path = path + "/";
+        path = path + _subdir;
+    }
+    else
+    {
+        path = scene_info.absoluteDir().absolutePath().toStdString();
+    }
+    QDir dir(path.c_str());
+    QStringList pattern;
+    pattern <<  (scene_info.fileName() + ".???_???.osgb");
+    QFileInfoList files = dir.entryInfoList(pattern, QDir::Files );
+    // load files
+    for(int i=0; i<files.count(); i++)
+    {
+        qDebug() << files[i].fileName();
+        osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
+        group->addChild(node);
+
+    }
     return group;
 }
 
