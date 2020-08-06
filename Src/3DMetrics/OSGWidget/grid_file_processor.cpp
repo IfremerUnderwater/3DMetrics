@@ -1,4 +1,6 @@
 #include "grid_file_processor.h"
+#include "smartlod.h"
+
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/Point>
@@ -993,6 +995,70 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadTiles(std::string _scene_file, s
         qDebug() << files[i].fileName();
         osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
         group->addChild(node);
+
+    }
+    return group;
+}
+
+osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file, std::string _subdir)
+{
+    osg::ref_ptr<osg::Group> group = new osg::Group;
+
+    // build path to search
+    std::string path;
+    QFileInfo scene_info(QString::fromStdString(_scene_file));
+
+    if(_subdir.size() > 0)
+    {
+        // use subdir
+        path = scene_info.absoluteDir().absolutePath().toStdString();
+        path = path + "/";
+        path = path + _subdir;
+    }
+    else
+    {
+        path = scene_info.absoluteDir().absolutePath().toStdString();
+    }
+    QDir dir(path.c_str());
+    QStringList pattern;
+    pattern <<  (scene_info.fileName() + ".???_???-?.osgb");
+    QFileInfoList files = dir.entryInfoList(pattern, QDir::Files,QDir::Name );
+
+    osg::ref_ptr<SmartLOD> smart;
+
+    // WARNING : files must be sorted
+    // load files
+    for(int i=0; i<files.count(); i++)
+    {
+        qDebug() << files[i].fileName();
+        //        osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
+        //        group->addChild(node);
+        if(files[i].fileName().endsWith("-0.osgb"))
+        {
+            smart = new SmartLOD;
+            smart->setDatabaseOptions(new osgDB::Options("noRotation"));
+            smart->addChild(path + "/" + files[i].fileName().toStdString(), 0.0f, 150.0f);
+        }
+        else if(files[i].fileName().endsWith("-1.osgb"))
+        {
+            if(smart == nullptr)
+                continue;
+            smart->addChild(path + "/" +files[i].fileName().toStdString(), 150.0f, 1000.0f);
+        }
+        else if(files[i].fileName().endsWith("-2.osgb"))
+        {
+            if(smart == nullptr)
+                continue;
+
+            osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
+            smart->addChild(node.get(), 1000.0f, FLT_MAX);
+            unsigned int idx = smart->getNumChildren()-1;
+            smart->setFileName(idx, path + "/" + files[i].absoluteFilePath().toStdString());
+            smart->doNotDiscardChild(idx);
+
+            group->addChild(smart);
+            smart = nullptr;
+        }
 
     }
     return group;

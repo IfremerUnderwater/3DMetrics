@@ -462,8 +462,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
     GridFileProcessor processor;
     //osg::ref_ptr<osg::Group> group = processor.loadFile(_scene_file, _mode, local_lat_lon, local_alt);
     //osg::ref_ptr<osg::Group> group = processor.loadFileAndBuildTiles(_scene_file, local_lat_lon, local_alt, true);
-    osg::ref_ptr<osg::Group> group = processor.loadTiles(_scene_file, "tile256");
-
+    //osg::ref_ptr<osg::Group> group = processor.loadTiles(_scene_file, "tile256");
+    osg::ref_ptr<osg::Group> group = processor.loadLODTiles(_scene_file, "tile256");
 
     //    GDALAllRegister();
     //    GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );

@@ -39,6 +39,14 @@ public:
     ///
     osg::ref_ptr<osg::Group> loadTiles(std::string _scene_file, std::string _subdir = "");
 
+    ///
+    /// \brief loadLODTiles
+    /// \param _scene_file
+    /// \param _subdir
+    /// \return
+    ///
+    osg::ref_ptr<osg::Group> loadLODTiles(std::string _scene_file, std::string _subdir = "");
+
 };
 
 #endif // GRIDFILEPROCESSOR_H

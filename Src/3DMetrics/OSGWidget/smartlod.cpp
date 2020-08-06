@@ -102,7 +102,13 @@ void SmartLOD::traverse(osg::NodeVisitor& nv)
                         QDateTime start = QDateTime::currentDateTime();
 
                         qDebug() << "Loading "  << m_perRangeDataList[i]._filename.c_str();
-                        _children[i]=osgDB::readRefNodeFile(m_perRangeDataList[i]._filename.c_str(), new osgDB::Options(dynamic_cast<osgDB::Options*>(m_databaseOptions.get())->getOptionString()));
+                        _children[i] = osgDB::readRefNodeFile(m_perRangeDataList[i]._filename.c_str(), new osgDB::Options(dynamic_cast<osgDB::Options*>(m_databaseOptions.get())->getOptionString()));
+                        // in case of error or file not found
+                        if(_children[i] == nullptr)
+                        {
+                            // do not SEGV
+                            _children[i] = new osg::Node;
+                        }
                         QDateTime current = QDateTime::currentDateTime();
                         uint msecs = start.time().msecsTo(current.time());
                         qDebug() << "Loaded in " << msecs << " ms";
