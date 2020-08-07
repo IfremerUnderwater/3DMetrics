@@ -4,7 +4,12 @@ enum LoadingMode {
     LoadingModePoint,
     LoadingModeTriangle,
     LoadingModeTriangleNormals,
-    LoadingModeTrianglePoint
+    LoadingModeTrianglePoint,
+    LoadingModeLODTiles,
+    LoadingModeLODTilesDir,
+    LoadingModeSmartLODTiles,
+    LoadingModeSmartLODTilesDir,
+    LoadingModeBuildLODTiles
 };
 
 #endif // LOADING_MODE_H

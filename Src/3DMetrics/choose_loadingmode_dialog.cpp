@@ -12,6 +12,11 @@ ChooseLoadingModeDialog::ChooseLoadingModeDialog(QWidget *parent) :
     connect(ui->triangles_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->triangles_normals_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->triangles_points_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->useLODTiles_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->useLODTilesDir_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->useSmartLODTiles_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->useSmartLODTilesDir_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->buildLOD_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
 }
 
 ChooseLoadingModeDialog::~ChooseLoadingModeDialog()
@@ -37,6 +42,26 @@ void ChooseLoadingModeDialog::setMode(LoadingMode _mode)
     case LoadingModeTrianglePoint:
         ui->triangles_points_radio->setChecked(true);
         break;
+
+    case LoadingModeLODTiles:
+        ui->useLODTiles_radio->setChecked(true);
+        break;
+
+    case LoadingModeLODTilesDir:
+        ui->useLODTilesDir_radio->setChecked(true);
+        break;
+
+    case LoadingModeSmartLODTiles:
+        ui->useSmartLODTiles_radio->setChecked(true);
+        break;
+
+    case LoadingModeSmartLODTilesDir:
+        ui->useSmartLODTilesDir_radio->setChecked(true);
+        break;
+
+    case LoadingModeBuildLODTiles:
+        ui->buildLOD_radio->setChecked(true);
+        break;
     }
 }
 
@@ -57,6 +82,26 @@ void ChooseLoadingModeDialog::radioToggled()
     if(ui->triangles_points_radio->isChecked())
     {
         m_mode = LoadingModeTrianglePoint;
+    }
+    if(ui->useLODTiles_radio->isChecked())
+    {
+        m_mode = LoadingModeLODTiles;
+    }
+    if(ui->useLODTilesDir_radio->isChecked())
+    {
+        m_mode = LoadingModeLODTilesDir;
+    }
+    if(ui->useSmartLODTiles_radio->isChecked())
+    {
+        m_mode = LoadingModeSmartLODTiles;
+    }
+    if(ui->useSmartLODTilesDir_radio->isChecked())
+    {
+        m_mode = LoadingModeSmartLODTilesDir;
+    }
+    if(ui->buildLOD_radio->isChecked())
+    {
+        m_mode = LoadingModeBuildLODTiles;
     }
 }
 

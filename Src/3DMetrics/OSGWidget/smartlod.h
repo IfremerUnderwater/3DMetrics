@@ -3,7 +3,7 @@
 
 #include <osg/LOD>
 
-class SmartLOD : public osg::LOD
+class OSG_EXPORT SmartLOD : public osg::LOD
 {
 public:
     SmartLOD();
@@ -11,7 +11,7 @@ public:
     /** Copy constructor using CopyOp to manage deep vs shallow copy.*/
     SmartLOD(const SmartLOD&,const osg::CopyOp& copyop=osg::CopyOp::SHALLOW_COPY);
 
-    META_Node(osg, SmartLOD);
+    META_Node(osg, SmartLOD)
 
     virtual void traverse(osg::NodeVisitor& nv);
 

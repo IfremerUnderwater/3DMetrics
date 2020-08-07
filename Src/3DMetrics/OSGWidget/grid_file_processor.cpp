@@ -32,12 +32,10 @@
 
 GridFileProcessor::GridFileProcessor()
 {
-
 }
 
 GridFileProcessor::~GridFileProcessor()
 {
-
 }
 
 ///
@@ -52,7 +50,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
 {
     osg::ref_ptr<osg::Group> group;
 
-    GDALAllRegister();
+    //GDALAllRegister();
     GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
     if(dataset != NULL)
     {
@@ -252,12 +250,12 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
 
                 osg::ref_ptr<osg::Vec3Array> vertices = new osg::Vec3Array;
 
-                // for LoadingModeTriangleNormals
-                osg::ref_ptr<osg::Vec3Array> normals;
-                if(_mode == LoadingModeTriangleNormals)
-                {
-                    normals = new osg::Vec3Array;
-                }
+                //                // for LoadingModeTriangleNormals
+                //                osg::ref_ptr<osg::Vec3Array> normals;
+                //                if(_mode == LoadingModeTriangleNormals)
+                //                {
+                //                    normals = new osg::Vec3Array;
+                //                }
 
                 osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
 
@@ -326,26 +324,26 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
                     vertices->push_back(pointB);
                     vertices->push_back(pointC);
 
-                    if(_mode == LoadingModeTriangleNormals)
-                    {
-                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
-                        normals->push_back(N1);
-                        normals->push_back(N1);
-                        normals->push_back(N1);
-                    }
+                    //                    if(_mode == LoadingModeTriangleNormals)
+                    //                    {
+                    //                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
+                    //                        normals->push_back(N1);
+                    //                        normals->push_back(N1);
+                    //                        normals->push_back(N1);
+                    //                    }
 
                     vertices->push_back(pointA);
                     vertices->push_back(pointC);
                     vertices->push_back(pointD);
 
 
-                    if(_mode == LoadingModeTriangleNormals)
-                    {
-                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
-                        normals->push_back(N2);
-                        normals->push_back(N2);
-                        normals->push_back(N2);
-                    }
+                    //                    if(_mode == LoadingModeTriangleNormals)
+                    //                    {
+                    //                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
+                    //                        normals->push_back(N2);
+                    //                        normals->push_back(N2);
+                    //                        normals->push_back(N2);
+                    //                    }
 
                 }
 
@@ -355,10 +353,10 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
                 // pass the created vertex array to the points geometry object.
                 geometry->setVertexArray(vertices);
 
-                if(_mode == LoadingModeTriangleNormals)
-                {
-                    geometry->setNormalArray(normals, osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
-                }
+                //                if(_mode == LoadingModeTriangleNormals)
+                //                {
+                //                    geometry->setNormalArray(normals, osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
+                //                }
 
                 osg::Vec4 color(1.0,1.0,1.0,1.0);
                 colors->push_back(color);
@@ -380,6 +378,12 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
                 float * tmp = pafScanline;
                 pafScanline = pafScanline2;
                 pafScanline2 = tmp;
+            }
+
+            if(_mode == LoadingModeTriangleNormals)
+            {
+                osgUtil::SmoothingVisitor sv;
+                geode->accept(sv);
             }
 
             group->addChild(geode);
@@ -554,10 +558,52 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
 
         GDALClose(dataset);
 
-        GDALDestroyDriverManager();
+        //GDALDestroyDriverManager();
     }
 
     return group;
+}
+
+void GridFileProcessor::getLatLonAlt(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt)
+{
+    //GDALAllRegister();
+    GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
+    if(dataset != NULL)
+    {
+        //char buffer[1024];
+        double        adfGeoTransform[6];
+        //                adfGeoTransform[0] /* top left x */
+        //                adfGeoTransform[1] /* w-e pixel resolution */
+        //                adfGeoTransform[2] /* 0 */
+        //                adfGeoTransform[3] /* top left y */
+        //                adfGeoTransform[4] /* 0 */
+        //                adfGeoTransform[5] /* n-s pixel resolution (negative value) */
+        if( dataset->GetGeoTransform( adfGeoTransform ) == CE_None )
+        {
+            //            sprintf(buffer, "Origin = (%.6f,%.6f)\n",
+            //                    adfGeoTransform[0], adfGeoTransform[3] );
+            //            qDebug() << buffer;
+            //            sprintf(buffer, "Pixel Size = (%.6f,%.6f)\n",
+            //                    adfGeoTransform[1], adfGeoTransform[5] );
+            //            qDebug() << buffer;
+            _local_lat_lon.setX(adfGeoTransform[3]);
+            _local_lat_lon.setY(adfGeoTransform[0]);
+        }
+
+        _local_lat_lon.setX(adfGeoTransform[3]);
+        _local_lat_lon.setY(adfGeoTransform[0]);
+
+        GDALClose(dataset);
+    }
+    else
+    {
+        _local_lat_lon.setX(0);
+        _local_lat_lon.setY(0);
+    }
+    // always 0
+    _local_alt = 0;
+
+    //GDALDestroyDriverManager();
 }
 
 // tile size in x and y
@@ -567,7 +613,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
 {
     osg::ref_ptr<osg::Group> group;
 
-    GDALAllRegister();
+    //GDALAllRegister();
     GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
     if(dataset != NULL)
     {
@@ -960,7 +1006,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
 
         GDALClose(dataset);
 
-        GDALDestroyDriverManager();
+        //GDALDestroyDriverManager();
     }
 
     return group;
@@ -1021,7 +1067,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
     }
     QDir dir(path.c_str());
     QStringList pattern;
-    pattern <<  (scene_info.fileName() + ".???_???-?.osgb");
+    pattern <<  (scene_info.fileName() + ".???_???"+"-?.osgb");
     QFileInfoList files = dir.entryInfoList(pattern, QDir::Files,QDir::Name );
 
     osg::ref_ptr<SmartLOD> smart;
@@ -1037,13 +1083,13 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
         {
             smart = new SmartLOD;
             smart->setDatabaseOptions(new osgDB::Options("noRotation"));
-            smart->addChild(path + "/" + files[i].fileName().toStdString(), 0.0f, 150.0f);
+            smart->addChild(path + "/" + files[i].fileName().toStdString(), 0.0f, 800.0f);
         }
         else if(files[i].fileName().endsWith("-1.osgb"))
         {
             if(smart == nullptr)
                 continue;
-            smart->addChild(path + "/" +files[i].fileName().toStdString(), 150.0f, 1000.0f);
+            smart->addChild(path + "/" +files[i].fileName().toStdString(), 800.0f, 2500.0f);
         }
         else if(files[i].fileName().endsWith("-2.osgb"))
         {
@@ -1051,7 +1097,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
                 continue;
 
             osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
-            smart->addChild(node.get(), 1000.0f, FLT_MAX);
+            smart->addChild(node.get(), 2500.0f, FLT_MAX);
             unsigned int idx = smart->getNumChildren()-1;
             smart->setFileName(idx, path + "/" + files[i].absoluteFilePath().toStdString());
             smart->doNotDiscardChild(idx);
