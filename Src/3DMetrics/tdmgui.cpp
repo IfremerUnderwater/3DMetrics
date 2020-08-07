@@ -362,9 +362,18 @@ void TDMGui::slot_open3dModel()
             choose.setMode(LoadingModePoint);
             if(choose.exec() == QDialog::Accepted)
             {
-                thread_node->setLoadingMode((choose.mode()));
+                thread_node->setLoadingMode(choose.mode());
             }
-            // TODO LOD processing...
+            if(choose.mode() == LoadingModeLODTilesDir ||
+                    choose.mode() == LoadingModeSmartLODTilesDir)
+            {
+                // choose dir
+                QString dirname = getDirectoryName(this,tr("Select associated tiles' folder"),m_path_model3D);
+                if(dirname.length() > 0)
+                {
+                    thread_node->setTileFolderName(dirname);
+                }
+            }
         }
 
         // check for LOD
@@ -482,50 +491,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
-    // process precomputed LOD if necessary
     // processind in file_open_thread
     ui->display_widget->addNodeToScene(node, _transp);
-
-    //    // check osgb extension
-    //    if(_filename.endsWith(".osgb", Qt::CaseInsensitive))
-    //    {
-    //        // precomputed simplified layers
-    //        ui->display_widget->addNodeToScene(node, _transp);
-    //    }
-    //    else if(std::string(_node->className()) == "SmartLOD")
-    //    {
-    //        ui->display_widget->addNodeToScene(node, _transp);
-    //    }
-    //    else
-    //    {
-    //        std::string pathToLodFile = _filename.toStdString();
-    //        pathToLodFile = pathToLodFile + ".osgb";
-    //        if(_filename.endsWith(".kml", Qt::CaseInsensitive))
-    //        {
-    //            KMLHandler kh;
-    //            kh.readFile(_filename.toStdString());
-    //            if(!QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
-    //            {
-    //                pathToLodFile = kh.getModelPath();
-    //                pathToLodFile = pathToLodFile + ".osgb";
-
-    //                // check relative path
-    //                if(pathToLodFile.size() > 0 && (!(pathToLodFile[0] == '/')))
-    //                {
-    //                    std::string base_directory, filename;
-    //                    kmlbase::File::SplitFilePath(_filename.toStdString(),
-    //                                                 &base_directory,
-    //                                                 &filename);
-    //                    pathToLodFile = base_directory + string("/") + pathToLodFile;
-    //                }
-
-    //                // TODO : edit kml and replace model path
-    //            }
-    //        }
-
-    //        // normal loading : build lod
-    //        ui->display_widget->addNodeToScene(node, _transp); //, buildLOD, pathToLodFile);
-    //    }
 
 
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());

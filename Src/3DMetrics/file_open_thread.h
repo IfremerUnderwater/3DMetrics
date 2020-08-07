@@ -41,6 +41,9 @@ public:
     bool getSaveCompLOD() const;
     void setSaveCompLOD(bool saveCompLOD);
 
+    QString getTileFolderName() const;
+    void setTileFolderName(const QString &tileFolderName);
+
 signals :
     void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool
                            ,double _transp, double _offsetX, double _offsetY, double offsetZ);
@@ -66,6 +69,7 @@ private:
     bool m_useExistingLOD;
     bool m_buildLOD;
     bool m_saveCompLOD;
+    QString m_tileFolderName;
 };
 
 #endif // FILE_OPEN_THREAD_H

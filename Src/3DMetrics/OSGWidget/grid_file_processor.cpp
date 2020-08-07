@@ -697,7 +697,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
 
         group = new osg::Group;
 
-        // LoadingModeTriangle || _mode == LoadingModeTriangleNormals)
+        // processing block
         {
             // triangles
 
@@ -722,16 +722,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
             {
                 geometry[i] = new osg::Geometry;
             }
-
-            //            // for LoadingModeTriangleNormals
-            //            osg::ref_ptr<osg::Vec3Array> normals[ntilesX];
-            //            if(_normals)
-            //            {
-            //                for(int i=0; i<ntilesX; i++)
-            //                {
-            //                    normals[i] = new osg::Vec3Array;
-            //                }
-            //            }
 
             osg::ref_ptr<osg::Vec3Array> vertices[ntilesX];
             for(int i=0; i<ntilesX; i++)
@@ -819,58 +809,12 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                     vertices[index]->push_back(pointB);
                     vertices[index]->push_back(pointC);
 
-                    //                    if(_normals)
-                    //                    {
-                    //                        osg::Vec3f N1 = (pointB - pointA) ^ (pointC - pointB);
-                    //                        normals[index]->push_back(N1);
-                    //                        normals[index]->push_back(N1);
-                    //                        normals[index]->push_back(N1);
-                    //                    }
-
                     vertices[index]->push_back(pointA);
                     vertices[index]->push_back(pointC);
                     vertices[index]->push_back(pointD);
 
-
-                    //                    if(_normals)
-                    //                    {
-                    //                        osg::Vec3f N2 = (pointC - pointA) ^ (pointD - pointC);
-                    //                        normals[index]->push_back(N2);
-                    //                        normals[index]->push_back(N2);
-                    //                        normals[index]->push_back(N2);
-                    //                    }
                 }
 
-                //                for(int i=0; i<ntilesX; i++)
-                //                {
-                //                    if(vertices[i]->size() == 0)
-                //                        continue;
-
-                //                    // triangles
-                //                    //osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry();
-
-                //                    // pass the created vertex array to the points geometry object.
-                //                    geometry->setVertexArray(vertices[i]);
-
-                //                    if(_normals)
-                //                    {
-                //                        geometry->setNormalArray(normals[i], osg::Array::BIND_PER_VERTEX); //BIND_PER_PRIMITIVE_SET);
-                //                    }
-
-                //                    osg::ref_ptr<osg::Vec4Array> colors = new osg::Vec4Array;
-                //                    osg::Vec4 color(1.0,1.0,1.0,1.0);
-                //                    colors->push_back(color);
-                //                    geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
-
-                //                    // create and add a DrawArray Primitive (see include/osg/Primitive).  The first
-                //                    // parameter passed to the DrawArrays constructor is the Primitive::Mode which
-                //                    // in this case is POINTS (which has the same value GL_POINTS), the second
-                //                    // parameter is the index position into the vertex array of the first point
-                //                    // to draw, and the third parameter is the number of points to draw.
-                //                    geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,vertices[i]->size()));
-
-                //                    geode[i]->addDrawable(geometry);
-                //                }
                 // swap line ponters
                 float * tmp = pafScanline;
                 pafScanline = pafScanline2;
@@ -1023,9 +967,18 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadTiles(std::string _scene_file, s
     if(_subdir.size() > 0)
     {
         // use subdir
-        path = scene_info.absoluteDir().absolutePath().toStdString();
-        path = path + "/";
-        path = path + _subdir;
+        if(_subdir[0] == '/')
+        {
+            // absolute path
+            path = _subdir;
+        }
+        else
+        {
+            // relative path
+            path = scene_info.absoluteDir().absolutePath().toStdString();
+            path = path + "/";
+            path = path + _subdir;
+        }
     }
     else
     {
@@ -1057,9 +1010,18 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
     if(_subdir.size() > 0)
     {
         // use subdir
-        path = scene_info.absoluteDir().absolutePath().toStdString();
-        path = path + "/";
-        path = path + _subdir;
+        if(_subdir[0] == '/')
+        {
+            // absolute path
+            path = _subdir;
+        }
+        else
+        {
+            // relative path
+            path = scene_info.absoluteDir().absolutePath().toStdString();
+            path = path + "/";
+            path = path + _subdir;
+        }
     }
     else
     {
@@ -1077,8 +1039,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
     for(int i=0; i<files.count(); i++)
     {
         qDebug() << files[i].fileName();
-        //        osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
-        //        group->addChild(node);
+
         if(files[i].fileName().endsWith("-0.osgb"))
         {
             smart = new SmartLOD;

@@ -20,10 +20,8 @@ void FileOpenThread::run()
     // check grd extension
     if(m_filename.toStdString().find_last_of(".grd") == m_filename.toStdString().size()-1)
     {
-        // TODO LOD processing
-
-        // default processing
-        m_node = m_osg_widget->createNodeFromFileWithGDAL(m_filename.toStdString(), m_loadingMode);
+        // GDAL (grid) processing
+        m_node = m_osg_widget->createNodeFromFileWithGDAL(m_filename.toStdString(), m_loadingMode, m_tileFolderName.toStdString());
     }
     else
     {
@@ -75,7 +73,6 @@ void FileOpenThread::run()
         }
     }
 
-
     QApplication::restoreOverrideCursor();
     emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ);
 
@@ -107,6 +104,16 @@ void FileOpenThread::setSaveCompLOD(bool saveCompLOD)
 {
     m_saveCompLOD = saveCompLOD;
 }
+QString FileOpenThread::getTileFolderName() const
+{
+    return m_tileFolderName;
+}
+
+void FileOpenThread::setTileFolderName(const QString &tileFolderName)
+{
+    m_tileFolderName = tileFolderName;
+}
+
 
 
 

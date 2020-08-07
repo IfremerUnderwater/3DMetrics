@@ -118,9 +118,10 @@ public:
     /// \brief createNodeFromFileWithGDAL load a scene from a 3D file
     /// \param _scene_file path to netcdf grid file
     /// \param _mode
+    /// \param _tileDir
     /// \return node if loading succeded
     ///
-    osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode);
+    osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode, std::string _tileDir = "");
 
     ///
     /// \brief addNodeToScene add a node to the scene

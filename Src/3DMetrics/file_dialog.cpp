@@ -56,3 +56,29 @@ QString getSaveFileName(QWidget *_parent, QString _title, QString _directory, QS
 
     return QString();
 }
+
+
+QString getDirectoryName(QWidget *_parent, QString _title, QString _directory)
+{
+    QFileDialog file_dialog(_parent,_title, _directory);
+    file_dialog.setOption(QFileDialog::ShowDirsOnly, true);
+    file_dialog.setFileMode(QFileDialog::DirectoryOnly);
+
+    file_dialog.setOption(QFileDialog::DontUseCustomDirectoryIcons, true);
+
+#ifndef __MINGW32__
+    // Ubuntu Linux doesn't show the dialog properly without this option
+    file_dialog.setOption(QFileDialog::DontUseNativeDialog,true);
+#endif
+
+    if (QDialog::Accepted != file_dialog.exec())
+        return QString();
+
+    QStringList files = file_dialog.selectedFiles();
+    if(files.count() > 0)
+    {
+        return files.first();
+    }
+
+    return QString();
+}

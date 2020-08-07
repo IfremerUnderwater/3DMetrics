@@ -452,7 +452,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
 /// \param _sceneFile path to any 3D file supported by osg
 /// \return node if loading succeded
 ///
-osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode)
+osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode, std::string _tileDir)
 {
     osg::ref_ptr<osg::MatrixTransform> model_transform;
 
@@ -462,8 +462,8 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
     GridFileProcessor processor;
     osg::ref_ptr<osg::Group> group;
 
-    // TODO : get subdirectory
-    std::string subdir = "tile256";
+    // get subdirectory
+    std::string subdir = _tileDir; //"tile256";
     switch(_mode)
     {
     case LoadingModePoint:
@@ -498,11 +498,6 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
         break;
     }
 
-    //osg::ref_ptr<osg::Group> group = processor.loadFile(_scene_file, _mode, local_lat_lon, local_alt);
-    //osg::ref_ptr<osg::Group> group = processor.loadFileAndBuildTiles(_scene_file, local_lat_lon, local_alt, true);
-    //osg::ref_ptr<osg::Group> group = processor.loadTiles(_scene_file, "tile256");
-    // osg::ref_ptr<osg::Group> group = processor.loadLODTiles(_scene_file, "tile256");
-
     if(group == nullptr)
     {
         std::cout << "GDAL error ; No data loaded" << std::endl;
@@ -526,7 +521,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
     // TEST save osgb file
     // warning : SmartLOD saving not supported
-    if(_mode == LoadingModeTriangle || _mode == LoadingModeTriangleNormals
+    if(_mode == LoadingModeTriangle // || _mode == LoadingModeTriangleNormals (not working)
             || _mode == LoadingModeLODTiles || _mode == LoadingModeLODTilesDir)
     {
         std::string path = _scene_file;
