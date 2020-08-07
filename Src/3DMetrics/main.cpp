@@ -2,6 +2,17 @@
 #include <QtWidgets>
 #include "tdmgui.h"
 
+// GDAL
+#ifdef _WIN32
+#include "gdal_priv.h"
+//#include "cpl_conv.h"
+//#include "ogr_spatialref.h"
+#else
+#include "gdal/gdal_priv.h"
+//#include "gdal/cpl_conv.h"
+//#include "gdal/ogr_spatialref.h"
+#endif
+
 int main(int argc, char *argv[])
 
 {
@@ -10,9 +21,17 @@ int main(int argc, char *argv[])
     // important for reading text format model files
     setlocale(LC_ALL, "C");
 
+    // GDAL
+    GDALAllRegister();
+
     TDMGui tdm_gui;
     tdm_gui.show();
 
-    return app.exec();
+    int res = app.exec();
+
+    // GDAL
+    GDALDestroyDriverManager();
+
+    return res;
 
 }
