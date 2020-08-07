@@ -1252,6 +1252,7 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *_item, bool _checked)
         {
             TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
             layer_data.node()->setNodeMask(itemChecked && _checked ? 0xFFFFFFFF : 0);
+            ui->display_widget->update();
         }
     }
 
@@ -1261,6 +1262,7 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *_item, bool _checked)
         {
             TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
             layer_data.group()->setNodeMask(itemChecked && _checked ? 0xFFFFFFFF : 0);
+            ui->display_widget->update();
         }
     }
 
@@ -3950,7 +3952,7 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
 
                         statusBar()->showMessage(message);
 
-                        //TEST
+                        //
                         int n = geode->getNumChildren();
                         for(int i=0; i<n; i++)
                         {
@@ -3960,6 +3962,7 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
                             geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
                         }
 
+                        ui->display_widget->update();
                         return;
                     }
 
@@ -4003,6 +4006,7 @@ void TDMGui::unselectAllMeasureGraph()
             }
         }
     }
+    ui->display_widget->update();
 }
 
 void TDMGui::selectMeasureGraph(osg::Geode *_geode)
@@ -4019,6 +4023,7 @@ void TDMGui::selectMeasureGraph(osg::Geode *_geode)
             geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
         }
     }
+    ui->display_widget->update();
 }
 
 void TDMGui::slot_noNodeClicked()

@@ -320,7 +320,7 @@ OSGWidget::OSGWidget(QWidget* parent)
 
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
-    //m_viewer->setThreadingModel( osgViewer::Viewer::CullThreadPerCameraDrawThreadPerContext);
+    // others threading modes cause SEGV
     m_viewer->realize();
 
     // This ensures that the widget will receive keyboard events. This focus
@@ -334,10 +334,10 @@ OSGWidget::OSGWidget(QWidget* parent)
     // graphics window switch viewports properly.
     this->setMouseTracking( true );
 
-    connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
-    m_timer.start( 40 ); //10 );
+    //    connect( &m_timer, SIGNAL(timeout()), this, SLOT(update()) );
+    //    m_timer.start( 40 ); //10 );
     // TODO : call update() all modification or visibility changed
-    //m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
+    m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
 
     // Create group that will contain measurement geode and 3D model
     m_globalGroup = new osg::Group;
@@ -549,58 +549,6 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 {
     osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
     osg::ref_ptr<osg::Node> root = matrix->getChild(0);
-    //    if(_buildLOD)
-    //    {
-
-    //        std::string name = _pathToLodFile.substr(0, _pathToLodFile.find_last_of("."));
-
-    //        // LOD processing
-    //        osg::ref_ptr<SmartLOD> lodroot = new SmartLOD;
-    //        //lodroot->addChild(root.get(), 0.0f, 40.0f);
-    //        std::string path0 = name;
-    //        path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
-    //        lodroot->addChild(path0, 0.0f, 40.0f);
-    //        osgDB::writeNodeFile(*root,
-    //                             path0,
-    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-    //        //lodroot->setFileName(0, path0);
-
-    //        osgUtil::Simplifier simplifer;
-
-    //        simplifer.setSampleRatio(0.1f);
-    //        osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(root->clone(osg::CopyOp::DEEP_COPY_ALL));
-    //        modelL1->accept(simplifer);
-    //        //lodroot->addChild(modelL1.get(), 40.0f, 200.0f);
-    //        std::string path1 = name;
-    //        path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
-    //        lodroot->addChild(path1, 40.0f, 200.0f);
-    //        osgDB::writeNodeFile(*modelL1,
-    //                             path1,
-    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-    //        //lodroot->setFileName(1, path1);
-
-    //        simplifer.setSampleRatio(0.2f);
-    //        osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
-    //        modelL2->accept(simplifer);
-    //        //lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
-    //        std::string path2 = name;
-    //        path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
-    //        // load 1 node explicitely to have matrix values
-    //        lodroot->addChild(modelL2.get(), 200.0f, FLT_MAX);
-    //        lodroot->setFileName(2, path2);
-    //        //
-    //        //lodroot->addChild(path2, 200.0f, FLT_MAX);
-    //        osgDB::writeNodeFile(*modelL2,
-    //                             path2,
-    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-
-    //        //lodroot->setFileName(2, path2);
-
-    //        // SmartLOD
-    //        lodroot->setDatabaseOptions(new osgDB::Options("noRotation"));
-    //        matrix->replaceChild(root,lodroot);
-    //        root = lodroot;
-    //    }
 
     // Add model
     m_models.push_back(matrix);
@@ -655,6 +603,8 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 
     // set transparency
     setNodeTransparency(matrix, _transparency);
+
+    update();
 
     return true;
 }
@@ -863,6 +813,8 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
 
     view->setSceneData( m_matrixTransform);
 
+    update();
+
     return true;
 }
 
@@ -929,6 +881,7 @@ void OSGWidget::clearSceneData()
     m_ref_alt = INVALID_VALUE;
 
     this->initializeGL();
+    update();
 }
 
 void OSGWidget::initializeGL(){
@@ -1229,7 +1182,7 @@ void OSGWidget::getIntersectionPointNode(int _x, int _y, osg::ref_ptr<osg::Node>
                 | osgUtil::PolytopeIntersector::LINE_PRIMITIVES);
     osgUtil::IntersectionVisitor iv(polyintersector);
 
-    // do not work to restrict seauch
+    // do not work to restrict search
     //iv.apply(*m_geodesGroup);
     osgViewer::View *view = m_viewer->getView(0);
 
@@ -1437,12 +1390,15 @@ void OSGWidget::setGeoOrigin(QPointF _latlon, double _alt)
     // Add model without userdata
     m_models.push_back(node);
     m_modelsGroup->insertChild(0, node.get()); // put at the beginning to be drawn first
+
+    update();
 }
 
 void OSGWidget::addGeode(osg::ref_ptr<osg::Geode> _geode)
 {
     m_geodesGroup->addChild(_geode.get());
     m_geodes.push_back(_geode);
+    update();
 }
 
 void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
@@ -1453,12 +1409,14 @@ void OSGWidget::removeGeode(osg::ref_ptr<osg::Geode> _geode)
         m_geodes.erase(position);
 
     m_geodesGroup->removeChild(_geode);
+    update();
 }
 
 void OSGWidget::addGroup(osg::ref_ptr<osg::Group> _group)
 {
     //m_groups.push_back(_group);
     m_geodesGroup->addChild(_group.get());
+    update();
 }
 
 void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
@@ -1469,6 +1427,7 @@ void OSGWidget::removeGroup(osg::ref_ptr<osg::Group> _group)
     //        m_groups.erase(position);
 
     m_geodesGroup->removeChild(_group);
+    update();
 }
 
 // reset view to home
@@ -1480,6 +1439,7 @@ void OSGWidget::home()
     osgViewer::View *view = m_viewer->getView(0);
     if(view)
         view->home();
+    update();
 }
 
 // tools : emit correspondant signal
@@ -1773,7 +1733,7 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
     // alpha on shader
     state_set->addUniform( new osg::Uniform( "alpha", float(_transparency_value) ));
 
-
+    update();
     //    // test
     //    osg::StateSet* state_set = _node->getOrCreateStateSet();
     //    osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
@@ -1798,6 +1758,8 @@ void OSGWidget::setNodeTranslationOffset(double _offset_x, double _offset_y, dou
     }
 
     recomputeGlobalZMinMax();
+
+    update();
 }
 
 void OSGWidget::setZScale(double _newValue)
@@ -1935,6 +1897,8 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
 
     stateSet->addUniform( new osg::Uniform( "lighton", lighton));
     stateSet->setMode(GL_VERTEX_PROGRAM_POINT_SIZE, osg::StateAttribute::ON);
+
+    update();
 }
 
 
@@ -2027,6 +1991,7 @@ void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
             stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
         }
     }
+    update();
 }
 
 
@@ -2053,6 +2018,8 @@ void OSGWidget::setUseDisplayZMinMaxAndUpdate(bool _use)
         state_set->addUniform( new osg::Uniform( "zmin", min - data->zoffset - data->originalZoffset));
         state_set->addUniform( new osg::Uniform( "deltaz", delta));
     }
+
+    update();
 }
 
 void OSGWidget::showZScale(bool _show)
@@ -2094,4 +2061,5 @@ void OSGWidget::setColorPalette(ShaderColor::Palette _palette)
             }
         }
     }
+    update();
 }

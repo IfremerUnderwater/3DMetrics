@@ -22,7 +22,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #endif
 
 #include <QPoint>
-#include <QTimer>
+//#include <QTimer>
 #include <QtOpenGL>
 #include <QFileDialog>
 #include <QPointF>
@@ -283,7 +283,7 @@ protected:
     virtual bool event( QEvent* _event );
 
     virtual void initializeGL();
-    QTimer m_timer;
+    //QTimer m_timer;
 
 private:
     virtual void onResize( int _width, int _height );
