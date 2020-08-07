@@ -3,6 +3,12 @@
 
 #include "OSGWidget/osg_widget.h"
 
+#if defined(_WIN32) || defined(WIN32)
+#define DIRSEP "\\"
+#else
+#define DIRSEP "/"
+#endif
+
 FileOpenThread::FileOpenThread() :
     m_select_item(false),
     m_transparency_value(0),
@@ -49,7 +55,7 @@ void FileOpenThread::run()
                     kmlbase::File::SplitFilePath(filename,
                                                  &base_directory,
                                                  &base_filename);
-                    pathToLodFile = base_directory + string("/") + pathToLodFile;
+                    pathToLodFile = base_directory + string(DIRSEP) + pathToLodFile;
 
                     filename = pathToLodFile;
                 }

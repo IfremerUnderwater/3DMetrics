@@ -30,6 +30,12 @@
 #include <QStringList>
 #include <QFileInfoList>
 
+#if defined(_WIN32) || defined(WIN32)
+#define DIRSEP "\\"
+#else
+#define DIRSEP "/"
+#endif
+
 GridFileProcessor::GridFileProcessor()
 {
 }
@@ -913,9 +919,9 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                             if(_buildCompoundLOD)
                             {
                                 osg::ref_ptr<osg::LOD> lod = new osg::LOD;
-                                lod->addChild(towrite, 0,40.0f);
-                                lod->addChild(modelL1.get(), 40.0f, 200.0f);
-                                lod->addChild(modelL2, 200.0f, FLT_MAX);
+                                lod->addChild(towrite, 0,800.0f);
+                                lod->addChild(modelL1.get(), 800.0f, 2500.0f);
+                                lod->addChild(modelL2, 2500.0f, FLT_MAX);
                                 path = _scene_file;
                                 path = path + buffer;
                                 path = path + ".osgb";
@@ -976,7 +982,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadTiles(std::string _scene_file, s
         {
             // relative path
             path = scene_info.absoluteDir().absolutePath().toStdString();
-            path = path + "/";
+            path = path + DIRSEP;
             path = path + _subdir;
         }
     }
@@ -1019,7 +1025,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
         {
             // relative path
             path = scene_info.absoluteDir().absolutePath().toStdString();
-            path = path + "/";
+            path = path + DIRSEP;
             path = path + _subdir;
         }
     }
@@ -1044,13 +1050,13 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
         {
             smart = new SmartLOD;
             smart->setDatabaseOptions(new osgDB::Options("noRotation"));
-            smart->addChild(path + "/" + files[i].fileName().toStdString(), 0.0f, 800.0f);
+            smart->addChild(path + DIRSEP + files[i].fileName().toStdString(), 0.0f, 800.0f);
         }
         else if(files[i].fileName().endsWith("-1.osgb"))
         {
             if(smart == nullptr)
                 continue;
-            smart->addChild(path + "/" +files[i].fileName().toStdString(), 800.0f, 2500.0f);
+            smart->addChild(path + DIRSEP +files[i].fileName().toStdString(), 800.0f, 2500.0f);
         }
         else if(files[i].fileName().endsWith("-2.osgb"))
         {
@@ -1060,7 +1066,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
             osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
             smart->addChild(node.get(), 2500.0f, FLT_MAX);
             unsigned int idx = smart->getNumChildren()-1;
-            smart->setFileName(idx, path + "/" + files[i].absoluteFilePath().toStdString());
+            smart->setFileName(idx, path + DIRSEP + files[i].absoluteFilePath().toStdString());
             smart->doNotDiscardChild(idx);
 
             group->addChild(smart);

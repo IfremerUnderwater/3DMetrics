@@ -73,6 +73,12 @@
 
 #include "ask_for_lod_dialog.h"
 
+#if defined(_WIN32) || defined(WIN32)
+#define DIRSEP "\\"
+#else
+#define DIRSEP "/"
+#endif
+
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
     ui(new Ui::TDMGui),
@@ -404,7 +410,7 @@ void TDMGui::slot_open3dModel()
                         kmlbase::File::SplitFilePath(filename.toStdString(),
                                                      &base_directory,
                                                      &lfname);
-                        pathToFile = base_directory + string("/") + pathToFile;
+                        pathToFile = base_directory + string(DIRSEP) + pathToFile;
                     }
                 }
             }
@@ -2836,7 +2842,7 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
                         kmlbase::File::SplitFilePath(filename.toStdString(),
                                                      &base_directory,
                                                      &lfname);
-                        pathToFile = dir.absolutePath().toStdString() + string("/") + pathToFile;
+                        pathToFile = dir.absolutePath().toStdString() + string(DIRSEP) + pathToFile;
                     }
                 }
             }
@@ -3279,7 +3285,7 @@ void TDMGui::slot_computeTotalArea()
         QApplication::restoreOverrideCursor();
 
         QString total_area_string = QString::number(total_area_double,'f',2);
-        QStringList filename_split = layer_data.fileName().split("/");
+        QStringList filename_split = layer_data.fileName().split(DIRSEP);
         QString name3D_mode = filename_split.at(filename_split.length()-1);
         QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3D_mode+tr(" is ")+total_area_string + " m²");
     }
