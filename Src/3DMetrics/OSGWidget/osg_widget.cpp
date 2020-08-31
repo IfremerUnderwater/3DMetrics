@@ -157,10 +157,11 @@ struct SnapImage : public osg::Camera::DrawCallback {
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
+    OSGWidget *m_osgWidget;
 public:
 
-    KeyboardEventHandler(osg::StateSet* stateset):
-        _stateset(stateset)
+    KeyboardEventHandler(osg::StateSet* stateset, OSGWidget *_osgWidget):
+        _stateset(stateset), m_osgWidget(_osgWidget)
     {
         _point = new osg::Point;
         _point->setDistanceAttenuation(osg::Vec3(0.0,0.0000,0.05f));
@@ -203,10 +204,12 @@ public:
             }
             else if (ea.getKey()==osgGA::GUIEventAdapter::KEY_L)
             {
-                if (_stateset->getMode(GL_LIGHTING) == osg::StateAttribute::OFF)
-                    _stateset->setMode(GL_LIGHTING, osg::StateAttribute::ON);
-                else
-                    _stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
+                // handle light on shaders
+                m_osgWidget->enableLight(_stateset->getMode(GL_LIGHTING) == osg::StateAttribute::OFF);
+                //                if (_stateset->getMode(GL_LIGHTING) == osg::StateAttribute::OFF)
+                //                    _stateset->setMode(GL_LIGHTING, osg::StateAttribute::ON);
+                //                else
+                //                    _stateset->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
                 return true;
             }
             break;
@@ -310,7 +313,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     view->setCamera( camera );
 
     view->addEventHandler( new osgViewer::StatsHandler );
-    view->addEventHandler(new KeyboardEventHandler(view->getCamera()->getOrCreateStateSet()));
+    view->addEventHandler(new KeyboardEventHandler(view->getCamera()->getOrCreateStateSet(), this));
 
 
     osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
@@ -369,7 +372,10 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_overlay = new OverlayWidget(this);
     m_overlay->setColorPalette(m_colorPalette);
     m_overlay->setMinMax(m_displayZMin, m_displayZMax);
-    m_overlay->show();
+    if(m_showZScale)
+        m_overlay->show();
+    else
+        m_overlay->hide();
 }
 
 OSGWidget::~OSGWidget()
@@ -909,9 +915,11 @@ void OSGWidget::initializeGL(){
 
 void OSGWidget::paintGL()
 {
+    qDebug() << "frame";
+
     m_viewer->frame();
 
-    paintOverlayGL();
+    //paintOverlayGL();
 }
 
 void OSGWidget::paintOverlayGL()
@@ -1667,14 +1675,18 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 void OSGWidget::enableLight(bool _state)
 {
     bool lighton = true;
+    osg::StateAttribute::Values light =  osg::StateAttribute::OFF;
+
     if ( _state )
     {
+        light =  osg::StateAttribute::ON;
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::ON);
         // disable shades on shader
         lighton = false;
     }
     else
     {
+        light =  osg::StateAttribute::OFF;
         m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->setMode(GL_LIGHTING, osg::StateAttribute::OFF);
         // enable shades on shader
         lighton = true;
@@ -1991,6 +2003,7 @@ void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
             stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
         }
     }
+    m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
     update();
 }
 
@@ -2025,6 +2038,15 @@ void OSGWidget::setUseDisplayZMinMaxAndUpdate(bool _use)
 void OSGWidget::showZScale(bool _show)
 {
     m_showZScale = _show;
+    if(_show)
+    {
+        m_overlay->show();
+        paintOverlayGL();
+    }
+    else
+    {
+        m_overlay->hide();
+    }
     update();
 }
 
@@ -2061,5 +2083,6 @@ void OSGWidget::setColorPalette(ShaderColor::Palette _palette)
             }
         }
     }
+    showZScale(m_showZScale);
     update();
 }
