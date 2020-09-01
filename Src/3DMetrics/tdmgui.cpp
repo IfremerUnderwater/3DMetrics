@@ -3634,12 +3634,15 @@ void TDMGui::slot_exportMeasToGeom()
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {
         const char *psz_driver_name = "ESRI Shapefile";
-        OGRSFDriver *driver;
-        OGRRegisterAll();
-        driver =(OGRSFDriver *)OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
-        OGRDataSource *data_source;
-        data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
-
+        //OGRSFDriver *driver;
+        GDALDriver *driver;
+        //OGRRegisterAll();
+        //driver =(OGRSFDriver *)OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
+        driver = GetGDALDriverManager()->GetDriverByName(psz_driver_name);
+        //OGRDataSource *data_source;
+        GDALDataset *data_source;
+        //data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
+        data_source =  driver->Create(path_info.absolutePath().toStdString().c_str(), 0, 0, 0, GDT_Unknown, NULL);
         if( data_source == NULL )
         {
             printf( "Creation of output file failed.\n" );
@@ -3708,7 +3711,7 @@ void TDMGui::slot_exportMeasToGeom()
             }
         }
 
-        char name[33] ;
+        char name[33] ="";
         for(int i=0; i<table->rowCount(); i++)
         {
             for(int j=1; j<table->columnCount(); j++)
@@ -3775,7 +3778,7 @@ void TDMGui::slot_exportMeasToGeom()
                 }
             }
         }
-        OGRDataSource::DestroyDataSource( data_source );
+        GDALClose( data_source );
     }
     m_meas_geom_export_dialog.clear();
 }

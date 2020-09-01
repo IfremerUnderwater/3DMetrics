@@ -94,10 +94,10 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
             for(int j=0; j<(width); j++)
             {
-                buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
-                buffer_G[width-j] = m_image->data(size - ((width*i)+j))[1];
-                buffer_B[width-j] = m_image->data(size - ((width*i)+j))[2];
-                buffer_A[width-j] = m_image->data(size - ((width*i)+j))[3];
+                buffer_R[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[0];
+                buffer_G[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[1];
+                buffer_B[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[2];
+                buffer_A[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[3];
             }
             // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
             CPLErr res;
@@ -106,11 +106,6 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
             res = geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
             res = geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
         }
-
-        delete buffer_R;
-        delete buffer_G;
-        delete buffer_B;
-        delete buffer_A;
 
         progress_dialog.setValue(height);
 
@@ -126,7 +121,13 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
         geotiff_dataset->SetProjection(geo_reference);
         CPLFree( geo_reference );
         GDALClose(geotiff_dataset) ;
+
         CPLPopErrorHandler();
+
+        delete buffer_R;
+        delete buffer_G;
+        delete buffer_B;
+        delete buffer_A;
 
         const_cast<SnapGeotiffImage*>(this)->m_status = true;
         //GDALDestroyDriverManager();
