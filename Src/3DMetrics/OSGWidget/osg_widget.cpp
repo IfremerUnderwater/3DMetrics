@@ -63,97 +63,19 @@
 #include "smartlod.h"
 #include "grid_file_processor.h"
 
-struct SnapImage : public osg::Camera::DrawCallback {
-    SnapImage(osg::GraphicsContext* _gc,const std::string& _filename, QPointF &_ref_lat_lon,osg::BoundingBox _box, double _pixel_size) :
-        m_filename( _filename ),
-        m_ref_lat_lon( _ref_lat_lon ),
-        m_box( _box ),
-        m_pixel_size( _pixel_size )
-    {
-        m_image = new osg::Image;
-        if (_gc->getTraits()) {
-            int width = _gc->getTraits()->width;
-            int height = _gc->getTraits()->height;
-            m_image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
-        }
-    }
+#include "snap_geotiff_image.h"
+#include "elevation_map_creator.h"
 
-    virtual void operator () (osg::RenderInfo& renderInfo) const {
-        osg::Camera* camera = renderInfo.getCurrentCamera();
+//#ifdef _WIN32
+//#include "gdal_priv.h"
+//#include "cpl_conv.h"
+//#include "ogr_spatialref.h"
+//#else
+//#include "gdal/gdal_priv.h"
+//#include "gdal/cpl_conv.h"
+//#include "gdal/ogr_spatialref.h"
+//#endif
 
-        osg::GraphicsContext* gc = camera->getGraphicsContext();
-        if (gc->getTraits() && m_image.valid()) {
-
-            // get the image
-            int width = gc->getTraits()->width;
-            int height = gc->getTraits()->height;
-            m_image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
-
-            // Variable for the command line "gdal_translate"
-            double lat_0  = m_ref_lat_lon.x();
-            double lon_0 = m_ref_lat_lon.y();
-            double x_min = m_box.xMin();
-            double y_max = m_box.yMax();
-
-            std::string tiff_name = m_filename+".tif";
-            //GDALAllRegister();
-            CPLPushErrorHandler(CPLQuietErrorHandler);
-            GDALDataset *geotiff_dataset;
-            GDALDriver *driver_geotiff;
-
-            driver_geotiff = GetGDALDriverManager()->GetDriverByName("GTiff");
-            geotiff_dataset = driver_geotiff->Create(tiff_name.c_str(),width,height,4,GDT_Byte,NULL);
-
-            int size = height*width;
-            unsigned char *buffer_R = new unsigned char[width];
-            unsigned char *buffer_G = new unsigned char[width];
-            unsigned char *buffer_B = new unsigned char[width];
-            unsigned char *buffer_A = new unsigned char[width];
-
-            for(int i=0; i<height; i++) {
-                for(int j=0; j<(width); j++) {
-                    buffer_R[width-j] = m_image->data(size - ((width*i)+j))[0];
-                    buffer_G[width-j] = m_image->data(size - ((width*i)+j))[1];
-                    buffer_B[width-j] = m_image->data(size - ((width*i)+j))[2];
-                    buffer_A[width-j] = m_image->data(size - ((width*i)+j))[3];
-
-                }
-                // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
-                CPLErr res;
-                res = geotiff_dataset->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer_R,width,1,GDT_Byte,0,0);
-                res = geotiff_dataset->GetRasterBand(2)->RasterIO(GF_Write,0,i,width,1,buffer_G,width,1,GDT_Byte,0,0);
-                res = geotiff_dataset->GetRasterBand(3)->RasterIO(GF_Write,0,i,width,1,buffer_B,width,1,GDT_Byte,0,0);
-                res = geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
-            }
-
-            delete buffer_R;
-            delete buffer_G;
-            delete buffer_B;
-            delete buffer_A;
-
-            // Setup output coordinate system.
-            double geo_transform[6] = { x_min, m_pixel_size, 0, y_max, 0, -m_pixel_size };
-            geotiff_dataset->SetGeoTransform(geo_transform);
-            char *geo_reference = NULL;
-            OGRSpatialReference o_SRS;
-            o_SRS.SetTM(lat_0,lon_0,0.9996,0,0);
-            o_SRS.SetWellKnownGeogCS( "WGS84" );
-            o_SRS.exportToWkt( &geo_reference );
-
-            geotiff_dataset->SetProjection(geo_reference);
-            CPLFree( geo_reference );
-            GDALClose(geotiff_dataset) ;
-
-            //GDALDestroyDriverManager();
-        }
-    }
-
-    std::string m_filename;
-    osg::ref_ptr<osg::Image> m_image;
-    QPointF m_ref_lat_lon;
-    osg::BoundingBox m_box;
-    double m_pixel_size;
-};
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
@@ -219,7 +141,6 @@ public:
         }
         return false;
     }
-
 
     float getPointSize() const
     {
@@ -1479,7 +1400,6 @@ void OSGWidget::xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, do
 
 bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type)
 {
-
     // get the translation in the  node
     osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
     osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
@@ -1593,78 +1513,22 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
     if ( _map_type == map_type::OrthoMap )
     {
-        SnapImage* final_draw_callback = new SnapImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size);
+        SnapGeotiffImage* final_draw_callback = new SnapGeotiffImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
         mrt_camera->setFinalDrawCallback(final_draw_callback);
     }
 
 
     viewer.home();
     viewer.frame();
+
     if ( _map_type == map_type::AltMap )
     {
-        //GDALAllRegister();
-        CPLPushErrorHandler(CPLQuietErrorHandler);
+        ElevationMapCreator emc(screen_capture_filename,m_ref_lat_lon, image_bounds,
+                                _pixel_size, width_pixel, height_pixel);
 
-        GDALDataset *geotiff_dataset_alt;
-        GDALDriver *driver_geotiff_alt;
+        emc.process(viewer, this);
 
-        int no_data =  -9999;
-        std::string file_prof = screen_capture_filename+".tif";
 
-        driver_geotiff_alt = GetGDALDriverManager()->GetDriverByName("GTiff");
-        geotiff_dataset_alt = driver_geotiff_alt->Create(file_prof.c_str(),width_pixel,height_pixel,1,GDT_Float32,NULL);
-
-        float *buffer= new float[width_pixel];
-
-        QProgressDialog progress_dialog("Write altitude map file...", "Abort altitude map", 0, height_pixel, this);
-        progress_dialog.setWindowModality(Qt::WindowModal);
-
-        for(int i=0; i<height_pixel; i++) {
-            for(int j=0; j<width_pixel; j++) {
-                QApplication::processEvents();
-                osg::Vec3d _inter_point;
-                osgUtil::LineSegmentIntersector::Intersections intersections;
-                progress_dialog.setValue(i);
-                if (progress_dialog.wasCanceled())
-                    return false;
-                if (viewer.computeIntersections(viewer.getCamera(),osgUtil::Intersector::WINDOW,j,height_pixel-i,intersections))
-                {
-
-                    osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
-
-                    // we get the intersections in a osg::Vec3d
-                    _inter_point = hitr->getWorldIntersectPoint();
-                    float alt_point = _inter_point.z();
-                    buffer[j] = alt_point;
-
-                }else{
-                    float alt_point = no_data;
-                    buffer[j] = alt_point;
-                }
-            }
-            // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
-            CPLErr res = geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width_pixel,1,buffer,width_pixel,1,GDT_Float32,0,0);
-        }
-
-        delete buffer;
-
-        progress_dialog.setValue(height_pixel);
-        geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
-
-        // Setup output coordinate system
-        double geo_transform[6] = { image_bounds.xMin(), _pixel_size, 0, image_bounds.yMax(), 0, -_pixel_size };
-        geotiff_dataset_alt->SetGeoTransform(geo_transform);
-        char *geo_reference_alt = NULL;
-        OGRSpatialReference o_SRS_alt;
-        o_SRS_alt.SetTM(m_ref_lat_lon.x(),m_ref_lat_lon.y(),0.9996,0,0);
-        o_SRS_alt.SetWellKnownGeogCS( "WGS84" );
-        o_SRS_alt.exportToWkt( &geo_reference_alt );
-
-        geotiff_dataset_alt->SetProjection(geo_reference_alt);
-        CPLFree( geo_reference_alt );
-        GDALClose(geotiff_dataset_alt) ;
-
-        //GDALDestroyDriverManager();
     }
 
     return true;

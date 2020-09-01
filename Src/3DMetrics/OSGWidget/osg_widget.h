@@ -37,16 +37,6 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include "kml_handler.h"
 #include "loading_mode.h"
 
-#ifdef _WIN32
-#include "gdal_priv.h"
-#include "cpl_conv.h"
-#include "ogr_spatialref.h"
-#else
-#include "gdal/gdal_priv.h"
-#include "gdal/cpl_conv.h"
-#include "gdal/ogr_spatialref.h"
-#endif
-
 #define INVALID_VALUE 100000
 
 class OSGWidget : public QOpenGLWidget
