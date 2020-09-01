@@ -21,6 +21,10 @@ struct SnapGeotiffImage : public osg::Camera::DrawCallback
 
     virtual void operator () (osg::RenderInfo& renderInfo) const;
 
+
+public:
+    bool status() const { return m_status; }
+
 private:
     std::string m_filename;
     osg::ref_ptr<osg::Image> m_image;
@@ -28,6 +32,7 @@ private:
     osg::BoundingBox m_box;
     double m_pixel_size;
     QWidget *m_parentWidget;
+    bool m_status;
 };
 
 #endif // SNAPGEOTIFFIMAGE_H

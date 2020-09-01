@@ -21,7 +21,8 @@ SnapGeotiffImage::SnapGeotiffImage(osg::GraphicsContext *_gc, const std::string 
     m_ref_lat_lon( _ref_lat_lon ),
     m_box( _box ),
     m_pixel_size( _pixel_size ),
-    m_parentWidget(_parentWidget)
+    m_parentWidget(_parentWidget),
+    m_status(true)
 {
     m_image = new osg::Image;
     if (_gc->getTraits())
@@ -68,6 +69,7 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
         QProgressDialog progress_dialog(QObject::tr("Write altitude ortho file..."), QObject::tr("Abort ortho map"), 0, height, m_parentWidget);
         progress_dialog.setWindowModality(Qt::WindowModal);
+        progress_dialog.show();
 
         for(int i=0; i<height; i++)
         {
@@ -84,6 +86,8 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
                 delete buffer_G;
                 delete buffer_B;
                 delete buffer_A;
+
+                const_cast<SnapGeotiffImage*>(this)->m_status = false;
 
                 return;
             }
@@ -124,6 +128,14 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
         GDALClose(geotiff_dataset) ;
         CPLPopErrorHandler();
 
+        const_cast<SnapGeotiffImage*>(this)->m_status = true;
         //GDALDestroyDriverManager();
     }
+    else
+    {
+        const_cast<SnapGeotiffImage*>(this)->m_status = false;
+    }
+
 }
+
+

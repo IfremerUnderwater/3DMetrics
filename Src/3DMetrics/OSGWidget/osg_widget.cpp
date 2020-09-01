@@ -1510,10 +1510,15 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
     std::string screen_capture_filename = _filename.toStdString();
+    bool hasShader = isEnabledShaderOnNode(_node);
+    enableShaderOnNode(_node, false);
+
+    SnapGeotiffImage* final_draw_callback = nullptr;
+    bool status = true;
 
     if ( _map_type == map_type::OrthoMap )
     {
-        SnapGeotiffImage* final_draw_callback = new SnapGeotiffImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
+        final_draw_callback = new SnapGeotiffImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
         mrt_camera->setFinalDrawCallback(final_draw_callback);
     }
 
@@ -1521,17 +1526,28 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
     viewer.home();
     viewer.frame();
 
+    if(final_draw_callback != nullptr)
+    {
+        status = final_draw_callback->status();
+
+        mrt_camera->removeFinalDrawCallback(final_draw_callback);
+
+        // causes SEGV
+        //delete final_draw_callback;
+    }
+
+
     if ( _map_type == map_type::AltMap )
     {
         ElevationMapCreator emc(screen_capture_filename,m_ref_lat_lon, image_bounds,
                                 _pixel_size, width_pixel, height_pixel);
 
-        emc.process(viewer, this);
-
-
+        status = emc.process(viewer, this);
     }
 
-    return true;
+    enableShaderOnNode(_node, hasShader);
+
+    return status;
 
 
 }
