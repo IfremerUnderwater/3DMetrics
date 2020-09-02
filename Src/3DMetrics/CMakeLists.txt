@@ -17,6 +17,8 @@ add_executable(3DMetrics
     OSGWidget/grid_file_processor.cpp
     OSGWidget/snap_geotiff_image.cpp
     OSGWidget/elevation_map_creator.cpp
+    OSGWidget/lod_tools.cpp
+    OSGWidget/object_meansize_visitor.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp
@@ -59,6 +61,7 @@ add_executable(3DMetrics
     model_depth_colors_chooser.cpp
     color_widget.cpp
     qtable_arrowkey_detector.cpp
+    edit_lod_threshold_dialog.cpp
 	ressources.qrc
 	3DMetrics.rc)
 	

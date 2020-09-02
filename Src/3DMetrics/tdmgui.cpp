@@ -66,12 +66,14 @@
 
 #include "OSGWidget/measurement_picker_tool.h"
 #include "OSGWidget/smartlod.h"
-
-#include "model_depth_colors_chooser.h"
+#include "OSGWidget/lod_tools.h"
+#include "OSGWidget/object_meansize_visitor.h"
 
 #include "qtable_arrowkey_detector.h"
 
+#include "model_depth_colors_chooser.h"
 #include "ask_for_lod_dialog.h"
+#include "edit_lod_threshold_dialog.h"
 
 #if defined(_WIN32) || defined(WIN32)
 #define DIRSEP "\\"
@@ -1335,16 +1337,46 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Edit layer offset"),this,SLOT(slot_editModelOffset()));
 
                 menu->addSeparator();
+
                 menu->addAction(tr("Orthoproject this layer"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Elevation map from this layer"),this,SLOT(slot_saveAltMap()));
                 menu->addAction(tr("Compute total layer area"),this,SLOT(slot_computeTotalArea()));
+
                 menu->addSeparator();
+
+                bool showLOD = false;
+                osg::ref_ptr<osg::Group> matrix = node->asGroup();
+                if(matrix.valid())
+                {
+                    osg::ref_ptr<osg::Node> child = matrix->getChild(0);
+                    osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
+                    if(lod.valid())
+                    {
+                        // can modify LOD
+                        showLOD = true;
+                    }
+                    else
+                    {
+                        if(LODTools::hasLODInTree(child.get()))
+                        {
+                            showLOD = true;
+                        }
+                    }
+                }
+                if(showLOD)
+                {
+                    menu->addSeparator();
+                    menu->addAction(tr("Edit LOD thresholds"),this,SLOT(slot_editLODThresholds()));
+                }
+
                 QAction *action = new QAction(tr("Depth to colormap"),this);
                 action->setCheckable(true);
                 bool enabled = ui->display_widget->isEnabledShaderOnNode(node);
                 action->setChecked(enabled);
                 QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(slot_toggleDepthToColor(bool)));
                 menu->addAction(action);
+
+                menu->addSeparator();
             }
         }
     }
@@ -4063,6 +4095,82 @@ void TDMGui::slot_toggleDepthToColor(bool _state)
             this->slot_toggleZScale();
         }
     }
+}
+
+void TDMGui::slot_editLODThresholds()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+
+        float step1 = 0;
+        float step2 = 0;
+
+        osg::ref_ptr<osg::Group> matrix = node->asGroup();
+        if(matrix.valid())
+        {
+            osg::ref_ptr<osg::Node> child = matrix->getChild(0);
+            osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
+            if(lod.valid())
+            {
+                // can modify LOD
+                step1 = lod->getMaxRange(0);
+                step2 = lod->getMinRange(2);
+            }
+            else
+            {
+                // tiles : group
+                osg::ref_ptr<osg::Group> group = child->asGroup();
+                if(group.valid())
+                {
+                    qDebug() << "child#:" << group->getNumChildren();
+
+                    osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
+                    if(lod.valid())
+                    {
+                        // can modify LOD
+                        step1 = lod->getMaxRange(0);
+                        step2 = lod->getMinRange(2);
+                    }
+                }
+            }
+        }
+
+
+        EditLODThresholdDialog dialog(this);
+        dialog.setThresholds(step1,step2);
+        QPoint point = QCursor::pos();
+        dialog.move(point.x()+20, point.y()+20);
+        int ret = dialog.exec();
+        int modif = 0;
+        if(ret == QDialog::Accepted)
+        {
+            modif = LODTools::applyLODValuesInTree(node, dialog.getThreshold1(), dialog.getThreshold2());
+        }
+
+
+        int count = LODTools::countLODInTree(node);
+        //int modif = LODTools::applyLODValuesInTree(node, 500, 2000);
+        ObjectMeanSizeVisitor meansize;
+        node->accept(meansize);
+
+        qDebug() << " nb=" << meansize.getCount() << "  meansize=" << meansize.getMeanSize();
+
+        qDebug() << "0 < " << step1 << " < " << step2 << " < INF  count=" << count << " modif=" << modif;
+    }
+
+    ui->display_widget->update();
 }
 
 

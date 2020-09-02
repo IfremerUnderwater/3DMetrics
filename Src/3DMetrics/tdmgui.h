@@ -181,6 +181,7 @@ public slots:
     void slot_editTransparency();
     void slot_editModelOffset();
     void slot_toggleDepthToColor(bool);
+    void slot_editLODThresholds();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);

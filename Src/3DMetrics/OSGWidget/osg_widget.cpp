@@ -836,7 +836,7 @@ void OSGWidget::initializeGL(){
 
 void OSGWidget::paintGL()
 {
-    qDebug() << "frame";
+    //qDebug() << "frame";
 
     m_viewer->frame();
 
