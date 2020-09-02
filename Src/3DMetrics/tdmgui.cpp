@@ -67,7 +67,7 @@
 #include "OSGWidget/measurement_picker_tool.h"
 #include "OSGWidget/smartlod.h"
 #include "OSGWidget/lod_tools.h"
-#include "OSGWidget/object_meansize_visitor.h"
+//#include "OSGWidget/object_meansize_visitor.h"
 
 #include "qtable_arrowkey_detector.h"
 
@@ -4124,7 +4124,7 @@ void TDMGui::slot_editLODThresholds()
             osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
             if(lod.valid())
             {
-                // can modify LOD
+                // has LOD : can modify
                 step1 = lod->getMaxRange(0);
                 step2 = lod->getMinRange(2);
             }
@@ -4139,14 +4139,13 @@ void TDMGui::slot_editLODThresholds()
                     osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
                     if(lod.valid())
                     {
-                        // can modify LOD
+                        // has LOD : can modify
                         step1 = lod->getMaxRange(0);
                         step2 = lod->getMinRange(2);
                     }
                 }
             }
         }
-
 
         EditLODThresholdDialog dialog(this);
         dialog.setThresholds(step1,step2);
@@ -4159,15 +4158,14 @@ void TDMGui::slot_editLODThresholds()
             modif = LODTools::applyLODValuesInTree(node, dialog.getThreshold1(), dialog.getThreshold2());
         }
 
+        //        int count = LODTools::countLODInTree(node);
 
-        int count = LODTools::countLODInTree(node);
-        //int modif = LODTools::applyLODValuesInTree(node, 500, 2000);
-        ObjectMeanSizeVisitor meansize;
-        node->accept(meansize);
+        //        ObjectMeanSizeVisitor meansize;
+        //        node->accept(meansize);
 
-        qDebug() << " nb=" << meansize.getCount() << "  meansize=" << meansize.getMeanSize();
+        //        qDebug() << " nb=" << meansize.getCount() << "  meansize=" << meansize.getMeanSize();
 
-        qDebug() << "0 < " << step1 << " < " << step2 << " < INF  count=" << count << " modif=" << modif;
+        //        qDebug() << "0 < " << step1 << " < " << step2 << " < INF  count=" << count << " modif=" << modif;
     }
 
     ui->display_widget->update();

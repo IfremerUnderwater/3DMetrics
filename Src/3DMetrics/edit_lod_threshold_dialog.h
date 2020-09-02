@@ -25,6 +25,7 @@ public slots:
     void slot_changeTh1(double _val);
     void slot_changeTh2(double _val);
 
+    void slot_ok();
 private:
     Ui::EditLODThresholdDialog *ui;
 
