@@ -105,6 +105,15 @@ public:
     bool createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, bool _buildCompoundLOD = false);
 
     ///
+    /// \brief createLODTiles load a scene from a 3D file
+    /// \param _node node to process
+    /// \param _scene_file_basename
+    /// \param _buildCompoundLOD
+    /// \return true if succeded
+    ///
+    bool createLODTiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD = false);
+
+    ///
     /// \brief createNodeFromFileWithGDAL load a scene from a 3D file
     /// \param _scene_file path to netcdf grid file
     /// \param _mode

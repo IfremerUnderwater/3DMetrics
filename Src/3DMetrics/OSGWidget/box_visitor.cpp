@@ -5,6 +5,7 @@
 #include <vector>
 #include <limits>
 #include "box_visitor.h"
+
 using namespace std;
 
 #include "math.h"

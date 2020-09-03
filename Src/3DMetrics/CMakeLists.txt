@@ -19,6 +19,7 @@ add_executable(3DMetrics
     OSGWidget/elevation_map_creator.cpp
     OSGWidget/lod_tools.cpp
     OSGWidget/object_meansize_visitor.cpp
+    OSGWidget/clip_model_visitor.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp
