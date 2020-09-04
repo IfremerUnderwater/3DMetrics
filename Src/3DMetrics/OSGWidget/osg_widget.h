@@ -69,11 +69,6 @@ public:
 
     virtual ~OSGWidget();
 
-    // extensions for SmartLOD
-    static constexpr const char *const EXTLOD0 = "-0.osgb";
-    static constexpr const char *const EXTLOD1 = "-1.osgb";
-    static constexpr const char *const EXTLOD2 = "-2.osgb";
-
     ///
     /// \brief setSceneFromFile load a scene from a 3D file
     /// \param _sceneFile path to any 3D file supported by osg
@@ -103,15 +98,6 @@ public:
     /// \return true if succeded
     ///
     bool createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, bool _buildCompoundLOD = false);
-
-    ///
-    /// \brief createLODTiles load a scene from a 3D file
-    /// \param _node node to process
-    /// \param _scene_file_basename
-    /// \param _buildCompoundLOD
-    /// \return true if succeded
-    ///
-    bool createLODTiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD = false);
 
     ///
     /// \brief createNodeFromFileWithGDAL load a scene from a 3D file

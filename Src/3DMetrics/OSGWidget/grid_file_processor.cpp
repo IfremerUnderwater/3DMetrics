@@ -1,6 +1,9 @@
 #include "grid_file_processor.h"
 #include "smartlod.h"
 
+#include "box_visitor.h"
+#include "clip_model_visitor.h"
+
 #include <osg/Geometry>
 #include <osg/Geode>
 #include <osg/Point>
@@ -52,7 +55,7 @@ GridFileProcessor::~GridFileProcessor()
 /// \param _local_alt
 /// \return
 ///
-osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, LoadingMode _mode, QPointF &_local_lat_lon, double &_local_alt)
+osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFile(std::string _scene_file, LoadingMode _mode, QPointF &_local_lat_lon, double &_local_alt)
 {
     osg::ref_ptr<osg::Group> group;
 
@@ -570,7 +573,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFile(std::string _scene_file, Lo
     return group;
 }
 
-void GridFileProcessor::getLatLonAlt(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt)
+void GridFileProcessor::getGridLatLonAlt(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt)
 {
     //GDALAllRegister();
     GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
@@ -615,7 +618,7 @@ void GridFileProcessor::getLatLonAlt(std::string _scene_file, QPointF &_local_la
 // tile size in x and y
 static const int TILESIZE = 256;
 
-osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _lod)
+osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFileAndBuildTiles(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt, bool _lod)
 {
     osg::ref_ptr<osg::Group> group;
 
@@ -878,7 +881,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
                         char buffer[80];
                         sprintf(buffer, ".%03d_%03d",i, (y == nYSize-1) ? (y / TILESIZE) : (y / TILESIZE - 1));
                         path = path + buffer;
-                        path = path + "-0.osgb";
+                        path = path + SmartLOD::EXTLOD0;
                         osgDB::writeNodeFile(*towrite,
                                              path,
                                              new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -896,7 +899,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
 
                             path = _scene_file;
                             path = path + buffer;
-                            path = path + "-1.osgb";
+                            path = path + SmartLOD::EXTLOD1;
                             osgDB::writeNodeFile(*modelL1,
                                                  path,
                                                  new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -908,7 +911,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadFileAndBuildTiles(std::string _s
 
                             path = _scene_file;
                             path = path + buffer;
-                            path = path + "-2.osgb";
+                            path = path + SmartLOD::EXTLOD2;
                             osgDB::writeNodeFile(*modelL2,
                                                  path,
                                                  new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -1005,7 +1008,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadTiles(std::string _scene_file, s
     return group;
 }
 
-osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file, std::string _subdir)
+osg::ref_ptr<osg::Group> GridFileProcessor::loadSmartLODTiles(std::string _scene_file, std::string _subdir)
 {
     osg::ref_ptr<osg::Group> group = new osg::Group;
 
@@ -1046,19 +1049,19 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
     {
         qDebug() << files[i].fileName();
 
-        if(files[i].fileName().endsWith("-0.osgb"))
+        if(files[i].fileName().endsWith(SmartLOD::EXTLOD0))
         {
             smart = new SmartLOD;
             smart->setDatabaseOptions(new osgDB::Options("noRotation"));
             smart->addChild(path + DIRSEP + files[i].fileName().toStdString(), 0.0f, 800.0f);
         }
-        else if(files[i].fileName().endsWith("-1.osgb"))
+        else if(files[i].fileName().endsWith(SmartLOD::EXTLOD1))
         {
             if(smart == nullptr)
                 continue;
             smart->addChild(path + DIRSEP +files[i].fileName().toStdString(), 800.0f, 2500.0f);
         }
-        else if(files[i].fileName().endsWith("-2.osgb"))
+        else if(files[i].fileName().endsWith(SmartLOD::EXTLOD2))
         {
             if(smart == nullptr)
                 continue;
@@ -1075,5 +1078,183 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadLODTiles(std::string _scene_file
 
     }
     return group;
+}
+
+bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD)
+{
+    if(_nTilesX < 1 || _nTilesY < 1)
+    {
+        return false;
+    }
+
+    // get bounding box
+    BoxVisitor bv;
+    _node->accept(bv);
+    osg::BoundingBox bb = bv.getBoundingBox();
+
+    for(int nx=0; nx < _nTilesX; nx++)
+    {
+        for(int ny=0; ny < _nTilesY; ny++)
+        {
+            osg::BoundingBox clipped( bb.xMin() + nx * (bb.xMax() - bb.xMin()) / _nTilesX,
+                                      bb.yMin() + ny * (bb.yMax() - bb.yMin()) / _nTilesY,
+                                      bb.zMin(),
+                                      bb.xMin() + (nx+1) * (bb.xMax() - bb.xMin()) / _nTilesX,
+                                      bb.yMin() + (ny+1) * (bb.yMax() - bb.yMin()) / _nTilesY,
+                                      bb.zMax());
+            ClipModelVisitor cv(clipped);
+            _node->accept(cv);
+            osg::ref_ptr<osg::Group> node = cv.getClippedNode()->asGroup();
+            if(node == nullptr)
+                continue;
+            if(node->getNumChildren() == 0)
+            {
+                continue;
+            }
+
+            // build LOD
+            std::string name = _scene_file_basename;
+            // add tile number
+            char buffer[80];
+            sprintf(buffer, ".%03d_%03d", nx, ny);
+            name = name + buffer;
+
+            // LOD processing
+            std::string path0 = name;
+            path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+            osgDB::writeNodeFile(*node,
+                                 path0,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+
+            osgUtil::Simplifier simplifier;
+
+            simplifier.setSampleRatio(0.1f);
+            osg::ref_ptr<osg::Node> modelL1 = dynamic_cast<osg::Node *>(node->clone(osg::CopyOp::DEEP_COPY_ALL));
+            modelL1->accept(simplifier);
+            std::string path1 = name;
+            path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+            osgDB::writeNodeFile(*modelL1,
+                                 path1,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+            simplifier.setSampleRatio(0.2f);
+            osg::ref_ptr<osg::Node> modelL2 = dynamic_cast<osg::Node *>(modelL1->clone(osg::CopyOp::DEEP_COPY_ALL));
+            modelL2->accept(simplifier);
+            std::string path2 = name;
+            path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+            osgDB::writeNodeFile(*modelL2,
+                                 path2,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+            // coumpound LOD
+            if(_buildCompoundLOD)
+            {
+                osg::ref_ptr<osg::LOD> lod = new osg::LOD;
+                lod->addChild(node, 0,40.0f);
+                lod->addChild(modelL1, 40.0f, 200.0f);
+                lod->addChild(modelL2, 200.0f, FLT_MAX);
+                std::string path = name;
+                path = path + ".osgb";
+                osgDB::writeNodeFile(*lod,
+                                     path,
+                                     new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+            }
+
+        }
+    }
+}
+
+bool GridFileProcessor::createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD)
+{
+
+    if(_nTilesX < 1 || _nTilesY < 1)
+    {
+        return false;
+    }
+    // get bounding box
+    BoxVisitor bv;
+    _node->accept(bv);
+    osg::BoundingBox bb = bv.getBoundingBox();
+
+    // precompute simplify level
+    osg::ref_ptr<osg::Node> L1 = dynamic_cast<osg::Node *>(_node->clone(osg::CopyOp::DEEP_COPY_ALL));
+    osgUtil::Simplifier simplifier;
+    simplifier.setSampleRatio(0.1f);
+    L1->accept(simplifier);
+
+    osg::ref_ptr<osg::Node> L2 = dynamic_cast<osg::Node *>(L1->clone(osg::CopyOp::DEEP_COPY_ALL));
+    simplifier.setSampleRatio(0.2f);
+    L2->accept(simplifier);
+
+    for(int nx=0; nx < _nTilesX; nx++)
+    {
+        for(int ny=0; ny < _nTilesY; ny++)
+        {
+            osg::BoundingBox clipped( bb.xMin() + nx * (bb.xMax() - bb.xMin()) / _nTilesX,
+                                      bb.yMin() + ny * (bb.yMax() - bb.yMin()) / _nTilesY,
+                                      bb.zMin(),
+                                      bb.xMin() + (nx+1) * (bb.xMax() - bb.xMin()) / _nTilesX,
+                                      bb.yMin() + (ny+1) * (bb.yMax() - bb.yMin()) / _nTilesY,
+                                      bb.zMax());
+            ClipModelVisitor cv(clipped);
+            _node->accept(cv);
+            osg::ref_ptr<osg::Group> node = cv.getClippedNode()->asGroup();
+            if(node == nullptr)
+                continue;
+            if(node->getNumChildren() == 0)
+            {
+                continue;
+            }
+
+            // build LOD
+            std::string name = _scene_file_basename;
+            // add tile number
+            char buffer[80];
+            sprintf(buffer, ".%03d_%03d", nx, ny);
+            name = name + buffer;
+
+            // LOD processing
+            std::string path0 = name;
+            path0 = path0 + SmartLOD::EXTLOD0; // "-0.osgb";
+            osgDB::writeNodeFile(*node,
+                                 path0,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+
+            ClipModelVisitor cv1(clipped);
+            L1->accept(cv1);
+            osg::ref_ptr<osg::Group> modelL1 = cv1.getClippedNode()->asGroup();
+            std::string path1 = name;
+            path1 = path1 + SmartLOD::EXTLOD1; //"-1.osgb";
+            osgDB::writeNodeFile(*modelL1,
+                                 path1,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+            ClipModelVisitor cv2(clipped);
+            L2->accept(cv2);
+            osg::ref_ptr<osg::Node> modelL2 = cv2.getClippedNode()->asGroup();
+            std::string path2 = name;
+            path2 = path2 + SmartLOD::EXTLOD2; //"-2.osgb";
+            osgDB::writeNodeFile(*modelL2,
+                                 path2,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+
+            // coumpound LOD
+            if(_buildCompoundLOD)
+            {
+                osg::ref_ptr<osg::LOD> lod = new osg::LOD;
+                lod->addChild(node, 0,40.0f);
+                lod->addChild(modelL1, 40.0f, 200.0f);
+                lod->addChild(modelL2, 200.0f, FLT_MAX);
+                std::string path = name;
+                path = path + ".osgb";
+                osgDB::writeNodeFile(*lod,
+                                     path,
+                                     new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+            }
+
+        }
+    }
 }
 

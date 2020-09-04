@@ -8,7 +8,7 @@ class ClipModelVisitor : public osg::NodeVisitor
 {
 public:
     ClipModelVisitor();
-    ClipModelVisitor(osg::BoundingBox _boundingBox);
+    ClipModelVisitor(osg::BoundingBox _boundingBox, double _margin = 0);
     virtual ~ClipModelVisitor();
 
     virtual void apply( osg::Node &node );
@@ -18,9 +18,13 @@ public:
 
     osg::ref_ptr<osg::Node> getClippedNode() { return m_clippedNode; }
 
+    void setMargin(double margin);
+
 private :
     osg::ref_ptr<osg::Node> m_clippedNode;
     osg::BoundingBox m_boundingBox;
+
+    double m_margin;
 };
 
 

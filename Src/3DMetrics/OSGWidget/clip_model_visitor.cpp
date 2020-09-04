@@ -3,13 +3,13 @@
 #include <osg/Geometry>
 #include <osgUtil/SmoothingVisitor>
 
-ClipModelVisitor::ClipModelVisitor(): osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
+ClipModelVisitor::ClipModelVisitor(): osg::NodeVisitor(TRAVERSE_ALL_CHILDREN), m_margin(0)
 {
     m_clippedNode = new osg::Group;
 }
 
-ClipModelVisitor::ClipModelVisitor(osg::BoundingBox _boundingBox) : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN),
-    m_boundingBox(_boundingBox)
+ClipModelVisitor::ClipModelVisitor(osg::BoundingBox _boundingBox, double _margin) : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN),
+    m_boundingBox(_boundingBox), m_margin(_margin)
 {
     m_clippedNode = new osg::Group;
 }
@@ -29,12 +29,12 @@ void ClipModelVisitor::apply(osg::Geode &geode)
         return;
 
     // some optimizations
-    const double XMIN = m_boundingBox.xMin();
-    const double XMAX = m_boundingBox.xMax();
-    const double YMIN = m_boundingBox.yMin();
-    const double YMAX = m_boundingBox.yMax();
-    const double ZMIN = m_boundingBox.zMin();
-    const double ZMAX = m_boundingBox.zMax();
+    const double XMIN = m_boundingBox.xMin() - m_margin;
+    const double XMAX = m_boundingBox.xMax() + m_margin;
+    const double YMIN = m_boundingBox.yMin() - m_margin;
+    const double YMAX = m_boundingBox.yMax() + m_margin;
+    const double ZMIN = m_boundingBox.zMin() - m_margin;
+    const double ZMAX = m_boundingBox.zMax() + m_margin;
 
     unsigned int num_drawables = geode.getNumDrawables();
     for( unsigned int i = 0; i < num_drawables; i++ )
@@ -87,6 +87,7 @@ void ClipModelVisitor::apply(osg::Geode &geode)
                     point_b = osg::Vec3f((* vertices)[primitive_set->index(k+1)].x(), (* vertices)[primitive_set->index(k+1)].y(), (* vertices)[primitive_set->index(k+1)].z()) ;
                     point_c = osg::Vec3f((* vertices)[primitive_set->index(k+2)].x(), (* vertices)[primitive_set->index(k+2)].y(), (* vertices)[primitive_set->index(k+2)].z()) ;
 
+                    // keep triangle if at least 1 point is in volume
                     bool contains =
                             (point_a.x()>=XMIN && point_a.x()<=XMAX) &&
                             (point_a.y()>=YMIN && point_a.y()<=YMAX) &&
@@ -103,6 +104,11 @@ void ClipModelVisitor::apply(osg::Geode &geode)
                                                  (point_c.y()>=YMIN && point_c.y()<=YMAX) &&
                                                  (point_c.z()>=ZMIN && point_c.z()<=ZMAX));
                     }
+
+                    // Warning : in some case, all points are "exterior" of volume but triangle has intersection
+                    // must be done plane by plane
+
+                    // Possibility : if not all points are "inside", do real polygon clipping
 
                     if(contains)
                     {
@@ -142,3 +148,9 @@ void ClipModelVisitor::setBoundingBox(osg::BoundingBox _boundingBox)
 {
     m_boundingBox = _boundingBox;
 }
+
+void ClipModelVisitor::setMargin(double margin)
+{
+    m_margin = margin;
+}
+

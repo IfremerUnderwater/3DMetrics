@@ -6,6 +6,11 @@
 class OSG_EXPORT SmartLOD : public osg::LOD
 {
 public:
+    // extensions for SmartLOD
+    static constexpr const char *const EXTLOD0 = "-0.osgb";
+    static constexpr const char *const EXTLOD1 = "-1.osgb";
+    static constexpr const char *const EXTLOD2 = "-2.osgb";
+
     SmartLOD();
 
     /** Copy constructor using CopyOp to manage deep vs shallow copy.*/
