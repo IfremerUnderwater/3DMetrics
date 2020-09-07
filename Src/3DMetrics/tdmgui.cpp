@@ -351,8 +351,8 @@ void TDMGui::slot_open3dModel()
     if(filename.length() > 0)
     {
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
-                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
 
         // default : do nothing
         thread_node->setBuildLOD(false);
@@ -471,8 +471,9 @@ void TDMGui::slot_open3dModel()
     }
 }
 
-void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item
-                              ,double _transp, double _offsetX, double _offsetY, double _offsetZ)
+void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item,
+                              double _transp, double _offsetX, double _offsetY, double _offsetZ,
+                              float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir)
 {
     if(_node == 0)
     {
@@ -491,6 +492,15 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     model_data.setOffsetY(_offsetY);
     model_data.setOffsetZ(_offsetZ);
 
+    if(_threshold1 == 0 && _threshold1 == 0)
+    {
+        // get default value
+        getLODThresholds(_node, _threshold1, _threshold2);
+    }
+    model_data.setLODThreshold(_threshold1, _threshold2);
+    model_data.setLoadingMode((LoadingMode)_loadingMode);
+    model_data.setRelativeItemsDir(_itemsDir);
+
     TdmLayersModel *model = TdmLayersModel::instance();
     QVariant name(_name);
     QVariant data;
@@ -499,7 +509,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
-    // processind in file_open_thread
+    // processing in file_open_thread
     ui->display_widget->addNodeToScene(node, _transp);
 
 
@@ -2820,8 +2830,8 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         // load 3D model
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
-                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
 
         thread_node->setFileName(file_path);
         QString name = _obj["Model3D"].toString();
@@ -3018,6 +3028,21 @@ QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *_item)
             obj.insert("OffsetX", layer_data.getOffsetX());
             obj.insert("OffsetY", layer_data.getOffsetY());
             obj.insert("OffsetZ", layer_data.getOffsetZ());
+
+            // loading mode + LOD thresholds
+            //            osg::Node* const node = (layer_data.node().get());
+
+            //            float step1 = 0;
+            //            float step2 = 0;
+
+            //            getLODThresholds(node, step1, step2);
+
+            obj.insert("LoadingMode", layer_data.getLoadingMode());
+            obj.insert("LODThreshold1", layer_data.getThreshold1());
+            obj.insert("LODThreshold2", layer_data.getThreshold2());
+
+            // relative items dir
+            obj.insert("ItemsDir", layer_data.getRelativeItemsDir());
         }
     }
 
@@ -4097,6 +4122,39 @@ void TDMGui::slot_toggleDepthToColor(bool _state)
     }
 }
 
+void TDMGui::getLODThresholds(osg::Node *node, float &step1, float &step2)
+{
+    osg::ref_ptr<osg::Group> matrix = node->asGroup();
+    if(matrix.valid())
+    {
+        osg::ref_ptr<osg::Node> child = matrix->getChild(0);
+        osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
+        if(lod.valid())
+        {
+            // has LOD : can modify
+            step1 = lod->getMaxRange(0);
+            step2 = lod->getMinRange(2);
+        }
+        else
+        {
+            // tiles : group
+            osg::ref_ptr<osg::Group> group = child->asGroup();
+            if(group.valid())
+            {
+                qDebug() << "child#:" << group->getNumChildren();
+
+                osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
+                if(lod.valid())
+                {
+                    // has LOD : can modify
+                    step1 = lod->getMaxRange(0);
+                    step2 = lod->getMinRange(2);
+                }
+            }
+        }
+    }
+}
+
 void TDMGui::slot_editLODThresholds()
 {
     QTreeView *view = ui->tree_widget;
@@ -4117,35 +4175,7 @@ void TDMGui::slot_editLODThresholds()
         float step1 = 0;
         float step2 = 0;
 
-        osg::ref_ptr<osg::Group> matrix = node->asGroup();
-        if(matrix.valid())
-        {
-            osg::ref_ptr<osg::Node> child = matrix->getChild(0);
-            osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
-            if(lod.valid())
-            {
-                // has LOD : can modify
-                step1 = lod->getMaxRange(0);
-                step2 = lod->getMinRange(2);
-            }
-            else
-            {
-                // tiles : group
-                osg::ref_ptr<osg::Group> group = child->asGroup();
-                if(group.valid())
-                {
-                    qDebug() << "child#:" << group->getNumChildren();
-
-                    osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
-                    if(lod.valid())
-                    {
-                        // has LOD : can modify
-                        step1 = lod->getMaxRange(0);
-                        step2 = lod->getMinRange(2);
-                    }
-                }
-            }
-        }
+        getLODThresholds(node, step1, step2);
 
         EditLODThresholdDialog dialog(this);
         dialog.setThresholds(step1,step2);
@@ -4156,6 +4186,8 @@ void TDMGui::slot_editLODThresholds()
         if(ret == QDialog::Accepted)
         {
             modif = LODTools::applyLODValuesInTree(node, dialog.getThreshold1(), dialog.getThreshold2());
+            layer_data.setLODThreshold(dialog.getThreshold1(), dialog.getThreshold2());
+            item->setPrivateData(layer_data);
         }
 
         //        int count = LODTools::countLODInTree(node);

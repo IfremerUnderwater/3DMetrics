@@ -15,7 +15,9 @@ FileOpenThread::FileOpenThread() :
     m_offsetX(0),
     m_offsetY(0),
     m_offsetZ(0),
-    m_loadingMode(LoadingModePoint)
+    m_loadingMode(LoadingModePoint),
+    m_threshold1(0),
+    m_threshold2(2)
 {
 
 }
@@ -79,8 +81,13 @@ void FileOpenThread::run()
         }
     }
 
+    // get relative directory
+    QDir dir( QFileInfo(m_filename).absoluteDir());
+    QString relItemsDir = dir.relativeFilePath(m_tileFolderName);
+
     QApplication::restoreOverrideCursor();
-    emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ);
+    emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ,
+                           m_threshold1, m_threshold2, m_loadingMode, relItemsDir);
 
 }
 bool FileOpenThread::getUseExistingLOD() const
@@ -119,6 +126,26 @@ void FileOpenThread::setTileFolderName(const QString &tileFolderName)
 {
     m_tileFolderName = tileFolderName;
 }
+float FileOpenThread::getThreshold1() const
+{
+    return m_threshold1;
+}
+
+void FileOpenThread::setThreshold1(float threshold1)
+{
+    m_threshold1 = threshold1;
+}
+float FileOpenThread::getThreshold2() const
+{
+    return m_threshold2;
+}
+
+void FileOpenThread::setThreshold2(float threshold2)
+{
+    m_threshold2 = threshold2;
+}
+
+
 
 
 

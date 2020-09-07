@@ -44,9 +44,16 @@ public:
     QString getTileFolderName() const;
     void setTileFolderName(const QString &tileFolderName);
 
+    float getThreshold1() const;
+    void setThreshold1(float threshold1);
+
+    float getThreshold2() const;
+    void setThreshold2(float threshold2);
+
 signals :
-    void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool
-                           ,double _transp, double _offsetX, double _offsetY, double offsetZ);
+    void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool _select_item,
+                           double _transp, double _offsetX, double _offsetY, double offsetZ,
+                           float _th1, float _th2, int _loadingMode, QString _itemsDir);
 
 private:
     OSGWidget *m_osg_widget;
@@ -70,6 +77,9 @@ private:
     bool m_buildLOD;
     bool m_saveCompLOD;
     QString m_tileFolderName;
+
+    float m_threshold1;
+    float m_threshold2;
 };
 
 #endif // FILE_OPEN_THREAD_H
