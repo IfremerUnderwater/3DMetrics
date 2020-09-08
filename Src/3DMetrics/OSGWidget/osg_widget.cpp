@@ -480,6 +480,17 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, L
         model_node = group;
         break;
 
+    case LoadingModeBuildOSGB:
+        model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
+        osgDB::writeNodeFile(*model_node,
+                             scene_file + ".osgb",
+                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+        break;
+
+        // use createLODNodeFromFiles instead
+        //    case LoadingModeBuildOSGBLOD:
+        //        break;
+
     default:
         // do not load
         break;

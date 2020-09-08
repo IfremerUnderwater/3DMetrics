@@ -19,6 +19,7 @@ enum LoadingMode {
     // USE : mode default (with osgb file)
     // could be LOD
     LoadingModeUseOSGB = 24,
+    LoadingModeBuildOSGB = 25,
 
     // Tiles
     LoadingModeLODTiles = 31,

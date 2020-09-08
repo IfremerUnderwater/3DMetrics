@@ -390,7 +390,7 @@ void TDMGui::slot_open3dModel()
             processLOD = false;
             thread_node->setLoadingMode(LoadingModeDefault);
 
-            // TODO : cas make tiles
+            // TODO : make tiles
         }
 
         else if (pathToFile.find_last_of(".ply") == pathToFile.size() - 1)
@@ -439,7 +439,7 @@ void TDMGui::slot_open3dModel()
         {
             // check existant LOD levels
             lodFilesExist = SmartLOD::hasLODFiles(pathToFile);
-
+            thread_node->setLoadingMode(LoadingModeDefault);
             // ask for LOD
             AskForLODDialog choose(this);
             choose.setBuildLOD(false);
@@ -449,8 +449,22 @@ void TDMGui::slot_open3dModel()
             if(choose.exec() == QDialog::Accepted)
             {
                 thread_node->setBuildLOD(choose.buildLOD());
-                thread_node->setSaveCompLOD(choose.saveCompLOD());
+                //thread_node->setSaveCompLOD(choose.saveCompLOD());
                 thread_node->setUseExistingLOD(choose.useLOD());
+                if(choose.useLOD())
+                {
+                    thread_node->setLoadingMode(LoadingModeUseSmartLOD);
+                }
+                if(choose.buildLOD())
+                {
+                    thread_node->setLoadingMode(LoadingModeBuildLOD);
+                    thread_node->setSaveCompLOD(choose.saveCompLOD());
+                }
+            }
+            else
+            {
+                // cancel
+                return;
             }
         }
 
@@ -506,7 +520,27 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     }
     model_data.setLODThreshold(_threshold1, _threshold2);
     LODTools::applyLODValuesInTree(_node,_threshold1,_threshold2);
-    model_data.setLoadingMode((LoadingMode)_loadingMode);
+
+    // put modified loading mode for use in project file
+    LoadingMode load = (LoadingMode)_loadingMode;
+    switch(load)
+    {
+
+    case LoadingModeBuildAndUseSmartLOD:
+        load = LoadingModeUseSmartLOD;
+        break;
+
+    case LoadingModeBuildLOD:
+    case LoadingModeBuildOSGB:
+        load = LoadingModeUseOSGB;
+        break;
+
+    case LoadingModeBuildLODTiles:
+        load = LoadingModeSmartLODTiles;
+        break;
+    }
+
+    model_data.setLoadingMode(load);
     model_data.setRelativeItemsDir(_itemsDir);
 
     TdmLayersModel *model = TdmLayersModel::instance();
