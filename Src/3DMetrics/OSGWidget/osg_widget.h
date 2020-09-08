@@ -78,10 +78,21 @@ public:
 
     ///
     /// \brief createNodeFromFile load a scene from a 3D file
-    /// \param _sceneFile path to any 3D file supported by osg
+    /// \param _scene_file path to any 3D file supported by osg
     /// \return node if loading succeded
     ///
     osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
+
+    ///
+    /// \brief createNodeFromFile load a scene from a 3D file
+    /// \param _sceneFile path to any 3D file supported by osg
+    /// \param _loading_mode loading mode used
+    /// \param _subdir tiles' subdirectory
+    /// \param _nTilesX # tiles tocreate in X
+    /// \param _nTilesY # tiles to create in Y
+    /// \return node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file, LoadingMode _loading_mode, std::string _subdir = "", int _nTilesX = 0, int _nTilesY = 0);
 
     ///
     /// \brief createLODNodeFromFiles load a scene from a 3D file

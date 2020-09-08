@@ -59,6 +59,8 @@ public:
     /** Get the optional database osgDB::Options object used when reading children.*/
     const osg::Referenced* getDatabaseOptions() const { return m_databaseOptions.get(); }
 
+    static bool hasLODFiles( const std::string& pathToFile);
+
 protected :
 
     virtual ~SmartLOD();

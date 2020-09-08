@@ -17,7 +17,7 @@ FileOpenThread::FileOpenThread() :
     m_offsetZ(0),
     m_loadingMode(LoadingModePoint),
     m_threshold1(0),
-    m_threshold2(2)
+    m_threshold2(0)
 {
 
 }

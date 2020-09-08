@@ -1008,7 +1008,8 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadTiles(std::string _scene_file, s
     return group;
 }
 
-osg::ref_ptr<osg::Group> GridFileProcessor::loadSmartLODTiles(std::string _scene_file, std::string _subdir)
+
+osg::ref_ptr<osg::Group> GridFileProcessor::loadSmartLODTiles(std::string _scene_file, std::string _subdir, float _threshold1/* = 800.0f*/, float _threshold2/* = 2500.0f*/)
 {
     osg::ref_ptr<osg::Group> group = new osg::Group;
 
@@ -1053,13 +1054,13 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadSmartLODTiles(std::string _scene
         {
             smart = new SmartLOD;
             smart->setDatabaseOptions(new osgDB::Options("noRotation"));
-            smart->addChild(path + DIRSEP + files[i].fileName().toStdString(), 0.0f, 800.0f);
+            smart->addChild(path + DIRSEP + files[i].fileName().toStdString(), 0.0f, _threshold1);
         }
         else if(files[i].fileName().endsWith(SmartLOD::EXTLOD1))
         {
             if(smart == nullptr)
                 continue;
-            smart->addChild(path + DIRSEP +files[i].fileName().toStdString(), 800.0f, 2500.0f);
+            smart->addChild(path + DIRSEP +files[i].fileName().toStdString(), _threshold1, _threshold2);
         }
         else if(files[i].fileName().endsWith(SmartLOD::EXTLOD2))
         {
@@ -1067,7 +1068,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadSmartLODTiles(std::string _scene
                 continue;
 
             osg::ref_ptr<osg::Node> node = osgDB::readRefNodeFile(files[i].absoluteFilePath().toStdString(), new osgDB::Options("noRotation"));
-            smart->addChild(node.get(), 2500.0f, FLT_MAX);
+            smart->addChild(node.get(), _threshold2, FLT_MAX);
             unsigned int idx = smart->getNumChildren()-1;
             smart->setFileName(idx, path + DIRSEP + files[i].absoluteFilePath().toStdString());
             smart->doNotDiscardChild(idx);
@@ -1080,7 +1081,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadSmartLODTiles(std::string _scene
     return group;
 }
 
-bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD)
+bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD, float _threshold1, float _threshold2)
 {
     if(_nTilesX < 1 || _nTilesY < 1)
     {
@@ -1151,9 +1152,9 @@ bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, st
             if(_buildCompoundLOD)
             {
                 osg::ref_ptr<osg::LOD> lod = new osg::LOD;
-                lod->addChild(node, 0,40.0f);
-                lod->addChild(modelL1, 40.0f, 200.0f);
-                lod->addChild(modelL2, 200.0f, FLT_MAX);
+                lod->addChild(node, 0,_threshold1);
+                lod->addChild(modelL1, _threshold1, _threshold2);
+                lod->addChild(modelL2, _threshold2, FLT_MAX);
                 std::string path = name;
                 path = path + ".osgb";
                 osgDB::writeNodeFile(*lod,
@@ -1165,7 +1166,7 @@ bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, st
     }
 }
 
-bool GridFileProcessor::createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD)
+bool GridFileProcessor::createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD, float _threshold1, float _threshold2)
 {
 
     if(_nTilesX < 1 || _nTilesY < 1)
@@ -1244,9 +1245,9 @@ bool GridFileProcessor::createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::N
             if(_buildCompoundLOD)
             {
                 osg::ref_ptr<osg::LOD> lod = new osg::LOD;
-                lod->addChild(node, 0,40.0f);
-                lod->addChild(modelL1, 40.0f, 200.0f);
-                lod->addChild(modelL2, 200.0f, FLT_MAX);
+                lod->addChild(node, 0,_threshold1);
+                lod->addChild(modelL1, _threshold1, _threshold2);
+                lod->addChild(modelL2, _threshold2, FLT_MAX);
                 std::string path = name;
                 path = path + ".osgb";
                 osgDB::writeNodeFile(*lod,

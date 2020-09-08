@@ -52,9 +52,11 @@ public:
     /// \brief loadSmartLODTiles
     /// \param _scene_file
     /// \param _subdir
+    /// \param _threshold1
+    /// \param _threshold2
     /// \return
     ///
-    osg::ref_ptr<osg::Group> loadSmartLODTiles(std::string _scene_file, std::string _subdir = "");
+    osg::ref_ptr<osg::Group> loadSmartLODTiles(std::string _scene_file, std::string _subdir = "", float _threshold1 = 800.0f, float _threshold2 = 2500.0f);
 
     ///
     /// \brief createLODTilesFromNode
@@ -63,9 +65,11 @@ public:
     /// \param _nTilesX
     /// \param _nTilesY
     /// \param _buildCompoundLOD
+    /// \param _threshold1
+    /// \param _threshold2
     /// \return
     ///
-    bool createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD);
+    bool createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD, float _threshold1 = 40.0f, float _threshold2 = 200.0f);
 
     ///
     /// \brief createLODTilesFromNodeGlobalSimplify
@@ -74,9 +78,11 @@ public:
     /// \param _nTilesX
     /// \param _nTilesY
     /// \param _buildCompoundLOD
+    /// \param _threshold1
+    /// \param _threshold2
     /// \return
     ///
-    bool createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD);
+    bool createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD, float _threshold1 = 40.0f, float _threshold2 = 200.0f);
 
 };
 

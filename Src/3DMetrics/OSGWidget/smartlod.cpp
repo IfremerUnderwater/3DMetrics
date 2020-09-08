@@ -3,6 +3,7 @@
 #include <QDateTime>
 #include <osg/CullStack>
 #include <osgDB/ReadFile>
+#include <QFileInfo>
 
 SmartLOD::SmartLOD() : osg::LOD(), m_lastIndex(-1)
 {
@@ -207,4 +208,16 @@ void SmartLOD::doNotDiscardChild(int _pos, bool _state)
         return;
     }
     m_perRangeDataList[_pos]._doNotDiscard = _state;
+}
+
+bool SmartLOD::hasLODFiles(const std::string &pathToFile)
+{
+    // check existant LOD levels
+    std::string fname0 = pathToFile + SmartLOD::EXTLOD0;
+    std::string fname1 = pathToFile + SmartLOD::EXTLOD1;
+    std::string fname2 = pathToFile + SmartLOD::EXTLOD2;
+
+    return QFileInfo::exists(fname0.c_str())
+            && QFileInfo::exists(fname1.c_str())
+            && QFileInfo::exists(fname2.c_str());
 }

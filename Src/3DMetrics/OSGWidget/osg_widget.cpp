@@ -355,16 +355,154 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file)
 
     }
 
-    // TEST
+    //    // TEST
+    //    osg::ref_ptr<osg::Group> group;
+    //    GridFileProcessor gfp;
+
+    //    //bool status =gfp.createLODTilesFromNodeGlobalSimplify(model_node, scene_file, 3, 4, true, 40.0f);
+    //    //group = gfp.loadTiles(scene_file);
+    //    group = gfp.loadSmartLODTiles(scene_file);
+    //    // hack
+    //    LODTools::applyLODValuesInTree(group, 40.0, 200.0);
+    //    model_node = group;
+
+    // Transform model
+    model_transform = new osg::MatrixTransform;
+    if (m_ref_alt == INVALID_VALUE){
+        m_ref_lat_lon = local_lat_lon;
+        m_ref_alt = local_alt;
+        m_ltp_proj.Reset(m_ref_lat_lon.x(), m_ref_lat_lon.y(),m_ref_alt);
+
+        osg::Matrix matrix = osg::Matrix::identity();
+        model_transform->setMatrix(matrix);
+    }else{
+        double N,E,U;
+        m_ltp_proj.Forward(local_lat_lon.x(), local_lat_lon.y(), local_alt, E, N, U);
+
+        model_transform->setMatrix(osg::Matrix::translate(E,N,U));
+    }
+
+    model_transform->addChild(model_node);
+
+    return model_transform;
+}
+
+///
+/// \brief createNodeFromFile load a scene from a 3D file
+/// \param _sceneFile path to any 3D file supported by osg
+/// \param _loading_mode loading mode used
+/// \param _subdir tiles' subdirectory
+/// \param _nTilesX # tiles tocreate in X
+/// \param _nTilesY # tiles to create in Y
+/// \return node if loading succeded
+///
+osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, LoadingMode _loading_mode, std::string _subdir, int _nTilesX, int _nTilesY)
+{
+    osg::ref_ptr<osg::MatrixTransform> model_transform;
+    // load the data
+    // in main.cpp
+    // setlocale(LC_ALL, "C");
+
+    QFileInfo scene_info(QString::fromStdString(_scene_file));
+    std::string scene_file;
+
+    QPointF local_lat_lon;
+    double local_alt;
+
+    if (scene_info.suffix()==QString("kml")){
+        m_kml_handler.readFile(_scene_file);
+        scene_file = scene_info.absoluteDir().filePath(QString::fromStdString(m_kml_handler.getModelPath())).toStdString();
+        local_lat_lon.setX(m_kml_handler.getModelLat());
+        local_lat_lon.setY(m_kml_handler.getModelLon());
+        local_alt = m_kml_handler.getModelAlt();
+    }else{
+        scene_file = _scene_file;
+        local_lat_lon.setX(0);
+        local_lat_lon.setY(0);
+        local_alt = 0;
+    }
+
+    osg::ref_ptr<osg::Node> model_node;
+
     osg::ref_ptr<osg::Group> group;
     GridFileProcessor gfp;
+    bool status;
 
-    //bool status =gfp.createLODTilesFromNodeGlobalSimplify(model_node, scene_file, 3, 4, true);
-    //group = gfp.loadTiles(scene_file);
-    group = gfp.loadSmartLODTiles(scene_file);
-    // hack
-    LODTools::applyLODValuesInTree(group, 40.0, 200.0);
-    model_node = group;
+    switch(_loading_mode)
+    {
+    case LoadingModeDefault:
+        model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
+        break;
+
+        // Tiles
+    case LoadingModeLODTiles:
+        group = gfp.loadTiles(scene_file);
+        model_node = group;
+        break;
+
+    case LoadingModeLODTilesDir:
+        group = gfp.loadTiles(scene_file, _subdir);
+        model_node = group;
+        break;
+
+    case LoadingModeSmartLODTiles:
+        group = gfp.loadSmartLODTiles(scene_file);
+        model_node = group;
+        break;
+
+    case LoadingModeSmartLODTilesDir:
+        group = gfp.loadSmartLODTiles(scene_file, _subdir);
+        model_node = group;
+        break;
+
+    case LoadingModeUseOSGB:
+    {
+        QFileInfo f((scene_file + ".osgb").c_str());
+        if(f.exists())
+        {
+            model_node=osgDB::readRefNodeFile(scene_file + ".osgb", new osgDB::Options("noRotation"));
+        }
+        else
+        {
+            model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
+        }
+    }
+        break;
+
+        // Build tiles (could be slow)
+        // (in current directory)
+    case LoadingModeBuildLODTiles:
+        status =gfp.createLODTilesFromNodeGlobalSimplify(model_node, scene_file, _nTilesX, _nTilesY, true, 40.0f, 200.0f);
+        //group = gfp.loadTiles(scene_file);
+        group = gfp.loadSmartLODTiles(scene_file);
+        // hack
+        LODTools::applyLODValuesInTree(group, 40.0, 200.0);
+        model_node = group;
+        break;
+
+    default:
+        // do not load
+        break;
+    }
+
+
+    if (!model_node)
+    {
+        std::cout << "No data loaded" << std::endl;
+        return model_transform;
+
+    }
+
+    //    // TEST
+    //    osg::ref_ptr<osg::Group> group;
+    //    GridFileProcessor gfp;
+
+    //    //bool status =gfp.createLODTilesFromNodeGlobalSimplify(model_node, scene_file, 3, 4, true, 40.0f);
+    //    //group = gfp.loadTiles(scene_file);
+    //    group = gfp.loadSmartLODTiles(scene_file);
+    //    // hack
+    //    LODTools::applyLODValuesInTree(group, 40.0, 200.0);
+    //    model_node = group;
 
     // Transform model
     model_transform = new osg::MatrixTransform;
@@ -404,7 +542,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
     osg::ref_ptr<osg::Group> group;
 
     // get subdirectory
-    std::string subdir = _tileDir; //"tile256";
+    std::string subdir = _tileDir;
     switch(_mode)
     {
     case LoadingModePoint:
@@ -426,12 +564,12 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
     case LoadingModeSmartLODTiles:
         processor.getGridLatLonAlt(_scene_file, local_lat_lon, local_alt);
-        group = processor.loadSmartLODTiles(_scene_file, "");
+        group = processor.loadSmartLODTiles(_scene_file, "", 800.0f, 2500.0f);
         break;
 
     case LoadingModeSmartLODTilesDir:
         processor.getGridLatLonAlt(_scene_file, local_lat_lon, local_alt);
-        group = processor.loadSmartLODTiles(_scene_file, subdir);
+        group = processor.loadSmartLODTiles(_scene_file, subdir, 800.0f, 2500.0f);
         break;
 
     case LoadingModeBuildLODTiles:
