@@ -3,6 +3,8 @@
 
 #include "OSGWidget/osg_widget.h"
 #include "OSGWidget/grid_file_processor.h"
+#include "OSGWidget/lod_tools.h"
+
 #include "osgDB/WriteFile"
 
 #if defined(_WIN32) || defined(WIN32)
@@ -38,36 +40,6 @@ void FileOpenThread::run()
         extension = pathToFile.substr(idx+1);
     }
 
-    if(extension == "kml")
-    {
-        // kml
-        KMLHandler kh;
-        kh.readFile(pathToFile);
-
-        pathToFile = kh.getModelPath();
-
-        // check relative path
-        if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
-        {
-            std::string base_directory, lfname;
-            kmlbase::File::SplitFilePath(m_filename.toStdString(),
-                                         &base_directory,
-                                         &lfname);
-            pathToFile = base_directory + string(DIRSEP) + pathToFile;
-        }
-
-        idx = pathToFile.rfind('.');
-        if(idx != std::string::npos)
-        {
-            extension = pathToFile.substr(idx+1);
-        }
-        else
-        {
-            extension = "";
-        }
-
-    }
-
     // check grd extension
     if(extension == "grd")
     {
@@ -81,14 +53,11 @@ void FileOpenThread::run()
         switch(m_loadingMode)
         {
         case LoadingModeUseOSGB:
-            m_node = m_osg_widget->createNodeFromFile(pathToFile + ".osgb");
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeUseOSGB);
             break;
 
         case LoadingModeBuildOSGB:
-            m_node = m_osg_widget->createNodeFromFile(pathToFile);
-            osgDB::writeNodeFile(*m_node,
-                                 pathToFile + ".osgb",
-                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeBuildOSGB);
             break;
 
         case LoadingModeBuildAndUseSmartLOD:
@@ -102,26 +71,29 @@ void FileOpenThread::run()
             break;
 
         case LoadingModeLODTiles:
-            m_node = gfp.loadTiles(pathToFile);
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeLODTiles);
             break;
 
         case LoadingModeLODTilesDir:
-            m_node = gfp.loadTiles(pathToFile, m_tileFolderName.toStdString());
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeLODTiles,  m_tileFolderName.toStdString());
             break;
 
         case LoadingModeSmartLODTiles:
-            m_node = gfp.loadSmartLODTiles(pathToFile,"", m_threshold1, m_threshold2);
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeSmartLODTiles);
+            LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
             break;
 
         case LoadingModeSmartLODTilesDir:
-            m_node = gfp.loadSmartLODTiles(pathToFile, m_tileFolderName.toStdString(), m_threshold1, m_threshold2);
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeSmartLODTilesDir,  m_tileFolderName.toStdString());
+            LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
             break;
 
 
         case LoadingModeBuildLODTiles:
             m_node = m_osg_widget->createNodeFromFile(pathToFile);
             gfp.createLODTilesFromNodeGlobalSimplify(m_node,pathToFile,m_nTilesX,m_nTilesY,m_saveCompLOD,m_threshold1, m_threshold2);
-            m_node = gfp.loadSmartLODTiles(pathToFile,"", m_threshold1, m_threshold2);
+            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeSmartLODTiles);
+            LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
             break;
 
         default:
@@ -130,53 +102,6 @@ void FileOpenThread::run()
         }
     }
 
-    //        // LOD processing
-    //        if(m_buildLOD)
-    //        {
-    //            // build LOD
-    //            m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString());
-    //            std::string filename = m_filename.toStdString();
-
-    //            if(filename.find_last_of(".kml") == filename.size()-1)
-    //            {
-    //                // kml
-
-    //                KMLHandler kh;
-    //                kh.readFile(filename);
-
-    //                std::string pathToLodFile = kh.getModelPath();
-
-
-    //                // check relative path
-    //                if(pathToLodFile.size() > 0 && (!(pathToLodFile[0] == '/')))
-    //                {
-    //                    std::string base_directory,base_filename;
-    //                    kmlbase::File::SplitFilePath(filename,
-    //                                                 &base_directory,
-    //                                                 &base_filename);
-    //                    pathToLodFile = base_directory + string(DIRSEP) + pathToLodFile;
-
-    //                    filename = pathToLodFile;
-    //                }
-
-    //            }
-
-    //            m_osg_widget->createLODFiles(m_node, filename, m_saveCompLOD);
-
-    //            m_useExistingLOD = true;
-    //        }
-
-    //        if(m_useExistingLOD)
-    //        {
-    //            //load existing LOD
-    //            m_node = m_osg_widget->createLODNodeFromFiles(m_filename.toStdString());
-    //        }
-    //        else
-    //        {
-    //            // default processing
-    //            m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString());
-    //        }
-    //    }
 
     // get relative directory
     QDir dir( QFileInfo(m_filename).absoluteDir());
@@ -187,28 +112,6 @@ void FileOpenThread::run()
                            m_threshold1, m_threshold2, m_loadingMode, relItemsDir);
 
 }
-//bool FileOpenThread::getUseExistingLOD() const
-//{
-//    return m_useExistingLOD;
-//}
-
-//void FileOpenThread::setUseExistingLOD(bool useExistingLOD)
-//{
-//    m_useExistingLOD = useExistingLOD;
-//}
-//bool FileOpenThread::getBuildLOD() const
-//{
-//    return m_buildLOD;
-//}
-
-//void FileOpenThread::setBuildLOD(bool buildLOD)
-//{
-//    m_buildLOD = buildLOD;
-//}
-//bool FileOpenThread::getSaveCompLOD() const
-//{
-//    return m_saveCompLOD;
-//}
 
 void FileOpenThread::setSaveCompLOD(bool saveCompLOD)
 {

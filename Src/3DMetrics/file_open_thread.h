@@ -32,12 +32,6 @@ public:
 
     void setLoadingMode(LoadingMode _loadingMode){ m_loadingMode = _loadingMode; }
 
-    //    bool getUseExistingLOD() const;
-    //    void setUseExistingLOD(bool useExistingLOD);
-
-    //    bool getBuildLOD() const;
-    //    void setBuildLOD(bool buildLOD);
-
     bool getSaveCompLOD() const;
     void setSaveCompLOD(bool saveCompLOD);
 
@@ -79,8 +73,6 @@ private:
     LoadingMode m_loadingMode;
 
     // LOD processing
-    //    bool m_useExistingLOD;
-    //    bool m_buildLOD;
     bool m_saveCompLOD;
     QString m_tileFolderName;
 
@@ -90,7 +82,6 @@ private:
     // tiles
     int m_nTilesX;
     int m_nTilesY;
-
 };
 
 #endif // FILE_OPEN_THREAD_H
