@@ -63,6 +63,7 @@ add_executable(3DMetrics
     color_widget.cpp
     qtable_arrowkey_detector.cpp
     edit_lod_threshold_dialog.cpp
+    model_loadingmode_dialog.cpp
 	ressources.qrc
 	3DMetrics.rc)
 	

@@ -32,11 +32,11 @@ public:
 
     void setLoadingMode(LoadingMode _loadingMode){ m_loadingMode = _loadingMode; }
 
-    bool getUseExistingLOD() const;
-    void setUseExistingLOD(bool useExistingLOD);
+    //    bool getUseExistingLOD() const;
+    //    void setUseExistingLOD(bool useExistingLOD);
 
-    bool getBuildLOD() const;
-    void setBuildLOD(bool buildLOD);
+    //    bool getBuildLOD() const;
+    //    void setBuildLOD(bool buildLOD);
 
     bool getSaveCompLOD() const;
     void setSaveCompLOD(bool saveCompLOD);
@@ -49,6 +49,12 @@ public:
 
     float getThreshold2() const;
     void setThreshold2(float threshold2);
+
+    int getNTilesX() const;
+    void setNTilesX(int nTilesX);
+
+    int getNTilesY() const;
+    void setNTilesY(int nTilesY);
 
 signals :
     void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool _select_item,
@@ -73,13 +79,18 @@ private:
     LoadingMode m_loadingMode;
 
     // LOD processing
-    bool m_useExistingLOD;
-    bool m_buildLOD;
+    //    bool m_useExistingLOD;
+    //    bool m_buildLOD;
     bool m_saveCompLOD;
     QString m_tileFolderName;
 
     float m_threshold1;
     float m_threshold2;
+
+    // tiles
+    int m_nTilesX;
+    int m_nTilesY;
+
 };
 
 #endif // FILE_OPEN_THREAD_H

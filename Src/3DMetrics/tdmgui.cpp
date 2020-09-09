@@ -72,8 +72,9 @@
 #include "qtable_arrowkey_detector.h"
 
 #include "model_depth_colors_chooser.h"
-#include "ask_for_lod_dialog.h"
+//#include "ask_for_lod_dialog.h"
 #include "edit_lod_threshold_dialog.h"
+#include "model_loadingmode_dialog.h"
 
 #if defined(_WIN32) || defined(WIN32)
 #define DIRSEP "\\"
@@ -355,16 +356,51 @@ void TDMGui::slot_open3dModel()
                 this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
 
         // default : do nothing
-        thread_node->setBuildLOD(false);
+        //thread_node->setBuildLOD(false);
         thread_node->setSaveCompLOD(false);
-        thread_node->setUseExistingLOD(false);
+        //thread_node->setUseExistingLOD(false);
 
-        bool processLOD = false;
+        //bool processLOD = false;
 
         std::string pathToFile = filename.toStdString();
 
+
+        std::string extension = "";
+        int idx = pathToFile.rfind('.');
+        if(idx != std::string::npos)
+        {
+            extension = pathToFile.substr(idx+1);
+        }
+
+        if(extension == "kml")
+        {
+            // kml
+            KMLHandler kh;
+            kh.readFile(filename.toStdString());
+
+            pathToFile = kh.getModelPath();
+
+            // check relative path
+            if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+            {
+                std::string base_directory, lfname;
+                kmlbase::File::SplitFilePath(filename.toStdString(),
+                                             &base_directory,
+                                             &lfname);
+                pathToFile = base_directory + string(DIRSEP) + pathToFile;
+            }
+
+            idx = pathToFile.rfind('.');
+            if(idx != std::string::npos)
+            {
+                extension = pathToFile.substr(idx+1);
+            }
+
+        }
+
+
         // check grd files
-        if(pathToFile.find_last_of(".grd") == pathToFile.size() - 1)
+        if(extension == "grd")
         {
             ChooseLoadingModeDialog choose(this);
             choose.setMode(LoadingModePoint);
@@ -384,24 +420,42 @@ void TDMGui::slot_open3dModel()
             }
         }
 
-        else if (pathToFile.find_last_of(".osgb") == pathToFile.size() - 1)
+        else if (extension == "osgb")
         {
             // do nothing on osgb files
-            processLOD = false;
+            //processLOD = false;
             thread_node->setLoadingMode(LoadingModeDefault);
 
             // TODO : make tiles
         }
 
-        else if (pathToFile.find_last_of(".ply") == pathToFile.size() - 1)
+        else if (extension == "ply")
         {
             // do nothing on ply files
-            processLOD = false;
+            //processLOD = false;
             thread_node->setLoadingMode(LoadingModeDefault);
         }
 
         else
         {
+            ModelLoadingModeDialog dlg(this);
+            dlg.setMode(LoadingModeDefault);
+
+            // TODO init
+            if(dlg.exec() == QDialog::Accepted)
+            {
+                // TODO process
+                thread_node->setLoadingMode(dlg.mode());
+                thread_node->setNTilesX(dlg.nXTiles());
+                thread_node->setNTilesY(dlg.nYTiles());
+                thread_node->setSaveCompLOD(dlg.saveCompoundLOD());
+            }
+            else
+            {
+                return;
+            }
+
+            /***
             processLOD = true;
             if(pathToFile.find_last_of(".kml") == pathToFile.size() - 1)
             {
@@ -467,6 +521,10 @@ void TDMGui::slot_open3dModel()
                 return;
             }
         }
+***/
+
+        }
+
 
         thread_node->setFileName(filename);
         QFileInfo info(filename);
@@ -2895,7 +2953,7 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         // check presence of LOD elements
         std::string pathToFile = file_path.toStdString();
-        bool processLOD = false;
+        //bool processLOD = false;
 
         // check grd files
         if(pathToFile.find_last_of(".grd") == pathToFile.size() - 1)
@@ -2941,28 +2999,30 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         }
         else if (pathToFile.find_last_of(".osgb") == pathToFile.size() - 1)
         {
-            // check for LOD
-
-            // TODO do nothing on osgb files
-            processLOD = false;
+            // do nothing on osgb files
+            loadingMode = LoadingModeDefault;
         }
         else if (pathToFile.find_last_of(".ply") == pathToFile.size() - 1)
         {
-            processLOD = false;
+            // do nothing on osgb file
+            loadingMode = LoadingModeDefault;
         }
         else
         {
-            processLOD = true;
             if(pathToFile.find_last_of(".kml") == pathToFile.size() - 1)
             {
                 KMLHandler kh;
                 kh.readFile(pathToFile);
                 if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
                 {
-                    // check for LOD
+                    // do nothing on osgb files
+                    loadingMode = LoadingModeDefault;
+                }
+                else if(QString(kh.getModelPath().c_str()).endsWith(".ply", Qt::CaseInsensitive))
+                {
 
-                    // TODO do nothing on osgb files
-                    processLOD = false;
+                    // do nothing on ply files
+                    loadingMode = LoadingModeDefault;
                 }
                 else
                 {
@@ -2978,16 +3038,51 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
                         pathToFile = dir.absolutePath().toStdString() + string(DIRSEP) + pathToFile;
                     }
                 }
+
+                switch(loadingMode)
+                {
+
+                case LoadingModeUseOSGB:
+                case LoadingModeBuildOSGB:
+                    if(!QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                    {
+                        pathToFile += ".osgb";
+                    }
+                    loadingMode = LoadingModeUseOSGB;
+                    break;
+
+                case LoadingModeUseSmartLOD:
+                case LoadingModeBuildAndUseSmartLOD:
+                    loadingMode = LoadingModeUseSmartLOD;
+                    break;
+
+                case LoadingModeLODTiles:
+                case LoadingModeLODTilesDir:
+                    break;
+
+                case LoadingModeSmartLODTiles:
+                case LoadingModeSmartLODTilesDir:
+                    break;
+
+                case LoadingModeBuildLODTiles:
+                    loadingMode = LoadingModeUseSmartLOD;
+                    break;
+
+                default:
+                    loadingMode = LoadingModeDefault;
+                }
             }
         }
-        bool lodFilesExist = false;
-        if(processLOD)
-        {
-            // check existant LOD levels
-            lodFilesExist = SmartLOD::hasLODFiles(pathToFile);
-        }
+        thread_node->setLoadingMode(loadingMode);
 
-        thread_node->setUseExistingLOD(lodFilesExist);
+        //bool lodFilesExist = false;
+        //if(processLOD)
+        //{
+        //    // check existant LOD levels
+        //    lodFilesExist = SmartLOD::hasLODFiles(pathToFile);
+        //}
+
+        //thread_node->setUseExistingLOD(lodFilesExist);
 
         double transp = _obj.value("Transparency").toDouble(0);
         thread_node->setTransparencyValue(transp);
