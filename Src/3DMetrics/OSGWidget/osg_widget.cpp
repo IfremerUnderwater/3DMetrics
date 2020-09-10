@@ -1834,7 +1834,15 @@ void OSGWidget::setZScale(double _newValue)
     m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
     if(m_models.size() > 0)
     {
-        setCameraOnNode(m_models[0]);
+        for(int i=0; i<m_models.size(); i++)
+        {
+            osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (m_models[i].get());
+            if(matrix_transform != nullptr)
+            {
+                setCameraOnNode(m_models[i]);
+                break;
+            }
+        }
     }
 
     //view->getCameraManipulator()->setHomePosition(eye,target,normal);
