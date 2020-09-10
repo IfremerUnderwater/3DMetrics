@@ -31,6 +31,25 @@ ModelLoadingModeDialog::~ModelLoadingModeDialog()
     delete ui;
 }
 
+void ModelLoadingModeDialog::enableUseOSBG(bool _enable)
+{
+    ui->useOSGBRadio->setEnabled(_enable);
+}
+
+void ModelLoadingModeDialog::enableUseLOD(bool _enable)
+{
+    ui->useSmartLODRadio->setEnabled(_enable);
+}
+
+void ModelLoadingModeDialog::enableUseTiles(bool _enable)
+{
+    ui->useTilesRadio->setEnabled(_enable);
+}
+
+void ModelLoadingModeDialog::enableUseSmartLODTiles(bool _enable)
+{
+    ui->useSmartLODTilesRadio->setEnabled(_enable);
+}
 
 void ModelLoadingModeDialog::radioToggled()
 {

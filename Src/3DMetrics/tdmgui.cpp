@@ -434,10 +434,41 @@ void TDMGui::slot_open3dModel()
             ModelLoadingModeDialog dlg(this);
             dlg.setMode(LoadingModeDefault);
 
-            // TODO init
+            //check allowed modes
+            // Use OSGB
+            QFileInfo f((pathToFile + ".osgb").c_str());
+            if(!f.exists())
+            {
+                dlg.enableUseOSBG(false);
+            }
+
+            // Use LOD
+            if(!SmartLOD::hasLODFiles(pathToFile))
+            {
+                dlg.enableUseLOD(false);
+            }
+
+            // tiles
+            QFileInfo fpath(pathToFile.c_str());
+            QStringList pattern;
+            pattern <<  (fpath.fileName() + ".???_???.osgb");
+            QFileInfoList tiles =  fpath.absoluteDir().entryInfoList(pattern, QDir::Files );
+            if(tiles.size() == 0)
+            {
+                dlg.enableUseTiles(false);
+            }
+            pattern.clear();
+            pattern <<  (fpath.fileName() + ".???_???" + "-?.osgb");
+            tiles =  fpath.absoluteDir().entryInfoList(pattern, QDir::Files );
+            if(tiles.size() == 0)
+            {
+                dlg.enableUseSmartLODTiles(false);
+            }
+
+
             if(dlg.exec() == QDialog::Accepted)
             {
-                // TODO process
+                // process
                 thread_node->setLoadingMode(dlg.mode());
                 thread_node->setNTilesX(dlg.nXTiles());
                 thread_node->setNTilesY(dlg.nYTiles());
@@ -451,6 +482,10 @@ void TDMGui::slot_open3dModel()
                         thread_node->setTileFolderName(dirname);
                     }
                 }
+
+                // default LOD thresholds
+                thread_node->setThreshold1(40.0f);
+                thread_node->setThreshold2(200.0f);
             }
             else
             {
@@ -458,7 +493,6 @@ void TDMGui::slot_open3dModel()
             }
 
         }
-
 
         thread_node->setFileName(filename);
         QFileInfo info(filename);
@@ -2951,32 +2985,32 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         {
             if(extension == "kml")
             {
-//                KMLHandler kh;
-//                kh.readFile(pathToFile);
-//                if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
-//                {
-//                    // do nothing on osgb files
-//                    loadingMode = LoadingModeDefault;
-//                }
-//                else if(QString(kh.getModelPath().c_str()).endsWith(".ply", Qt::CaseInsensitive))
-//                {
-//                    // do nothing on ply files
-//                    loadingMode = LoadingModeDefault;
-//                }
-//                else
-//                {
-//                    pathToFile = kh.getModelPath();
+                //                KMLHandler kh;
+                //                kh.readFile(pathToFile);
+                //                if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                //                {
+                //                    // do nothing on osgb files
+                //                    loadingMode = LoadingModeDefault;
+                //                }
+                //                else if(QString(kh.getModelPath().c_str()).endsWith(".ply", Qt::CaseInsensitive))
+                //                {
+                //                    // do nothing on ply files
+                //                    loadingMode = LoadingModeDefault;
+                //                }
+                //                else
+                //                {
+                //                    pathToFile = kh.getModelPath();
 
-//                    // check relative path
-//                    if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
-//                    {
-//                        std::string base_directory, lfname;
-//                        kmlbase::File::SplitFilePath(filename.toStdString(),
-//                                                     &base_directory,
-//                                                     &lfname);
-//                        pathToFile = dir.absolutePath().toStdString() + string(DIRSEP) + pathToFile;
-//                    }
-//                }
+                //                    // check relative path
+                //                    if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                //                    {
+                //                        std::string base_directory, lfname;
+                //                        kmlbase::File::SplitFilePath(filename.toStdString(),
+                //                                                     &base_directory,
+                //                                                     &lfname);
+                //                        pathToFile = dir.absolutePath().toStdString() + string(DIRSEP) + pathToFile;
+                //                    }
+                //                }
             }
             else
             {
@@ -2985,10 +3019,10 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
                 case LoadingModeUseOSGB:
                 case LoadingModeBuildOSGB:
-//                    if(!QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
-//                    {
-//                        pathToFile += ".osgb";
-//                    }
+                    //                    if(!QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                    //                    {
+                    //                        pathToFile += ".osgb";
+                    //                    }
                     loadingMode = LoadingModeUseOSGB;
                     break;
 

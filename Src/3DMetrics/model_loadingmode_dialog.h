@@ -23,6 +23,11 @@ public:
     int nXTiles() const { return m_nXTiles; }
     int nYTiles() const { return m_nYTiles; }
 
+    void enableUseOSBG(bool _enable);
+    void enableUseLOD(bool _enable);
+    void enableUseTiles(bool _enable);
+    void enableUseSmartLODTiles(bool _enable);
+
 public slots:
     void radioToggled();
     void ok();

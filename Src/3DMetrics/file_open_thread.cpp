@@ -91,8 +91,27 @@ void FileOpenThread::run()
 
         case LoadingModeBuildLODTiles:
             m_node = m_osg_widget->createNodeFromFile(pathToFile);
+            // KML processing
+            if(extension == "kml")
+            {
+                // kml
+                KMLHandler kh;
+                kh.readFile(pathToFile);
+
+                pathToFile = kh.getModelPath();
+
+                // check relative path
+                if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                {
+                    std::string base_directory, lfname;
+                    kmlbase::File::SplitFilePath(m_filename.toStdString(),
+                                                 &base_directory,
+                                                 &lfname);
+                    pathToFile = base_directory + string(DIRSEP) + pathToFile;
+                }
+            }
             gfp.createLODTilesFromNodeGlobalSimplify(m_node,pathToFile,m_nTilesX,m_nTilesY,m_saveCompLOD,m_threshold1, m_threshold2);
-            m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeSmartLODTiles);
+            m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString(), LoadingModeSmartLODTiles);
             LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
             break;
 
