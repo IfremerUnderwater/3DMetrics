@@ -3,7 +3,7 @@
 
 #include <osg/LOD>
 
-class OSG_EXPORT SmartLOD : public osg::LOD
+class  SmartLOD : public osg::LOD
 {
 public:
     // extensions for SmartLOD
@@ -32,7 +32,7 @@ public:
 
     void doNotDiscardChild(int _pos, bool _state = true);
 
-    struct OSG_EXPORT PerRangeData
+    struct  PerRangeData
     {
         PerRangeData();
         PerRangeData(const PerRangeData& prd);

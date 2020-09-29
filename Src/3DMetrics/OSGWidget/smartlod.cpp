@@ -191,8 +191,10 @@ bool SmartLOD::addChild(const std::string& filename, float rmin, float rmax)
 
 bool SmartLOD::removeChildren( unsigned int pos,unsigned int numChildrenToRemove)
 {
-    if (pos<_rangeList.size()) _rangeList.erase(_rangeList.begin()+pos, osg::minimum(_rangeList.begin()+(pos+numChildrenToRemove), _rangeList.end()) );
-    if (pos<m_perRangeDataList.size()) m_perRangeDataList.erase(m_perRangeDataList.begin()+pos, osg::minimum(m_perRangeDataList.begin()+ (pos+numChildrenToRemove), m_perRangeDataList.end()) );
+    if (pos<_rangeList.size())
+        _rangeList.erase(_rangeList.begin()+pos, osg::minimum(_rangeList.begin()+(pos+numChildrenToRemove), _rangeList.end()) );
+    if (pos<m_perRangeDataList.size())
+        m_perRangeDataList.erase(m_perRangeDataList.begin()+pos, osg::minimum(m_perRangeDataList.begin()+ (pos+numChildrenToRemove), m_perRangeDataList.end()) );
 
     // just to be sure...
     m_lastIndex = -1;

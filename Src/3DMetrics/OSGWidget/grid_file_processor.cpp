@@ -717,7 +717,7 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFileAndBuildTiles(std::strin
             const int ntilesX = nXSize / TILESIZE + (nXSize  % TILESIZE > 0 ? 1 : 0);
             const int ntilesY = nYSize / TILESIZE + (nYSize  % TILESIZE > 0 ? 1 : 0);
 
-            osg::ref_ptr<osg::Geode> geode[ntilesX];
+            std::vector< osg::ref_ptr<osg::Geode> > geode(ntilesX, nullptr);
             for(int i=0; i<ntilesX; i++)
                 geode[i] = new osg::Geode;
 
@@ -726,13 +726,13 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFileAndBuildTiles(std::strin
                                            pafScanline, nXSize, 1, GDT_Float32,
                                            0, 0 );
 
-            osg::ref_ptr<osg::Geometry> geometry[ntilesX];
+            std::vector < osg::ref_ptr<osg::Geometry> > geometry(ntilesX, nullptr);
             for(int i=0; i<ntilesX; i++)
             {
                 geometry[i] = new osg::Geometry;
             }
 
-            osg::ref_ptr<osg::Vec3Array> vertices[ntilesX];
+            std::vector < osg::ref_ptr<osg::Vec3Array> > vertices(ntilesX, nullptr);
             for(int i=0; i<ntilesX; i++)
             {
                 vertices[i] = new osg::Vec3Array;
