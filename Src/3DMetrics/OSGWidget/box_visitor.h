@@ -1,7 +1,6 @@
 #ifndef BOX_VISITOR_H
 #define BOX_VISITOR_H
 
-#include <osg/Array>
 #include <osg/Geode>
 #include <osg/NodeVisitor>
 

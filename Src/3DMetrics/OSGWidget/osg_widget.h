@@ -22,7 +22,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #endif
 
 #include <QPoint>
-#include <QTimer>
+//#include <QTimer>
 #include <QtOpenGL>
 #include <QFileDialog>
 #include <QPointF>
@@ -36,16 +36,6 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 
 #include "kml_handler.h"
 #include "loading_mode.h"
-
-#ifdef _WIN32
-#include "gdal_priv.h"
-#include "cpl_conv.h"
-#include "ogr_spatialref.h"
-#else
-#include "gdal/gdal_priv.h"
-#include "gdal/cpl_conv.h"
-#include "gdal/ogr_spatialref.h"
-#endif
 
 #define INVALID_VALUE 100000
 
@@ -88,7 +78,7 @@ public:
 
     ///
     /// \brief createNodeFromFile load a scene from a 3D file
-    /// \param _sceneFile path to any 3D file supported by osg
+    /// \param _scene_file path to any 3D file supported by osg
     /// \return node if loading succeded
     ///
     osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file);
@@ -96,16 +86,46 @@ public:
     ///
     /// \brief createNodeFromFile load a scene from a 3D file
     /// \param _sceneFile path to any 3D file supported by osg
+    /// \param _loading_mode loading mode used
+    /// \param _subdir tiles' subdirectory
+    /// \param _nTilesX # tiles tocreate in X
+    /// \param _nTilesY # tiles to create in Y
     /// \return node if loading succeded
     ///
-    osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode);
+    osg::ref_ptr<osg::Node> createNodeFromFile(std::string _scene_file, LoadingMode _loading_mode, std::string _subdir = "", int _nTilesX = 0, int _nTilesY = 0);
+
+    ///
+    /// \brief createLODNodeFromFiles load a scene from a 3D file
+    /// \param _scene_file_basename path base file name (without "-0.osgb" "-1.osgb" "-2.osgb")
+    /// \return SmartLOD node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createLODNodeFromFiles(std::string _scene_file_basename);
+
+    ///
+    /// \brief createLODFiles load a scene from a 3D file
+    /// \param _node node to process
+    /// \param _scene_file_basename
+    /// \param _buildCompoundLOD
+    /// \return true if succeded
+    ///
+    bool createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, bool _buildCompoundLOD = false);
+
+    ///
+    /// \brief createNodeFromFileWithGDAL load a scene from a 3D file
+    /// \param _scene_file path to netcdf grid file
+    /// \param _mode
+    /// \param _tileDir
+    /// \return node if loading succeded
+    ///
+    osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode, std::string _tileDir = "");
 
     ///
     /// \brief addNodeToScene add a node to the scene
     /// \param _node node to be added
+    /// \param _transparency transparency (default to 0
     /// \return true if loading succeded
     ///
-    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0);
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0); //, bool _buildLOD = false, std::string _pathToLodFile = "");
 
     ///
     /// \brief removeNodeFromScene remove a node from the scene
@@ -259,7 +279,7 @@ protected:
     virtual bool event( QEvent* _event );
 
     virtual void initializeGL();
-    QTimer m_timer;
+    //QTimer m_timer;
 
 private:
     virtual void onResize( int _width, int _height );

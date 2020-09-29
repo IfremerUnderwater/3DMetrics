@@ -13,6 +13,13 @@ add_executable(3DMetrics
     OSGWidget/geometry_type_count_visitor.cpp
     OSGWidget/shader_color.cpp
     OSGWidget/overlay_widget.cpp
+    OSGWidget/grid_file_processor.cpp
+    OSGWidget/snap_geotiff_image.cpp
+    OSGWidget/elevation_map_creator.cpp
+    OSGWidget/lod_tools.cpp
+    OSGWidget/object_meansize_visitor.cpp
+    OSGWidget/clip_model_visitor.cpp
+	OSGWidget/smartlod.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp
@@ -29,6 +36,7 @@ add_executable(3DMetrics
     TreeView/tdm_layer_model.cpp
     decimation_dialog.cpp
     osg_axes.cpp
+    ask_for_lod_dialog.cpp
     attrib_area_widget.cpp
     attrib_categories_widget.cpp
     attrib_line_widget.cpp
@@ -54,9 +62,10 @@ add_executable(3DMetrics
     model_depth_colors_chooser.cpp
     color_widget.cpp
     qtable_arrowkey_detector.cpp
+    edit_lod_threshold_dialog.cpp
+    model_loadingmode_dialog.cpp
 	ressources.qrc
 	3DMetrics.rc)
-	
 	
 set_target_properties(3DMetrics PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TDM_RUNTIME_ROOT}/$<0:>)
 	
@@ -64,10 +73,12 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(3DMetrics PUBLIC
      BasicProcessing
+     Eigen3::Eigen
      Qt5::Core
      Qt5::Widgets
      Qt5::OpenGL
-	 GDAL::GDAL
+	 ${GDAL_LIBRARY}
 	 ${GeographicLib_LIBRARIES}
      ${OPENSCENEGRAPH_LIBRARIES}
 	 kmldom kmlbase)
+# GDAL::GDAL

@@ -65,10 +65,22 @@
 #include "z_scale_dialog.h"
 
 #include "OSGWidget/measurement_picker_tool.h"
-
-#include "model_depth_colors_chooser.h"
+#include "OSGWidget/smartlod.h"
+#include "OSGWidget/lod_tools.h"
+//#include "OSGWidget/object_meansize_visitor.h"
 
 #include "qtable_arrowkey_detector.h"
+
+#include "model_depth_colors_chooser.h"
+//#include "ask_for_lod_dialog.h"
+#include "edit_lod_threshold_dialog.h"
+#include "model_loadingmode_dialog.h"
+
+#if defined(_WIN32) || defined(WIN32)
+#define DIRSEP "\\"
+#else
+#define DIRSEP "/"
+#endif
 
 TDMGui::TDMGui(QWidget *_parent) :
     QMainWindow(_parent),
@@ -331,7 +343,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd *.osgb)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -340,18 +352,146 @@ void TDMGui::slot_open3dModel()
     if(filename.length() > 0)
     {
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
-                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
+
+        thread_node->setSaveCompLOD(false);
+
+        std::string pathToFile = filename.toStdString();
+
+
+        std::string extension = "";
+        int idx = pathToFile.rfind('.');
+        if(idx != std::string::npos)
+        {
+            extension = pathToFile.substr(idx+1);
+        }
+
+        if(extension == "kml")
+        {
+            // kml
+            KMLHandler kh;
+            kh.readFile(filename.toStdString());
+
+            pathToFile = kh.getModelPath();
+
+            // check relative path
+            if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+            {
+                std::string base_directory, lfname;
+                kmlbase::File::SplitFilePath(filename.toStdString(),
+                                             &base_directory,
+                                             &lfname);
+                pathToFile = base_directory + string(DIRSEP) + pathToFile;
+            }
+
+            idx = pathToFile.rfind('.');
+            if(idx != std::string::npos)
+            {
+                extension = pathToFile.substr(idx+1);
+            }
+
+        }
+
 
         // check grd files
-        if(filename.toStdString().find_last_of(".grd") == filename.toStdString().size() - 1)
+        if(extension == "grd")
         {
             ChooseLoadingModeDialog choose(this);
             choose.setMode(LoadingModePoint);
             if(choose.exec() == QDialog::Accepted)
             {
-                thread_node->setLoadingMode((choose.mode()));
+                thread_node->setLoadingMode(choose.mode());
             }
+            if(choose.mode() == LoadingModeLODTilesDir ||
+                    choose.mode() == LoadingModeSmartLODTilesDir)
+            {
+                // choose dir
+                QString dirname = getDirectoryName(this,tr("Select associated tiles' folder"),m_path_model3D);
+                if(dirname.length() > 0)
+                {
+                    thread_node->setTileFolderName(dirname);
+                }
+            }
+        }
+
+        else if (extension == "osgb")
+        {
+            // do nothing on osgb files
+            thread_node->setLoadingMode(LoadingModeDefault);
+
+            // TODO : make tiles
+        }
+
+        else if (extension == "ply")
+        {
+            // do nothing on ply files
+            thread_node->setLoadingMode(LoadingModeDefault);
+        }
+
+        else
+        {
+            ModelLoadingModeDialog dlg(this);
+            dlg.setMode(LoadingModeDefault);
+
+            //check allowed modes
+            // Use OSGB
+            QFileInfo f((pathToFile + ".osgb").c_str());
+            if(!f.exists())
+            {
+                dlg.enableUseOSBG(false);
+            }
+
+            // Use LOD
+            if(!SmartLOD::hasLODFiles(pathToFile))
+            {
+                dlg.enableUseLOD(false);
+            }
+
+            // tiles
+            QFileInfo fpath(pathToFile.c_str());
+            QStringList pattern;
+            pattern <<  (fpath.fileName() + ".???_???.osgb");
+            QFileInfoList tiles =  fpath.absoluteDir().entryInfoList(pattern, QDir::Files );
+            if(tiles.size() == 0)
+            {
+                dlg.enableUseTiles(false);
+            }
+            pattern.clear();
+            pattern <<  (fpath.fileName() + ".???_???" + "-?.osgb");
+            tiles =  fpath.absoluteDir().entryInfoList(pattern, QDir::Files );
+            if(tiles.size() == 0)
+            {
+                dlg.enableUseSmartLODTiles(false);
+            }
+
+
+            if(dlg.exec() == QDialog::Accepted)
+            {
+                // process
+                thread_node->setLoadingMode(dlg.mode());
+                thread_node->setNTilesX(dlg.nXTiles());
+                thread_node->setNTilesY(dlg.nYTiles());
+                thread_node->setSaveCompLOD(dlg.saveCompoundLOD());
+                if(dlg.mode() == LoadingModeLODTilesDir || dlg.mode() == LoadingModeSmartLODTilesDir)
+                {
+                    // choose dir
+                    QString dirname = getDirectoryName(this,tr("Select associated tiles' folder"),m_path_model3D);
+                    if(dirname.length() > 0)
+                    {
+                        thread_node->setTileFolderName(dirname);
+                    }
+                }
+
+                // default LOD thresholds
+                thread_node->setThreshold1(40.0f);
+                thread_node->setThreshold2(200.0f);
+            }
+            else
+            {
+                return;
+            }
+
         }
 
         thread_node->setFileName(filename);
@@ -378,12 +518,9 @@ void TDMGui::slot_open3dModel()
     }
 }
 
-//#include <osg/DepthRangeIndexed>
-//#include <osgTerrain/Terrain>
-//#include <osgVolume/Volume>
-
-void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item
-                              ,double _transp, double _offsetX, double _offsetY, double _offsetZ)
+void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item,
+                              double _transp, double _offsetX, double _offsetY, double _offsetZ,
+                              float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir)
 {
     if(_node == 0)
     {
@@ -402,6 +539,36 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     model_data.setOffsetY(_offsetY);
     model_data.setOffsetZ(_offsetZ);
 
+    if(_threshold1 == 0 && _threshold2 == 0)
+    {
+        // get default value
+        getLODThresholds(_node, _threshold1, _threshold2);
+    }
+    model_data.setLODThreshold(_threshold1, _threshold2);
+    LODTools::applyLODValuesInTree(_node,_threshold1,_threshold2);
+
+    // put modified loading mode for use in project file
+    LoadingMode load = (LoadingMode)_loadingMode;
+    switch(load)
+    {
+
+    case LoadingModeBuildAndUseSmartLOD:
+        load = LoadingModeUseSmartLOD;
+        break;
+
+    case LoadingModeBuildLOD:
+    case LoadingModeBuildOSGB:
+        load = LoadingModeUseOSGB;
+        break;
+
+    case LoadingModeBuildLODTiles:
+        load = LoadingModeSmartLODTiles;
+        break;
+    }
+
+    model_data.setLoadingMode(load);
+    model_data.setRelativeItemsDir(_itemsDir);
+
     TdmLayersModel *model = TdmLayersModel::instance();
     QVariant name(_name);
     QVariant data;
@@ -410,52 +577,11 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     TdmLayerItem *added = model->addLayerItem(TdmLayerItem::ModelLayer, _parent, name, data);
     added->setChecked(true);
 
-
-    // test
-
-    //    osg::Group *group = _node->asGroup();
-    //    osg::Image *image = _node->asImage();
-
-    //    osg::ref_ptr<osg::TransferFunction1D> trans = new osg::TransferFunction1D();
-
-    //    trans->setColor(0.0, osg::Vec4(1.0,0.0,0.0,0.0));
-    //    trans->setColor(0.5, osg::Vec4(1.0,1.0,0.0,0.5));
-    //    trans->setColor(1.0, osg::Vec4(0.0,0.0,1.0,1.0));
-
-    //    // TODO
-    //     osg::ref_ptr<osgVolume::Volume> volume = new osgVolume::Volume;
-    //    volume->addChild(_node);
-
-    //    osg::ref_ptr<osgVolume::ImageLayer> layer = new osgVolume::ImageLayer(_node->asImage());
-
-    //    osgVolume::SwitchProperty* sp = new osgVolume::SwitchProperty;
-    //    sp->setActiveProperty(0);
-    //    osgVolume::CompositeProperty* cp = new osgVolume::CompositeProperty;
-    //    osgVolume::TransferFunctionProperty* tfp = trans.valid() ? new osgVolume::TransferFunctionProperty(trans.get()) : 0;
-    //    cp->addProperty(tfp);
-    //    sp->addProperty(cp);
-    //    layer->setProperty(sp);
-    //    volume->addChild(layer->asNode());
-    //    node = volume.get();
-
-
-    //    osg::StateSet* state_set = _node->getOrCreateStateSet();
-    //    osg::StateAttribute* attrcolortable = state_set->getAttribute(osg::StateAttribute::COLORTABLE);
-    //    osg::StateAttribute* attrdepthrange = state_set->getAttribute(osg::StateAttribute::DEPTHRANGEINDEXED);
-    //    osg::DepthRangeIndexed* depthrange =      dynamic_cast<osg::DepthRangeIndexed*>(attrdepthrange);
-    //    double far = depthrange->getZFar();
-    //    double near = depthrange->getZNear();
-
-    //state_set->setAttributeAndModes( material, osg::StateAttribute::OVERRIDE);
-
-
-    //_node->asGeode()->setColorArray(colors,osg::Array::BIND_OVERALL);
-    // end test
-
-
+    // processing in file_open_thread
     ui->display_widget->addNodeToScene(node, _transp);
-    ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
+
+    ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
     if(_select_item)
     {
@@ -1206,6 +1332,7 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *_item, bool _checked)
         {
             TDMModelLayerData layer_data = _item->getPrivateData<TDMModelLayerData>();
             layer_data.node()->setNodeMask(itemChecked && _checked ? 0xFFFFFFFF : 0);
+            ui->display_widget->update();
         }
     }
 
@@ -1215,6 +1342,7 @@ void TDMGui::manageCheckStateForChildren(TdmLayerItem *_item, bool _checked)
         {
             TDMMeasurementLayerData layer_data = _item->getPrivateData<TDMMeasurementLayerData>();
             layer_data.group()->setNodeMask(itemChecked && _checked ? 0xFFFFFFFF : 0);
+            ui->display_widget->update();
         }
     }
 
@@ -1287,16 +1415,46 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                 menu->addAction(tr("Edit layer offset"),this,SLOT(slot_editModelOffset()));
 
                 menu->addSeparator();
+
                 menu->addAction(tr("Orthoproject this layer"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Elevation map from this layer"),this,SLOT(slot_saveAltMap()));
                 menu->addAction(tr("Compute total layer area"),this,SLOT(slot_computeTotalArea()));
+
                 menu->addSeparator();
+
+                bool showLOD = false;
+                osg::ref_ptr<osg::Group> matrix = node->asGroup();
+                if(matrix.valid())
+                {
+                    osg::ref_ptr<osg::Node> child = matrix->getChild(0);
+                    osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
+                    if(lod.valid())
+                    {
+                        // can modify LOD
+                        showLOD = true;
+                    }
+                    else
+                    {
+                        if(LODTools::hasLODInTree(child.get()))
+                        {
+                            showLOD = true;
+                        }
+                    }
+                }
+                if(showLOD)
+                {
+                    menu->addSeparator();
+                    menu->addAction(tr("Edit LOD thresholds"),this,SLOT(slot_editLODThresholds()));
+                }
+
                 QAction *action = new QAction(tr("Depth to colormap"),this);
                 action->setCheckable(true);
                 bool enabled = ui->display_widget->isEnabledShaderOnNode(node);
                 action->setChecked(enabled);
                 QObject::connect(action, SIGNAL(toggled(bool)), this, SLOT(slot_toggleDepthToColor(bool)));
                 menu->addAction(action);
+
+                menu->addSeparator();
             }
         }
     }
@@ -2740,8 +2898,8 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         // load 3D model
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)),
-                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
 
         thread_node->setFileName(file_path);
         QString name = _obj["Model3D"].toString();
@@ -2750,16 +2908,156 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         thread_node->setSelectItem(false);
         thread_node->setOSGWidget(ui->display_widget);
 
+
+        LoadingMode loadingMode = (LoadingMode)_obj.value("LoadingMode").toInt(0);
+        float lodTh1 = (float)_obj.value("LODThreshold1").toDouble(0);
+        float lodTh2 = (float)_obj.value("LODThreshold2").toDouble(0);
+        QString itemsDir = _obj.value("ItemsDir").toString("");
+
+        thread_node->setLoadingMode(loadingMode);
+        thread_node->setThreshold1(lodTh1);
+        thread_node->setThreshold2(lodTh2);
+        thread_node->setTileFolderName(itemsDir);
+
+        // check presence of LOD elements
+        std::string pathToFile = file_path.toStdString();
+        //bool processLOD = false;
+
+        std::string extension = "";
+        int idx = pathToFile.rfind('.');
+        if(idx != std::string::npos)
+        {
+            extension = pathToFile.substr(idx+1);
+        }
+
+        // check grd files
+        if(extension == "grd")     {
+            // check loading mode
+            switch(loadingMode)
+            {
+            // old values
+            case LoadingModePoint:
+            case LoadingModeTriangle:
+            case LoadingModeTriangleNormals:
+            case LoadingModeTrianglePoint:
+                break;
+
+                // Tiles
+            case LoadingModeLODTiles:
+            case LoadingModeSmartLODTiles:
+                // do not update dir even if not used
+                // TODO check tiles existence
+                break;
+
+            case LoadingModeLODTilesDir:
+            case LoadingModeSmartLODTilesDir:
+                // toto check dir existence and tiles in dir
+                break;
+
+                // Build tiles (could be slow)
+                // (in current directory)
+            case LoadingModeBuildLODTiles:
+                loadingMode = LoadingModeSmartLODTiles;
+                // could have been LoadingModeLODTiles
+                break;
+
+
+            default:
+                loadingMode = LoadingModeTriangleNormals;
+                break;
+            }
+            // update
+            thread_node->setLoadingMode(loadingMode);
+
+
+        }
+        else if (extension == "osgb")
+        {
+            // do nothing on osgb files
+            loadingMode = LoadingModeDefault;
+        }
+        else if (extension == "ply")
+        {
+            // do nothing on osgb file
+            loadingMode = LoadingModeDefault;
+        }
+        else
+        {
+            if(extension == "kml")
+            {
+                //                KMLHandler kh;
+                //                kh.readFile(pathToFile);
+                //                if(QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                //                {
+                //                    // do nothing on osgb files
+                //                    loadingMode = LoadingModeDefault;
+                //                }
+                //                else if(QString(kh.getModelPath().c_str()).endsWith(".ply", Qt::CaseInsensitive))
+                //                {
+                //                    // do nothing on ply files
+                //                    loadingMode = LoadingModeDefault;
+                //                }
+                //                else
+                //                {
+                //                    pathToFile = kh.getModelPath();
+
+                //                    // check relative path
+                //                    if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                //                    {
+                //                        std::string base_directory, lfname;
+                //                        kmlbase::File::SplitFilePath(filename.toStdString(),
+                //                                                     &base_directory,
+                //                                                     &lfname);
+                //                        pathToFile = dir.absolutePath().toStdString() + string(DIRSEP) + pathToFile;
+                //                    }
+                //                }
+            }
+            else
+            {
+                switch(loadingMode)
+                {
+
+                case LoadingModeUseOSGB:
+                case LoadingModeBuildOSGB:
+                    //                    if(!QString(kh.getModelPath().c_str()).endsWith(".osgb", Qt::CaseInsensitive))
+                    //                    {
+                    //                        pathToFile += ".osgb";
+                    //                    }
+                    loadingMode = LoadingModeUseOSGB;
+                    break;
+
+                case LoadingModeUseSmartLOD:
+                case LoadingModeBuildAndUseSmartLOD:
+                    loadingMode = LoadingModeUseSmartLOD;
+                    break;
+
+                case LoadingModeLODTiles:
+                case LoadingModeLODTilesDir:
+                    break;
+
+                case LoadingModeSmartLODTiles:
+                case LoadingModeSmartLODTilesDir:
+                    break;
+
+                case LoadingModeBuildLODTiles:
+                    loadingMode = LoadingModeUseSmartLOD;
+                    break;
+
+                }
+            }
+        }
+        thread_node->setLoadingMode(loadingMode);
+
         double transp = _obj.value("Transparency").toDouble(0);
         thread_node->setTransparencyValue(transp);
 
-        double offsetX = _obj.value("OffsetX").toDouble(0);;
+        double offsetX = _obj.value("OffsetX").toDouble(0);
         thread_node->setOffsetX(offsetX);
 
-        double offsetY = _obj.value("OffsetY").toDouble(0);;
+        double offsetY = _obj.value("OffsetY").toDouble(0);
         thread_node->setOffsetY(offsetY);
 
-        double offsetZ = _obj.value("OffsetZ").toDouble(0);;
+        double offsetZ = _obj.value("OffsetZ").toDouble(0);
         thread_node->setOffsetZ(offsetZ);
 
         thread_node->start();
@@ -2868,6 +3166,21 @@ QJsonObject TDMGui::saveTreeStructure(TdmLayerItem *_item)
             obj.insert("OffsetX", layer_data.getOffsetX());
             obj.insert("OffsetY", layer_data.getOffsetY());
             obj.insert("OffsetZ", layer_data.getOffsetZ());
+
+            // loading mode + LOD thresholds
+            //            osg::Node* const node = (layer_data.node().get());
+
+            //            float step1 = 0;
+            //            float step2 = 0;
+
+            //            getLODThresholds(node, step1, step2);
+
+            obj.insert("LoadingMode", layer_data.getLoadingMode());
+            obj.insert("LODThreshold1", layer_data.getThreshold1());
+            obj.insert("LODThreshold2", layer_data.getThreshold2());
+
+            // relative items dir
+            obj.insert("ItemsDir", layer_data.getRelativeItemsDir());
         }
     }
 
@@ -3169,7 +3482,7 @@ void TDMGui::slot_computeTotalArea()
         QApplication::restoreOverrideCursor();
 
         QString total_area_string = QString::number(total_area_double,'f',2);
-        QStringList filename_split = layer_data.fileName().split("/");
+        QStringList filename_split = layer_data.fileName().split(DIRSEP);
         QString name3D_mode = filename_split.at(filename_split.length()-1);
         QMessageBox::information(this,tr("total surface area"), tr("The total surface area of ")+ name3D_mode+tr(" is ")+total_area_string + " m²");
     }
@@ -3516,12 +3829,15 @@ void TDMGui::slot_exportMeasToGeom()
     if( m_meas_geom_export_dialog.getExportType() == MeasGeomExportDialog::export_type::ShapeFile)
     {
         const char *psz_driver_name = "ESRI Shapefile";
-        OGRSFDriver *driver;
-        OGRRegisterAll();
-        driver =(OGRSFDriver *)OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
-        OGRDataSource *data_source;
-        data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
-
+        //OGRSFDriver *driver;
+        GDALDriver *driver;
+        //OGRRegisterAll();
+        //driver =(OGRSFDriver *)OGRSFDriverRegistrar::GetRegistrar()->GetDriverByName(psz_driver_name);
+        driver = GetGDALDriverManager()->GetDriverByName(psz_driver_name);
+        //OGRDataSource *data_source;
+        GDALDataset *data_source;
+        //data_source = driver->CreateDataSource( path_info.absolutePath().toStdString().c_str(), NULL );
+        data_source =  driver->Create(path_info.absolutePath().toStdString().c_str(), 0, 0, 0, GDT_Unknown, NULL);
         if( data_source == NULL )
         {
             printf( "Creation of output file failed.\n" );
@@ -3590,7 +3906,7 @@ void TDMGui::slot_exportMeasToGeom()
             }
         }
 
-        char name[33] ;
+        char name[33] ="";
         for(int i=0; i<table->rowCount(); i++)
         {
             for(int j=1; j<table->columnCount(); j++)
@@ -3657,7 +3973,7 @@ void TDMGui::slot_exportMeasToGeom()
                 }
             }
         }
-        OGRDataSource::DestroyDataSource( data_source );
+        GDALClose( data_source );
     }
     m_meas_geom_export_dialog.clear();
 }
@@ -3834,7 +4150,7 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
 
                         statusBar()->showMessage(message);
 
-                        //TEST
+                        //
                         int n = geode->getNumChildren();
                         for(int i=0; i<n; i++)
                         {
@@ -3844,6 +4160,7 @@ void TDMGui::slot_nodeClicked(osg::Node *_node)
                             geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
                         }
 
+                        ui->display_widget->update();
                         return;
                     }
 
@@ -3887,6 +4204,7 @@ void TDMGui::unselectAllMeasureGraph()
             }
         }
     }
+    ui->display_widget->update();
 }
 
 void TDMGui::selectMeasureGraph(osg::Geode *_geode)
@@ -3903,6 +4221,7 @@ void TDMGui::selectMeasureGraph(osg::Geode *_geode)
             geo->getOrCreateStateSet()->setAttribute(new osg::LineWidth(8.0f), osg::StateAttribute::ON);
         }
     }
+    ui->display_widget->update();
 }
 
 void TDMGui::slot_noNodeClicked()
@@ -3939,6 +4258,91 @@ void TDMGui::slot_toggleDepthToColor(bool _state)
             this->slot_toggleZScale();
         }
     }
+}
+
+void TDMGui::getLODThresholds(osg::Node *node, float &step1, float &step2)
+{
+    // init
+    step1 = 0;
+    step2 = 0;
+
+    osg::ref_ptr<osg::Group> matrix = node->asGroup();
+    if(matrix.valid())
+    {
+        osg::ref_ptr<osg::Node> child = matrix->getChild(0);
+        osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
+        if(lod.valid())
+        {
+            // has LOD : can modify
+            step1 = lod->getMaxRange(0);
+            step2 = lod->getMinRange(2);
+        }
+        else
+        {
+            // tiles : group
+            osg::ref_ptr<osg::Group> group = child->asGroup();
+            if(group.valid())
+            {
+                qDebug() << "child#:" << group->getNumChildren();
+
+                osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
+                if(lod.valid())
+                {
+                    // has LOD : can modify
+                    step1 = lod->getMaxRange(0);
+                    step2 = lod->getMinRange(2);
+                }
+            }
+        }
+    }
+}
+
+void TDMGui::slot_editLODThresholds()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+
+        float step1 = 0;
+        float step2 = 0;
+
+        getLODThresholds(node, step1, step2);
+
+        EditLODThresholdDialog dialog(this);
+        dialog.setThresholds(step1,step2);
+        QPoint point = QCursor::pos();
+        dialog.move(point.x()+20, point.y()+20);
+        int ret = dialog.exec();
+        int modif = 0;
+        if(ret == QDialog::Accepted)
+        {
+            modif = LODTools::applyLODValuesInTree(node, dialog.getThreshold1(), dialog.getThreshold2());
+            layer_data.setLODThreshold(dialog.getThreshold1(), dialog.getThreshold2());
+            item->setPrivateData(layer_data);
+        }
+
+        //        int count = LODTools::countLODInTree(node);
+
+        //        ObjectMeanSizeVisitor meansize;
+        //        node->accept(meansize);
+
+        //        qDebug() << " nb=" << meansize.getCount() << "  meansize=" << meansize.getMeanSize();
+
+        //        qDebug() << "0 < " << step1 << " < " << step2 << " < INF  count=" << count << " modif=" << modif;
+    }
+
+    ui->display_widget->update();
 }
 
 

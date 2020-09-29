@@ -5,6 +5,7 @@
 #include <osg/Node>
 #include <QString>
 #include <QMetaType>
+#include "OSGWidget/loading_mode.h"
 
 // private data used in Model Layer
 // usable in QVariant
@@ -35,6 +36,21 @@ public:
 
     osg::Vec3d getOriginalTranslation() const { return m_trans; }
 
+    void setLODThreshold(float _th1, float _th2)
+    {
+        m_threshold1 = _th1;
+        m_threshold2 = _th2;
+    }
+
+    float getThreshold1() const { return m_threshold1; }
+    float getThreshold2() const { return m_threshold2; }
+
+    LoadingMode getLoadingMode() const { return m_loadingMode; }
+    void setLoadingMode(const LoadingMode _loadingMode) { m_loadingMode = _loadingMode; }
+
+    QString getRelativeItemsDir() const { return m_relativeItemsDir; }
+    void setRelativeItemsDir(const QString &_relativeItemsDir) { m_relativeItemsDir = _relativeItemsDir; }
+
 private:
     QString m_filename;
     osg::ref_ptr<osg::Node> m_node;
@@ -45,6 +61,13 @@ private:
     double m_offsetX;
     double m_offsetY;
     double m_offsetZ;
+
+    QString m_relativeItemsDir;
+
+    float m_threshold1;
+    float m_threshold2;
+
+    LoadingMode m_loadingMode;
 };
 
 // needed for using with QVariant

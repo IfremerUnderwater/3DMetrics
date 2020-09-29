@@ -103,11 +103,14 @@ private:
     void unselectAllMeasureGraph();
     void selectMeasureGraph(osg::Geode *_geode);
 
+    void getLODThresholds(osg::Node *node, float &step1, float &step2);
+
 public slots:
 
     void slot_open3dModel();
-    void slot_load3DModel(osg::Node*, QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item
-                          ,double _transp, double _offsetX, double _offsetY, double offsetZ);
+    void slot_load3DModel(osg::Node*, QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item,
+                          double _transp, double _offsetX, double _offsetY, double offsetZ,
+                          float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir);
 
     void slot_openMeasurementFile();
     void slot_saveMeasurementFile();
@@ -181,6 +184,7 @@ public slots:
     void slot_editTransparency();
     void slot_editModelOffset();
     void slot_toggleDepthToColor(bool);
+    void slot_editLODThresholds();
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);

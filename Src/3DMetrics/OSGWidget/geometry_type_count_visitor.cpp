@@ -49,12 +49,13 @@ void GeometryTypeCountVisitor::apply( osg::Geode &geode )
                 {
                 case osg::PrimitiveSet::POINTS:
                     m_nbPoints++;
-                break;
+                    break;
 
                 case osg::PrimitiveSet::LINES:
                 case osg::PrimitiveSet::LINE_STRIP:
                 case osg::PrimitiveSet::LINE_LOOP:
                     m_nbLignes++;
+                    break;
 
                 case osg::PrimitiveSet::TRIANGLE_STRIP:
                 case osg::PrimitiveSet::TRIANGLES:

@@ -1,10 +1,15 @@
 #include "tdm_model_layerdata.h"
 #include <osg/MatrixTransform>
 
-TDMModelLayerData::TDMModelLayerData():m_transparency_value(0.0), m_offsetX(0), m_offsetY(0), m_offsetZ(0) {}
+TDMModelLayerData::TDMModelLayerData():m_transparency_value(0.0), m_offsetX(0), m_offsetY(0), m_offsetZ(0),
+    m_loadingMode(LoadingModeDefault),
+    m_threshold1(0), m_threshold2(0)
+{}
 
 TDMModelLayerData::TDMModelLayerData(const QString _filename, const osg::ref_ptr<osg::Node> _node):
-    m_transparency_value(0.0), m_offsetX(0), m_offsetY(0), m_offsetZ(0)
+    m_transparency_value(0.0), m_offsetX(0), m_offsetY(0), m_offsetZ(0),
+    m_loadingMode(LoadingModeDefault),
+    m_threshold1(0), m_threshold2(0)
 {
     m_filename = _filename;
     m_node = _node;
@@ -23,9 +28,17 @@ TDMModelLayerData::TDMModelLayerData(const TDMModelLayerData &_other)
     m_offsetY = _other.m_offsetY;
     m_offsetZ = _other.m_offsetZ;
     m_trans = _other.m_trans;
+
+    m_relativeItemsDir = _other.m_relativeItemsDir;
+
+    m_threshold1 = _other.m_threshold1;
+    m_threshold2 = _other.m_threshold2;;
+
+    m_loadingMode = _other.m_loadingMode;
 }
 
 TDMModelLayerData::~TDMModelLayerData() {}
+
 
 
 

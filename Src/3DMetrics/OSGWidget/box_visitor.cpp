@@ -5,6 +5,7 @@
 #include <vector>
 #include <limits>
 #include "box_visitor.h"
+
 using namespace std;
 
 #include "math.h"
@@ -15,6 +16,8 @@ BoxVisitor::BoxVisitor() : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
     m_x_max = numeric_limits<double>::min();
     m_y_min = numeric_limits<double>::max();
     m_y_max = numeric_limits<double>::min();
+    m_z_min = numeric_limits<double>::max();
+    m_z_max = numeric_limits<double>::min();
 }
 
 BoxVisitor::~BoxVisitor()
@@ -65,6 +68,6 @@ void BoxVisitor::apply( osg::Geode &geode )
             }
         }
     }
-    m_box = osg::BoundingBox(m_x_min, m_y_min, m_z_min, m_x_max, m_y_max, m_z_max);
 
+    m_box = osg::BoundingBox(m_x_min, m_y_min, m_z_min, m_x_max, m_y_max, m_z_max);
 }

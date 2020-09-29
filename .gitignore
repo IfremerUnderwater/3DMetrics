@@ -1,2 +1,4 @@
 /Build*
+/Src-build/
 /Run/
+CMakeLists.txt.user
