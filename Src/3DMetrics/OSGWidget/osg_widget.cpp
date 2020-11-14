@@ -1,4 +1,4 @@
-﻿#include "osg_widget.h"
+#include "osg_widget.h"
 
 #include <QDebug>
 #include <QKeyEvent>
@@ -214,7 +214,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_ref_alt = INVALID_VALUE;
 
 
-    //osgDB::Registry::instance()->setLibraryFilePathList("/Users/tim/code/3DMetricWorkspace/Run/Release/3DMetrics.app/Contents/osgPlugins");
+    /*osgDB::Registry::instance()->setLibraryFilePathList("/Users/neoaurion/Dev/3dmetrics_build/Run/3DMetrics.app/Contents/Plugins");*/
 
     float aspectRatio = static_cast<float>( this->width() ) / static_cast<float>( this->height() );
 

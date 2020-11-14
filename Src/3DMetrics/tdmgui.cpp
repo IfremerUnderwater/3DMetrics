@@ -47,7 +47,7 @@
 #include "OSGWidget/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 #include "ogr_spatialref.h"
 #include "ogrsf_frmts.h"
 #else

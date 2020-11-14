@@ -2,7 +2,7 @@
 
 #include <osg/RenderInfo>
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 #include "gdal_priv.h"
 #include "cpl_conv.h"
 #include "ogr_spatialref.h"

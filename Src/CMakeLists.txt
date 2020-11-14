@@ -7,6 +7,7 @@ project(3DMetricsProject VERSION 0.5.1)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+INCLUDE_DIRECTORIES(/opt/local/include)
 
 #path to OpenSceneGraph
 list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/OpenSceneGraph-3.6.2/CMakeModules)
