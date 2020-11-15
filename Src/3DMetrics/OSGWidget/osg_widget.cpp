@@ -213,8 +213,12 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_ref_lat_lon.setY(INVALID_VALUE);
     m_ref_alt = INVALID_VALUE;
 
-
-    /*osgDB::Registry::instance()->setLibraryFilePathList("/Users/neoaurion/Dev/3dmetrics_build/Run/3DMetrics.app/Contents/Plugins");*/
+#ifdef __APPLE__
+    QDir dir(QCoreApplication::applicationDirPath());
+    dir.cdUp();
+    dir.cd("Plugins");
+    osgDB::Registry::instance()->setLibraryFilePathList(dir.absolutePath().toStdString());
+#endif
 
     float aspectRatio = static_cast<float>( this->width() ) / static_cast<float>( this->height() );
 

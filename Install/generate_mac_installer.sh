@@ -24,7 +24,7 @@ cp macosx/PkgInfo ${APPBUNDLECONTENTS}/
 #cp macosx/${APPNAME}.icns $(APPBUNDLEICON)/
 cp ${OUTFILE} ${APPBUNDLEEXE}/${APPNAME}
 
-dylibbundler -od -b -x ${APPBUNDLEEXE}/${APPNAME} -d ${APPBUNDLECONTENTS}/libs
+dylibbundler -od -b -x ${APPBUNDLEEXE}/${APPNAME} -d ${APPBUNDLECONTENTS}/Frameworks -p @executable_path/../Frameworks
 ${MACDEPLOYQT} $APPBUNDLE
 
 # copy plugins and fix them
@@ -32,7 +32,7 @@ cp ${OSGPLUGINS_PATH}/*.so ${APPBUNDLEPLUGINS}
 
 for plugin_file in `find "$APPBUNDLEPLUGINS" -name '*.so'`; do
     echo "preparing plugin ${file_to_sign}"
-    dylibbundler -b -of -x ${plugin_file} -d ${APPBUNDLECONTENTS}/libs
+    dylibbundler -b -of -x ${plugin_file} -d ${APPBUNDLECONTENTS}/Frameworks -p @executable_path/../Frameworks
 done
 
 #macosx/$(APPNAME).icns: macosx/$(APPNAME)Icon.png
