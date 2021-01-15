@@ -6,221 +6,206 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>574</width>
-    <height>411</height>
+    <width>719</width>
+    <height>471</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Model Loading Mode Dialog</string>
   </property>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>10</x>
-     <y>0</y>
-     <width>296</width>
-     <height>351</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QRadioButton" name="defaultRadio">
-      <property name="toolTip">
-       <string>Use standard file loading</string>
-      </property>
-      <property name="text">
-       <string>Default</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useOSGBRadio">
-      <property name="toolTip">
-       <string>Use existing osgb file</string>
-      </property>
-      <property name="text">
-       <string>Use existing OSGB format</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="buildOSGBRadio">
-      <property name="toolTip">
-       <string>Build osgb file and use it</string>
-      </property>
-      <property name="text">
-       <string>Build and use OSGB format</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useSmartLODRadio">
-      <property name="toolTip">
-       <string>Use existing Smart LOD files</string>
-      </property>
-      <property name="text">
-       <string>Use existing SmartLOD files</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="buildSmartLODRadio">
-      <property name="toolTip">
-       <string>Build Smart LOD files and use them</string>
-      </property>
-      <property name="text">
-       <string>Build and use SmartLOD files</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useTilesRadio">
-      <property name="toolTip">
-       <string>Use existing tiles in the same folder</string>
-      </property>
-      <property name="text">
-       <string>Use existing Tiles</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useTilesFolderRadio">
-      <property name="toolTip">
-       <string>Use existing tiles in choosen folder</string>
-      </property>
-      <property name="text">
-       <string>Use existing Tiles in folder...</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useSmartLODTilesRadio">
-      <property name="toolTip">
-       <string>Use existing Smart LOD tiles in the same folder</string>
-      </property>
-      <property name="text">
-       <string>Use existing SmartLOD Tiles</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useSmartLODTilesFolderRadio">
-      <property name="toolTip">
-       <string>Use existing SmartLOD tiles in choosen folder</string>
-      </property>
-      <property name="text">
-       <string>Use existing SmartLOD Tiles in folder...</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="buildSmartLODTilesRadio">
-      <property name="toolTip">
-       <string>Build Smart LOD tiles and use them</string>
-      </property>
-      <property name="text">
-       <string>Build and use SmartLOD Tiles</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>320</x>
-     <y>130</y>
-     <width>238</width>
-     <height>141</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout_2">
-    <item>
-     <widget class="QCheckBox" name="saveCompoudCheck">
-      <property name="toolTip">
-       <string>Save also LOD level in one osgb file</string>
-      </property>
-      <property name="text">
-       <string>Save also compound LOD files</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="spacing">
-       <number>10</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="Xlabel">
-        <property name="text">
-         <string># Tiles in X :</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="XspinBox">
-        <property name="toolTip">
-         <string>Number of tiles in X direction</string>
-        </property>
-        <property name="minimum">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout_2">
-      <property name="spacing">
-       <number>10</number>
-      </property>
-      <item>
-       <widget class="QLabel" name="Ylabel">
-        <property name="text">
-         <string># Tiles in Y :</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSpinBox" name="YspinBox">
-        <property name="toolTip">
-         <string>Number of tiles in Y direction</string>
-        </property>
-        <property name="minimum">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </item>
-   </layout>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>160</x>
-     <y>370</y>
-     <width>281</width>
-     <height>29</height>
-    </rect>
-   </property>
-   <layout class="QHBoxLayout" name="horizontalLayout_3">
-    <item>
-     <widget class="QPushButton" name="cancelButton">
-      <property name="text">
-       <string>Cancel</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="okButton">
-      <property name="text">
-       <string>Ok</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QRadioButton" name="defaultRadio">
+       <property name="toolTip">
+        <string>Use standard file loading</string>
+       </property>
+       <property name="text">
+        <string>Default (Load file as is)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useOSGBRadio">
+       <property name="toolTip">
+        <string>Use existing osgb file</string>
+       </property>
+       <property name="text">
+        <string>Use existing OSGB format (Use a previously generated optimized equivalent)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="buildOSGBRadio">
+       <property name="toolTip">
+        <string>Build osgb file and use it</string>
+       </property>
+       <property name="text">
+        <string>Build and use OSGB format (Optimize the file for faster loading. Can take time but done only once)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useSmartLODRadio">
+       <property name="toolTip">
+        <string>Use existing Smart LOD files</string>
+       </property>
+       <property name="text">
+        <string>Use existing SmartLOD files (Use previously generated multiscale model)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="buildSmartLODRadio">
+       <property name="toolTip">
+        <string>Build Smart LOD files and use them</string>
+       </property>
+       <property name="text">
+        <string>Build and use SmartLOD files (Build mutliscale pyramid. Takes time on first launch but a lot faster for usage)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useTilesRadio">
+       <property name="toolTip">
+        <string>Use existing tiles in the same folder</string>
+       </property>
+       <property name="text">
+        <string>Use existing Tiles</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useTilesFolderRadio">
+       <property name="toolTip">
+        <string>Use existing tiles in choosen folder</string>
+       </property>
+       <property name="text">
+        <string>Use existing Tiles in folder...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useSmartLODTilesRadio">
+       <property name="toolTip">
+        <string>Use existing Smart LOD tiles in the same folder</string>
+       </property>
+       <property name="text">
+        <string>Use existing SmartLOD Tiles</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useSmartLODTilesFolderRadio">
+       <property name="toolTip">
+        <string>Use existing SmartLOD tiles in choosen folder</string>
+       </property>
+       <property name="text">
+        <string>Use existing SmartLOD Tiles in folder...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="buildSmartLODTilesRadio">
+       <property name="toolTip">
+        <string>Build Smart LOD tiles and use them</string>
+       </property>
+       <property name="text">
+        <string>Build and use SmartLOD Tiles</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <item>
+      <widget class="QLabel" name="label">
+       <property name="text">
+        <string>Options for LOD generation</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="saveCompoudCheck">
+       <property name="toolTip">
+        <string>Save also LOD level in one osgb file</string>
+       </property>
+       <property name="text">
+        <string>Save also compound LOD files</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="Xlabel">
+         <property name="text">
+          <string># Tiles in X :</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="XspinBox">
+         <property name="toolTip">
+          <string>Number of tiles in X direction</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+     <item>
+      <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <property name="spacing">
+        <number>10</number>
+       </property>
+       <item>
+        <widget class="QLabel" name="Ylabel">
+         <property name="text">
+          <string># Tiles in Y :</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QSpinBox" name="YspinBox">
+         <property name="toolTip">
+          <string>Number of tiles in Y direction</string>
+         </property>
+         <property name="minimum">
+          <number>1</number>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
+     <item>
+      <widget class="QPushButton" name="cancelButton">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="okButton">
+       <property name="text">
+        <string>Ok</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>

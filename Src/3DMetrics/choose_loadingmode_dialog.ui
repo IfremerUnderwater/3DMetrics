@@ -6,107 +6,95 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>343</width>
-    <height>298</height>
+    <width>419</width>
+    <height>388</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Choose Loading Mode</string>
   </property>
-  <widget class="QPushButton" name="ok_button">
-   <property name="geometry">
-    <rect>
-     <x>110</x>
-     <y>260</y>
-     <width>97</width>
-     <height>27</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>OK</string>
-   </property>
-  </widget>
-  <widget class="QWidget" name="layoutWidget">
-   <property name="geometry">
-    <rect>
-     <x>13</x>
-     <y>6</y>
-     <width>311</width>
-     <height>257</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout">
-    <item>
-     <widget class="QRadioButton" name="points_radio">
-      <property name="text">
-       <string>Points in color</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="triangles_radio">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="text">
-       <string>Triangles - monochrome</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="triangles_normals_radio">
-      <property name="text">
-       <string>Triangles with normals</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="triangles_points_radio">
-      <property name="text">
-       <string>Triangle (mono) + points (color)</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useLODTiles_radio">
-      <property name="text">
-       <string>Use existing LOD files</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useLODTilesDir_radio">
-      <property name="text">
-       <string>Use existing LOD files in folder...</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useSmartLODTiles_radio">
-      <property name="text">
-       <string>Use existing SmartLOD files</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="useSmartLODTilesDir_radio">
-      <property name="text">
-       <string>Use existing SmartLOD files in folder...</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QRadioButton" name="buildLOD_radio">
-      <property name="text">
-       <string>Build LOD Tiles (very slow)</string>
-      </property>
-     </widget>
-    </item>
-   </layout>
-  </widget>
+  <layout class="QVBoxLayout" name="verticalLayout_2">
+   <item>
+    <layout class="QVBoxLayout" name="verticalLayout">
+     <item>
+      <widget class="QRadioButton" name="points_radio">
+       <property name="text">
+        <string>Points in color</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="triangles_radio">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>Triangles - monochrome</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="triangles_normals_radio">
+       <property name="text">
+        <string>Triangles with normals</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="triangles_points_radio">
+       <property name="text">
+        <string>Triangle (mono) + points (color)</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useLODTiles_radio">
+       <property name="text">
+        <string>Use existing LOD files</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useLODTilesDir_radio">
+       <property name="text">
+        <string>Use existing LOD files in folder...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useSmartLODTiles_radio">
+       <property name="text">
+        <string>Use existing SmartLOD files</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="useSmartLODTilesDir_radio">
+       <property name="text">
+        <string>Use existing SmartLOD files in folder...</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QRadioButton" name="buildLOD_radio">
+       <property name="text">
+        <string>Build LOD Tiles (very slow)</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QPushButton" name="ok_button">
+     <property name="text">
+      <string>OK</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
  </widget>
  <resources/>
  <connections/>
