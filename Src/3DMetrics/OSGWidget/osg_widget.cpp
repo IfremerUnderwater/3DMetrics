@@ -1699,7 +1699,7 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
 
         mrt_camera->removeFinalDrawCallback(final_draw_callback);
 
-        // causes SEGV
+        // TODO : causes SEGV , Ugly must find a solution
         //delete final_draw_callback;
     }
 
