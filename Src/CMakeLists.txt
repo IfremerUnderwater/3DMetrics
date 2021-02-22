@@ -9,15 +9,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 INCLUDE_DIRECTORIES(/opt/local/include)
 
-#path to OpenSceneGraph
-list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/OpenSceneGraph-3.6.2/CMakeModules)
-
 #path to Geographic lib
-list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
+#ist(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
 #set(GeographicLib_DIR /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
-
-#path to libkml
-list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/libkml-master/build)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
