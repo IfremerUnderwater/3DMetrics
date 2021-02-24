@@ -27,7 +27,7 @@ void ZScaleDialog::setZScale(double _zscale)
 {
     m_zscale = _zscale;
 
-    int val = _zscale / 10.0;
+    int val = m_zscale * 10.0;
     ui->zscale_slider->setValue(val);
     ui->value_label->setText( QString::number(_zscale,'f',1));
 }
