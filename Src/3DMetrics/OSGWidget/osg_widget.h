@@ -221,6 +221,7 @@ public:
     void cancelTool(QString &_message);
 
     // screen2D
+    bool generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
     bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type);
 
     //
@@ -238,7 +239,7 @@ public:
     static const char *const MEASUREMENT_NAME;
 
     bool isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node);
-    void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable);
+    void enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable, bool _update = true);
 
     double getModelsZMin() const { return m_modelsZMin; }
     double getModelsZMax() const { return m_modelsZMax; }

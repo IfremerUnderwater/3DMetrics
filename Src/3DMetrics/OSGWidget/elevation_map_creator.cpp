@@ -16,6 +16,8 @@
 
 #include <osgUtil/LineSegmentIntersector>
 
+//#include <QDebug>
+
 ElevationMapCreator::ElevationMapCreator(const std::string &_filename, QPointF &_ref_lat_lon, osg::BoundingBox _box, double _pixel_size, int _width_pixel, int _height_pixel) :
     m_filename( _filename ),
     m_ref_lat_lon( _ref_lat_lon ),
@@ -27,36 +29,34 @@ ElevationMapCreator::ElevationMapCreator(const std::string &_filename, QPointF &
 
 }
 
-bool ElevationMapCreator::process(osgViewer::Viewer &_viewer, QWidget *_parentWidget)
+bool ElevationMapCreator::process(osgViewer::View &_view, QWidget *_parentWidget)
 {
-    //GDALAllRegister();
     CPLPushErrorHandler(CPLQuietErrorHandler);
 
-    GDALDataset *geotiff_dataset_alt;
-    GDALDriver *driver_geotiff_alt;
-
-    int no_data =  -9999;
+    const int no_data =  -9999;
     std::string file_prof = m_filename+".tif";
 
-    driver_geotiff_alt = GetGDALDriverManager()->GetDriverByName("GTiff");
-    geotiff_dataset_alt = driver_geotiff_alt->Create(file_prof.c_str(),m_width_pixel,m_height_pixel,1,GDT_Float32,NULL);
+    GDALDriver *driver_geotiff_alt = GetGDALDriverManager()->GetDriverByName("GTiff");
+    GDALDataset *geotiff_dataset_alt = driver_geotiff_alt->Create(file_prof.c_str(),m_width_pixel,m_height_pixel,1,GDT_Float32,NULL);
 
     float *buffer= new float[m_width_pixel];
 
     QProgressDialog progress_dialog(QObject::tr("Write altitude map file..."), QObject::tr("Abort altitude map"), 0, m_height_pixel, _parentWidget);
     progress_dialog.setWindowModality(Qt::WindowModal);
 
+    const osg::Camera* camera = _view.getCamera();
     for(int i=0; i<m_height_pixel; i++)
     {
-        QApplication::processEvents();
         progress_dialog.setValue(i);
+        QApplication::processEvents();
+
         if (progress_dialog.wasCanceled())
         {
             // cleanup
             GDALClose(geotiff_dataset_alt) ;
             CPLPopErrorHandler();
 
-            delete buffer;
+            delete [] buffer;
 
             return false;
         }
@@ -66,7 +66,9 @@ bool ElevationMapCreator::process(osgViewer::Viewer &_viewer, QWidget *_parentWi
             osg::Vec3d _inter_point;
             osgUtil::LineSegmentIntersector::Intersections intersections;
 
-            if (_viewer.computeIntersections(_viewer.getCamera(),osgUtil::Intersector::WINDOW,j,m_height_pixel-i,intersections))
+            float x = j;
+            float y = (m_height_pixel-i-1);
+            if (_view.computeIntersections(camera,osgUtil::Intersector::WINDOW,x,y,intersections))
             {
 
                 osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin();
@@ -75,17 +77,19 @@ bool ElevationMapCreator::process(osgViewer::Viewer &_viewer, QWidget *_parentWi
                 _inter_point = hitr->getWorldIntersectPoint();
                 float alt_point = _inter_point.z();
                 buffer[j] = alt_point;
+                //qDebug()  << i << " " << j << " " << alt_point;
 
             }else{
                 float alt_point = no_data;
                 buffer[j] = alt_point;
+                //qDebug() << i << " " << j << " Nodata";
+
             }
         }
-        // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
         CPLErr res = geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,m_width_pixel,1,buffer,m_width_pixel,1,GDT_Float32,0,0);
     }
 
-    delete buffer;
+    delete [] buffer;
 
     progress_dialog.setValue(m_height_pixel);
     geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
@@ -105,5 +109,5 @@ bool ElevationMapCreator::process(osgViewer::Viewer &_viewer, QWidget *_parentWi
 
     CPLPopErrorHandler();
 
-    //GDALDestroyDriverManager();
+    return true;
 }

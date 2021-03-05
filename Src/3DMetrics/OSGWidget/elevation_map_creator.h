@@ -30,7 +30,7 @@ public:
     /// \param _parentWidget
     /// \return
     ///
-    bool process(osgViewer::Viewer &_viewer, QWidget *_parentWidget);
+    bool process(osgViewer::View &_view, QWidget *_parentWidget);
 
 private:
     std::string m_filename;

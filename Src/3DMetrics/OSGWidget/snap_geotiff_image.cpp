@@ -54,7 +54,8 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
         std::string tiff_name = m_filename+".tif";
         //GDALAllRegister();
-        CPLPushErrorHandler(CPLQuietErrorHandler);
+        //CPLPushErrorHandler(CPLQuietErrorHandler);
+        CPLPushErrorHandler(CPLDefaultErrorHandler);
         GDALDataset *geotiff_dataset;
         GDALDriver *driver_geotiff;
 
@@ -82,10 +83,10 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
                 GDALClose(geotiff_dataset) ;
                 CPLPopErrorHandler();
 
-                delete buffer_R;
-                delete buffer_G;
-                delete buffer_B;
-                delete buffer_A;
+                delete [] buffer_R;
+                delete [] buffer_G;
+                delete [] buffer_B;
+                delete [] buffer_A;
 
                 const_cast<SnapGeotiffImage*>(this)->m_status = false;
 
@@ -119,15 +120,17 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
         o_SRS.exportToWkt( &geo_reference );
 
         geotiff_dataset->SetProjection(geo_reference);
+
+        GDALClose(geotiff_dataset);
+
         CPLFree( geo_reference );
-        GDALClose(geotiff_dataset) ;
 
         CPLPopErrorHandler();
 
-        delete buffer_R;
-        delete buffer_G;
-        delete buffer_B;
-        delete buffer_A;
+        delete [] buffer_R;
+        delete [] buffer_G;
+        delete [] buffer_B;
+        delete [] buffer_A;
 
         const_cast<SnapGeotiffImage*>(this)->m_status = true;
         //GDALDestroyDriverManager();

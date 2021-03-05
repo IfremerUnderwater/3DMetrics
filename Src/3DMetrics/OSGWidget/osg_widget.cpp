@@ -33,6 +33,7 @@
 
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
+#include <osgViewer/config/SingleWindow>
 #include <osgGA/GUIEventAdapter>
 
 #include <cassert>
@@ -759,6 +760,8 @@ bool OSGWidget::createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene
                              path,
                              new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
     }
+
+    return true;
 }
 
 ///
@@ -875,7 +878,7 @@ void OSGWidget::setCameraOnNode(osg::ref_ptr<osg::Node> _node)
 
     osg::Vec3d eye(cam_center_x,
                    cam_center_y,
-                   (box.zMin() + cam_center_z)*m_zScale);
+                   (box.zMin()*m_zScale + cam_center_z)); //*m_zScale);
     osg::Vec3d target( cam_center_x,
                        cam_center_y,
                        box.zMin()*m_zScale);
@@ -912,24 +915,6 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
     return true;
 }
 
-//bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> _sceneData)
-//{
-//    if (!_sceneData)
-//    {
-//        std::cout << "No data loaded" << std::endl;
-//        return false;
-//    }
-
-//    m_models.push_back(_sceneData);
-
-
-//    osgViewer::View *view = m_viewer->getView(0);
-
-//    view->setSceneData( m_models.back().get() );
-
-
-//    return true;
-//}
 
 void OSGWidget::setClearColor(double _r, double _g, double _b, double _alpha)
 {
@@ -1554,6 +1539,104 @@ void OSGWidget::cancelTool(QString &_message)
     emit signal_cancelTool(_message);
 }
 
+bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size)
+{
+    // get the translation in the  node
+    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
+    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
+
+    BoxVisitor boxVisitor;
+    _node->accept(boxVisitor);
+
+    osg::BoundingBox box = boxVisitor.getBoundingBox();
+
+    // Create the edge of our picture
+    double x_max = box.xMax();
+    double x_min = box.xMin();
+    double y_max = box.yMax();
+    double y_min = box.yMin();
+    int width_pixel = ceil((x_max-x_min)/_pixel_size);
+    int height_pixel = ceil((y_max-y_min)/_pixel_size);
+    double width_meter = _pixel_size*width_pixel;
+    double height_meter = _pixel_size*height_pixel;
+    double cam_center_x = (x_max+x_min)/2 +  translation.x();
+    double cam_center_y = (y_max+y_min)/2 +  translation.y();
+
+    osg::ref_ptr< osg::Group > root( new osg::Group );
+    root->addChild( _node );
+
+    // Create the viewer
+    osgViewer::Viewer viewer;
+    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
+    viewer.setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
+
+    osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+    camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+    camera->setViewport( 0, 0, width_pixel, height_pixel );
+    camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
+
+    viewer.setCamera( camera.get() );
+
+    //viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
+    viewer.getCamera()->setProjectionMatrixAsPerspective( 30.0f, 1.0, 1.f, 1000.f );
+
+    // put our model in the center of our viewer
+    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
+    //double cam_center_z= (x_max-x_min)/2 + (y_max-y_min)/2 ;
+    double cam_center_z;
+    if( (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 )) > (y_max-y_min)/(2*tan(((30* M_PI )/ 180.0 )/2)) )
+    {
+        cam_center_z = (x_max-x_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
+    }
+    else
+    {
+        cam_center_z = (y_max-y_min)/(2*tan(((30/2)* M_PI )/ 180.0 ));
+    }
+
+    osg::Vec3d eyes(cam_center_x,
+                    cam_center_y,
+                    box.zMin() + cam_center_z);
+    osg::Vec3d center(cam_center_x,
+                      cam_center_y,
+                      box.zMin());
+    osg::Vec3d normal(0,0,-1);
+    viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
+
+    viewer.setSceneData( root.get() );
+    viewer.realize();
+
+    osgViewer::Viewer::Windows ws;
+    // Get the window
+    viewer.getWindows(ws);
+    if (!ws.empty())
+    {
+        osgViewer::Viewer::Windows::iterator iter = ws.begin();
+        (*iter)->setWindowRectangle(0, 0, width_pixel, height_pixel);
+    }
+
+    // setup the callback
+    osg::BoundingBox image_bounds;
+    image_bounds.xMin() = cam_center_x-width_meter/2;
+    image_bounds.xMax() = cam_center_x+width_meter/2;
+    image_bounds.yMin() = cam_center_y-height_meter/2;
+    image_bounds.yMax() = cam_center_y+height_meter/2;
+
+
+    viewer.home();
+    viewer.frame();
+
+    std::string screen_capture_filename = _filename.toStdString();
+
+    ElevationMapCreator emc(screen_capture_filename,m_ref_lat_lon, image_bounds,
+                            _pixel_size, width_pixel, height_pixel);
+
+    bool status = emc.process(viewer, this);
+
+    viewer.setSceneData(nullptr);
+
+    return status;
+}
+
 // convert x, y, z => lat, lon & alt
 // if(m_ref_alt == INVALID_VALUE) do nothing
 void OSGWidget::xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, double &_lon, double &_alt)
@@ -1712,10 +1795,12 @@ bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename
         status = emc.process(viewer, this);
     }
 
+
+    root->removeChild(_node);
+
     enableShaderOnNode(_node, hasShader);
 
     return status;
-
 
 }
 
@@ -2042,7 +2127,7 @@ bool OSGWidget::isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node)
     return false;
 }
 
-void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
+void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable, bool _update)
 {
     osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
     if(data != nullptr)
@@ -2058,8 +2143,9 @@ void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
             stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
         }
     }
-    m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
-    update();
+    //m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
+    if(_update)
+        update();
 }
 
 
