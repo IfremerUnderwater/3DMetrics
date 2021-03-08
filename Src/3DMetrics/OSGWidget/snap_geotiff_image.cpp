@@ -32,7 +32,7 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
     osg::GraphicsContext* gc = camera->getGraphicsContext();
 
-    if (gc->getTraits() != nullptr) // && m_image.valid())
+    if (gc->getTraits() != nullptr)
     {
         int width = gc->getTraits()->width;
         int height = gc->getTraits()->height;

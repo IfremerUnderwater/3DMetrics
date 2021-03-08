@@ -1530,103 +1530,9 @@ void OSGWidget::cancelTool(QString &_message)
 
 bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size)
 {
-    // get the translation in the  node
-    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
-    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
-
-    BoxVisitor boxVisitor;
-    _node->accept(boxVisitor);
-
-    osg::BoundingBox box = boxVisitor.getBoundingBox();
-
-    // Create the edge of our picture
-    double x_max = box.xMax();
-    double x_min = box.xMin();
-    double y_max = box.yMax();
-    double y_min = box.yMin();
-    int width_pixel = ceil((x_max-x_min)/_pixel_size);
-    int height_pixel = ceil((y_max-y_min)/_pixel_size);
-    double width_meter = _pixel_size*width_pixel;
-    double height_meter = _pixel_size*height_pixel;
-    double cam_center_x = (x_max+x_min)/2 +  translation.x();
-    double cam_center_y = (y_max+y_min)/2 +  translation.y();
-
-    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-    traits->x = 0;
-    traits->y = 0;
-    traits->width = width_pixel;
-    traits->height = height_pixel;
-    traits->pbuffer = true;
-    traits->alpha =  1;
-    traits->sharedContext = 0;
-    traits->doubleBuffer = false;
-    traits->readDISPLAY();
-    if(traits->displayNum < 0)
-        traits->displayNum  = 0;
-    traits->screenNum = 0;
-    osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-
-
-    osg::ref_ptr< osg::Group > root( new osg::Group );
-    root->addChild( _node );
-
-    // Create the viewer
-    osgViewer::Viewer viewer;
-    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
-    viewer.setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
-
-    osg::ref_ptr<osg::Camera> camera = new osg::Camera;
-    camera->setGraphicsContext(gc);
-    camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    camera->setViewport( 0, 0, width_pixel, height_pixel );
-    camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
-
-    viewer.setCamera( camera.get() );
-
-    // put our model in the center of our viewer
-    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
-    double cam_center_z= (x_max-x_min)/2 + (y_max-y_min)/2 ;
-    osg::Vec3d eyes(cam_center_x,
-                    cam_center_y,
-                    box.zMin() + cam_center_z);
-    osg::Vec3d center(cam_center_x,
-                      cam_center_y,
-                      box.zMin());
-    osg::Vec3d normal(0,0,-1);
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-    viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
-
-    viewer.setSceneData( root.get() );
-    viewer.realize();
-
-    osgViewer::Viewer::Windows ws;
-    // Get the window
-    viewer.getWindows(ws);
-    if (!ws.empty())
-    {
-        osgViewer::Viewer::Windows::iterator iter = ws.begin();
-        (*iter)->setWindowRectangle(0, 0, width_pixel, height_pixel);
-    }
-
-    // setup the callback
-    osg::BoundingBox image_bounds;
-    image_bounds.xMin() = cam_center_x-width_meter/2;
-    image_bounds.xMax() = cam_center_x+width_meter/2;
-    image_bounds.yMin() = cam_center_y-height_meter/2;
-    image_bounds.yMax() = cam_center_y+height_meter/2;
-
-    viewer.home();
-    viewer.frame();
-
-    std::string screen_capture_filename = _filename.toStdString();
-
-    ElevationMapCreator emc(screen_capture_filename,m_ref_lat_lon, image_bounds,
-                            _pixel_size, width_pixel, height_pixel);
-
-    bool status = emc.process(viewer, this);
-
-    viewer.setSceneData(nullptr);
-
+    std::string fileName = _filename.toStdString();
+    ElevationMapCreator emc(m_ref_lat_lon, _pixel_size);
+    bool status = emc.process(_node,fileName,this);
     return status;
 }
 
@@ -1747,14 +1653,14 @@ bool OSGWidget::generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _fil
     image_bounds.yMin() = cam_center_y-height_meter/2;
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
-    osgViewer::Viewer::Windows ws;
-    // Get the window
-    viewer.getWindows(ws);
-    if (!ws.empty())
-    {
-        osgViewer::Viewer::Windows::iterator iter = ws.begin();
-        (*iter)->setWindowRectangle(0, 0, width_pixel, height_pixel);
-    }
+//    osgViewer::Viewer::Windows ws;
+//    // Get the window
+//    viewer.getWindows(ws);
+//    if (!ws.empty())
+//    {
+//        osgViewer::Viewer::Windows::iterator iter = ws.begin();
+//        (*iter)->setWindowRectangle(0, 0, width_pixel, height_pixel);
+//    }
 
     std::string screen_capture_filename = _filename.toStdString();
     bool hasShader = isEnabledShaderOnNode(_node);
@@ -1774,7 +1680,6 @@ bool OSGWidget::generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _fil
     //delete final_draw_callback;
 
     viewer.setSceneData(nullptr);
-    //root->removeChild(_node);
 
     enableShaderOnNode(_node, hasShader);
 

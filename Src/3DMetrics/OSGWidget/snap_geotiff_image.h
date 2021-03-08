@@ -7,10 +7,9 @@
 
 struct SnapGeotiffImage : public osg::Camera::DrawCallback
 {
-
+public:
     ///
     /// \brief SnapGeotiffImage
-    /// \param _gc
     /// \param _filename
     /// \param _ref_lat_lon
     /// \param _box
@@ -21,12 +20,11 @@ struct SnapGeotiffImage : public osg::Camera::DrawCallback
 
     virtual void operator () (osg::RenderInfo& renderInfo) const;
 
-
-public:
     bool status() const { return m_status; }
 
 private:
     std::string m_filename;
+    osg::ref_ptr<osg::Image> m_image;
     QPointF m_ref_lat_lon;
     osg::BoundingBox m_box;
     double m_pixel_size;
