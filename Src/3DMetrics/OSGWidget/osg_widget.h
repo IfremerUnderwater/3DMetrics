@@ -222,7 +222,8 @@ public:
 
     // screen2D
     bool generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
-    bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type);
+    bool generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
+    //bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type);
 
     //
     void enableLight(bool _state);

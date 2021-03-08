@@ -24,13 +24,6 @@ SnapGeotiffImage::SnapGeotiffImage(osg::GraphicsContext *_gc, const std::string 
     m_parentWidget(_parentWidget),
     m_status(true)
 {
-    m_image = new osg::Image;
-    if (_gc->getTraits())
-    {
-        int width = _gc->getTraits()->width;
-        int height = _gc->getTraits()->height;
-        m_image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
-    }
 }
 
 void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
@@ -38,13 +31,16 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
     osg::Camera* camera = renderInfo.getCurrentCamera();
 
     osg::GraphicsContext* gc = camera->getGraphicsContext();
-    if (gc->getTraits() && m_image.valid())
-    {
 
-        // get the image
+    if (gc->getTraits() != nullptr) // && m_image.valid())
+    {
         int width = gc->getTraits()->width;
         int height = gc->getTraits()->height;
-        m_image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
+        osg::ref_ptr<osg::Image> image = new osg::Image;
+        image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
+
+        // get the image
+        image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
 
         // Variable for the command line "gdal_translate"
         double lat_0  = m_ref_lat_lon.x();
@@ -53,9 +49,8 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
         double y_max = m_box.yMax();
 
         std::string tiff_name = m_filename+".tif";
-        //GDALAllRegister();
-        //CPLPushErrorHandler(CPLQuietErrorHandler);
-        CPLPushErrorHandler(CPLDefaultErrorHandler);
+
+        CPLPushErrorHandler(CPLQuietErrorHandler);
         GDALDataset *geotiff_dataset;
         GDALDriver *driver_geotiff;
 
@@ -95,10 +90,10 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
             for(int j=0; j<(width); j++)
             {
-                buffer_R[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[0];
-                buffer_G[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[1];
-                buffer_B[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[2];
-                buffer_A[width-j-1] = m_image->data(size - ((width*i)+j) - 1)[3];
+                buffer_R[width-j-1] = image->data(size - ((width*i)+j) - 1)[0];
+                buffer_G[width-j-1] = image->data(size - ((width*i)+j) - 1)[1];
+                buffer_B[width-j-1] = image->data(size - ((width*i)+j) - 1)[2];
+                buffer_A[width-j-1] = image->data(size - ((width*i)+j) - 1)[3];
             }
             // CPLErr GDALRasterBand::RasterIO( GDALRWFlag eRWFlag, int nXOff, int nYOff, int nXSize, int nYSize, void * pData, int nBufXSize, int nBufYSize, GDALDataType eBufType, int nPixelSpace, int nLineSpace )
             CPLErr res;
@@ -133,7 +128,6 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
         delete [] buffer_A;
 
         const_cast<SnapGeotiffImage*>(this)->m_status = true;
-        //GDALDestroyDriverManager();
     }
     else
     {
