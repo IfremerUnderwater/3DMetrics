@@ -223,7 +223,6 @@ public:
     // screen2D
     bool generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
     bool generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
-    //bool generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type);
 
     //
     void enableLight(bool _state);
@@ -266,9 +265,6 @@ protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );
     virtual void paintOverlayGL();
-    //virtual void paintEvent(QPaintEvent*event);
-
-    //void drawOverlay();
 
     virtual void keyPressEvent( QKeyEvent* _event );
     virtual void keyReleaseEvent( QKeyEvent* _event );

@@ -16,7 +16,7 @@
 #include <QProgressDialog>
 #include <QApplication>
 
-SnapGeotiffImage::SnapGeotiffImage(osg::GraphicsContext *_gc, const std::string &_filename, QPointF &_ref_lat_lon, osg::BoundingBox _box, double _pixel_size, QWidget *_parentWidget) :
+SnapGeotiffImage::SnapGeotiffImage(const std::string &_filename, QPointF &_ref_lat_lon, osg::BoundingBox _box, double _pixel_size, QWidget *_parentWidget) :
     m_filename( _filename ),
     m_ref_lat_lon( _ref_lat_lon ),
     m_box( _box ),

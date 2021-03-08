@@ -1551,6 +1551,22 @@ bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _
     double cam_center_x = (x_max+x_min)/2 +  translation.x();
     double cam_center_y = (y_max+y_min)/2 +  translation.y();
 
+    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
+    traits->x = 0;
+    traits->y = 0;
+    traits->width = width_pixel;
+    traits->height = height_pixel;
+    traits->pbuffer = true;
+    traits->alpha =  1;
+    traits->sharedContext = 0;
+    traits->doubleBuffer = false;
+    traits->readDISPLAY();
+    if(traits->displayNum < 0)
+        traits->displayNum  = 0;
+    traits->screenNum = 0;
+    osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+
+
     osg::ref_ptr< osg::Group > root( new osg::Group );
     root->addChild( _node );
 
@@ -1560,18 +1576,16 @@ bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _
     viewer.setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
 
     osg::ref_ptr<osg::Camera> camera = new osg::Camera;
+    camera->setGraphicsContext(gc);
     camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
     camera->setViewport( 0, 0, width_pixel, height_pixel );
     camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
 
     viewer.setCamera( camera.get() );
 
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-
     // put our model in the center of our viewer
     viewer.setCameraManipulator(new osgGA::TrackballManipulator());
     double cam_center_z= (x_max-x_min)/2 + (y_max-y_min)/2 ;
-
     osg::Vec3d eyes(cam_center_x,
                     cam_center_y,
                     box.zMin() + cam_center_z);
@@ -1579,13 +1593,11 @@ bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _
                       cam_center_y,
                       box.zMin());
     osg::Vec3d normal(0,0,-1);
+    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
     viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
 
     viewer.setSceneData( root.get() );
     viewer.realize();
-
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-    viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
 
     osgViewer::Viewer::Windows ws;
     // Get the window
@@ -1659,7 +1671,6 @@ bool OSGWidget::generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _fil
 
     osg::ref_ptr< osg::Group > root( new osg::Group );
     root->addChild( _node );
-
 
     // setup MRT camera
     std::vector<osg::Texture2D*> attached_textures;
@@ -1749,7 +1760,7 @@ bool OSGWidget::generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _fil
     bool hasShader = isEnabledShaderOnNode(_node);
     enableShaderOnNode(_node, false);
 
-    SnapGeotiffImage* final_draw_callback = new SnapGeotiffImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
+    SnapGeotiffImage* final_draw_callback = new SnapGeotiffImage(screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
     mrt_camera->setFinalDrawCallback(final_draw_callback);
 
     viewer.home();
@@ -1779,162 +1790,6 @@ void OSGWidget::xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, do
 
     m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _alt);
 }
-
-
-//bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type)
-//{
-//    // get the translation in the  node
-//    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
-//    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
-
-//    BoxVisitor boxVisitor;
-//    _node->accept(boxVisitor);
-
-//    osg::BoundingBox box = boxVisitor.getBoundingBox();
-
-//    // Create the edge of our picture
-//    // Set graphics contexts
-//    double x_max = box.xMax();
-//    double x_min = box.xMin();
-//    double y_max = box.yMax();
-//    double y_min = box.yMin();
-//    int width_pixel = ceil((x_max-x_min)/_pixel_size);
-//    int height_pixel = ceil((y_max-y_min)/_pixel_size);
-//    double width_meter = _pixel_size*width_pixel;
-//    double height_meter = _pixel_size*height_pixel;
-//    double cam_center_x = (x_max+x_min)/2 +  translation.x();
-//    double cam_center_y = (y_max+y_min)/2 +  translation.y();
-
-//    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-//    traits->x = 0;
-//    traits->y = 0;
-//    traits->width = width_pixel;
-//    traits->height = height_pixel;
-//    traits->pbuffer = true;
-//    traits->alpha =  1;
-//    osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-
-//    osg::ref_ptr< osg::Group > root( new osg::Group );
-//    root->addChild( _node );
-
-
-//    // setup MRT camera
-//    std::vector<osg::Texture2D*> attached_textures;
-//    osg::ref_ptr<osg::Camera> mrt_camera = new osg::Camera;
-//    mrt_camera->setGraphicsContext(gc);
-//    mrt_camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-//    mrt_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
-//    mrt_camera->setRenderOrder( osg::Camera::PRE_RENDER );
-//    mrt_camera->setViewport( 0, 0, width_pixel, height_pixel );
-//    mrt_camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
-
-//    // Create our Texture
-//    osg::Texture2D* tex = new osg::Texture2D;
-//    tex->setTextureSize( width_pixel, height_pixel );
-//    tex->setSourceType( GL_UNSIGNED_BYTE );
-//    tex->setSourceFormat( GL_RGBA );
-//    tex->setInternalFormat( GL_RGBA32F_ARB );
-//    tex->setResizeNonPowerOfTwoHint( false );
-//    tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
-//    tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-//    attached_textures.push_back( tex );
-//    mrt_camera->attach( osg::Camera::COLOR_BUFFER, tex );
-
-//    // set RTT textures to quad
-//    osg::Geode* geode( new osg::Geode );
-//    geode->addDrawable( osg::createTexturedQuadGeometry(
-//                            osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
-//    geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
-//    geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-//    //geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
-
-//    // configure postRenderCamera to draw fullscreen textured quad
-//    osg::Camera* post_render_camera( new osg::Camera );
-//    post_render_camera->setClearMask( 0 );
-//    post_render_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER, osg::Camera::FRAME_BUFFER );
-//    post_render_camera->setReferenceFrame( osg::Camera::ABSOLUTE_RF );
-//    post_render_camera->setRenderOrder( osg::Camera::POST_RENDER );
-//    post_render_camera->setViewMatrix( osg::Matrixd::identity() );
-//    post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
-
-//    if ( _map_type == map_type::OrthoMap ) post_render_camera->addChild( geode );
-
-//    root->addChild(post_render_camera);
-
-//    // Create the viewer
-//    osgViewer::Viewer viewer;
-//    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
-
-//    viewer.setCamera( mrt_camera.get() );
-//    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-
-//    // put our model in the center of our viewer
-//    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
-//    double cam_center_z= (x_max-x_min)/2;
-
-//    osg::Vec3d eyes(cam_center_x,
-//                    cam_center_y,
-//                    box.zMin() + cam_center_z);
-//    osg::Vec3d center(cam_center_x,
-//                      cam_center_y,
-//                      box.zMin());
-//    osg::Vec3d normal(0,0,-1);
-//    viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
-
-//    viewer.setSceneData( root.get() );
-//    viewer.realize();
-
-//    // setup the callback
-//    osg::BoundingBox image_bounds;
-//    image_bounds.xMin() = cam_center_x-width_meter/2;
-//    image_bounds.xMax() = cam_center_x+width_meter/2;
-//    image_bounds.yMin() = cam_center_y-height_meter/2;
-//    image_bounds.yMax() = cam_center_y+height_meter/2;
-
-//    std::string screen_capture_filename = _filename.toStdString();
-//    bool hasShader = isEnabledShaderOnNode(_node);
-//    enableShaderOnNode(_node, false);
-
-//    SnapGeotiffImage* final_draw_callback = nullptr;
-//    bool status = true;
-
-//    if ( _map_type == map_type::OrthoMap )
-//    {
-//        final_draw_callback = new SnapGeotiffImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
-//        mrt_camera->setFinalDrawCallback(final_draw_callback);
-//    }
-
-
-//    viewer.home();
-//    viewer.frame();
-
-//    if(final_draw_callback != nullptr)
-//    {
-//        status = final_draw_callback->status();
-
-//        mrt_camera->removeFinalDrawCallback(final_draw_callback);
-
-//        // causes SEGV
-//        //delete final_draw_callback;
-//    }
-
-
-//    if ( _map_type == map_type::AltMap )
-//    {
-//        ElevationMapCreator emc(screen_capture_filename,m_ref_lat_lon, image_bounds,
-//                                _pixel_size, width_pixel, height_pixel);
-
-//        status = emc.process(viewer, this);
-//    }
-
-
-//    root->removeChild(_node);
-
-//    enableShaderOnNode(_node, hasShader);
-
-//    return status;
-
-//}
 
 void OSGWidget::enableLight(bool _state)
 {
