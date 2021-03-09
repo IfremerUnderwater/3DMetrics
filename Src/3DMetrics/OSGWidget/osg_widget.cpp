@@ -18,6 +18,8 @@
 #include <osg/LOD>
 //#include <osg/PagedLOD>
 
+#include <osg/TexGen>
+
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 
@@ -62,6 +64,7 @@
 #include "minmax_computation_visitor.h"
 #include "geometry_type_count_visitor.h"
 #include "shader_color.h"
+#include "shader_builder.h"
 
 #include "smartlod.h"
 #include "grid_file_processor.h"
@@ -1653,14 +1656,14 @@ bool OSGWidget::generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _fil
     image_bounds.yMin() = cam_center_y-height_meter/2;
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
-//    osgViewer::Viewer::Windows ws;
-//    // Get the window
-//    viewer.getWindows(ws);
-//    if (!ws.empty())
-//    {
-//        osgViewer::Viewer::Windows::iterator iter = ws.begin();
-//        (*iter)->setWindowRectangle(0, 0, width_pixel, height_pixel);
-//    }
+    //    osgViewer::Viewer::Windows ws;
+    //    // Get the window
+    //    viewer.getWindows(ws);
+    //    if (!ws.empty())
+    //    {
+    //        osgViewer::Viewer::Windows::iterator iter = ws.begin();
+    //        (*iter)->setWindowRectangle(0, 0, width_pixel, height_pixel);
+    //    }
 
     std::string screen_capture_filename = _filename.toStdString();
     bool hasShader = isEnabledShaderOnNode(_node);
@@ -1753,7 +1756,6 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
             // Put the 3D model totally opaque
             material->setAlpha( osg::Material::FRONT, _transparency_value);
             state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
-
         }
 
         // Changes the transparency of the node
@@ -1835,107 +1837,55 @@ void OSGWidget::setZScale(double _newValue)
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )
 {  
-    const std::string vertexSourceBegin =
-            "#version 130 \n"
-            "uniform float zmin;"
-            "uniform float deltaz;"
-            "uniform float alpha;"
-            "uniform float pointsize;"
-
-            "out vec3 vertex_light_position;"
-            "out vec3 vertex_light_half_vector;"
-            "out vec3 vertex_normal;"
-            "out vec4 fcolor;";
-
-
-
-    const std::string vertexSourceEnd =
-            "void main(void)"
-            "{"
-            // Calculate the normal value for this vertex, in world coordinates (multiply by gl_NormalMatrix)
-            "    vertex_normal = normalize(gl_NormalMatrix * gl_Normal);"
-            // Calculate the light position for this vertex
-            "    vertex_light_position = normalize(gl_LightSource[0].position.xyz);"
-
-            // Calculate the light's half vector
-            "    vertex_light_half_vector = normalize(gl_LightSource[0].halfVector.xyz);"
-
-            "    vec4 v = vec4(gl_Vertex);"
-            "    float val = (v.z-zmin) / deltaz;"
-            ""
-            "    vec3 RGB = colorPalette(val);"
-            "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
-            "    gl_Position = gl_ModelViewProjectionMatrix*v;"
-            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
-            "}";
-
-    std::string vertexSource = vertexSourceBegin;
-    vertexSource += ShaderColor::shaderSource(m_colorPalette);
-    vertexSource += vertexSourceEnd;
-
-    osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
-
-    // without shading
-    //    const std::string fragmentSourceOld =
-    //            "#version 330 compatibility \n"
-    //            "in vec4 fcolor;"
-    //            "void main()"
-    //            "{"
-    //            "   gl_FragColor = fcolor;"
-    //            "}";
-
-
-    const std::string fragmentSource =
-            "#version 130 \n"
-            "uniform bool hasmesh;"
-            "uniform bool lighton;"
-
-            "in vec4 fcolor;"
-            "in vec3 vertex_light_position;"
-            "in vec3 vertex_light_half_vector;"
-            "in vec3 vertex_normal;"
-
-            "void main() {"
-            "   vec4 color = fcolor;"
-            "   if(!hasmesh || lighton)"
-            "   {"
-            "      color = fcolor;"
-            "   }"
-            "   else"
-            "   {"
-            // Calculate the ambient term
-            "      vec4 ambient_color = gl_FrontMaterial.ambient * gl_LightSource[0].ambient + gl_LightModel.ambient * gl_FrontMaterial.ambient;"
-
-            // Calculate the diffuse term
-            "      vec4 diffuse_color = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;"
-
-            // Calculate the specular value
-            "      vec4 specular_color = gl_FrontMaterial.specular * gl_LightSource[0].specular * pow(max(dot(vertex_normal, vertex_light_half_vector), 0.0) , gl_FrontMaterial.shininess);"
-
-            // Set the diffuse value (darkness). This is done with a dot product between the normal and the light
-            // and the maths behind it is explained in the maths section of the site.
-            "      float diffuse_value = max(dot(vertex_normal, vertex_light_position), 0.0);"
-
-            // Set the output color of our current pixel
-            "      vec4 material_color = ambient_color + diffuse_color * diffuse_value + specular_color;"
-
-            "      color.r = material_color.r * fcolor.r;"
-            "      color.g = material_color.g * fcolor.g;"
-            "      color.b = material_color.b * fcolor.b;"
-            "   }"
-            "   gl_FragColor = color;"
-            "}";
-
-    osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
-
     osg::Program* program = new osg::Program;
     program->setName("3dMetricsShader");
-    program->addShader( fShader );
-    program->addShader( vShader );
+    program->addShader( ShaderBuilder::fragmentShader(ShaderBuilder::Standard) );
+    program->addShader( ShaderBuilder::vertexShader(ShaderBuilder::Standard, m_colorPalette) );
+
     stateSet->setAttribute( program, osg::StateAttribute::ON );
 
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
     stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
+
+//    // test EDL
+//    osg::ref_ptr<osg::Image> image = new osg::Image();
+//    image->allocateImage(width(), height(), 1, GL_RGBA, GL_UNSIGNED_BYTE);
+//    osg::Vec4 color(0.5,0.6,0.7,1.0);
+//    for(int i=0; i<width(); i++)
+//    {
+//        for(int j=0; j<height(); j++)
+//        {
+//            image->setColor(color,i,j);
+//        }
+//    }
+//    osg::ref_ptr<osg::Texture2D> tex(new osg::Texture2D());               // (1)
+
+//      tex->setImage(image);
+//      stateSet->setTextureAttributeAndModes(0, tex);
+//      osg::ref_ptr<osg::TexGen> texGen(new osg::TexGen());                // (2)
+//        texGen->setPlane(osg::TexGen::S, osg::Plane(0.075, 0.0, 0.0, 0.5)); // (2)
+//        texGen->setPlane(osg::TexGen::T, osg::Plane(0.0, 0.035, 0.0, 0.3)); // (2)
+//        stateSet->setTextureAttributeAndModes(0, texGen);                         // (2)
+
+//    stateSet->addUniform( new osg::Uniform( "s1_color", 1));
+//    stateSet->addUniform( new osg::Uniform( "s2_depth", 0));
+//    stateSet->addUniform( new osg::Uniform( "Pix_scale", 1));
+//    stateSet->addUniform( new osg::Uniform( "Exp_scale", 1.0f));
+
+//    osg::Uniform *neighbors = new osg::Uniform(osg::Uniform::FLOAT_VEC2,"Neigh_pos_2D", 8);
+//    for (unsigned c = 0; c < 8; c++)
+//    {
+//        osg::Vec2 neib;
+
+//        neib.x() = std::cos(c * M_PI / 4.0);
+//        neib.y() = std::sin(c * M_PI / 4.0);
+//        neighbors->setElement(c,neib);
+//    }
+//    stateSet->addUniform( neighbors);
+//    stateSet->addUniform( new osg::Uniform( "Sx", (float)width()));
+//    stateSet->addUniform( new osg::Uniform( "Sy", (float)height()));
+//    stateSet->addUniform( new osg::Uniform( "Light_dir", osg::Vec3f(0.0f,1.0f,0.0f)));
+//    // end test
 
     bool lighton = (m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->getMode(GL_LIGHTING) == osg::StateAttribute::OFF);
 
