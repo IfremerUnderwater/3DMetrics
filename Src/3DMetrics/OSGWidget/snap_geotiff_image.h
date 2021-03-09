@@ -22,6 +22,8 @@ public:
 
     bool status() const { return m_status; }
 
+    static bool process(osg::ref_ptr<osg::Node> _node, const std::string& _filename, QPointF &_ref_lat_lon, double _pixel_size, QWidget *_parentWidget);
+
 private:
     std::string m_filename;
     osg::ref_ptr<osg::Image> m_image;
