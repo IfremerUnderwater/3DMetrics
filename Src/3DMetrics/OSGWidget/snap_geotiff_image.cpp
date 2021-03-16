@@ -5,6 +5,8 @@
 #include <osgGA/TrackballManipulator>
 #include <osgViewer/Viewer>
 #include <osg/MatrixTransform>
+#include <osg/Material>
+#include <osg/BlendFunc>
 
 #include "box_visitor.h"
 
@@ -38,15 +40,21 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
     osg::GraphicsContext* gc = camera->getGraphicsContext();
 
+    OpenThreads::ScopedLock<OpenThreads::Mutex> lock(m_mutex);
+
     if (gc->getTraits() != nullptr)
     {
+        //GLenum buffer = camera->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
+        osg::State& state = *renderInfo.getState();
+        state.glReadBuffer(camera->getDrawBuffer());
+
         int width = gc->getTraits()->width;
         int height = gc->getTraits()->height;
         osg::ref_ptr<osg::Image> image = new osg::Image;
         image->allocateImage(width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE);
 
         // get the image
-        image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE );
+        image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
 
         // Variable for the command line "gdal_translate"
         double lat_0  = m_ref_lat_lon.x();
@@ -142,8 +150,11 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
 }
 
-bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string &_filename, QPointF &_ref_lat_lon, double _pixel_size, QWidget *_parentWidget)
+bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string &_filename, QPointF &_ref_lat_lon, double _pixel_size, QWidget *_parentWidget, bool _disableTexture)
 {
+    osg::GLExtensions *ext = new osg::GLExtensions(0);
+    GLint maxTextureSize = ext->maxTextureSize;
+
     // get the translation in the  node
     osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
     osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
@@ -166,30 +177,70 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     double cam_center_x = (x_max+x_min)/2 +  translation.x();
     double cam_center_y = (y_max+y_min)/2 +  translation.y();
 
+    if( width_pixel > maxTextureSize ||  height_pixel > maxTextureSize)
+    {
+        // too big to process
+        return false;
+    }
+
+    osg::StateSet *stateSet= _node->getOrCreateStateSet();
+
+
+    // disable texturing
+    if(_disableTexture)
+    {
+        unsigned int mode = osg::StateAttribute::OVERRIDE|osg::StateAttribute::OFF;
+        for( unsigned int ii=0; ii < 4; ii++ )
+        {
+            stateSet->setTextureMode( ii, GL_TEXTURE_1D, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_2D, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_3D, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_RECTANGLE, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_CUBE_MAP, mode);
+        }
+    }
+
+    //    // get BLEND mode and alpha value
+    osg::StateAttribute::GLModeValue blend = stateSet->getMode(GL_BLEND);
+    stateSet->setMode( GL_BLEND, osg::StateAttribute::OFF);
+    osg::StateAttribute* attr = stateSet->getAttribute(osg::StateAttribute::MATERIAL);
+    osg::Material* material = dynamic_cast<osg::Material*>(attr);
+    double alpha = 1.0;
+    if(material != nullptr)
+    {
+        osg::Vec4 amb = material->getAmbient(osg::Material::FRONT);
+        alpha = amb.a();
+        stateSet->removeAttribute(osg::StateAttribute::MATERIAL);
+    }
+
     osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
     traits->x = 0;
     traits->y = 0;
     traits->width = width_pixel;
     traits->height = height_pixel;
     traits->pbuffer = true;
-    traits->alpha =  1;
+    traits->red = 8;
+    traits->green = 8;
+    traits->blue = 8;
+    traits->alpha = 8;
+    traits->depth = 32;
     traits->sharedContext = 0;
     traits->doubleBuffer = false;
     traits->readDISPLAY();
     if(traits->displayNum < 0)
         traits->displayNum  = 0;
     traits->screenNum = 0;
+
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
     osg::ref_ptr< osg::Group > root( new osg::Group );
     root->addChild( _node );
 
     // setup MRT camera
-    std::vector<osg::Texture2D*> attached_textures;
     osg::ref_ptr<osg::Camera> mrt_camera = new osg::Camera;
     mrt_camera->setGraphicsContext(gc);
-    mrt_camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mrt_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
+    mrt_camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    mrt_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER );
     mrt_camera->setRenderOrder( osg::Camera::PRE_RENDER );
     mrt_camera->setViewport( 0, 0, width_pixel, height_pixel );
     mrt_camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
@@ -200,26 +251,27 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     tex->setSourceType( GL_UNSIGNED_BYTE );
     tex->setSourceFormat( GL_RGBA );
     tex->setInternalFormat( GL_RGBA32F_ARB );
-    tex->setResizeNonPowerOfTwoHint( false );
+    tex->setInternalFormatMode(osg::Texture2D::USE_IMAGE_DATA_FORMAT);
     tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
     tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-    attached_textures.push_back( tex );
-    mrt_camera->attach( osg::Camera::COLOR_BUFFER, tex );
+    mrt_camera->attach( osg::Camera::COLOR_BUFFER0, tex );
 
     // set RTT textures to quad
     osg::Geode* geode( new osg::Geode );
     geode->addDrawable( osg::createTexturedQuadGeometry(
                             osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
-    geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
+    geode->getOrCreateStateSet()->setTextureAttributeAndModes(0, tex);
     geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    //geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
     // configure postRenderCamera to draw fullscreen textured quad
     osg::Camera* post_render_camera( new osg::Camera );
     post_render_camera->setClearMask( 0 );
     post_render_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER, osg::Camera::FRAME_BUFFER );
     post_render_camera->setReferenceFrame( osg::Camera::ABSOLUTE_RF );
+    post_render_camera->setComputeNearFarMode( osg::Camera::DO_NOT_COMPUTE_NEAR_FAR );
     post_render_camera->setRenderOrder( osg::Camera::POST_RENDER );
+    post_render_camera->setDrawBuffer(GL_FRONT);
+    post_render_camera->setReadBuffer(GL_FRONT);
     post_render_camera->setViewMatrix( osg::Matrixd::identity() );
     post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
 
@@ -230,6 +282,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     // Create the viewer
     osgViewer::Viewer viewer;
     viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
+    viewer.setUpThreading();
     viewer.setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
 
     viewer.setCamera( mrt_camera.get() );
@@ -238,7 +291,6 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     // put our model in the center of our viewer
     viewer.setCameraManipulator(new osgGA::TrackballManipulator());
     double cam_center_z= (x_max-x_min)/2 + (y_max-y_min)/2 ;
-
 
     osg::Vec3d eyes(cam_center_x,
                     cam_center_y,
@@ -259,10 +311,11 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     image_bounds.yMin() = cam_center_y-height_meter/2;
     image_bounds.yMax() = cam_center_y+height_meter/2;
 
+    viewer.home();
+
     SnapGeotiffImage* final_draw_callback = new SnapGeotiffImage(_filename,_ref_lat_lon, image_bounds, _pixel_size, _parentWidget);
     mrt_camera->setFinalDrawCallback(final_draw_callback);
 
-    viewer.home();
     viewer.frame();
 
     bool status = final_draw_callback->status();
@@ -273,6 +326,39 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     //delete final_draw_callback;
 
     viewer.setSceneData(nullptr);
+
+    if(_disableTexture)
+    {
+        unsigned int mode = osg::StateAttribute::INHERIT|osg::StateAttribute::ON;
+        for( unsigned int ii=0; ii < 4; ii++ )
+        {
+            stateSet->setTextureMode( ii, GL_TEXTURE_1D, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_2D, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_3D, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_RECTANGLE, mode );
+            stateSet->setTextureMode( ii, GL_TEXTURE_CUBE_MAP, mode);
+        }
+    }
+
+    // restore
+    stateSet->setMode( GL_BLEND, blend);
+    // ??????
+    stateSet->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
+    if(alpha != 1)
+    {
+        // Add the possibility of modifying the transparence
+        material = new osg::Material;
+        // Put the 3D model totally opaque
+        material->setAlpha( osg::Material::FRONT, alpha);
+        stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
+
+        // Turn on blending
+        osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+        stateSet->setAttributeAndModes(bf);
+
+        stateSet->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+    }
 
     return status;
 }
