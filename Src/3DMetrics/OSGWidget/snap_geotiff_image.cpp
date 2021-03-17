@@ -209,7 +209,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
         }
     }
 
-    //    // get BLEND mode and alpha value
+    // get BLEND mode and alpha value
     osg::StateAttribute::GLModeValue blend = stateSet->getMode(GL_BLEND);
     stateSet->setMode( GL_BLEND, osg::StateAttribute::OFF);
     osg::StateAttribute* attr = stateSet->getAttribute(osg::StateAttribute::MATERIAL);
@@ -228,17 +228,19 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     traits->width = width_pixel;
     traits->height = height_pixel;
     traits->pbuffer = true;
-    traits->red = 8;
-    traits->green = 8;
-    traits->blue = 8;
-    traits->alpha = 8;
+//    traits->red = 8;
+//    traits->green = 8;
+//    traits->blue = 8;
+//    traits->alpha = 8;
+    traits->alpha = 1;
     //traits->depth = 32;
     traits->sharedContext = 0;
-    traits->doubleBuffer = false;
+//    traits->doubleBuffer = false;
     traits->readDISPLAY();
-    if(traits->displayNum < 0)
-        traits->displayNum  = 0;
-    traits->screenNum = 0;
+//    traits->setUndefinedScreenDetailsToDefaultScreen();
+//    if(traits->displayNum < 0)
+//        traits->displayNum  = 0;
+//    traits->screenNum = 0;
 
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 

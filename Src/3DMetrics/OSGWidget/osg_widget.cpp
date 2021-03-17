@@ -28,7 +28,7 @@
 
 #include <osgUtil/IntersectionVisitor>
 #include <osgUtil/PolytopeIntersector>
-//#include <osgUtil/Optimizer>
+#include <osgUtil/Optimizer>
 #include <osgUtil/Simplifier>
 // too slow
 //#include <osgUtil/DelaunayTriangulator>
@@ -661,6 +661,23 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     //    // optimize the scene graph, remove redundant nodes and state etc.
     //    osgUtil::Optimizer optimizer;
     //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+    osgUtil::Optimizer optimizer;
+    optimizer.optimize(matrix.get(),
+                       osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
+                       osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
+                       osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
+                       osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
+                       osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
+                       osgUtil::Optimizer::MERGE_GEODES |
+                       osgUtil::Optimizer::MERGE_GEOMETRY |
+                       osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
+                       osgUtil::Optimizer::SPATIALIZE_GROUPS |
+                       osgUtil::Optimizer::COPY_SHARED_NODES |
+                       osgUtil::Optimizer::TRISTRIP_GEOMETRY |
+                       osgUtil::Optimizer::INDEX_MESH |
+                       osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
+                       osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
+                       osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
     // compute z min/max of 3D model
     MinMaxComputationVisitor minmax;
@@ -899,7 +916,7 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
     m_modelsGroup->removeChild(_node.get());
 
     //    // optimize the scene graph, remove redundant nodes and state etc.
-    //    osgUtil::Optimizer optimizer;
+    //    osgUtil:: optimizer;
     //    optimizer.optimize(this->m_globalGroup.get());
 
     osgViewer::View *view = m_viewer->getView(0);
@@ -1716,45 +1733,45 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
     stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
 
-//    // test EDL
-//    osg::ref_ptr<osg::Image> image = new osg::Image();
-//    image->allocateImage(width(), height(), 1, GL_RGBA, GL_UNSIGNED_BYTE);
-//    osg::Vec4 color(0.5,0.6,0.7,1.0);
-//    for(int i=0; i<width(); i++)
-//    {
-//        for(int j=0; j<height(); j++)
-//        {
-//            image->setColor(color,i,j);
-//        }
-//    }
-//    /*        osg::ref_ptr<osg::Texture2D> tex(new osg::Texture2D());               // (1)
+    //    // test EDL
+    //    osg::ref_ptr<osg::Image> image = new osg::Image();
+    //    image->allocateImage(width(), height(), 1, GL_RGBA, GL_UNSIGNED_BYTE);
+    //    osg::Vec4 color(0.5,0.6,0.7,1.0);
+    //    for(int i=0; i<width(); i++)
+    //    {
+    //        for(int j=0; j<height(); j++)
+    //        {
+    //            image->setColor(color,i,j);
+    //        }
+    //    }
+    //    /*        osg::ref_ptr<osg::Texture2D> tex(new osg::Texture2D());               // (1)
 
-//          tex->setImage(image);
-//          stateSet->setTextureAttributeAndModes(0, tex);
-//          osg::ref_ptr<osg::TexGen> texGen(new osg::TexGen());                // (2)
-//            texGen->setPlane(osg::TexGen::S, osg::Plane(0.075, 0.0, 0.0, 0.5)); // (2)
-//            texGen->setPlane(osg::TexGen::T, osg::Plane(0.0, 0.035, 0.0, 0.3)); // (2)
-//            stateSet->setTextureAttributeAndModes(0, texGen);     */                    // (2)
+    //          tex->setImage(image);
+    //          stateSet->setTextureAttributeAndModes(0, tex);
+    //          osg::ref_ptr<osg::TexGen> texGen(new osg::TexGen());                // (2)
+    //            texGen->setPlane(osg::TexGen::S, osg::Plane(0.075, 0.0, 0.0, 0.5)); // (2)
+    //            texGen->setPlane(osg::TexGen::T, osg::Plane(0.0, 0.035, 0.0, 0.3)); // (2)
+    //            stateSet->setTextureAttributeAndModes(0, texGen);     */                    // (2)
 
-//    stateSet->addUniform( new osg::Uniform( "s1_color", 1));
-//    stateSet->addUniform( new osg::Uniform( "s2_depth", 0));
-//    stateSet->addUniform( new osg::Uniform( "Pix_scale", 1));
-//    stateSet->addUniform( new osg::Uniform( "Exp_scale", 1.0f));
+    //    stateSet->addUniform( new osg::Uniform( "s1_color", 1));
+    //    stateSet->addUniform( new osg::Uniform( "s2_depth", 0));
+    //    stateSet->addUniform( new osg::Uniform( "Pix_scale", 1));
+    //    stateSet->addUniform( new osg::Uniform( "Exp_scale", 1.0f));
 
-//    osg::Uniform *neighbors = new osg::Uniform(osg::Uniform::FLOAT_VEC2,"Neigh_pos_2D", 8);
-//    for (unsigned c = 0; c < 8; c++)
-//    {
-//        osg::Vec2 neib;
+    //    osg::Uniform *neighbors = new osg::Uniform(osg::Uniform::FLOAT_VEC2,"Neigh_pos_2D", 8);
+    //    for (unsigned c = 0; c < 8; c++)
+    //    {
+    //        osg::Vec2 neib;
 
-//        neib.x() = std::cos(c * M_PI / 4.0);
-//        neib.y() = std::sin(c * M_PI / 4.0);
-//        neighbors->setElement(c,neib);
-//    }
-//    stateSet->addUniform( neighbors);
-//    stateSet->addUniform( new osg::Uniform( "Sx", (float)width()));
-//    stateSet->addUniform( new osg::Uniform( "Sy", (float)height()));
-//    stateSet->addUniform( new osg::Uniform( "Light_dir", osg::Vec3f(0.0f,1.0f,0.0f)));
-//    // end test
+    //        neib.x() = std::cos(c * M_PI / 4.0);
+    //        neib.y() = std::sin(c * M_PI / 4.0);
+    //        neighbors->setElement(c,neib);
+    //    }
+    //    stateSet->addUniform( neighbors);
+    //    stateSet->addUniform( new osg::Uniform( "Sx", (float)width()));
+    //    stateSet->addUniform( new osg::Uniform( "Sy", (float)height()));
+    //    stateSet->addUniform( new osg::Uniform( "Light_dir", osg::Vec3f(0.0f,1.0f,0.0f)));
+    //    // end test
 
     bool lighton = (m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->getMode(GL_LIGHTING) == osg::StateAttribute::OFF);
 

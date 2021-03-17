@@ -181,15 +181,6 @@ bool ElevationMapCreator::process(osg::ref_ptr<osg::Node> _node, const std::stri
     viewer.setSceneData( root.get() );
     viewer.realize();
 
-//    osgViewer::Viewer::Windows ws;
-//    // Get the window
-//    viewer.getWindows(ws);
-//    if (!ws.empty())
-//    {
-//        osgViewer::Viewer::Windows::iterator iter = ws.begin();
-//        (*iter)->setWindowRectangle(0, 0, m_width_pixel, m_height_pixel);
-//    }
-
     // setup the callback
     osg::BoundingBox image_bounds;
     image_bounds.xMin() = cam_center_x-width_meter/2;
