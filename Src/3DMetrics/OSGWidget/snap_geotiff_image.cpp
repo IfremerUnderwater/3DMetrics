@@ -23,6 +23,7 @@
 #include <QObject>
 #include <QProgressDialog>
 #include <QApplication>
+#include <QMessageBox>
 
 SnapGeotiffImage::SnapGeotiffImage(const std::string &_filename, QPointF &_ref_lat_lon, osg::BoundingBox _box, double _pixel_size, QWidget *_parentWidget) :
     m_filename( _filename ),
@@ -180,6 +181,14 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     if( width_pixel > maxTextureSize ||  height_pixel > maxTextureSize)
     {
         // too big to process
+        QString message = QObject::tr("Size Error:\n");
+        if(width_pixel > maxTextureSize )
+            message += QObject::tr("Width ") + QString::number(width_pixel) + " > " + QString::number(maxTextureSize) + "\n";
+        if(height_pixel > maxTextureSize )
+            message += QObject::tr("Height ") + QString::number(height_pixel) + " > " + QString::number(maxTextureSize) + "\n";
+        message +=  QObject::tr("Pixel Size = ") + QString::number(_pixel_size) + " too small";
+        QMessageBox::critical(_parentWidget, QObject::tr("Error : GeoTIFF Creation"), message);
+
         return false;
     }
 
@@ -223,7 +232,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     traits->green = 8;
     traits->blue = 8;
     traits->alpha = 8;
-    traits->depth = 32;
+    //traits->depth = 32;
     traits->sharedContext = 0;
     traits->doubleBuffer = false;
     traits->readDISPLAY();
@@ -254,7 +263,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     tex->setInternalFormatMode(osg::Texture2D::USE_IMAGE_DATA_FORMAT);
     tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
     tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-    mrt_camera->attach( osg::Camera::COLOR_BUFFER0, tex );
+    mrt_camera->attach( osg::Camera::COLOR_BUFFER, tex );
 
     // set RTT textures to quad
     osg::Geode* geode( new osg::Geode );

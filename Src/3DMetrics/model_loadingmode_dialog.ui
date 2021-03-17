@@ -13,7 +13,7 @@
   <property name="windowTitle">
    <string>Model Loading Mode Dialog</string>
   </property>
-  <widget class="QWidget" name="layoutWidget">
+  <widget class="QWidget" name="layoutWidget1">
    <property name="geometry">
     <rect>
      <x>10</x>
@@ -125,7 +125,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="layoutWidget">
+  <widget class="QWidget" name="layoutWidget2">
    <property name="geometry">
     <rect>
      <x>320</x>
@@ -195,7 +195,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="layoutWidget">
+  <widget class="QWidget" name="layoutWidget3">
    <property name="geometry">
     <rect>
      <x>160</x>

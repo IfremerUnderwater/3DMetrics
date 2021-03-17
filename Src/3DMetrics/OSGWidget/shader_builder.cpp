@@ -82,6 +82,17 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
             "   gl_Position = gl_ModelViewProjectionMatrix*v;"
             "}";
 
+    const std::string vertexSourceTextureShader =
+    "#version 330\n"
+    "layout (location = 0) in vec3 Position;"
+    "layout (location = 1) in vec2 TexCoord;"
+    "uniform mat4 gWVP;"
+    "out vec2 TexCoord0;"
+    "void main()"
+    "{"
+    "    gl_Position = gWVP * vec4(Position, 1.0);"
+    "    TexCoord0 = TexCoord;"
+    "};";
 
     std::string vertexSource;
     switch(_shader)
@@ -102,6 +113,10 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
 
     case EyeDomeLighting:
         vertexSource = vertexSourceEyeDomeLighting;
+        break;
+
+    case TextureShader:
+        vertexSource = vertexSourceTextureShader;
         break;
     }
 
@@ -244,6 +259,15 @@ osg::Shader *ShaderBuilder::fragmentShader(const ShaderBuilder::ShaderType _shad
             "   }"
             "}";
 
+    const std::string fragmentSourceTextureShader =
+    "in vec2 TexCoord0;"
+//    "out vec4 FragColor;"
+    "uniform sampler2D gSampler;"
+    "void main()"
+    "{"
+    "    gl_FragColor = texture2D(gSampler, TexCoord0.st);"
+    "};";
+
 
     std::string fragmentSource;
     switch(_shader)
@@ -262,6 +286,10 @@ osg::Shader *ShaderBuilder::fragmentShader(const ShaderBuilder::ShaderType _shad
 
     case EyeDomeLighting:
         fragmentSource = fragmentSourceEyeDomeLighting;
+        break;
+
+    case TextureShader:
+        fragmentSource = fragmentSourceTextureShader;
         break;
     }
 

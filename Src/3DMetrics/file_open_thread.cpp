@@ -146,6 +146,7 @@ void FileOpenThread::setTileFolderName(const QString &tileFolderName)
 {
     m_tileFolderName = tileFolderName;
 }
+
 float FileOpenThread::getThreshold1() const
 {
     return m_threshold1;
@@ -155,6 +156,7 @@ void FileOpenThread::setThreshold1(float threshold1)
 {
     m_threshold1 = threshold1;
 }
+
 float FileOpenThread::getThreshold2() const
 {
     return m_threshold2;
@@ -164,6 +166,7 @@ void FileOpenThread::setThreshold2(float threshold2)
 {
     m_threshold2 = threshold2;
 }
+
 int FileOpenThread::getNTilesX() const
 {
     return m_nTilesX;
@@ -173,6 +176,7 @@ void FileOpenThread::setNTilesX(int nTilesX)
 {
     m_nTilesX = nTilesX;
 }
+
 int FileOpenThread::getNTilesY() const
 {
     return m_nTilesY;
@@ -182,11 +186,3 @@ void FileOpenThread::setNTilesY(int nTilesY)
 {
     m_nTilesY = nTilesY;
 }
-
-
-
-
-
-
-
-
