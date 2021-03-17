@@ -12,7 +12,7 @@
 #include <osgDB/ReadFile>
 #include <osg/LOD>
 #include <osgUtil/Simplifier>
-#include <osgUtil/Optimizer>
+//#include <osgUtil/Optimizer>
 #include <osgUtil/SmoothingVisitor>
 
 #if defined(_WIN32) || defined(__APPLE__)

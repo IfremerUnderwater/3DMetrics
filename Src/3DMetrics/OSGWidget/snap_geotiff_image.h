@@ -22,7 +22,7 @@ public:
 
     bool status() const { return m_status; }
 
-    static bool process(osg::ref_ptr<osg::Node> _node, const std::string& _filename, QPointF &_ref_lat_lon, double _pixel_size, QWidget *_parentWidget);
+    static bool process(osg::ref_ptr<osg::Node> _node, const std::string& _filename, QPointF &_ref_lat_lon, double _pixel_size, QWidget *_parentWidget, bool _disableTexture = false);
 
 private:
     std::string m_filename;
@@ -32,6 +32,7 @@ private:
     double m_pixel_size;
     QWidget *m_parentWidget;
     bool m_status;
+    mutable OpenThreads::Mutex m_mutex;
 };
 
 #endif // SNAPGEOTIFFIMAGE_H

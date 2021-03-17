@@ -36,22 +36,22 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
 
     // without shading
     const std::string vertexSourceNoShader =
-            "#version 330 compatibility \n"
+            "#version 130 \n"
             "uniform float alpha;"
             "out vec4 fcolor;"
             "void main(void)"
             "{"
             "   vec4 v = vec4(gl_Vertex);"
             "   vec4 color = gl_Color;"
-            "   color.a = alpha;"
-            "   fcolor = color"
+            "   fcolor = vec4( color.x, color.y, color.z, alpha);"
             "   gl_Position = gl_ModelViewProjectionMatrix*v;"
+            "   gl_TexCoord[0]	=	gl_MultiTexCoord0;"
             "}";
 
 
     // gray shading
     const std::string vertexSourceGrayShader =
-            "#version 330 compatibility \n"
+            "#version 130\n"
             "uniform float alpha;"
             "uniform float zmin;"
             "uniform float deltaz;"
@@ -64,14 +64,22 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
             "   if(val > 1.0) val = 1.0;"
             "   fcolor = vec4( val, val, val, alpha);"
             "   gl_Position = gl_ModelViewProjectionMatrix*v;"
+            "   gl_TexCoord[0]	=	gl_MultiTexCoord0;"
             "}";
 
     // EyeDomeLighting shading
     const std::string vertexSourceEyeDomeLighting =
+            "#version 130\n"
+            "uniform float alpha;"
+            "out vec4 fcolor;"
             "void main(void)"
             "{"
             "   gl_TexCoord[0]	=	gl_MultiTexCoord0;"
-            "   gl_Position = ftransform();"
+            "   vec4 v = vec4(gl_Vertex);"
+            "   vec4 color = gl_Color;"
+//            "   color.a = alpha;"
+            "   fcolor = vec4( color.x, color.y, color.z, alpha);"
+            "   gl_Position = gl_ModelViewProjectionMatrix*v;"
             "}";
 
 

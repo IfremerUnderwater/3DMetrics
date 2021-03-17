@@ -2,6 +2,7 @@
 #include <osg/Geode>
 #include <osg/Geometry>
 #include <osgUtil/SmoothingVisitor>
+#include <osg/StateSet>
 
 ClipModelVisitor::ClipModelVisitor(): osg::NodeVisitor(TRAVERSE_ALL_CHILDREN), m_margin(0)
 {
@@ -20,11 +21,15 @@ ClipModelVisitor::~ClipModelVisitor()
 
 void ClipModelVisitor::apply(osg::Node &node)
 {
+    //if (node.getStateSet()) apply(*node.getStateSet());
+
     traverse(node);
 }
 
 void ClipModelVisitor::apply(osg::Geode &geode)
 {
+    //if (geode.getStateSet()) apply(*geode.getStateSet());
+
     if(!m_boundingBox.valid())
         return;
 
@@ -39,6 +44,22 @@ void ClipModelVisitor::apply(osg::Geode &geode)
     unsigned int num_drawables = geode.getNumDrawables();
     for( unsigned int i = 0; i < num_drawables; i++ )
     {
+        TextureSet ts;
+        osg::StateSet *stateSet = geode.getDrawable(i)->getStateSet();
+        if (stateSet != nullptr)
+        {
+            // search for the existence of any texture object attributes
+            for(unsigned int i=0;i<stateSet->getTextureAttributeList().size();++i)
+            {
+                osg::Texture* texture = dynamic_cast<osg::Texture*>(stateSet->getTextureAttribute(i,osg::StateAttribute::TEXTURE));
+                if (texture)
+                {
+                    ts.insert(texture);
+                }
+            }
+        }
+
+
         // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
         // every little saving counts
         osg::Geometry *current_geometry = geode.getDrawable(i)->asGeometry();
@@ -121,7 +142,7 @@ void ClipModelVisitor::apply(osg::Geode &geode)
                 if(outarray->size() > 0)
                 {
 
-                    osg::ref_ptr<osg::Geode> geode = new osg::Geode;
+                    osg::ref_ptr<osg::Geode> newgeode = new osg::Geode;
                     osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
 
                     //add triangles
@@ -132,14 +153,57 @@ void ClipModelVisitor::apply(osg::Geode &geode)
                     geometry->setColorArray(colors, osg::Array::BIND_OVERALL);
                     geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outarray->size()));
 
-                    geode->addDrawable(geometry);
+                    newgeode->addDrawable(geometry);
 
                     osgUtil::SmoothingVisitor sv;
-                    geode->accept(sv);
+                    newgeode->accept(sv);
 
-                    (m_clippedNode->asGroup())->addChild(geode);
+//                    int n = geode.getNumChildren();
+//                    osg::StateSet *ss = geode.getOrCreateStateSet();
+//                    osg::StateAttribute *attr = ss->getTextureAttribute(0,osg::StateAttribute::TEXTURE);
+//                    osg::StateAttribute *attr2 = ss->getTextureAttribute(0,osg::StateAttribute::TEXGEN);
+//                    osg::StateAttribute *attr3 = ss->getTextureAttribute(0,osg::StateAttribute::TEXMAT);
+//                    if(attr != nullptr)
+//                        newgeode->getOrCreateStateSet()->setTextureAttribute(0,attr,osg::StateAttribute::ON);
+                    if(ts.size() > 0)
+                    {
+                        osg::StateSet *ss = newgeode->getOrCreateStateSet();
+                        //osg::StateSet::TextureAttributeList ta;
+                        TextureSet::iterator it = ts.begin();
+                        while(it != ts.end())
+                        {
+                            osg::Texture *texture = *it;
+                            ss->setAttributeAndModes(texture);
+                            //ta.push_back(texture);
+                            ++it;
+                        }
+                        //ss->setTextureAttributeList(ta);
+                    }
+                    (m_clippedNode->asGroup())->addChild(newgeode);
                 }
             }
+        }
+//        else
+//        {
+//            osg::Drawable *drawable =geode.getDrawable(i);
+//            osg::BoundingBox bb = drawable->getBoundingBox();
+//            if(bb.intersects(m_boundingBox))
+//            {
+//                (m_clippedNode->asGroup())->addChild(drawable);
+//            }
+//        }
+    }
+}
+
+void ClipModelVisitor::apply(osg::StateSet &stateset)
+{
+    // search for the existence of any texture object attributes
+    for(unsigned int i=0;i<stateset.getTextureAttributeList().size();++i)
+    {
+        osg::Texture* texture = dynamic_cast<osg::Texture*>(stateset.getTextureAttribute(i,osg::StateAttribute::TEXTURE));
+        if (texture)
+        {
+            m_textureSet.insert(texture);
         }
     }
 }

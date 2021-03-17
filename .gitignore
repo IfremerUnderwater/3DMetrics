@@ -1,4 +1,5 @@
 /Build*
 /Src-build/
 /Run/
+/test-source-code/
 CMakeLists.txt.user

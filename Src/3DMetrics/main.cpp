@@ -1,6 +1,7 @@
 #include <QApplication>
 #include <QtWidgets>
 #include "tdmgui.h"
+#include <QLocale>
 
 // GDAL
 #if defined(_WIN32) || defined(__APPLE__)
@@ -20,6 +21,9 @@ int main(int argc, char *argv[])
 
     // important for reading text format model files
     setlocale(LC_ALL, "C");
+
+    QLocale curLocale(QLocale("C"));
+    QLocale::setDefault(curLocale);
 
     // GDAL
     GDALAllRegister();
