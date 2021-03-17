@@ -1161,18 +1161,19 @@ bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, st
                                      path,
                                      new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
             }
-
         }
     }
+
+    return true;
 }
 
 bool GridFileProcessor::createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD, float _threshold1, float _threshold2)
 {
-
     if(_nTilesX < 1 || _nTilesY < 1)
     {
         return false;
     }
+
     // get bounding box
     BoxVisitor bv;
     _node->accept(bv);
@@ -1254,8 +1255,9 @@ bool GridFileProcessor::createLODTilesFromNodeGlobalSimplify(osg::ref_ptr<osg::N
                                      path,
                                      new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
             }
-
         }
     }
+
+    return true;
 }
 

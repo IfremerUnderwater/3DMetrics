@@ -19,7 +19,8 @@ add_executable(3DMetrics
     OSGWidget/lod_tools.cpp
     OSGWidget/object_meansize_visitor.cpp
     OSGWidget/clip_model_visitor.cpp
-	OSGWidget/smartlod.cpp
+    OSGWidget/smartlod.cpp
+    OSGWidget/shader_builder.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp

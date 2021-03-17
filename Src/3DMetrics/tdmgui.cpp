@@ -3523,9 +3523,8 @@ void TDMGui::slot_saveOrthoMap()
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
+//        osg::ref_ptr<osg::Node> node = layer_data.node();
         osg::Node* const node = (layer_data.node().get());
-
-
         // SCREEN
 
         // Collect the number of pixel that the user want
@@ -3533,7 +3532,8 @@ void TDMGui::slot_saveOrthoMap()
         double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1 , 0, 99999,4, &ok);
         if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,OSGWidget::OrthoMap);
+        //bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,OSGWidget::OrthoMap);
+        bool save_image = ui->display_widget->generateGeoOrthoTiff(node,name_file_orhto2D,pixels);
         if (save_image) QMessageBox::information(this,"Done","Your orthographic image have been generated");
         else
         {
@@ -3577,7 +3577,7 @@ void TDMGui::slot_saveAltMap()
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        osg::Node* const node = (layer_data.node().get());
+        osg::ref_ptr<osg::Node> node = layer_data.node();
 
         // SCREEN
 
@@ -3586,7 +3586,8 @@ void TDMGui::slot_saveAltMap()
         double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1, 0, 99999,4, &ok);
         if( !ok ) return;
 
-        bool save_image = ui->display_widget->generateGeoTiff(node,name_file_alt,pixels, OSGWidget::AltMap);
+        bool save_image = ui->display_widget->generateGeoAltitudeTiff(node,name_file_alt,pixels);
+        //bool save_image = ui->display_widget->generateGeoTiff(node,name_file_alt,pixels, OSGWidget::AltMap);
         if (save_image) QMessageBox::information(this,"Done","Your altitude image have been generated");
         else
         {

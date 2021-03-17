@@ -18,6 +18,8 @@
 #include <osg/LOD>
 //#include <osg/PagedLOD>
 
+#include <osg/TexGen>
+
 #include <osgDB/ReadFile>
 #include <osgDB/WriteFile>
 
@@ -33,6 +35,7 @@
 
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
+#include <osgViewer/config/SingleWindow>
 #include <osgGA/GUIEventAdapter>
 
 #include <cassert>
@@ -61,6 +64,7 @@
 #include "minmax_computation_visitor.h"
 #include "geometry_type_count_visitor.h"
 #include "shader_color.h"
+#include "shader_builder.h"
 
 #include "smartlod.h"
 #include "grid_file_processor.h"
@@ -68,17 +72,6 @@
 
 #include "snap_geotiff_image.h"
 #include "elevation_map_creator.h"
-
-//#ifdef _WIN32
-//#include "gdal_priv.h"
-//#include "cpl_conv.h"
-//#include "ogr_spatialref.h"
-//#else
-//#include "gdal/gdal_priv.h"
-//#include "gdal/cpl_conv.h"
-//#include "gdal/ogr_spatialref.h"
-//#endif
-
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
@@ -759,6 +752,8 @@ bool OSGWidget::createLODFiles(osg::ref_ptr<osg::Node> _node, std::string _scene
                              path,
                              new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
     }
+
+    return true;
 }
 
 ///
@@ -875,7 +870,7 @@ void OSGWidget::setCameraOnNode(osg::ref_ptr<osg::Node> _node)
 
     osg::Vec3d eye(cam_center_x,
                    cam_center_y,
-                   (box.zMin() + cam_center_z)*m_zScale);
+                   (box.zMin()*m_zScale + cam_center_z)); //*m_zScale);
     osg::Vec3d target( cam_center_x,
                        cam_center_y,
                        box.zMin()*m_zScale);
@@ -912,24 +907,6 @@ bool OSGWidget::removeNodeFromScene(osg::ref_ptr<osg::Node> _node)
     return true;
 }
 
-//bool OSGWidget::setSceneData(osg::ref_ptr<osg::Node> _sceneData)
-//{
-//    if (!_sceneData)
-//    {
-//        std::cout << "No data loaded" << std::endl;
-//        return false;
-//    }
-
-//    m_models.push_back(_sceneData);
-
-
-//    osgViewer::View *view = m_viewer->getView(0);
-
-//    view->setSceneData( m_models.back().get() );
-
-
-//    return true;
-//}
 
 void OSGWidget::setClearColor(double _r, double _g, double _b, double _alpha)
 {
@@ -1554,6 +1531,27 @@ void OSGWidget::cancelTool(QString &_message)
     emit signal_cancelTool(_message);
 }
 
+bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size)
+{
+    std::string fileName = _filename.toStdString();
+    ElevationMapCreator emc(m_ref_lat_lon, _pixel_size);
+    bool status = emc.process(_node,fileName,this);
+    return status;
+}
+
+bool OSGWidget::generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size)
+{
+    bool hasShader = isEnabledShaderOnNode(_node);
+    enableShaderOnNode(_node, false);
+
+    std::string fileName = _filename.toStdString();
+    bool status = SnapGeotiffImage::process(_node,fileName,m_ref_lat_lon,_pixel_size,this);
+
+    enableShaderOnNode(_node, hasShader);
+
+    return status;
+}
+
 // convert x, y, z => lat, lon & alt
 // if(m_ref_alt == INVALID_VALUE) do nothing
 void OSGWidget::xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, double &_lon, double &_alt)
@@ -1562,161 +1560,6 @@ void OSGWidget::xyzToLatLonAlt(double _x, double _y, double _z, double &_lat, do
         return;
 
     m_ltp_proj.Reverse(_x, _y, _z, _lat, _lon, _alt);
-}
-
-
-bool OSGWidget::generateGeoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size, OSGWidget::map_type _map_type)
-{
-    // get the translation in the  node
-    osg::MatrixTransform *matrix_transform = dynamic_cast <osg::MatrixTransform*> (_node.get());
-    osg::Vec3d translation = matrix_transform->getMatrix().getTrans();
-
-    BoxVisitor boxVisitor;
-    _node->accept(boxVisitor);
-
-    osg::BoundingBox box = boxVisitor.getBoundingBox();
-
-    // Create the edge of our picture
-    // Set graphics contexts
-    double x_max = box.xMax();
-    double x_min = box.xMin();
-    double y_max = box.yMax();
-    double y_min = box.yMin();
-    int width_pixel = ceil((x_max-x_min)/_pixel_size);
-    int height_pixel = ceil((y_max-y_min)/_pixel_size);
-    double width_meter = _pixel_size*width_pixel;
-    double height_meter = _pixel_size*height_pixel;
-    double cam_center_x = (x_max+x_min)/2 +  translation.x();
-    double cam_center_y = (y_max+y_min)/2 +  translation.y();
-
-
-    osg::ref_ptr<osg::GraphicsContext::Traits> traits = new osg::GraphicsContext::Traits;
-    traits->x = 0;
-    traits->y = 0;
-    traits->width = width_pixel;
-    traits->height = height_pixel;
-    traits->pbuffer = true;
-    traits->alpha =  1;
-    osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
-
-    osg::ref_ptr< osg::Group > root( new osg::Group );
-    root->addChild( _node );
-
-
-    // setup MRT camera
-    std::vector<osg::Texture2D*> attached_textures;
-    osg::ref_ptr<osg::Camera> mrt_camera = new osg::Camera;
-    mrt_camera->setGraphicsContext(gc);
-    mrt_camera->setClearMask( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-    mrt_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER_OBJECT );
-    mrt_camera->setRenderOrder( osg::Camera::PRE_RENDER );
-    mrt_camera->setViewport( 0, 0, width_pixel, height_pixel );
-    mrt_camera->setClearColor(osg::Vec4(0., 0., 0., 0.));
-
-    // Create our Texture
-    osg::Texture2D* tex = new osg::Texture2D;
-    tex->setTextureSize( width_pixel, height_pixel );
-    tex->setSourceType( GL_UNSIGNED_BYTE );
-    tex->setSourceFormat( GL_RGBA );
-    tex->setInternalFormat( GL_RGBA32F_ARB );
-    tex->setResizeNonPowerOfTwoHint( false );
-    tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
-    tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-    attached_textures.push_back( tex );
-    mrt_camera->attach( osg::Camera::COLOR_BUFFER, tex );
-
-    // set RTT textures to quad
-    osg::Geode* geode( new osg::Geode );
-    geode->addDrawable( osg::createTexturedQuadGeometry(
-                            osg::Vec3(-1,-1,0), osg::Vec3(2.0,0.0,0.0), osg::Vec3(0.0,2.0,0.0)) );
-    geode->getOrCreateStateSet()->setTextureAttributeAndModes( 0, attached_textures[0] );
-    geode->getOrCreateStateSet()->setMode( GL_LIGHTING, osg::StateAttribute::OFF );
-    //geode->getOrCreateStateSet()->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
-
-    // configure postRenderCamera to draw fullscreen textured quad
-    osg::Camera* post_render_camera( new osg::Camera );
-    post_render_camera->setClearMask( 0 );
-    post_render_camera->setRenderTargetImplementation( osg::Camera::FRAME_BUFFER, osg::Camera::FRAME_BUFFER );
-    post_render_camera->setReferenceFrame( osg::Camera::ABSOLUTE_RF );
-    post_render_camera->setRenderOrder( osg::Camera::POST_RENDER );
-    post_render_camera->setViewMatrix( osg::Matrixd::identity() );
-    post_render_camera->setProjectionMatrix( osg::Matrixd::identity() );
-
-    if ( _map_type == map_type::OrthoMap ) post_render_camera->addChild( geode );
-
-    root->addChild(post_render_camera);
-
-    // Create the viewer
-    osgViewer::Viewer viewer;
-    viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
-
-    viewer.setCamera( mrt_camera.get() );
-    viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
-
-    // put our model in the center of our viewer
-    viewer.setCameraManipulator(new osgGA::TrackballManipulator());
-    double cam_center_z= (x_max-x_min)/2;
-
-    osg::Vec3d eyes(cam_center_x,
-                    cam_center_y,
-                    box.zMin() + cam_center_z);
-    osg::Vec3d center(cam_center_x,
-                      cam_center_y,
-                      box.zMin());
-    osg::Vec3d normal(0,0,-1);
-    viewer.getCameraManipulator()->setHomePosition(eyes,center,normal);
-
-    viewer.setSceneData( root.get() );
-    viewer.realize();
-
-    // setup the callback
-    osg::BoundingBox image_bounds;
-    image_bounds.xMin() = cam_center_x-width_meter/2;
-    image_bounds.xMax() = cam_center_x+width_meter/2;
-    image_bounds.yMin() = cam_center_y-height_meter/2;
-    image_bounds.yMax() = cam_center_y+height_meter/2;
-
-    std::string screen_capture_filename = _filename.toStdString();
-    bool hasShader = isEnabledShaderOnNode(_node);
-    enableShaderOnNode(_node, false);
-
-    SnapGeotiffImage* final_draw_callback = nullptr;
-    bool status = true;
-
-    if ( _map_type == map_type::OrthoMap )
-    {
-        final_draw_callback = new SnapGeotiffImage(viewer.getCamera()->getGraphicsContext(),screen_capture_filename,m_ref_lat_lon, image_bounds,_pixel_size, this);
-        mrt_camera->setFinalDrawCallback(final_draw_callback);
-    }
-
-
-    viewer.home();
-    viewer.frame();
-
-    if(final_draw_callback != nullptr)
-    {
-        status = final_draw_callback->status();
-
-        mrt_camera->removeFinalDrawCallback(final_draw_callback);
-
-        // TODO : causes SEGV , Ugly must find a solution
-        //delete final_draw_callback;
-    }
-
-
-    if ( _map_type == map_type::AltMap )
-    {
-        ElevationMapCreator emc(screen_capture_filename,m_ref_lat_lon, image_bounds,
-                                _pixel_size, width_pixel, height_pixel);
-
-        status = emc.process(viewer, this);
-    }
-
-    enableShaderOnNode(_node, hasShader);
-
-    return status;
-
-
 }
 
 void OSGWidget::enableLight(bool _state)
@@ -1776,7 +1619,6 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
             // Put the 3D model totally opaque
             material->setAlpha( osg::Material::FRONT, _transparency_value);
             state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
-
         }
 
         // Changes the transparency of the node
@@ -1858,107 +1700,55 @@ void OSGWidget::setZScale(double _newValue)
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )
 {  
-    const std::string vertexSourceBegin =
-            "#version 130 \n"
-            "uniform float zmin;"
-            "uniform float deltaz;"
-            "uniform float alpha;"
-            "uniform float pointsize;"
-
-            "out vec3 vertex_light_position;"
-            "out vec3 vertex_light_half_vector;"
-            "out vec3 vertex_normal;"
-            "out vec4 fcolor;";
-
-
-
-    const std::string vertexSourceEnd =
-            "void main(void)"
-            "{"
-            // Calculate the normal value for this vertex, in world coordinates (multiply by gl_NormalMatrix)
-            "    vertex_normal = normalize(gl_NormalMatrix * gl_Normal);"
-            // Calculate the light position for this vertex
-            "    vertex_light_position = normalize(gl_LightSource[0].position.xyz);"
-
-            // Calculate the light's half vector
-            "    vertex_light_half_vector = normalize(gl_LightSource[0].halfVector.xyz);"
-
-            "    vec4 v = vec4(gl_Vertex);"
-            "    float val = (v.z-zmin) / deltaz;"
-            ""
-            "    vec3 RGB = colorPalette(val);"
-            "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
-            "    gl_Position = gl_ModelViewProjectionMatrix*v;"
-            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
-            "}";
-
-    std::string vertexSource = vertexSourceBegin;
-    vertexSource += ShaderColor::shaderSource(m_colorPalette);
-    vertexSource += vertexSourceEnd;
-
-    osg::Shader* vShader = new osg::Shader( osg::Shader::VERTEX, vertexSource );
-
-    // without shading
-    //    const std::string fragmentSourceOld =
-    //            "#version 330 compatibility \n"
-    //            "in vec4 fcolor;"
-    //            "void main()"
-    //            "{"
-    //            "   gl_FragColor = fcolor;"
-    //            "}";
-
-
-    const std::string fragmentSource =
-            "#version 130 \n"
-            "uniform bool hasmesh;"
-            "uniform bool lighton;"
-
-            "in vec4 fcolor;"
-            "in vec3 vertex_light_position;"
-            "in vec3 vertex_light_half_vector;"
-            "in vec3 vertex_normal;"
-
-            "void main() {"
-            "   vec4 color = fcolor;"
-            "   if(!hasmesh || lighton)"
-            "   {"
-            "      color = fcolor;"
-            "   }"
-            "   else"
-            "   {"
-            // Calculate the ambient term
-            "      vec4 ambient_color = gl_FrontMaterial.ambient * gl_LightSource[0].ambient + gl_LightModel.ambient * gl_FrontMaterial.ambient;"
-
-            // Calculate the diffuse term
-            "      vec4 diffuse_color = gl_FrontMaterial.diffuse * gl_LightSource[0].diffuse;"
-
-            // Calculate the specular value
-            "      vec4 specular_color = gl_FrontMaterial.specular * gl_LightSource[0].specular * pow(max(dot(vertex_normal, vertex_light_half_vector), 0.0) , gl_FrontMaterial.shininess);"
-
-            // Set the diffuse value (darkness). This is done with a dot product between the normal and the light
-            // and the maths behind it is explained in the maths section of the site.
-            "      float diffuse_value = max(dot(vertex_normal, vertex_light_position), 0.0);"
-
-            // Set the output color of our current pixel
-            "      vec4 material_color = ambient_color + diffuse_color * diffuse_value + specular_color;"
-
-            "      color.r = material_color.r * fcolor.r;"
-            "      color.g = material_color.g * fcolor.g;"
-            "      color.b = material_color.b * fcolor.b;"
-            "   }"
-            "   gl_FragColor = color;"
-            "}";
-
-    osg::Shader* fShader = new osg::Shader( osg::Shader::FRAGMENT, fragmentSource );
-
     osg::Program* program = new osg::Program;
     program->setName("3dMetricsShader");
-    program->addShader( fShader );
-    program->addShader( vShader );
+    program->addShader( ShaderBuilder::fragmentShader(ShaderBuilder::Standard) );
+    program->addShader( ShaderBuilder::vertexShader(ShaderBuilder::Standard, m_colorPalette) );
+
     stateSet->setAttribute( program, osg::StateAttribute::ON );
 
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
     stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
+
+    //    // test EDL
+    //    osg::ref_ptr<osg::Image> image = new osg::Image();
+    //    image->allocateImage(width(), height(), 1, GL_RGBA, GL_UNSIGNED_BYTE);
+    //    osg::Vec4 color(0.5,0.6,0.7,1.0);
+    //    for(int i=0; i<width(); i++)
+    //    {
+    //        for(int j=0; j<height(); j++)
+    //        {
+    //            image->setColor(color,i,j);
+    //        }
+    //    }
+    //    osg::ref_ptr<osg::Texture2D> tex(new osg::Texture2D());               // (1)
+
+    //      tex->setImage(image);
+    //      stateSet->setTextureAttributeAndModes(0, tex);
+    //      osg::ref_ptr<osg::TexGen> texGen(new osg::TexGen());                // (2)
+    //        texGen->setPlane(osg::TexGen::S, osg::Plane(0.075, 0.0, 0.0, 0.5)); // (2)
+    //        texGen->setPlane(osg::TexGen::T, osg::Plane(0.0, 0.035, 0.0, 0.3)); // (2)
+    //        stateSet->setTextureAttributeAndModes(0, texGen);                         // (2)
+
+    //    stateSet->addUniform( new osg::Uniform( "s1_color", 1));
+    //    stateSet->addUniform( new osg::Uniform( "s2_depth", 0));
+    //    stateSet->addUniform( new osg::Uniform( "Pix_scale", 1));
+    //    stateSet->addUniform( new osg::Uniform( "Exp_scale", 1.0f));
+
+    //    osg::Uniform *neighbors = new osg::Uniform(osg::Uniform::FLOAT_VEC2,"Neigh_pos_2D", 8);
+    //    for (unsigned c = 0; c < 8; c++)
+    //    {
+    //        osg::Vec2 neib;
+
+    //        neib.x() = std::cos(c * M_PI / 4.0);
+    //        neib.y() = std::sin(c * M_PI / 4.0);
+    //        neighbors->setElement(c,neib);
+    //    }
+    //    stateSet->addUniform( neighbors);
+    //    stateSet->addUniform( new osg::Uniform( "Sx", (float)width()));
+    //    stateSet->addUniform( new osg::Uniform( "Sy", (float)height()));
+    //    stateSet->addUniform( new osg::Uniform( "Light_dir", osg::Vec3f(0.0f,1.0f,0.0f)));
+    //    // end test
 
     bool lighton = (m_viewer->getView(0)->getCamera()->getOrCreateStateSet()->getMode(GL_LIGHTING) == osg::StateAttribute::OFF);
 
@@ -2042,7 +1832,7 @@ bool OSGWidget::isEnabledShaderOnNode(osg::ref_ptr<osg::Node> _node)
     return false;
 }
 
-void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
+void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable, bool _update)
 {
     osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
     if(data != nullptr)
@@ -2058,8 +1848,9 @@ void OSGWidget::enableShaderOnNode(osg::ref_ptr<osg::Node> _node, bool _enable)
             stateSet->removeAttribute(osg::StateAttribute::PROGRAM);
         }
     }
-    m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
-    update();
+    //m_viewer->setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
+    if(_update)
+        update();
 }
 
 
