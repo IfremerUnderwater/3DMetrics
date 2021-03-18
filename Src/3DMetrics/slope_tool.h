@@ -8,7 +8,7 @@ namespace Ui {
 class SlopeTool;
 }
 
-class Point3D;
+struct Point3D;
 
 class SlopeTool : public QDialog
 {

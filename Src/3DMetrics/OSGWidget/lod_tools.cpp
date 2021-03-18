@@ -18,7 +18,7 @@ bool LODTools::hasLODInTree(osg::Node *_node)
     {
         return false;
     }
-    for(int i=0; i<group->getNumChildren(); i++)
+    for(unsigned int i=0; i<group->getNumChildren(); i++)
     {
         if(hasLODInTree(group->getChild(i)))
             return true;
@@ -44,7 +44,7 @@ osg::ref_ptr<osg::LOD> LODTools::getFirstLODNode(osg::Node *_node)
     {
         return lod;
     }
-    for(int i=0; i<group->getNumChildren(); i++)
+    for (unsigned int i = 0; i < group->getNumChildren(); i++)
     {
         lod = getFirstLODNode(group->getChild(i));
         if(lod.valid())
@@ -72,7 +72,7 @@ int LODTools::countLODInTree(osg::Node *_node)
         return 0;
     }
     int count = 0;
-    for(int i=0; i<group->getNumChildren(); i++)
+    for (unsigned int i = 0; i < group->getNumChildren(); i++)
     {
         count += countLODInTree(group->getChild(i));
     }
@@ -92,7 +92,7 @@ int LODTools::applyLODValuesInTree( osg::Node *_node, float _threshold1, float _
     osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(_node);
     if(lod.valid())
     {
-        if(!lod->getNumChildren() == 3)
+        if(!(lod->getNumChildren() == 3))
         {
             return 0;
         }
@@ -108,7 +108,7 @@ int LODTools::applyLODValuesInTree( osg::Node *_node, float _threshold1, float _
         return 0;
     }
     int count = 0;
-    for(int i=0; i<group->getNumChildren(); i++)
+    for (unsigned int i = 0; i < group->getNumChildren(); i++)
     {
         count += applyLODValuesInTree(group->getChild(i), _threshold1, _threshold2);
     }

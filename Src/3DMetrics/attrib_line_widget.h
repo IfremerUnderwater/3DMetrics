@@ -4,7 +4,7 @@
 #include <QWidget>
 #include <QShortcut>
 
-class Point3D;
+struct Point3D;
 
 namespace Ui {
 class AttribLineWidget;
