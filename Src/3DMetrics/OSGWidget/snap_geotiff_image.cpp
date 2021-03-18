@@ -8,6 +8,9 @@
 #include <osg/Material>
 #include <osg/BlendFunc>
 
+// test
+//#include <osgDB/WriteFile>
+
 #include "box_visitor.h"
 
 #if defined(_WIN32) || defined(__APPLE__)
@@ -47,7 +50,8 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
     {
         //GLenum buffer = camera->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
         osg::State& state = *renderInfo.getState();
-        state.glReadBuffer(camera->getDrawBuffer());
+        //state.glReadBuffer(camera->getDrawBuffer());
+        state.glReadBuffer(GL_FRONT);
 
         int width = gc->getTraits()->width;
         int height = gc->getTraits()->height;
@@ -56,6 +60,9 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
         // get the image
         image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
+
+        // test
+        //osgDB::writeImageFile(*image, "snap.png");
 
         // Variable for the command line "gdal_translate"
         double lat_0  = m_ref_lat_lon.x();
@@ -228,19 +235,19 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     traits->width = width_pixel;
     traits->height = height_pixel;
     traits->pbuffer = true;
-//    traits->red = 8;
-//    traits->green = 8;
-//    traits->blue = 8;
-//    traits->alpha = 8;
-    traits->alpha = 1;
-    //traits->depth = 32;
-    traits->sharedContext = 0;
-//    traits->doubleBuffer = false;
+//    traits->red = 8;      // = default value
+//    traits->green = 8;    // = default value
+//    traits->blue = 8;     // = default value
+    traits->alpha = 8;
+    //    traits->alpha = 1;
+    //traits->depth = 32;   // default value = 24
+    traits->sharedContext = 0; // = default value
+    traits->doubleBuffer = false;
     traits->readDISPLAY();
+    if(traits->displayNum < 0)
+        traits->displayNum  = 0;
+    traits->screenNum = 0;
 //    traits->setUndefinedScreenDetailsToDefaultScreen();
-//    if(traits->displayNum < 0)
-//        traits->displayNum  = 0;
-//    traits->screenNum = 0;
 
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
@@ -295,7 +302,6 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
     viewer.setUpThreading();
     viewer.setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
-
     viewer.setCamera( mrt_camera.get() );
     viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
 
