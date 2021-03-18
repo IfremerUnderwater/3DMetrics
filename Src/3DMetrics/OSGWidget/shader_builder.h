@@ -14,7 +14,8 @@ public:
         NoShader, // only alpha processing
         GrayShader, // gray palette in Z
         Standard, // standard palette from Shader Color
-        EyeDomeLighting
+        EyeDomeLighting,
+        TextureShader
     };
 
     static osg::Shader * vertexShader(const ShaderType _shader, const ShaderColor::Palette _palette);

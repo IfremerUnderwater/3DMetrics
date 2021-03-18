@@ -12,7 +12,6 @@
 #include <osgDB/ReadFile>
 #include <osg/LOD>
 #include <osgUtil/Simplifier>
-//#include <osgUtil/Optimizer>
 #include <osgUtil/SmoothingVisitor>
 
 #if defined(_WIN32) || defined(__APPLE__)
@@ -59,7 +58,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFile(std::string _scene_file
 {
     osg::ref_ptr<osg::Group> group;
 
-    //GDALAllRegister();
     GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
     if(dataset != NULL)
     {
@@ -566,8 +564,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFile(std::string _scene_file
         }
 
         GDALClose(dataset);
-
-        //GDALDestroyDriverManager();
     }
 
     return group;
@@ -575,7 +571,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFile(std::string _scene_file
 
 void GridFileProcessor::getGridLatLonAlt(std::string _scene_file, QPointF &_local_lat_lon, double &_local_alt)
 {
-    //GDALAllRegister();
     GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
     if(dataset != NULL)
     {
@@ -611,8 +606,6 @@ void GridFileProcessor::getGridLatLonAlt(std::string _scene_file, QPointF &_loca
     }
     // always 0
     _local_alt = 0;
-
-    //GDALDestroyDriverManager();
 }
 
 // tile size in x and y
@@ -622,7 +615,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFileAndBuildTiles(std::strin
 {
     osg::ref_ptr<osg::Group> group;
 
-    //GDALAllRegister();
     GDALDataset *dataset = (GDALDataset *) GDALOpen( _scene_file.c_str(), GA_ReadOnly );
     if(dataset != NULL)
     {
@@ -958,8 +950,6 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFileAndBuildTiles(std::strin
         }
 
         GDALClose(dataset);
-
-        //GDALDestroyDriverManager();
     }
 
     return group;

@@ -8,6 +8,9 @@
 #include <osg/Material>
 #include <osg/BlendFunc>
 
+// test
+//#include <osgDB/WriteFile>
+
 #include "box_visitor.h"
 
 #if defined(_WIN32) || defined(__APPLE__)
@@ -23,6 +26,7 @@
 #include <QObject>
 #include <QProgressDialog>
 #include <QApplication>
+#include <QMessageBox>
 
 SnapGeotiffImage::SnapGeotiffImage(const std::string &_filename, QPointF &_ref_lat_lon, osg::BoundingBox _box, double _pixel_size, QWidget *_parentWidget) :
     m_filename( _filename ),
@@ -46,7 +50,8 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
     {
         //GLenum buffer = camera->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
         osg::State& state = *renderInfo.getState();
-        state.glReadBuffer(camera->getDrawBuffer());
+        //state.glReadBuffer(camera->getDrawBuffer());
+        state.glReadBuffer(GL_FRONT);
 
         int width = gc->getTraits()->width;
         int height = gc->getTraits()->height;
@@ -55,6 +60,9 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
 
         // get the image
         image->readPixels( 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE);
+
+        // test
+        //osgDB::writeImageFile(*image, "snap.png");
 
         // Variable for the command line "gdal_translate"
         double lat_0  = m_ref_lat_lon.x();
@@ -180,6 +188,14 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     if( width_pixel > maxTextureSize ||  height_pixel > maxTextureSize)
     {
         // too big to process
+        QString message = QObject::tr("Size Error:\n");
+        if(width_pixel > maxTextureSize )
+            message += QObject::tr("Width ") + QString::number(width_pixel) + " > " + QString::number(maxTextureSize) + "\n";
+        if(height_pixel > maxTextureSize )
+            message += QObject::tr("Height ") + QString::number(height_pixel) + " > " + QString::number(maxTextureSize) + "\n";
+        message +=  QObject::tr("Pixel Size = ") + QString::number(_pixel_size) + " too small";
+        QMessageBox::critical(_parentWidget, QObject::tr("Error : GeoTIFF Creation"), message);
+
         return false;
     }
 
@@ -200,7 +216,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
         }
     }
 
-    //    // get BLEND mode and alpha value
+    // get BLEND mode and alpha value
     osg::StateAttribute::GLModeValue blend = stateSet->getMode(GL_BLEND);
     stateSet->setMode( GL_BLEND, osg::StateAttribute::OFF);
     osg::StateAttribute* attr = stateSet->getAttribute(osg::StateAttribute::MATERIAL);
@@ -219,17 +235,19 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     traits->width = width_pixel;
     traits->height = height_pixel;
     traits->pbuffer = true;
-    traits->red = 8;
-    traits->green = 8;
-    traits->blue = 8;
+//    traits->red = 8;      // = default value
+//    traits->green = 8;    // = default value
+//    traits->blue = 8;     // = default value
     traits->alpha = 8;
-    traits->depth = 32;
-    traits->sharedContext = 0;
+    //    traits->alpha = 1;
+    //traits->depth = 32;   // default value = 24
+    traits->sharedContext = 0; // = default value
     traits->doubleBuffer = false;
     traits->readDISPLAY();
     if(traits->displayNum < 0)
         traits->displayNum  = 0;
     traits->screenNum = 0;
+//    traits->setUndefinedScreenDetailsToDefaultScreen();
 
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
@@ -254,7 +272,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     tex->setInternalFormatMode(osg::Texture2D::USE_IMAGE_DATA_FORMAT);
     tex->setFilter( osg::Texture2D::MIN_FILTER, osg::Texture2D::LINEAR );
     tex->setFilter( osg::Texture2D::MAG_FILTER, osg::Texture2D::LINEAR );
-    mrt_camera->attach( osg::Camera::COLOR_BUFFER0, tex );
+    mrt_camera->attach( osg::Camera::COLOR_BUFFER, tex );
 
     // set RTT textures to quad
     osg::Geode* geode( new osg::Geode );
@@ -284,7 +302,6 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     viewer.setThreadingModel( osgViewer::Viewer::SingleThreaded );
     viewer.setUpThreading();
     viewer.setRunFrameScheme( osgViewer::ViewerBase::ON_DEMAND );
-
     viewer.setCamera( mrt_camera.get() );
     viewer.getCamera()->setProjectionMatrixAsOrtho2D(-width_meter/2,width_meter/2,-height_meter/2,height_meter/2);
 

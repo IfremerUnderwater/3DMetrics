@@ -8,7 +8,7 @@ class AttribPointWidget;
 }
 
 class MeasPoint;
-class Point3D;
+struct Point3D;
 
 class AttribPointWidget : public QWidget
 {
