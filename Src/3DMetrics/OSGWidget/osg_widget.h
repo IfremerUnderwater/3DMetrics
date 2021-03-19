@@ -43,27 +43,6 @@ class OSGWidget : public QOpenGLWidget
 {
     Q_OBJECT
 
-private:
-
-    // models' user data
-    class NodeUserData : public osg::Referenced
-    {
-    public:
-        NodeUserData() : Referenced() {}
-        virtual ~NodeUserData() {}
-
-        // values zmin and zmax from model (without offset)
-        float zmin;
-        float zmax;
-
-        float zoffset;
-        float originalZoffset;
-
-        // use or not shader
-        bool useShader;
-        bool hasMesh;
-    };
-
 public:
     OSGWidget( QWidget* parent = 0);
 
@@ -222,6 +201,7 @@ public:
 
     // screen2D
     bool generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
+    bool generateFastGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
     bool generateGeoOrthoTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size);
 
     //

@@ -13,11 +13,11 @@ using namespace std;
 BoxVisitor::BoxVisitor() : osg::NodeVisitor(TRAVERSE_ALL_CHILDREN)
 {
     m_x_min = numeric_limits<double>::max();
-    m_x_max = numeric_limits<double>::min();
+    m_x_max = -numeric_limits<double>::max();
     m_y_min = numeric_limits<double>::max();
-    m_y_max = numeric_limits<double>::min();
+    m_y_max = -numeric_limits<double>::max();
     m_z_min = numeric_limits<double>::max();
-    m_z_max = numeric_limits<double>::min();
+    m_z_max = -numeric_limits<double>::max();
 }
 
 BoxVisitor::~BoxVisitor()

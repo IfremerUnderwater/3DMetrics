@@ -212,6 +212,7 @@ public slots:
 
     // generateAltMap 2D
     void slot_saveAltMap();
+    void slot_saveFastAltMap();
 
     // Settings
     void slot_applySettings();

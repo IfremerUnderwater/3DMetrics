@@ -21,6 +21,7 @@ add_executable(3DMetrics
     OSGWidget/clip_model_visitor.cpp
     OSGWidget/smartlod.cpp
     OSGWidget/shader_builder.cpp
+    OSGWidget/snap_geotiff_depth.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp
