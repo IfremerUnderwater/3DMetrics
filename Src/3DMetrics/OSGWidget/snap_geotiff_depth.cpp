@@ -4,7 +4,7 @@
 #include <osgGA/TrackballManipulator>
 
 #include "box_visitor.h"
-#include "node_user_data.h"
+//#include "node_user_data.h"
 
 #if defined(_WIN32) || defined(__APPLE__)
 #include "gdal_priv.h"
@@ -144,9 +144,10 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
         // Add the WindowCaptureCallback now that we have full resolution
         //GLenum buffer = snap->pViewer->getCamera()->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
         GLenum buffer = GL_FRONT;
-        snap->pViewer->getCamera()->setFinalDrawCallback(new WindowCaptureCallback(buffer, fileName));
+
+        WindowCaptureCallback *winCaptureCbk = new WindowCaptureCallback(buffer, fileName);
+        snap->pViewer->getCamera()->setFinalDrawCallback(winCaptureCbk);
         snap->pViewer->renderingTraversals();
-        snap->pViewer->getCamera()->setFinalDrawCallback(NULL);
 
         // test
         //osgDB::writeImageFile(*zImage.get(),fileName + "-depth1.tif");
@@ -154,12 +155,12 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
         float zmin = box.zMin();
         float zmax = box.zMax();
 
-        osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
-        if(data != nullptr)
-        {
-            zmin = data->zmin;
-            zmax = data->zmax;
-        }
+//        osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+//        if(data != nullptr)
+//        {
+//            zmin = data->zmin;
+//            zmax = data->zmax;
+//        }
 
         float delta = zmax - zmin;
 
@@ -220,7 +221,10 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
             GDALClose(geotiff_dataset_alt) ;
         }
 
+        snap->pViewer->getCamera()->removeFinalDrawCallback(winCaptureCbk);
+        snap->pViewer->getCamera()->setFinalDrawCallback(NULL);
     }
+    viewer.done();
     viewer.setSceneData(nullptr);
     delete snap;
 
