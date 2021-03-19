@@ -1418,6 +1418,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
 
                 menu->addAction(tr("Orthoproject this layer"),this,SLOT(slot_saveOrthoMap()));
                 menu->addAction(tr("Elevation map from this layer"),this,SLOT(slot_saveAltMap()));
+                menu->addAction(tr("Fast Elevation map from this layer"),this,SLOT(slot_saveFastAltMap()));
                 menu->addAction(tr("Compute total layer area"),this,SLOT(slot_computeTotalArea()));
 
                 menu->addSeparator();
@@ -3523,7 +3524,7 @@ void TDMGui::slot_saveOrthoMap()
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-//        osg::ref_ptr<osg::Node> node = layer_data.node();
+        //        osg::ref_ptr<osg::Node> node = layer_data.node();
         osg::Node* const node = (layer_data.node().get());
         // SCREEN
 
@@ -3587,8 +3588,65 @@ void TDMGui::slot_saveAltMap()
         if( !ok ) return;
 
         bool save_image = ui->display_widget->generateGeoAltitudeTiff(node,name_file_alt,pixels);
-        //bool save_image = ui->display_widget->generateGeoTiff(node,name_file_alt,pixels, OSGWidget::AltMap);
         if (save_image) QMessageBox::information(this,"Done","Your altitude image have been generated");
+        else
+        {
+            QMessageBox::critical(this, tr("Error : altitude map file"), tr("Error : your altitude image couldn't be generated"));
+            return;
+        }
+    }
+}
+
+void TDMGui::slot_saveFastAltMap()
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    QString name_file_alt = getSaveFileName(this, tr("Save altitude map"),m_path_alt_map,
+                                            tr("Images (*.tif)"));
+    m_path_alt_map = name_file_alt;
+    slot_applySettings();
+
+    QFileInfo alt_file_info(name_file_alt);
+
+    // check filename is not empty
+    if(alt_file_info.fileName().isEmpty())
+    {
+        QMessageBox::critical(this, tr("Error : save altitude map"), tr("Error : you didn't give any name to the file"));
+        return;
+    }
+
+    // add suffix if needed
+    if (alt_file_info.suffix() != ".tif")
+    {
+        name_file_alt = name_file_alt.remove(".tif");
+        alt_file_info.setFile(name_file_alt);
+    }
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::ref_ptr<osg::Node> node = layer_data.node();
+
+        // Collect the number of pixel that the user want
+        bool ok;
+        double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1, 0, 99999,4, &ok);
+        if( !ok )
+        {
+            return;
+        }
+        bool save_image = ui->display_widget->generateFastGeoAltitudeTiff(node,name_file_alt,pixels);
+        if (save_image)
+        {
+            QMessageBox::information(this,"Done","Your altitude image have been generated");
+        }
         else
         {
             QMessageBox::critical(this, tr("Error : altitude map file"), tr("Error : your altitude image couldn't be generated"));

@@ -60,6 +60,7 @@
 
 #include "box_visitor.h"
 #include "clip_model_visitor.h"
+#include "node_user_data.h"
 
 #include "minmax_computation_visitor.h"
 #include "geometry_type_count_visitor.h"
@@ -72,6 +73,7 @@
 
 #include "snap_geotiff_image.h"
 #include "elevation_map_creator.h"
+#include "snap_geotiff_depth.h"
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
@@ -1556,7 +1558,23 @@ bool OSGWidget::generateGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _
 {
     std::string fileName = _filename.toStdString();
     ElevationMapCreator emc(m_ref_lat_lon, _pixel_size);
+
     bool status = emc.process(_node,fileName,this);
+
+    return status;
+}
+
+bool OSGWidget::generateFastGeoAltitudeTiff(osg::ref_ptr<osg::Node> _node, QString _filename, double _pixel_size)
+{
+    bool hasShader = isEnabledShaderOnNode(_node);
+    enableShaderOnNode(_node, false, false);
+
+    std::string fileName = _filename.toStdString();
+
+    bool status = SnapGeotiffDepth::Capture(_node,fileName,_pixel_size, m_ref_lat_lon.x(), m_ref_lat_lon.y(), this);
+
+    enableShaderOnNode(_node, hasShader);
+
     return status;
 }
 

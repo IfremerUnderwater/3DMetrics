@@ -85,14 +85,22 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
         unsigned char *buffer_B = new unsigned char[width];
         unsigned char *buffer_A = new unsigned char[width];
 
-        QProgressDialog progress_dialog(QObject::tr("Write altitude ortho file..."), QObject::tr("Abort ortho map"), 0, height, m_parentWidget);
+        const int PCT = 100;
+        int lastpct = 0;
+        QProgressDialog progress_dialog(QObject::tr("Write altitude ortho file..."), QObject::tr("Abort ortho map"), 0, PCT, m_parentWidget);
         progress_dialog.setWindowModality(Qt::WindowModal);
         progress_dialog.show();
+        QApplication::processEvents();
 
         for(int i=0; i<height; i++)
         {
-            progress_dialog.setValue(i);
-            QApplication::processEvents();
+            int pct = i * PCT / height;
+            if(pct != lastpct)
+            {
+                progress_dialog.setValue(pct);
+                QApplication::processEvents();
+                lastpct = pct;
+            }
 
             if (progress_dialog.wasCanceled())
             {
@@ -125,7 +133,8 @@ void SnapGeotiffImage::operator ()(osg::RenderInfo &renderInfo) const
             res = geotiff_dataset->GetRasterBand(4)->RasterIO(GF_Write,0,i,width,1,buffer_A,width,1,GDT_Byte,0,0);
         }
 
-        progress_dialog.setValue(height);
+        progress_dialog.setValue(PCT);
+        QApplication::processEvents();
 
         // Setup output coordinate system.
         double geo_transform[6] = { x_min, m_pixel_size, 0, y_max, 0, -m_pixel_size };
@@ -235,9 +244,9 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     traits->width = width_pixel;
     traits->height = height_pixel;
     traits->pbuffer = true;
-//    traits->red = 8;      // = default value
-//    traits->green = 8;    // = default value
-//    traits->blue = 8;     // = default value
+    //    traits->red = 8;      // = default value
+    //    traits->green = 8;    // = default value
+    //    traits->blue = 8;     // = default value
     traits->alpha = 8;
     //    traits->alpha = 1;
     //traits->depth = 32;   // default value = 24
@@ -247,7 +256,7 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     if(traits->displayNum < 0)
         traits->displayNum  = 0;
     traits->screenNum = 0;
-//    traits->setUndefinedScreenDetailsToDefaultScreen();
+    //    traits->setUndefinedScreenDetailsToDefaultScreen();
 
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
