@@ -75,6 +75,8 @@
 #include "elevation_map_creator.h"
 #include "snap_geotiff_depth.h"
 
+#define DEFAULT_POINT_SIZE 30.0f
+
 class KeyboardEventHandler : public osgGA::GUIEventHandler
 {
     OSGWidget *m_osgWidget;
@@ -85,7 +87,7 @@ public:
     {
         _point = new osg::Point;
         _point->setDistanceAttenuation(osg::Vec3(0.0,0.0000,0.05f));
-        _point->setSize(30);
+        _point->setSize(DEFAULT_POINT_SIZE);
         _stateset->setAttribute(_point.get());
 
         _line_width = new osg::LineWidth();
@@ -171,6 +173,7 @@ public:
     void changePointSize(float delta)
     {
         setPointSize(getPointSize()+delta);
+        m_osgWidget->changePointSize(getPointSize());
     }
 
     void changeLineWidth(float delta)
@@ -202,6 +205,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     , m_ctrl_pressed(false)
     , m_fake_middle_click_activated(false)
     , m_zScale(1.0)
+    , m_pointsize(DEFAULT_POINT_SIZE)
 {
 
     m_ref_lat_lon.setX(INVALID_VALUE);
@@ -1703,6 +1707,20 @@ void OSGWidget::setNodeTranslationOffset(double _offset_x, double _offset_y, dou
     update();
 }
 
+void OSGWidget::changePointSize(float _newPointSize)
+{
+    // update for shaders
+    m_pointsize = _newPointSize;
+
+    for(unsigned int i=0; i<m_models.size(); i++)
+    {
+        osg::StateSet* state_set = m_models[i]->getOrCreateStateSet();
+        state_set->addUniform( new osg::Uniform( "pointsize", _newPointSize));
+    }
+
+    update();
+}
+
 void OSGWidget::setZScale(double _newValue)
 {
 
@@ -1749,7 +1767,7 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     stateSet->setAttribute( program, osg::StateAttribute::ON );
 
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
-    stateSet->addUniform( new osg::Uniform( "pointsize", 32.0f));
+    stateSet->addUniform( new osg::Uniform( "pointsize", m_pointsize));
 
     //    // test EDL
     //    osg::ref_ptr<osg::Image> image = new osg::Image();

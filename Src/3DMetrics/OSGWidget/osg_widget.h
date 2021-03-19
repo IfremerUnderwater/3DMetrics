@@ -181,6 +181,8 @@ public:
 
     void setNodeTranslationOffset(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans);
 
+    void changePointSize(float _newPointSize);
+
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
     void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
@@ -292,6 +294,7 @@ private:
 
     // for shaders
     void configureShaders( osg::StateSet* stateSet );
+    float m_pointsize;
 
     // recompute global zmin and zmax for all models
     void recomputeGlobalZMinMax();
