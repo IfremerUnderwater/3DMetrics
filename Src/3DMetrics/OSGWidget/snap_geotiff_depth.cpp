@@ -90,7 +90,7 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
     traits->height = height_pixel;
     traits->pbuffer = true;
     traits->alpha =  8;
-    traits->depth = 32;
+    traits->depth = 24; //32; does not work in Windows
     traits->sharedContext = 0;
     traits->doubleBuffer = false;
     traits->samples = 0;
@@ -134,6 +134,7 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
 
     viewer.setSceneData( root.get() );
     viewer.realize();
+
     viewer.frame();
 
     SnapGeotiffDepth *snap = new SnapGeotiffDepth(&viewer);
@@ -141,7 +142,8 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
     if (snap->pViewer)
     {
         // Add the WindowCaptureCallback now that we have full resolution
-        GLenum buffer = snap->pViewer->getCamera()->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
+        //GLenum buffer = snap->pViewer->getCamera()->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
+        GLenum buffer = GL_FRONT;
         snap->pViewer->getCamera()->setFinalDrawCallback(new WindowCaptureCallback(buffer, fileName));
         snap->pViewer->renderingTraversals();
         snap->pViewer->getCamera()->setFinalDrawCallback(NULL);
