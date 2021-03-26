@@ -31,7 +31,7 @@
 #include <osgUtil/Optimizer>
 #include <osgUtil/Simplifier>
 // too slow
-//#include <osgUtil/DelaunayTriangulator>
+#include <osgUtil/DelaunayTriangulator>
 
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
@@ -664,6 +664,19 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 
     m_modelsGroup->insertChild(0, matrix.get()); // put at the beginning to be drawn first
 
+    // compute z min/max of 3D model
+    MinMaxComputationVisitor minmax;
+    matrix->accept(minmax);
+    float zmin = minmax.getMin();
+    float zmax = minmax.getMax();
+
+    GeometryTypeCountVisitor geomcount;
+    matrix->accept(geomcount);
+
+    // save original translation
+    //osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(root.get());
+
+
     //    // optimize the scene graph, remove redundant nodes and state etc.
     //    osgUtil::Optimizer optimizer;
     //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
@@ -685,18 +698,6 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                        osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
                        osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
-    // compute z min/max of 3D model
-    MinMaxComputationVisitor minmax;
-    matrix->accept(minmax);
-    float zmin = minmax.getMin();
-    float zmax = minmax.getMax();
-
-    GeometryTypeCountVisitor geomcount;
-    matrix->accept(geomcount);
-
-    // save original translation
-    //osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(root.get());
-
     osg::ref_ptr<NodeUserData> data = new NodeUserData();
     data->useShader = false;
     data->zmin = zmin;
@@ -704,6 +705,52 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     data->zoffset = 0; // will be changed on z offset changed
     data->originalZoffset = matrix->getMatrix().getTrans().z();
     data->hasMesh = geomcount.getNbTriangles() > 0;
+
+    // test Delaunaytriangulation for models with only points
+    if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0)
+    {
+        osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator;
+
+        osg::Geode *geode = root->asGeode();
+        unsigned int num_drawables = geode->getNumDrawables();
+        for( unsigned int i = 0; i < num_drawables; i++ )
+        {
+            // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
+            // every little saving counts
+            osg::Geometry *current_geometry = geode->getDrawable(i)->asGeometry();
+
+            // Only process if the drawable is geometry
+            if ( current_geometry )
+            {
+                // get the list of different geometry mode which were created
+                osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
+
+                for(unsigned int j = 0; j < primitive_list.size(); j++)
+                {
+                    osg::PrimitiveSet *primitive_set = primitive_list[j];
+
+                    if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
+                    {
+                        osg::Array *array = current_geometry->getVertexArray();
+                        dt->setInputPointArray( (osg::Vec3Array*)array  );
+                        dt->setOutputNormalArray( new osg::Vec3Array );
+                        dt->triangulate();
+
+                        osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+                        geometry->setVertexArray( dt->getInputPointArray() );
+                        geometry->setNormalArray( dt->getOutputNormalArray() );
+                        geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
+                        geometry->setColorArray(current_geometry->getColorArray());
+                        geometry->setColorBinding( current_geometry->getColorBinding());
+                        geometry->addPrimitiveSet( dt->getTriangles() );
+
+                        geode->addDrawable( geometry.get() );
+                    }
+                }
+            }
+        }
+    }
+
     matrix->setUserData(data);
 
     //configureShaders( root->getOrCreateStateSet() );
@@ -1769,6 +1816,12 @@ void OSGWidget::configureShaders( osg::StateSet* stateSet )
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
     stateSet->addUniform( new osg::Uniform( "pointsize", m_pointsize));
 
+    // test texture
+    osg::Texture *texture = (osg::Texture *)(stateSet->getTextureAttribute(0, osg::StateAttribute::TEXTURE));
+    if(texture != nullptr)
+    {
+        stateSet->addUniform( new osg::Uniform( "my_color_texture", texture));
+    }
     //    // test EDL
     //    osg::ref_ptr<osg::Image> image = new osg::Image();
     //    image->allocateImage(width(), height(), 1, GL_RGBA, GL_UNSIGNED_BYTE);
