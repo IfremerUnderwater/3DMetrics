@@ -193,7 +193,7 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
                     if(val == 1.0f)
                         buffer[j] = no_data;
                     else
-                        buffer[j] = val * delta + zmin;
+                        buffer[j] = (1.0f - val) * delta + zmin;
                 }
                 CPLErr res = geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer,width,1,GDT_Float32,0,0);
             }
