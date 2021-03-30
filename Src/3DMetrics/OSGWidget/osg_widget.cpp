@@ -33,6 +33,7 @@
 // too slow
 //#include <osgUtil/DelaunayTriangulator>
 #include "delaunay_triangulator_nosort.h"
+#include "deprecated_geometry.h"
 
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
@@ -677,28 +678,6 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     // save original translation
     //osg::ref_ptr<osg::MatrixTransform> model_transform =  dynamic_cast<osg::MatrixTransform*>(root.get());
 
-
-    //    // optimize the scene graph, remove redundant nodes and state etc.
-    //    osgUtil::Optimizer optimizer;
-    //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
-    osgUtil::Optimizer optimizer;
-    optimizer.optimize(matrix.get(),
-                       osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
-                       osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
-                       osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
-                       osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
-                       osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
-                       osgUtil::Optimizer::MERGE_GEODES |
-                       osgUtil::Optimizer::MERGE_GEOMETRY |
-                       osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
-                       osgUtil::Optimizer::SPATIALIZE_GROUPS |
-                       osgUtil::Optimizer::COPY_SHARED_NODES |
-                       osgUtil::Optimizer::TRISTRIP_GEOMETRY |
-                       osgUtil::Optimizer::INDEX_MESH |
-                       osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
-                       osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
-                       osgUtil::Optimizer::TESSELLATE_GEOMETRY);
-
     osg::ref_ptr<NodeUserData> data = new NodeUserData();
     data->useShader = false;
     data->zmin = zmin;
@@ -743,14 +722,14 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         dt->setOutputNormalArray( new osg::Vec3Array );
                         dt->triangulate();
 
-                        osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+                        osg::ref_ptr<deprecated_osg::Geometry> geometry = new deprecated_osg::Geometry;
                         geometry->setVertexArray( dt->getInputPointArray() );
                         geometry->setNormalArray( dt->getOutputNormalArray() );
-                        geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
+                        geometry->setNormalBinding(deprecated_osg::Geometry::BIND_PER_PRIMITIVE );
                         osg::Vec4Array *color = new osg::Vec4Array;
                         osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
                         color->push_back(c);
-                        geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
+                        geometry->setColorBinding( deprecated_osg::Geometry::BIND_OVERALL );
                         geometry->addPrimitiveSet( dt->getTriangles() );
 
                         osg::StateSet* stateSet = geometry->getOrCreateStateSet();
@@ -764,6 +743,13 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         // material
                         // Add the possibility of modifying the transparence
                         osg::Material* material = material = new osg::Material;
+
+                        //material->setDiffuse( osg::Material::FRONT, osg::Vec4( 0.5f, 0.5f, 0.5f, 1.f ) );
+                        //material->setSpecular( osg::Material::FRONT, osg::Vec4( 1.f, 1.f, 1.f, 0.f ) );
+                        material->setShininess( osg::Material::FRONT_AND_BACK, 96.f );
+                        material->setEmission( osg::Material::FRONT_AND_BACK, osg::Vec4( 0.2f, 0.2f, 0.2f, 0.f ) );
+
+
                         // Put the 3D model totally opaque
                         stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
                         material->setAlpha(osg::Material::FRONT_AND_BACK, 0.5f );
@@ -773,6 +759,29 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 
                         geode->addDrawable( geometry.get() );
                         data->composite = true;
+
+                        //                        // light1
+
+
+                        //                        // osg:Light nous permet de donner à notre lumière ses caractéristiques
+                        //                        osg::Light* pLight = new osg::Light;
+                        //                        pLight->setLightNum( 1 );// ici cette lumière sera GL_LIGHT1
+                        //                        pLight->setAmbient( osg::Vec4d(1.0, 1.0, 1.0, 0.0) );
+                        //                        pLight->setDiffuse( osg::Vec4(1.0f, 1.0f, 1.0f, 0.0f) );
+                        //                        pLight->setSpecular(osg::Vec4(1.0f,1.0f,1.0f,1.0f));
+                        //                        pLight->setPosition(osg::Vec4(2.0f,0.0f,2.0f,1.0f));
+                        //                        pLight->setDirection(osg::Vec3(-1.0f,0.0f,-1.0f)); // direction dans le cas d'un spot
+                        //                        pLight->setSpotCutoff(45.0); // angle d'ouverture du spot
+                        //                        pLight->setConstantAttenuation(0.5);
+                        //                        pLight->setLinearAttenuation(0.2);
+                        //                        pLight->setQuadraticAttenuation(0.02);
+
+                        //                        osg::LightSource* pLightSource = new osg::LightSource;
+                        //                        pLightSource->setLight( pLight );
+                        //                        geode->addChild( pLightSource );
+
+                        //                        stateSet->setMode( GL_LIGHT0, osg::StateAttribute::OFF );
+                        //                        stateSet->setMode( GL_LIGHT1, osg::StateAttribute::ON );
                     }
                 }
             }
@@ -780,6 +789,27 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     }
 
     matrix->setUserData(data);
+
+    //    // optimize the scene graph, remove redundant nodes and state etc.
+    //    osgUtil::Optimizer optimizer;
+    //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+    osgUtil::Optimizer optimizer;
+    optimizer.optimize(matrix.get(),
+                       osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
+                       osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
+                       osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
+                       osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
+                       osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
+                       osgUtil::Optimizer::MERGE_GEODES |
+                       osgUtil::Optimizer::MERGE_GEOMETRY |
+                       osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
+                       osgUtil::Optimizer::SPATIALIZE_GROUPS |
+                       osgUtil::Optimizer::COPY_SHARED_NODES |
+                       osgUtil::Optimizer::TRISTRIP_GEOMETRY |
+                       osgUtil::Optimizer::INDEX_MESH |
+                       osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
+                       osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
+                       osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
     //configureShaders( root->getOrCreateStateSet() );
     matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
@@ -1065,8 +1095,9 @@ void OSGWidget::initializeGL(){
     material->setColorMode( osg::Material::AMBIENT_AND_DIFFUSE );
     state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
     state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
-    state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::OFF);
-    state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+    state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
+    state_set->setMode(GL_POINT_SMOOTH, osg::StateAttribute::ON);
+    state_set->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
 
     // to show measures too
     state_set = m_geodesGroup->getOrCreateStateSet();
@@ -1076,7 +1107,7 @@ void OSGWidget::initializeGL(){
     state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
     state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
     state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
-    // if selected : only parts on top of all madels are shown
+    // if selected : only parts on top of all models are shown
     //state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 }
 
