@@ -30,10 +30,10 @@
 #include <osgUtil/PolytopeIntersector>
 #include <osgUtil/Optimizer>
 #include <osgUtil/Simplifier>
-// too slow
-//#include <osgUtil/DelaunayTriangulator>
-#include "delaunay_triangulator_nosort.h"
-#include "deprecated_geometry.h"
+
+#include <osgUtil/DelaunayTriangulator>
+//#include "delaunay_triangulator_nosort.h"
+//#include "deprecated_geometry.h"
 
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
@@ -722,15 +722,50 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         dt->setOutputNormalArray( new osg::Vec3Array );
                         dt->triangulate();
 
-                        osg::ref_ptr<deprecated_osg::Geometry> geometry = new deprecated_osg::Geometry;
-                        geometry->setVertexArray( dt->getInputPointArray() );
-                        geometry->setNormalArray( dt->getOutputNormalArray() );
-                        geometry->setNormalBinding(deprecated_osg::Geometry::BIND_PER_PRIMITIVE );
+                        // deprecated
+                        //                        osg::ref_ptr<deprecated_osg::Geometry> geometry = new deprecated_osg::Geometry;
+                        //                        geometry->setVertexArray( dt->getInputPointArray() );
+                        //                        geometry->setNormalArray( dt->getOutputNormalArray() );
+                        //                        geometry->setNormalBinding(deprecated_osg::Geometry::BIND_PER_PRIMITIVE );
+                        //                        osg::Vec4Array *color = new osg::Vec4Array;
+                        //                        osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
+                        //                        color->push_back(c);
+                        //                        geometry->setColorBinding( deprecated_osg::Geometry::BIND_OVERALL );
+                        //                        geometry->addPrimitiveSet( dt->getTriangles() );
+
+                        // no deprecated
+                        osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+                        osg::Vec3Array* vertexes = dt->getInputPointArray();
+                        size_t vsz = vertexes->size();
+                        osg::Vec3Array* normals = dt->getOutputNormalArray();
+                        size_t nsz = normals->size();
+                        osg::DrawElementsUInt *indexes = dt->getTriangles();
+                        size_t isz = indexes->size();
+
+                        osg::ref_ptr<osg::Vec3Array> outPoints = new osg::Vec3Array;
+                        osg::ref_ptr<osg::Vec3Array> outNormals = new osg::Vec3Array;
+
+                        for(int i=0; i<nsz; i++)
+                        {
+                            unsigned int i1 = (*indexes)[i*3];
+                            unsigned int i2 = (*indexes)[i*3+1];
+                            unsigned int i3 = (*indexes)[i*3+2];
+                            outPoints->push_back((*vertexes)[i1]);
+                            outPoints->push_back((*vertexes)[i2]);
+                            outPoints->push_back((*vertexes)[i3]);
+                            outNormals->push_back((*normals)[i]);
+                            outNormals->push_back((*normals)[i]);
+                            outNormals->push_back((*normals)[i]);
+                        }
+                        geometry->setVertexArray( outPoints );
+                        geometry->setNormalArray( outNormals );
+                        geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
+
                         osg::Vec4Array *color = new osg::Vec4Array;
                         osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
                         color->push_back(c);
-                        geometry->setColorBinding( deprecated_osg::Geometry::BIND_OVERALL );
-                        geometry->addPrimitiveSet( dt->getTriangles() );
+                        geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
+                        bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
 
                         osg::StateSet* stateSet = geometry->getOrCreateStateSet();
                         stateSet->setMode( GL_BLEND, osg::StateAttribute::ON);
@@ -749,7 +784,6 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         material->setShininess( osg::Material::FRONT_AND_BACK, 96.f );
                         material->setEmission( osg::Material::FRONT_AND_BACK, osg::Vec4( 0.2f, 0.2f, 0.2f, 0.f ) );
 
-
                         // Put the 3D model totally opaque
                         stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
                         material->setAlpha(osg::Material::FRONT_AND_BACK, 0.5f );
@@ -759,29 +793,6 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 
                         geode->addDrawable( geometry.get() );
                         data->composite = true;
-
-                        //                        // light1
-
-
-                        //                        // osg:Light nous permet de donner à notre lumière ses caractéristiques
-                        //                        osg::Light* pLight = new osg::Light;
-                        //                        pLight->setLightNum( 1 );// ici cette lumière sera GL_LIGHT1
-                        //                        pLight->setAmbient( osg::Vec4d(1.0, 1.0, 1.0, 0.0) );
-                        //                        pLight->setDiffuse( osg::Vec4(1.0f, 1.0f, 1.0f, 0.0f) );
-                        //                        pLight->setSpecular(osg::Vec4(1.0f,1.0f,1.0f,1.0f));
-                        //                        pLight->setPosition(osg::Vec4(2.0f,0.0f,2.0f,1.0f));
-                        //                        pLight->setDirection(osg::Vec3(-1.0f,0.0f,-1.0f)); // direction dans le cas d'un spot
-                        //                        pLight->setSpotCutoff(45.0); // angle d'ouverture du spot
-                        //                        pLight->setConstantAttenuation(0.5);
-                        //                        pLight->setLinearAttenuation(0.2);
-                        //                        pLight->setQuadraticAttenuation(0.02);
-
-                        //                        osg::LightSource* pLightSource = new osg::LightSource;
-                        //                        pLightSource->setLight( pLight );
-                        //                        geode->addChild( pLightSource );
-
-                        //                        stateSet->setMode( GL_LIGHT0, osg::StateAttribute::OFF );
-                        //                        stateSet->setMode( GL_LIGHT1, osg::StateAttribute::ON );
                     }
                 }
             }
