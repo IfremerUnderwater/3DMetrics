@@ -31,7 +31,8 @@
 #include <osgUtil/Optimizer>
 #include <osgUtil/Simplifier>
 // too slow
-#include <osgUtil/DelaunayTriangulator>
+//#include <osgUtil/DelaunayTriangulator>
+#include "delaunay_triangulator_nosort.h"
 
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
@@ -705,11 +706,13 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     data->zoffset = 0; // will be changed on z offset changed
     data->originalZoffset = matrix->getMatrix().getTrans().z();
     data->hasMesh = geomcount.getNbTriangles() > 0;
+    data->composite = false;
 
     // test Delaunaytriangulation for models with only points
     if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0)
     {
         osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator;
+        //osg::ref_ptr<osg3DMETRICS::DelaunayTriangulatorNosort> dt = new osg3DMETRICS::DelaunayTriangulatorNosort;
 
         osg::Geode *geode = root->asGeode();
         unsigned int num_drawables = geode->getNumDrawables();
@@ -732,7 +735,11 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                     if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
                     {
                         osg::Array *array = current_geometry->getVertexArray();
-                        dt->setInputPointArray( (osg::Vec3Array*)array  );
+                        osg::Vec3Array *v = new osg::Vec3Array;
+                        v->resize(((osg::Vec3Array*)array)->size());
+                        std::copy( ((osg::Vec3Array*)array)->begin(), ((osg::Vec3Array*)array)->end(), v->begin() );
+
+                        dt->setInputPointArray( v);
                         dt->setOutputNormalArray( new osg::Vec3Array );
                         dt->triangulate();
 
@@ -740,11 +747,32 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         geometry->setVertexArray( dt->getInputPointArray() );
                         geometry->setNormalArray( dt->getOutputNormalArray() );
                         geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
-                        geometry->setColorArray(current_geometry->getColorArray());
-                        geometry->setColorBinding( current_geometry->getColorBinding());
+                        osg::Vec4Array *color = new osg::Vec4Array;
+                        osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
+                        color->push_back(c);
+                        geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
                         geometry->addPrimitiveSet( dt->getTriangles() );
 
+                        osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+                        stateSet->setMode( GL_BLEND, osg::StateAttribute::ON);
+                        stateSet->setRenderBinDetails(2, "RenderBin");
+
+                        osg::StateSet* stateSetpts = current_geometry->getOrCreateStateSet();
+                        stateSetpts->setMode( GL_BLEND, osg::StateAttribute::ON);
+                        stateSetpts->setRenderBinDetails(1, "RenderBin");
+
+                        // material
+                        // Add the possibility of modifying the transparence
+                        osg::Material* material = material = new osg::Material;
+                        // Put the 3D model totally opaque
+                        stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
+                        material->setAlpha(osg::Material::FRONT_AND_BACK, 0.5f );
+
+                        osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+                        stateSet->setAttributeAndModes(bf);
+
                         geode->addDrawable( geometry.get() );
+                        data->composite = true;
                     }
                 }
             }
@@ -1691,35 +1719,76 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
     osg::Material* material = dynamic_cast<osg::Material*>(attr);
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
 
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
-    if(_transparency_value == 0.0)
+    if(data != nullptr && data->composite)
     {
-        state_set->removeAttribute(osg::StateAttribute::MATERIAL);
-        state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
+        // Only process generated triangles
+        osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+        osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+        osg::Geode *geode = root->asGeode();
+        unsigned int num_drawables = geode->getNumDrawables();
+        for( unsigned int i = 0; i < num_drawables; i++ )
+        {
+            // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
+            // every little saving counts
+            osg::Geometry *current_geometry = geode->getDrawable(i)->asGeometry();
+
+            // Only process if the drawable is geometry
+            if ( current_geometry )
+            {
+                // get the list of different geometry mode which were created
+                osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
+
+                for(unsigned int j = 0; j < primitive_list.size(); j++)
+                {
+                    osg::PrimitiveSet *primitive_set = primitive_list[j];
+                    if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
+                        continue;
+
+                    // we have triangles here
+                    osg::StateSet* stateSet = current_geometry->getOrCreateStateSet();
+
+                    osg::StateAttribute* attrmat = stateSet->getAttribute(osg::StateAttribute::MATERIAL);
+                    osg::Material* mat = dynamic_cast<osg::Material*>(attrmat);
+                    stateSet->setAttributeAndModes ( mat, osg::StateAttribute::ON );
+                    mat->setAlpha(osg::Material::FRONT_AND_BACK, _transparency_value);
+                }
+            }
+        }
+
     }
     else
     {
-        state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
-
-        if(material == nullptr)
+        if(_transparency_value == 0.0)
         {
-            // Add the possibility of modifying the transparence
-            material = new osg::Material;
-            // Put the 3D model totally opaque
-            material->setAlpha( osg::Material::FRONT, _transparency_value);
-            state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
+            state_set->removeAttribute(osg::StateAttribute::MATERIAL);
+            state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
         }
+        else
+        {
+            state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
-        // Changes the transparency of the node
-        material->setAlpha(osg::Material::FRONT, _transparency_value );
+            if(material == nullptr)
+            {
+                // Add the possibility of modifying the transparence
+                material = new osg::Material;
+                // Put the 3D model totally opaque
+                material->setAlpha( osg::Material::FRONT, _transparency_value);
+                state_set->setAttributeAndModes ( material, osg::StateAttribute::ON );
+            }
 
-        // Turn on blending
-        osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-        state_set->setAttributeAndModes(bf);
+            // Changes the transparency of the node
+            material->setAlpha(osg::Material::FRONT, _transparency_value );
 
-        state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+            // Turn on blending
+            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+            state_set->setAttributeAndModes(bf);
+
+            state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        }
     }
 
     // alpha on shader

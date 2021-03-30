@@ -20,6 +20,9 @@ public:
     // use or not shader
     bool useShader;
     bool hasMesh;
+
+    // points + generated triangles added
+    bool composite;
 };
 
 #endif // NODE_USER_DATA_H

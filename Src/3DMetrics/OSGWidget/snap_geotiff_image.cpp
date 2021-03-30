@@ -12,6 +12,7 @@
 //#include <osgDB/WriteFile>
 
 #include "box_visitor.h"
+#include "node_user_data.h"
 
 #if defined(_WIN32) || defined(__APPLE__)
 #include "gdal_priv.h"
@@ -208,8 +209,43 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
         return false;
     }
 
-    osg::StateSet *stateSet= _node->getOrCreateStateSet();
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    bool isComposite = data != nullptr && data->composite;
+    osg::ref_ptr<osg::Node> triangles;
 
+    osg::StateSet *stateSet= _node->getOrCreateStateSet();
+    if(isComposite)
+    {
+        // process generated triangles
+        osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+        osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+        osg::Geode *geode = root->asGeode();
+        unsigned int num_drawables = geode->getNumDrawables();
+        for( unsigned int i = 0; i < num_drawables; i++ )
+        {
+            // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
+            // every little saving counts
+            osg::Geometry *current_geometry = geode->getDrawable(i)->asGeometry();
+
+            // Only process if the drawable is geometry
+            if ( current_geometry )
+            {
+                // get the list of different geometry mode which were created
+                osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
+
+                for(unsigned int j = 0; j < primitive_list.size(); j++)
+                {
+                    osg::PrimitiveSet *primitive_set = primitive_list[j];
+                    if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
+                        continue;
+
+                    // we have triangles here
+                    stateSet = current_geometry->getOrCreateStateSet();
+                    triangles = current_geometry;
+                }
+            }
+        }
+    }
 
     // disable texturing
     if(_disableTexture)
@@ -261,7 +297,14 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
     osg::ref_ptr<osg::GraphicsContext> gc = osg::GraphicsContext::createGraphicsContext(traits.get());
 
     osg::ref_ptr< osg::Group > root( new osg::Group );
-    root->addChild( _node );
+    if(isComposite && triangles != nullptr)
+    {
+        root->addChild( triangles );
+    }
+    else
+    {
+        root->addChild( _node );
+    }
 
     // setup MRT camera
     osg::ref_ptr<osg::Camera> mrt_camera = new osg::Camera;
@@ -373,17 +416,25 @@ bool SnapGeotiffImage::process(osg::ref_ptr<osg::Node> _node, const std::string 
 
     if(alpha != 1)
     {
-        // Add the possibility of modifying the transparence
-        material = new osg::Material;
-        // Put the 3D model totally opaque
-        material->setAlpha( osg::Material::FRONT, alpha);
-        stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
 
-        // Turn on blending
-        osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-        stateSet->setAttributeAndModes(bf);
+        if(isComposite)
+        {
+            osg::Material* material = material = new osg::Material;
+            material->setAlpha( osg::Material::FRONT_AND_BACK, alpha);
+            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+            stateSet->setAttributeAndModes(bf);
+            stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
+        }
+        else
+        {
+            material = new osg::Material;
+            material->setAlpha( osg::Material::FRONT, alpha);
 
-        stateSet->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+            // Turn on blending
+            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+            stateSet->setAttributeAndModes(bf);
+            stateSet->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);
+        }
     }
 
     return status;
