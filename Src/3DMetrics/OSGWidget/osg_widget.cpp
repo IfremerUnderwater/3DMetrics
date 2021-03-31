@@ -32,6 +32,7 @@
 #include <osgUtil/Simplifier>
 
 #include <osgUtil/DelaunayTriangulator>
+
 //#include "delaunay_triangulator_nosort.h"
 //#include "deprecated_geometry.h"
 
@@ -688,7 +689,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     data->composite = false;
 
     // test Delaunaytriangulation for models with only points
-    if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0)
+    if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0 && root->asGeode() != nullptr)
     {
         osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator;
         //osg::ref_ptr<osg3DMETRICS::DelaunayTriangulatorNosort> dt = new osg3DMETRICS::DelaunayTriangulatorNosort;
@@ -722,58 +723,61 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         dt->setOutputNormalArray( new osg::Vec3Array );
                         dt->triangulate();
 
-                        // deprecated
-                        //                        osg::ref_ptr<deprecated_osg::Geometry> geometry = new deprecated_osg::Geometry;
-                        //                        geometry->setVertexArray( dt->getInputPointArray() );
-                        //                        geometry->setNormalArray( dt->getOutputNormalArray() );
-                        //                        geometry->setNormalBinding(deprecated_osg::Geometry::BIND_PER_PRIMITIVE );
-                        //                        osg::Vec4Array *color = new osg::Vec4Array;
-                        //                        osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
-                        //                        color->push_back(c);
-                        //                        geometry->setColorBinding( deprecated_osg::Geometry::BIND_OVERALL );
-                        //                        geometry->addPrimitiveSet( dt->getTriangles() );
-
-                        // no deprecated
+                        // rebuild in order not to use depracated osg::Geometry::BIND_PER_PRIMITIVE
                         osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
                         osg::Vec3Array* vertexes = dt->getInputPointArray();
-                        size_t vsz = vertexes->size();
+
                         osg::Vec3Array* normals = dt->getOutputNormalArray();
-                        size_t nsz = normals->size();
+                        osg::Vec3Array::iterator nitr = normals->begin();
+
                         osg::DrawElementsUInt *indexes = dt->getTriangles();
-                        size_t isz = indexes->size();
+                        osg::DrawElementsUInt::iterator iitr =   indexes->begin();
 
                         osg::ref_ptr<osg::Vec3Array> outPoints = new osg::Vec3Array;
                         osg::ref_ptr<osg::Vec3Array> outNormals = new osg::Vec3Array;
 
-                        for(int i=0; i<nsz; i++)
+                        while(nitr != normals->end())
                         {
-                            unsigned int i1 = (*indexes)[i*3];
-                            unsigned int i2 = (*indexes)[i*3+1];
-                            unsigned int i3 = (*indexes)[i*3+2];
-                            outPoints->push_back((*vertexes)[i1]);
-                            outPoints->push_back((*vertexes)[i2]);
-                            outPoints->push_back((*vertexes)[i3]);
-                            outNormals->push_back((*normals)[i]);
-                            outNormals->push_back((*normals)[i]);
-                            outNormals->push_back((*normals)[i]);
+                            outPoints->push_back((*vertexes)[*iitr]);
+                            ++iitr;
+                            outPoints->push_back((*vertexes)[*iitr]);
+                            ++iitr;
+                            outPoints->push_back((*vertexes)[*iitr]);
+                            ++iitr;
+
+                            // triangles with normals to bottom
+                            osg::Vec3 n = *nitr;
+                            if(n.z() < 0)
+                            {
+                                n.x() = -n.x();
+                                n.y() = -n.y();
+                                n.z() = -n.z();
+                            }
+                            outNormals->push_back(n);
+                            outNormals->push_back(n);
+                            outNormals->push_back(n);
+                            ++nitr;
                         }
                         geometry->setVertexArray( outPoints );
                         geometry->setNormalArray( outNormals );
                         geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
 
+                        bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
+
                         osg::Vec4Array *color = new osg::Vec4Array;
                         osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
                         color->push_back(c);
                         geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
-                        bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
 
                         osg::StateSet* stateSet = geometry->getOrCreateStateSet();
                         stateSet->setMode( GL_BLEND, osg::StateAttribute::ON);
                         stateSet->setRenderBinDetails(2, "RenderBin");
 
+                        //
                         osg::StateSet* stateSetpts = current_geometry->getOrCreateStateSet();
                         stateSetpts->setMode( GL_BLEND, osg::StateAttribute::ON);
                         stateSetpts->setRenderBinDetails(1, "RenderBin");
+                        //stateSetpts->addUniform( new osg::Uniform( "hasmesh", false));
 
                         // material
                         // Add the possibility of modifying the transparence
@@ -782,17 +786,20 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                         //material->setDiffuse( osg::Material::FRONT, osg::Vec4( 0.5f, 0.5f, 0.5f, 1.f ) );
                         //material->setSpecular( osg::Material::FRONT, osg::Vec4( 1.f, 1.f, 1.f, 0.f ) );
                         material->setShininess( osg::Material::FRONT_AND_BACK, 96.f );
-                        material->setEmission( osg::Material::FRONT_AND_BACK, osg::Vec4( 0.2f, 0.2f, 0.2f, 0.f ) );
+                        material->setEmission( osg::Material::FRONT_AND_BACK, osg::Vec4( 0.4f, 0.4f, 0.4f, 0.f ) );
 
-                        // Put the 3D model totally opaque
+                        // Put the 3D model 50% opaque
                         stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
                         material->setAlpha(osg::Material::FRONT_AND_BACK, 0.5f );
+                        //stateSet->addUniform( new osg::Uniform( "hasmesh", true));
 
                         osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
                         stateSet->setAttributeAndModes(bf);
 
                         geode->addDrawable( geometry.get() );
+
                         data->composite = true;
+                        data->hasMesh = true;
                     }
                 }
             }
