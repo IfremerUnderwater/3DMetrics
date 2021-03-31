@@ -67,7 +67,6 @@
 #include "OSGWidget/measurement_picker_tool.h"
 #include "OSGWidget/smartlod.h"
 #include "OSGWidget/lod_tools.h"
-//#include "OSGWidget/object_meansize_visitor.h"
 
 #include "qtable_arrowkey_detector.h"
 
@@ -1423,10 +1422,10 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
 
                 menu->addSeparator();
 
-                bool showLOD = false;
                 osg::ref_ptr<osg::Group> matrix = node->asGroup();
                 if(matrix.valid())
                 {
+                    bool showLOD = false;
                     osg::ref_ptr<osg::Node> child = matrix->getChild(0);
                     osg::ref_ptr<osg::LOD> lod = dynamic_cast<osg::LOD*>(child.get());
                     if(lod.valid())
@@ -1441,11 +1440,22 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                             showLOD = true;
                         }
                     }
-                }
-                if(showLOD)
-                {
-                    menu->addSeparator();
-                    menu->addAction(tr("Edit LOD thresholds"),this,SLOT(slot_editLODThresholds()));
+
+                    if(showLOD)
+                    {
+                        menu->addSeparator();
+                        menu->addAction(tr("Edit LOD thresholds"),this,SLOT(slot_editLODThresholds()));
+                    }
+
+                    if(ui->display_widget->hasCompositeMesh(node))
+                    {
+                        QAction *compositeAction = new QAction(tr("Show generated mesh"),this);
+                        compositeAction->setCheckable(true);
+                        bool enabled = ui->display_widget->isCompositeMeshVisible(node);
+                        compositeAction->setChecked(enabled);
+                        QObject::connect(compositeAction, SIGNAL(toggled(bool)), this, SLOT(slot_toggleCompositeMesh(bool)));
+                        menu->addAction(compositeAction);
+                    }
                 }
 
                 QAction *action = new QAction(tr("Depth to colormap"),this);
@@ -4402,6 +4412,27 @@ void TDMGui::slot_editLODThresholds()
     }
 
     ui->display_widget->update();
+}
+
+void TDMGui::slot_toggleCompositeMesh(bool _value)
+{
+
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+        ui->display_widget->showCompositeMesh(node,_value);
+    }
 }
 
 

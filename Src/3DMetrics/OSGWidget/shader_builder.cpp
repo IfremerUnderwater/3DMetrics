@@ -31,14 +31,14 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
             "    vec3 RGB = colorPalette(val);"
             "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
             "    gl_Position = gl_ModelViewProjectionMatrix*v;"
-            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
+//            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
             "}";
 
     // without shading
     const std::string vertexSourceNoShader =
             "#version 130 \n"
             "uniform float alpha;"
-            "varying vec2 texture_coordinate;"
+//            "varying vec2 texture_coordinate;"
             "out vec4 fcolor;"
             "void main(void)"
             "{"
@@ -47,7 +47,7 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
             "   fcolor = vec4( color.x, color.y, color.z, alpha);"
             "   gl_Position = gl_ModelViewProjectionMatrix*v;"
             // Passing The Texture Coordinate Of Texture Unit 0 To The Fragment Shader
-            "   texture_coordinate = vec2(gl_MultiTexCoord0);"
+//            "   texture_coordinate = vec2(gl_MultiTexCoord0);"
             "}";
 
 
@@ -174,12 +174,12 @@ osg::Shader *ShaderBuilder::fragmentShader(const ShaderBuilder::ShaderType _shad
     // without shading
     const std::string fragmentSourceNoShader =
             "in vec4 fcolor;"
-            "varying vec2 texture_coordinate;"
-            "uniform sampler2D my_color_texture;"
+//            "varying vec2 texture_coordinate;"
+//            "uniform sampler2D my_color_texture;"
             "void main()"
             "{"
-//            "   gl_FragColor = fcolor;"
-            "   gl_FragColor= texture2D(my_color_texture, texture_coordinate);"
+            "   gl_FragColor = fcolor;"
+//            "   gl_FragColor= texture2D(my_color_texture, texture_coordinate);"
             "}";
 
 

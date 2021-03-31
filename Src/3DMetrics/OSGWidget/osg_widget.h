@@ -243,6 +243,10 @@ public:
 
     double getRefAlt() const { return m_ref_alt == INVALID_VALUE ? 0 : m_ref_alt; }
 
+    bool hasCompositeMesh(osg::ref_ptr<osg::Node> _node);
+    bool isCompositeMeshVisible(osg::ref_ptr<osg::Node> _node);
+    void showCompositeMesh(osg::ref_ptr<osg::Node> _node, bool _show);
+
 protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );

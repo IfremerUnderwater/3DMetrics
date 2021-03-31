@@ -278,6 +278,10 @@ OSGWidget::OSGWidget(QWidget* parent)
     m_modelsGroup = new osg::Group;
     m_geodesGroup = new osg::Group;
 
+    osg::StateSet* stateSetGeodes = m_geodesGroup->getOrCreateStateSet();
+    stateSetGeodes->setMode( GL_BLEND, osg::StateAttribute::ON);
+    stateSetGeodes->setRenderBinDetails(100, "RenderBin");
+
     m_globalGroup->addChild(m_modelsGroup);
     m_globalGroup->addChild(m_geodesGroup);
 
@@ -688,118 +692,125 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     data->hasMesh = geomcount.getNbTriangles() > 0;
     data->composite = false;
 
-    // test Delaunaytriangulation for models with only points
+    // Delaunaytriangulation for models with only points
     if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0 && root->asGeode() != nullptr)
     {
-        osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator;
-        //osg::ref_ptr<osg3DMETRICS::DelaunayTriangulatorNosort> dt = new osg3DMETRICS::DelaunayTriangulatorNosort;
-
-        osg::Geode *geode = root->asGeode();
-        unsigned int num_drawables = geode->getNumDrawables();
-        for( unsigned int i = 0; i < num_drawables; i++ )
+        QMessageBox::StandardButton res = QMessageBox::question( this, tr("Loading point cloud"),
+                                                                 tr("Build model with Delaunay triangulation?\nWARNING : could be slow"),
+                                                                 QMessageBox::No | QMessageBox::Yes,
+                                                                 QMessageBox::No);
+        if(res == QMessageBox::Yes)
         {
-            // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
-            // every little saving counts
-            osg::Geometry *current_geometry = geode->getDrawable(i)->asGeometry();
+            osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator;
+            //osg::ref_ptr<osg3DMETRICS::DelaunayTriangulatorNosort> dt = new osg3DMETRICS::DelaunayTriangulatorNosort;
 
-            // Only process if the drawable is geometry
-            if ( current_geometry )
+            osg::Geode *geode = root->asGeode();
+            unsigned int num_drawables = geode->getNumDrawables();
+            for( unsigned int i = 0; i < num_drawables; i++ )
             {
-                // get the list of different geometry mode which were created
-                osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
+                // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
+                // every little saving counts
+                osg::Geometry *current_geometry = geode->getDrawable(i)->asGeometry();
 
-                for(unsigned int j = 0; j < primitive_list.size(); j++)
+                // Only process if the drawable is geometry
+                if ( current_geometry )
                 {
-                    osg::PrimitiveSet *primitive_set = primitive_list[j];
+                    // get the list of different geometry mode which were created
+                    osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
 
-                    if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
+                    for(unsigned int j = 0; j < primitive_list.size(); j++)
                     {
-                        osg::Array *array = current_geometry->getVertexArray();
-                        osg::Vec3Array *v = new osg::Vec3Array;
-                        v->resize(((osg::Vec3Array*)array)->size());
-                        std::copy( ((osg::Vec3Array*)array)->begin(), ((osg::Vec3Array*)array)->end(), v->begin() );
+                        osg::PrimitiveSet *primitive_set = primitive_list[j];
 
-                        dt->setInputPointArray( v);
-                        dt->setOutputNormalArray( new osg::Vec3Array );
-                        dt->triangulate();
-
-                        // rebuild in order not to use depracated osg::Geometry::BIND_PER_PRIMITIVE
-                        osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
-                        osg::Vec3Array* vertexes = dt->getInputPointArray();
-
-                        osg::Vec3Array* normals = dt->getOutputNormalArray();
-                        osg::Vec3Array::iterator nitr = normals->begin();
-
-                        osg::DrawElementsUInt *indexes = dt->getTriangles();
-                        osg::DrawElementsUInt::iterator iitr =   indexes->begin();
-
-                        osg::ref_ptr<osg::Vec3Array> outPoints = new osg::Vec3Array;
-                        osg::ref_ptr<osg::Vec3Array> outNormals = new osg::Vec3Array;
-
-                        while(nitr != normals->end())
+                        if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
                         {
-                            outPoints->push_back((*vertexes)[*iitr]);
-                            ++iitr;
-                            outPoints->push_back((*vertexes)[*iitr]);
-                            ++iitr;
-                            outPoints->push_back((*vertexes)[*iitr]);
-                            ++iitr;
+                            osg::Array *array = current_geometry->getVertexArray();
+                            osg::Vec3Array *v = new osg::Vec3Array;
+                            v->resize(((osg::Vec3Array*)array)->size());
+                            std::copy( ((osg::Vec3Array*)array)->begin(), ((osg::Vec3Array*)array)->end(), v->begin() );
 
-                            // triangles with normals to bottom
-                            osg::Vec3 n = *nitr;
-                            if(n.z() < 0)
+                            dt->setInputPointArray( v);
+                            dt->setOutputNormalArray( new osg::Vec3Array );
+                            dt->triangulate();
+
+                            // rebuild in order not to use depracated osg::Geometry::BIND_PER_PRIMITIVE
+                            osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
+                            osg::Vec3Array* vertexes = dt->getInputPointArray();
+
+                            osg::Vec3Array* normals = dt->getOutputNormalArray();
+                            osg::Vec3Array::iterator nitr = normals->begin();
+
+                            osg::DrawElementsUInt *indexes = dt->getTriangles();
+                            osg::DrawElementsUInt::iterator iitr =   indexes->begin();
+
+                            osg::ref_ptr<osg::Vec3Array> outPoints = new osg::Vec3Array;
+                            osg::ref_ptr<osg::Vec3Array> outNormals = new osg::Vec3Array;
+
+                            while(nitr != normals->end())
                             {
-                                n.x() = -n.x();
-                                n.y() = -n.y();
-                                n.z() = -n.z();
+                                outPoints->push_back((*vertexes)[*iitr]);
+                                ++iitr;
+                                outPoints->push_back((*vertexes)[*iitr]);
+                                ++iitr;
+                                outPoints->push_back((*vertexes)[*iitr]);
+                                ++iitr;
+
+                                // triangles with normals to bottom
+                                osg::Vec3 n = *nitr;
+                                if(n.z() < 0)
+                                {
+                                    n.x() = -n.x();
+                                    n.y() = -n.y();
+                                    n.z() = -n.z();
+                                }
+                                outNormals->push_back(n);
+                                outNormals->push_back(n);
+                                outNormals->push_back(n);
+                                ++nitr;
                             }
-                            outNormals->push_back(n);
-                            outNormals->push_back(n);
-                            outNormals->push_back(n);
-                            ++nitr;
+                            geometry->setVertexArray( outPoints );
+                            geometry->setNormalArray( outNormals );
+                            geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
+
+                            bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
+
+                            osg::Vec4Array *color = new osg::Vec4Array;
+                            osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
+                            color->push_back(c);
+                            geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
+
+                            osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+                            stateSet->setMode( GL_BLEND, osg::StateAttribute::ON);
+                            stateSet->setRenderBinDetails(2, "RenderBin");
+
+                            //
+                            osg::StateSet* stateSetpts = current_geometry->getOrCreateStateSet();
+                            stateSetpts->setMode( GL_BLEND, osg::StateAttribute::ON);
+                            stateSetpts->setRenderBinDetails(1, "RenderBin");
+                            //stateSetpts->addUniform( new osg::Uniform( "hasmesh", false));
+
+                            // material
+                            // Add the possibility of modifying the transparence
+                            osg::Material* material = material = new osg::Material;
+
+                            //material->setDiffuse( osg::Material::FRONT, osg::Vec4( 0.5f, 0.5f, 0.5f, 1.f ) );
+                            //material->setSpecular( osg::Material::FRONT, osg::Vec4( 1.f, 1.f, 1.f, 0.f ) );
+                            material->setShininess( osg::Material::FRONT, 96.f );
+                            material->setEmission( osg::Material::FRONT, osg::Vec4( 0.4f, 0.4f, 0.4f, 0.f ) );
+
+                            // Put the 3D model 50% opaque
+                            stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
+                            material->setAlpha(osg::Material::FRONT, 0.5f );
+                            //stateSet->addUniform( new osg::Uniform( "hasmesh", true));
+
+                            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+                            stateSet->setAttributeAndModes(bf);
+
+                            geode->addDrawable( geometry.get() );
+
+                            data->composite = true;
+                            data->hasMesh = true;
                         }
-                        geometry->setVertexArray( outPoints );
-                        geometry->setNormalArray( outNormals );
-                        geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
-
-                        bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
-
-                        osg::Vec4Array *color = new osg::Vec4Array;
-                        osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
-                        color->push_back(c);
-                        geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
-
-                        osg::StateSet* stateSet = geometry->getOrCreateStateSet();
-                        stateSet->setMode( GL_BLEND, osg::StateAttribute::ON);
-                        stateSet->setRenderBinDetails(2, "RenderBin");
-
-                        //
-                        osg::StateSet* stateSetpts = current_geometry->getOrCreateStateSet();
-                        stateSetpts->setMode( GL_BLEND, osg::StateAttribute::ON);
-                        stateSetpts->setRenderBinDetails(1, "RenderBin");
-                        //stateSetpts->addUniform( new osg::Uniform( "hasmesh", false));
-
-                        // material
-                        // Add the possibility of modifying the transparence
-                        osg::Material* material = material = new osg::Material;
-
-                        //material->setDiffuse( osg::Material::FRONT, osg::Vec4( 0.5f, 0.5f, 0.5f, 1.f ) );
-                        //material->setSpecular( osg::Material::FRONT, osg::Vec4( 1.f, 1.f, 1.f, 0.f ) );
-                        material->setShininess( osg::Material::FRONT_AND_BACK, 96.f );
-                        material->setEmission( osg::Material::FRONT_AND_BACK, osg::Vec4( 0.4f, 0.4f, 0.4f, 0.f ) );
-
-                        // Put the 3D model 50% opaque
-                        stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
-                        material->setAlpha(osg::Material::FRONT_AND_BACK, 0.5f );
-                        //stateSet->addUniform( new osg::Uniform( "hasmesh", true));
-
-                        osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-                        stateSet->setAttributeAndModes(bf);
-
-                        geode->addDrawable( geometry.get() );
-
-                        data->composite = true;
-                        data->hasMesh = true;
                     }
                 }
             }
@@ -1803,7 +1814,7 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
                     osg::StateAttribute* attrmat = stateSet->getAttribute(osg::StateAttribute::MATERIAL);
                     osg::Material* mat = dynamic_cast<osg::Material*>(attrmat);
                     stateSet->setAttributeAndModes ( mat, osg::StateAttribute::ON );
-                    mat->setAlpha(osg::Material::FRONT_AND_BACK, _transparency_value);
+                    mat->setAlpha(osg::Material::FRONT, _transparency_value);
                 }
             }
         }
@@ -1922,24 +1933,23 @@ void OSGWidget::setZScale(double _newValue)
 }
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )
-{  
+{
     osg::Program* program = new osg::Program;
     program->setName("3dMetricsShader");
     ShaderBuilder::ShaderType shaderType = ShaderBuilder::Standard;
     program->addShader( ShaderBuilder::fragmentShader(shaderType) );
     program->addShader( ShaderBuilder::vertexShader(shaderType, m_colorPalette) );
-
     stateSet->setAttribute( program, osg::StateAttribute::ON );
 
     stateSet->addUniform( new osg::Uniform( "alpha", 1.0f));
     stateSet->addUniform( new osg::Uniform( "pointsize", m_pointsize));
 
     // test texture
-    osg::Texture *texture = (osg::Texture *)(stateSet->getTextureAttribute(0, osg::StateAttribute::TEXTURE));
-    if(texture != nullptr)
-    {
-        stateSet->addUniform( new osg::Uniform( "my_color_texture", texture));
-    }
+    //    osg::Texture *texture = (osg::Texture *)(stateSet->getTextureAttribute(0, osg::StateAttribute::TEXTURE));
+    //    if(texture != nullptr)
+    //    {
+    //        stateSet->addUniform( new osg::Uniform( "my_color_texture", texture));
+    //    }
     //    // test EDL
     //    osg::ref_ptr<osg::Image> image = new osg::Image();
     //    image->allocateImage(width(), height(), 1, GL_RGBA, GL_UNSIGNED_BYTE);
@@ -2161,4 +2171,52 @@ void OSGWidget::setColorPalette(ShaderColor::Palette _palette)
     }
     showZScale(m_showZScale);
     update();
+}
+
+bool OSGWidget::hasCompositeMesh(osg::ref_ptr<osg::Node> _node)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr && data->composite)
+        return true;
+    return false;
+}
+
+bool OSGWidget::isCompositeMeshVisible(osg::ref_ptr<osg::Node> _node)
+{
+    if(!hasCompositeMesh(_node))
+        return false;
+
+    osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+    osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+    if(root != 0)
+    {
+        osg::Geode *geode = root->asGeode();
+        if(geode != nullptr)
+        {
+            osg::Geometry *geometry = geode->getDrawable(1)->asGeometry();
+            if(geometry != nullptr)
+                return geometry->getNodeMask() != 0;
+        }
+    }
+
+    return false;
+}
+
+void OSGWidget::showCompositeMesh(osg::ref_ptr<osg::Node> _node, bool _show)
+{
+    if(!hasCompositeMesh(_node))
+        return;
+    osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+    osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+    if(root != 0)
+    {
+        osg::Geode *geode = root->asGeode();
+        if(geode != nullptr)
+        {
+            osg::Geometry *geometry = geode->getDrawable(1)->asGeometry();
+            if(geometry != nullptr)
+                geometry->setNodeMask(_show ? 0xFFFFFFFF : 0);
+            update();
+        }
+    }
 }
