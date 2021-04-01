@@ -6,9 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1277</width>
+    <width>1340</width>
     <height>907</height>
    </rect>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
   </property>
   <property name="windowTitle">
    <string>3D Metrics v0.5.2</string>
@@ -41,8 +44,8 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1277</width>
-     <height>21</height>
+     <width>1340</width>
+     <height>22</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -57,6 +60,7 @@
     <addaction name="separator"/>
     <addaction name="open_project_action"/>
     <addaction name="save_project_action"/>
+    <addaction name="close_project_action"/>
     <addaction name="separator"/>
     <addaction name="import_old_measurement_format_action"/>
     <addaction name="separator"/>
@@ -340,11 +344,6 @@
     <string>Save current measurement changes</string>
    </property>
   </action>
-  <action name="save_project_action">
-   <property name="text">
-    <string>Save project</string>
-   </property>
-  </action>
   <action name="export_data_to_csv_action">
    <property name="text">
     <string>Export data to ASCII (.csv or .txt)</string>
@@ -507,6 +506,16 @@
    </property>
    <property name="text">
     <string>Show Z scale</string>
+   </property>
+  </action>
+  <action name="close_project_action">
+   <property name="text">
+    <string>Close project</string>
+   </property>
+  </action>
+  <action name="save_project_action">
+   <property name="text">
+    <string>Save project</string>
    </property>
   </action>
  </widget>
