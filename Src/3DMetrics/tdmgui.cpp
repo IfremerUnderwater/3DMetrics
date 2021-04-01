@@ -1276,6 +1276,13 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                         compositeAction->setChecked(enabled);
                         QObject::connect(compositeAction, SIGNAL(toggled(bool)), this, SLOT(slot_toggleCompositeMesh(bool)));
                         menu->addAction(compositeAction);
+
+                        compositeAction = new QAction(tr("Swap mesh and points order"),this);
+                        compositeAction->setCheckable(true);
+                        enabled = ui->display_widget->isCompositeMeshFirstDraw(node);
+                        compositeAction->setChecked(enabled);
+                        QObject::connect(compositeAction, SIGNAL(toggled(bool)), this, SLOT(slot_toggleCompositeMeshOrder(bool)));
+                        menu->addAction(compositeAction);
                     }
                 }
 
@@ -4554,7 +4561,6 @@ void TDMGui::slot_editLODThresholds()
 
 void TDMGui::slot_toggleCompositeMesh(bool _value)
 {
-
     QTreeView *view = ui->tree_widget;
 
     bool has_selection = !view->selectionModel()->selection().isEmpty();
@@ -4570,6 +4576,26 @@ void TDMGui::slot_toggleCompositeMesh(bool _value)
 
         osg::Node* const node = (layer_data.node().get());
         ui->display_widget->showCompositeMesh(node,_value);
+    }
+}
+
+void TDMGui::slot_toggleCompositeMeshOrder(bool _value)
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+        ui->display_widget->compositeMeshFirstDraw(node,_value);
     }
 }
 

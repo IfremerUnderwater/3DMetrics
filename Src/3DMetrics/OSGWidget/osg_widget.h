@@ -246,6 +246,8 @@ public:
     bool hasCompositeMesh(osg::ref_ptr<osg::Node> _node);
     bool isCompositeMeshVisible(osg::ref_ptr<osg::Node> _node);
     void showCompositeMesh(osg::ref_ptr<osg::Node> _node, bool _show);
+    void compositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node, bool _meshFirst);
+    bool isCompositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node);
 
 protected:
     virtual void paintGL();

@@ -810,6 +810,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
 
                             data->composite = true;
                             data->hasMesh = true;
+                            data->swappriorities = false;
                         }
                     }
                 }
@@ -2219,4 +2220,51 @@ void OSGWidget::showCompositeMesh(osg::ref_ptr<osg::Node> _node, bool _show)
             update();
         }
     }
+}
+
+void OSGWidget::compositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node, bool _meshFirst)
+{
+    if(!hasCompositeMesh(_node))
+        return;
+
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        data->swappriorities = _meshFirst;
+    }
+
+    osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
+    osg::ref_ptr<osg::Node> root = matrix->getChild(0);
+    if(root != 0)
+    {
+        osg::Geode *geode = root->asGeode();
+        if(geode != nullptr)
+        {
+            osg::Geometry *geometry = geode->getDrawable(0)->asGeometry();
+            if(geometry != nullptr)
+            {
+                osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+                stateSet->setRenderBinDetails( _meshFirst ? 2 : 1, "RenderBin");
+            }
+            geometry = geode->getDrawable(1)->asGeometry();
+            if(geometry != nullptr)
+            {
+                osg::StateSet* stateSet = geometry->getOrCreateStateSet();
+                stateSet->setRenderBinDetails(_meshFirst ? 1 : 2, "RenderBin");
+            }
+            update();
+        }
+    }
+}
+
+bool OSGWidget::isCompositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node)
+{
+
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        return data->swappriorities;
+    }
+
+    return false;
 }

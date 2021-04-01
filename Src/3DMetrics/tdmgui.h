@@ -196,7 +196,8 @@ public slots:
     void slot_editModelOffset();
     void slot_toggleDepthToColor(bool);
     void slot_editLODThresholds();
-    void slot_toggleCompositeMesh(bool);
+    void slot_toggleCompositeMesh(bool _value);
+    void slot_toggleCompositeMeshOrder(bool _value);
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);

@@ -23,6 +23,7 @@ public:
 
     // points + generated triangles added
     bool composite;
+    bool swappriorities;
 };
 
 #endif // NODE_USER_DATA_H
