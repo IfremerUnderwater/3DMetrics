@@ -31,7 +31,7 @@ osg::Shader *ShaderBuilder::vertexShader(const ShaderBuilder::ShaderType _shader
             "    vec3 RGB = colorPalette(val);"
             "    fcolor = vec4( RGB.x, RGB.y, RGB.z, alpha);"
             "    gl_Position = gl_ModelViewProjectionMatrix*v;"
-//            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
+            "    gl_PointSize = 4.0 * pointsize / gl_Position.w;"
             "}";
 
     // without shading

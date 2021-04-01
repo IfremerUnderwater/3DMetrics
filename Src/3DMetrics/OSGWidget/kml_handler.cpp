@@ -1,6 +1,5 @@
 #include "kml_handler.h"
 
-
 using kmldom::BasicLinkPtr;
 using kmldom::ContainerPtr;
 using kmldom::DocumentPtr;
@@ -22,9 +21,10 @@ using kmldom::StylePtr;
 using kmldom::StyleMapPtr;
 using kmldom::StyleSelectorPtr;
 
-KMLHandler::KMLHandler()
-{
+#include <iostream>
 
+KMLHandler::KMLHandler()
+{   
 }
 
 FeaturePtr KMLHandler::getRootFeature(const ElementPtr& _root) {
@@ -40,7 +40,7 @@ bool KMLHandler::visitGeometry(const GeometryPtr& _geometry) {
 
         if (m_model->has_location()){
             m_model_location = m_model->get_location();
-            return false;
+            return true;
         }
     }
     return false;
@@ -53,7 +53,6 @@ bool KMLHandler::visitPlacemark(const PlacemarkPtr& _placemark) {
     }
     return false;
 }
-
 
 bool KMLHandler::visitFeature(const FeaturePtr& _feature) {
     if (const PlacemarkPtr placemark = kmldom::AsPlacemark(_feature)) {
@@ -73,6 +72,7 @@ bool KMLHandler::readFile(std::string _kmlfile) {
     std::string errors;
     ElementPtr root = kmldom::Parse(kml, &errors);
     if (!root) {
+        std::cerr << errors << std::endl;
         return false;
     }
     if (const FeaturePtr feature = getRootFeature(root)) {
@@ -84,17 +84,16 @@ bool KMLHandler::readFile(std::string _kmlfile) {
 
 std::string KMLHandler::getModelPath()
 {
-// not used
-//    std::string filepath, base_directory, filename;
+    // not used
+    //    std::string filepath, base_directory, filename;
 
-//    kmlbase::File::SplitFilePath(filepath,
-//                                &base_directory,
-//                                &filename);
+    //    kmlbase::File::SplitFilePath(filepath,
+    //                                &base_directory,
+    //                                &filename);
 
     //return base_directory+std::string("/")+m_model->get_link()->get_href();
 
     return m_model->get_link()->get_href();
-
 }
 
 double KMLHandler::getModelLat()

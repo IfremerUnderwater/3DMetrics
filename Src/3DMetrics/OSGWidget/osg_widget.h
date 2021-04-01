@@ -249,6 +249,10 @@ public:
     void compositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node, bool _meshFirst);
     bool isCompositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node);
 
+    bool hasMesh(osg::ref_ptr<osg::Node> _node);
+    bool isPointSmooth(osg::ref_ptr<osg::Node> _node);
+    void setPointSmooth(osg::ref_ptr<osg::Node> _node, bool _smooth);
+
 protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );

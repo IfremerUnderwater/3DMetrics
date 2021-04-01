@@ -1113,6 +1113,12 @@ void OSGWidget::clearSceneData()
     m_ref_lat_lon.setY(INVALID_VALUE);
     m_ref_alt = INVALID_VALUE;
 
+    m_modelsZMin = 0;
+    m_modelsZMax= 0;
+
+    m_displayZMin = 0;
+    m_displayZMax = 0;
+
     this->initializeGL();
     update();
 }
@@ -1126,7 +1132,7 @@ void OSGWidget::initializeGL(){
     state_set->setAttributeAndModes( material, osg::StateAttribute::ON );
     state_set->setMode(GL_BLEND, osg::StateAttribute::ON);
     state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
-    state_set->setMode(GL_POINT_SMOOTH, osg::StateAttribute::ON);
+    state_set->setMode(GL_POINT_SMOOTH, osg::StateAttribute::OFF);
     state_set->setMode(GL_DEPTH_TEST, osg::StateAttribute::ON);
 
     // to show measures too
@@ -1784,6 +1790,8 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
 
     state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
 
+    bool alphaset = false;
+
     if(data != nullptr && data->composite)
     {
         // Only process generated triangles
@@ -1807,8 +1815,12 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
                 {
                     osg::PrimitiveSet *primitive_set = primitive_list[j];
                     if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
+                    {
+                        // hack alpha value
+                        osg::StateSet* stateSet = current_geometry->getOrCreateStateSet();
+                        stateSet->addUniform( new osg::Uniform( "alpha", float(1.0 - _transparency_value) ));
                         continue;
-
+                    }
                     // we have triangles here
                     osg::StateSet* stateSet = current_geometry->getOrCreateStateSet();
 
@@ -1816,10 +1828,12 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
                     osg::Material* mat = dynamic_cast<osg::Material*>(attrmat);
                     stateSet->setAttributeAndModes ( mat, osg::StateAttribute::ON );
                     mat->setAlpha(osg::Material::FRONT, _transparency_value);
+
+                    // hack alpha value
+                    stateSet->addUniform( new osg::Uniform( "alpha", float(_transparency_value) ));
                 }
             }
         }
-
     }
     else
     {
@@ -1853,7 +1867,8 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
     }
 
     // alpha on shader
-    state_set->addUniform( new osg::Uniform( "alpha", float(_transparency_value) ));
+    if(!alphaset)
+        state_set->addUniform( new osg::Uniform( "alpha", float(_transparency_value) ));
 
     update();
     //    // test
@@ -2267,4 +2282,28 @@ bool OSGWidget::isCompositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node)
     }
 
     return false;
+}
+
+bool OSGWidget::hasMesh(osg::ref_ptr<osg::Node> _node)
+{
+    osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
+    if(data != nullptr)
+    {
+        return data->hasMesh;
+    }
+
+    return false;
+}
+
+bool OSGWidget::isPointSmooth(osg::ref_ptr<osg::Node> _node)
+{
+    osg::StateSet* stateSet = _node->getOrCreateStateSet();
+    return stateSet->getMode(GL_POINT_SMOOTH) == osg::StateAttribute::ON;
+}
+
+void OSGWidget::setPointSmooth(osg::ref_ptr<osg::Node> _node, bool _smooth)
+{
+    osg::StateSet* stateSet = _node->getOrCreateStateSet();
+    stateSet->setMode(GL_POINT_SMOOTH, _smooth ? osg::StateAttribute::ON : osg::StateAttribute::OFF);
+    update();
 }

@@ -1283,6 +1283,22 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
                         compositeAction->setChecked(enabled);
                         QObject::connect(compositeAction, SIGNAL(toggled(bool)), this, SLOT(slot_toggleCompositeMeshOrder(bool)));
                         menu->addAction(compositeAction);
+
+                        compositeAction = new QAction(tr("Smooth points"),this);
+                        compositeAction->setCheckable(true);
+                        enabled = ui->display_widget->isPointSmooth(node);
+                        compositeAction->setChecked(enabled);
+                        QObject::connect(compositeAction, SIGNAL(toggled(bool)), this, SLOT(slot_toggleSmoothPoint(bool)));
+                        menu->addAction(compositeAction);
+                    }
+                    else if(!ui->display_widget->hasMesh(node))
+                    {
+                        QAction *compositeAction = new QAction(tr("Smooth points"),this);
+                        compositeAction->setCheckable(true);
+                        bool enabled = ui->display_widget->isPointSmooth(node);
+                        compositeAction->setChecked(enabled);
+                        QObject::connect(compositeAction, SIGNAL(toggled(bool)), this, SLOT(slot_toggleSmoothPoint(bool)));
+                        menu->addAction(compositeAction);
                     }
                 }
 
@@ -3236,7 +3252,6 @@ void TDMGui::slot_axeView()
 
 void TDMGui::slot_computeTotalArea()
 {
-
     QTreeView *view = ui->tree_widget;
 
     bool has_selection = !view->selectionModel()->selection().isEmpty();
@@ -3303,7 +3318,6 @@ void TDMGui::slot_saveOrthoMap()
         TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
         TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
 
-        //        osg::ref_ptr<osg::Node> node = layer_data.node();
         osg::Node* const node = (layer_data.node().get());
         // SCREEN
 
@@ -3312,7 +3326,6 @@ void TDMGui::slot_saveOrthoMap()
         double pixels = QInputDialog::getDouble(this,tr("Pixels") , tr("Enter the pixel size in meter ?"), 0.1 , 0, 99999,4, &ok);
         if( !ok ) return;
 
-        //bool save_image = ui->display_widget->generateGeoTiff(node,name_file_orhto2D,pixels,OSGWidget::OrthoMap);
         bool save_image = ui->display_widget->generateGeoOrthoTiff(node,name_file_orhto2D,pixels);
         if (save_image) QMessageBox::information(this,"Done","Your orthographic image have been generated");
         else
@@ -4157,8 +4170,12 @@ void TDMGui::open3DModel(const QString _filename)
     {
         // kml
         KMLHandler kh;
-        kh.readFile(_filename.toStdString());
-
+        bool status = kh.readFile(_filename.toStdString());
+        if(!status)
+        {
+            QMessageBox::critical(this, tr("Error parsing KML file"), _filename);
+            return;
+        }
         pathToFile = kh.getModelPath();
 
         // check relative path
@@ -4418,6 +4435,28 @@ bool TDMGui::closeProjectAndAskForSaving()
     return true;
 }
 
+osg::Node *TDMGui::getSelectedNode() const
+{
+    QTreeView *view = ui->tree_widget;
+
+    bool has_selection = !view->selectionModel()->selection().isEmpty();
+    bool has_current = view->selectionModel()->currentIndex().isValid();
+
+    if (has_selection && has_current)
+    {
+        // get the 3D model selected
+        QModelIndex index = view->selectionModel()->currentIndex();
+        QAbstractItemModel *model = view->model();
+        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
+        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
+
+        osg::Node* const node = (layer_data.node().get());
+        return node;
+    }
+
+    return nullptr;
+}
+
 void TDMGui::dragEnterEvent(QDragEnterEvent *evt)
 {
     if(evt->mimeData()->hasUrls())
@@ -4427,11 +4466,8 @@ void TDMGui::dragEnterEvent(QDragEnterEvent *evt)
         {
             foreach(auto url, urls) {
                 //do stuff to tree widget based on the file url
-                qDebug() << url << " drag enter";
                 if(url.isValid())
                 {
-                    qDebug() << url.toLocalFile() << " drag enter";
-
                     // get extension
                     std::string pathToFile = url.toLocalFile().toStdString();
 
@@ -4445,30 +4481,21 @@ void TDMGui::dragEnterEvent(QDragEnterEvent *evt)
                     {
                         if(std::find(MODELSEXTENSION.begin(), MODELSEXTENSION.end(), extension) != MODELSEXTENSION.end())
                         {
-                            qDebug() << "MODEL";
                             evt->accept();
                         }
                         if(std::find(MEASUREEXTENSION.begin(), MEASUREEXTENSION.end(), extension) != MEASUREEXTENSION.end())
                         {
-                            qDebug() << "MEASUREMENT";
                             evt->accept();
                         }
                         if(std::find(PROJECTEXTENSION.begin(), PROJECTEXTENSION.end(), extension) != PROJECTEXTENSION.end())
                         {
-                            qDebug() << "PROJECT";
                             evt->accept();
                         }
                     }
                 }
             }
         }
-        else
-        {
-            qDebug() << "only one file acceptes";
-        }
     }
-    else
-        qDebug() << "drag enter : none";
 }
 
 void TDMGui::dropEvent(QDropEvent *evt)
@@ -4477,7 +4504,6 @@ void TDMGui::dropEvent(QDropEvent *evt)
     foreach(auto url, urls)
     {
         //do stuff to tree widget based on the file url
-        qDebug() << url << " dropped";
         // get extension
         std::string pathToFile = url.toLocalFile().toStdString();
 
@@ -4491,17 +4517,14 @@ void TDMGui::dropEvent(QDropEvent *evt)
         {
             if(std::find(MODELSEXTENSION.begin(), MODELSEXTENSION.end(), extension) != MODELSEXTENSION.end())
             {
-                qDebug() << "MODEL";
                 open3DModel(url.toLocalFile());
             }
             if(std::find(MEASUREEXTENSION.begin(), MEASUREEXTENSION.end(), extension) != MEASUREEXTENSION.end())
             {
-                qDebug() << "MEASUREMENT";
                 openMeasurement(url.toLocalFile());
             }
             if(std::find(PROJECTEXTENSION.begin(), PROJECTEXTENSION.end(), extension) != PROJECTEXTENSION.end())
             {
-                qDebug() << "PROJECT";
                 if(closeProjectAndAskForSaving())
                 {
                     openProject(url.toLocalFile());
@@ -4581,21 +4604,19 @@ void TDMGui::slot_toggleCompositeMesh(bool _value)
 
 void TDMGui::slot_toggleCompositeMeshOrder(bool _value)
 {
-    QTreeView *view = ui->tree_widget;
-
-    bool has_selection = !view->selectionModel()->selection().isEmpty();
-    bool has_current = view->selectionModel()->currentIndex().isValid();
-
-    if (has_selection && has_current)
+    osg::Node* const node = getSelectedNode();
+    if(node != nullptr)
     {
-        // get the 3D model selected
-        QModelIndex index = view->selectionModel()->currentIndex();
-        QAbstractItemModel *model = view->model();
-        TdmLayerItem *item = (static_cast<TdmLayersModel*>(model))->getLayerItem(index);
-        TDMModelLayerData layer_data = item->getPrivateData<TDMModelLayerData>();
-
-        osg::Node* const node = (layer_data.node().get());
         ui->display_widget->compositeMeshFirstDraw(node,_value);
+    }
+}
+
+void TDMGui::slot_toggleSmoothPoint(bool _value)
+{
+    osg::Node* const node = getSelectedNode();
+    if(node != nullptr)
+    {
+        ui->display_widget->setPointSmooth(node,_value);
     }
 }
 

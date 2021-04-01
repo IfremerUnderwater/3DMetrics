@@ -115,6 +115,8 @@ protected:
     void openProject(QString _filename);
     bool closeProjectAndAskForSaving();
 
+    osg::Node *getSelectedNode() const;
+
 public slots:
 
     void slot_open3dModel();
@@ -198,6 +200,7 @@ public slots:
     void slot_editLODThresholds();
     void slot_toggleCompositeMesh(bool _value);
     void slot_toggleCompositeMeshOrder(bool _value);
+    void slot_toggleSmoothPoint(bool _value);
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
