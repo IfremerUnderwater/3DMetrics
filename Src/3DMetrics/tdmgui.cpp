@@ -3269,10 +3269,13 @@ void TDMGui::slot_computeTotalArea()
 
         QApplication::setOverrideCursor(Qt::WaitCursor);
 
+        unsigned int nodeMask = node->getNodeMask();
+        node->setNodeMask(0xFFFFFFFF);
         // compute the surface of the 3D model selected through his node
         AreaComputationVisitor total_area;
         node->accept(total_area);
         double total_area_double = total_area.getArea();
+        node->setNodeMask(nodeMask);
 
         QApplication::restoreOverrideCursor();
 
