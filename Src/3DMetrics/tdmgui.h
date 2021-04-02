@@ -36,7 +36,11 @@ public:
     ~TDMGui();
 
     // ask on close
-    void closeEvent(QCloseEvent *_event);
+    virtual void closeEvent(QCloseEvent *_event) override;
+
+    // Drag & Drop files
+    virtual void dragEnterEvent(QDragEnterEvent * evt) override;
+    virtual void dropEvent(QDropEvent * evt) override;
 
 private:
     Ui::TDMGui *ui;
@@ -105,6 +109,14 @@ private:
 
     void getLODThresholds(osg::Node *node, float &step1, float &step2);
 
+protected:
+    void open3DModel(const QString _filename);
+    void openMeasurement(QString _filename);
+    void openProject(QString _filename);
+    bool closeProjectAndAskForSaving();
+
+    osg::Node *getSelectedNode() const;
+
 public slots:
 
     void slot_open3dModel();
@@ -123,6 +135,7 @@ public slots:
 
     void slot_openProject();
     void slot_saveProject();
+    void slot_closeProject();
 
     // Menu "View"
     void slot_layersTreeWindow();
@@ -185,6 +198,9 @@ public slots:
     void slot_editModelOffset();
     void slot_toggleDepthToColor(bool);
     void slot_editLODThresholds();
+    void slot_toggleCompositeMesh(bool _value);
+    void slot_toggleCompositeMeshOrder(bool _value);
+    void slot_toggleSmoothPoint(bool _value);
 
     // Attributes Table widget
     void slot_attribTableContextMenu(const QPoint &);
@@ -220,7 +236,6 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
-
 
 private slots:
 

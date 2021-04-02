@@ -181,6 +181,8 @@ public:
 
     void setNodeTranslationOffset(double _x, double _y, double _z, osg::ref_ptr<osg::Node> _node, osg::Vec3d _trans);
 
+    void changePointSize(float _newPointSize);
+
 signals:
     void sig_showMeasurementSavingPopup(double _norm, QString _measurement_type, int _measurement_index);
     void signal_onMousePress(Qt::MouseButton _button, int _x, int _y);
@@ -241,6 +243,16 @@ public:
 
     double getRefAlt() const { return m_ref_alt == INVALID_VALUE ? 0 : m_ref_alt; }
 
+    bool hasCompositeMesh(osg::ref_ptr<osg::Node> _node);
+    bool isCompositeMeshVisible(osg::ref_ptr<osg::Node> _node);
+    void showCompositeMesh(osg::ref_ptr<osg::Node> _node, bool _show);
+    void compositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node, bool _meshFirst);
+    bool isCompositeMeshFirstDraw(osg::ref_ptr<osg::Node> _node);
+
+    bool hasMesh(osg::ref_ptr<osg::Node> _node);
+    bool isPointSmooth(osg::ref_ptr<osg::Node> _node);
+    void setPointSmooth(osg::ref_ptr<osg::Node> _node, bool _smooth);
+
 protected:
     virtual void paintGL();
     virtual void resizeGL( int _width, int _height );
@@ -292,6 +304,7 @@ private:
 
     // for shaders
     void configureShaders( osg::StateSet* stateSet );
+    float m_pointsize;
 
     // recompute global zmin and zmax for all models
     void recomputeGlobalZMinMax();

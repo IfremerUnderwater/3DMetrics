@@ -142,25 +142,14 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
     if (snap->pViewer)
     {
         // Add the WindowCaptureCallback now that we have full resolution
-        //GLenum buffer = snap->pViewer->getCamera()->getGraphicsContext()->getTraits()->doubleBuffer ? GL_BACK : GL_FRONT;
         GLenum buffer = GL_FRONT;
 
         WindowCaptureCallback *winCaptureCbk = new WindowCaptureCallback(buffer, fileName);
         snap->pViewer->getCamera()->setFinalDrawCallback(winCaptureCbk);
         snap->pViewer->renderingTraversals();
 
-        // test
-        //osgDB::writeImageFile(*zImage.get(),fileName + "-depth1.tif");
-
         float zmin = box.zMin();
         float zmax = box.zMax();
-
-//        osg::ref_ptr<NodeUserData> data = (NodeUserData*)(_node->getUserData());
-//        if(data != nullptr)
-//        {
-//            zmin = data->zmin;
-//            zmax = data->zmax;
-//        }
 
         float delta = zmax - zmin;
 
@@ -173,7 +162,7 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
 
             zImage->readPixels(0,0,width,height, GL_DEPTH_COMPONENT, GL_FLOAT);
             float *buffer= new float[width];
-            float no_data = -9999.0f;
+            const float no_data = -9999.0f;
 
             for(int i=0; i<height; i++)
             {
@@ -193,7 +182,7 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
                     if(val == 1.0f)
                         buffer[j] = no_data;
                     else
-                        buffer[j] = val * delta + zmin;
+                        buffer[j] = (1.0f - val) * delta + zmin;
                 }
                 CPLErr res = geotiff_dataset_alt->GetRasterBand(1)->RasterIO(GF_Write,0,i,width,1,buffer,width,1,GDT_Float32,0,0);
             }
@@ -204,7 +193,6 @@ bool SnapGeotiffDepth::Capture(osg::ref_ptr<osg::Node> _node, std::string fileNa
             delete [] buffer;
 
             geotiff_dataset_alt->GetRasterBand(1)->SetNoDataValue(no_data);
-
 
             // Setup output coordinate system
             double geo_transform[6] = { box.xMin(), _pixel_size, 0, box.yMax(), 0, -_pixel_size };
