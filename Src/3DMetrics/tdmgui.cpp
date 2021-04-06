@@ -35,6 +35,7 @@
 #include "Measurement/osg_measurement_row.h"
 
 #include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/mesh_builder.h"
 
 #include "tool_point_dialog.h"
 #include "tool_line_dialog.h"
@@ -424,7 +425,51 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     added->setChecked(true);
 
     // processing in file_open_thread
-    ui->display_widget->addNodeToScene(node, _transp);
+    bool mesh = false;
+    MeshBuilder meshBuilder(_node);
+    if(meshBuilder.hasPointsAndNotMesh())
+    {
+        QMessageBox::StandardButton res = QMessageBox::question( this, tr("Loading point cloud"),
+                                                                 tr("Build model with Delaunay triangulation?\nWARNING : could be slow"),
+                                                                 QMessageBox::No | QMessageBox::Yes,
+                                                                 QMessageBox::No);
+        if(res == QMessageBox::Yes)
+        {
+            mesh = meshBuilder.Triangulate();
+            if(mesh)
+            {
+                // ask for saving
+                QMessageBox::StandardButton save = QMessageBox::question( this, tr("Generated mesh"),
+                                                                          tr("Save generated triangle mesh?"),
+                                                                          QMessageBox::No | QMessageBox::Yes,
+                                                                          QMessageBox::No);
+                if(save == QMessageBox::Yes)
+                {
+                    // save in file
+                    QString mesh_filename = getSaveFileName(this, "Save Generated mesh : ","",
+                                                            "*.osgb", _filename + "-mesh.osgb");
+                    QFileInfo file_mesh_info(mesh_filename);
+
+                    // check filename is not empty
+                    if(file_mesh_info.fileName().isEmpty())
+                    {
+                        QMessageBox::critical(this, tr("Error : Save Generated mesh"), tr("Error : you didn't give a name to the file"));
+                    }
+                    else
+                    {
+                        bool status = meshBuilder.saveGeneratedMesh(mesh_filename.toStdString());
+                        if(!status)
+                        {
+                            QMessageBox::critical(this, tr("Error : Save Generated mesh"), tr("Error writing file"));
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    ui->display_widget->addNodeToScene(node, _transp, mesh);
 
 
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());

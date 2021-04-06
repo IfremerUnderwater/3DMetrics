@@ -78,6 +78,8 @@
 #include "elevation_map_creator.h"
 #include "snap_geotiff_depth.h"
 
+#include "../file_dialog.h"
+
 #define DEFAULT_POINT_SIZE 30.0f
 
 class KeyboardEventHandler : public osgGA::GUIEventHandler
@@ -316,14 +318,14 @@ OSGWidget::~OSGWidget()
 {
 }
 
-bool OSGWidget::setSceneFromFile(std::string _scene_file)
-{
-    osg::ref_ptr<osg::Node> node = createNodeFromFile(_scene_file);
-    if(!node)
-        return false;
+//bool OSGWidget::setSceneFromFile(std::string _scene_file)
+//{
+//    osg::ref_ptr<osg::Node> node = createNodeFromFile(_scene_file);
+//    if(!node)
+//        return false;
 
-    return addNodeToScene(node);
-}
+//    return addNodeToScene(node,0.0, _scene_file);
+//}
 
 ///
 /// \brief createNodeFromFile load a scene from a 3D file
@@ -637,19 +639,17 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
     }
     model_transform->addChild(group);
 
-
     return  model_transform;
-
-
 }
 
 ///
 /// \brief addNodeToScene add a binary OSG node to the scene
 /// \param _node node to be added
-/// \param _transparency transparency (default to 0
+/// \param _transparency transparency (default to 0)
+/// \param _filename
 /// \return true if loading succeded
 ///
-bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency) //, bool _buildLOD, std::string _pathToLodFile)
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency, bool _hasGeneratedmesh) //, bool _buildLOD, std::string _pathToLodFile)
 {
     osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
     osg::ref_ptr<osg::Node> root = matrix->getChild(0);
@@ -692,6 +692,7 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     data->hasMesh = geomcount.getNbTriangles() > 0;
     data->composite = false;
 
+    /***
     // Delaunaytriangulation for models with only points
     if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0 && root->asGeode() != nullptr)
     {
@@ -741,22 +742,127 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                             osg::Vec3Array::iterator nitr = normals->begin();
 
                             osg::DrawElementsUInt *indexes = dt->getTriangles();
-                            osg::DrawElementsUInt::iterator iitr =   indexes->begin();
+                            osg::DrawElementsUInt::iterator iitr = indexes->begin();
+
+                            // calculate mean triangle edge size
+                            // sum of dx*dx+dy*dy+dz*dz
+                            double sum = 0;
+                            double sumdx = 0;
+                            double sumdy = 0;
+                            double sumdz = 0;
+                            while(iitr != indexes->end())
+                            {
+                                osg::Vec3 a = (*vertexes)[*iitr];
+                                ++iitr;
+                                osg::Vec3 b = (*vertexes)[*iitr];
+                                ++iitr;
+                                osg::Vec3 c = (*vertexes)[*iitr];
+                                ++iitr;
+
+                                // ab
+                                sum += (a.x()-b.x())*(a.x()-b.x());
+                                sum += (a.y()-b.y())*(a.y()-b.y());
+                                sum += (a.z()-b.z())*(a.z()-b.z());
+                                sumdx += fabs(a.x() - b.x());
+                                sumdy += fabs(a.y() - b.y());
+                                sumdz += fabs(a.z() - b.z());
+
+                                // ac
+                                sum += (a.x()-c.x())*(a.x()-c.x());
+                                sum += (a.y()-c.y())*(a.y()-c.y());
+                                sum += (a.z()-c.z())*(a.z()-c.z());
+                                sumdx += fabs(a.x() - c.x());
+                                sumdy += fabs(a.y() - c.y());
+                                sumdz += fabs(a.z() - c.z());
+
+                                // bc
+                                sum += (b.x()-c.x())*(b.x()-c.x());
+                                sum += (b.y()-c.y())*(b.y()-c.y());
+                                sum += (b.z()-c.z())*(b.z()-c.z());
+                                sumdx += fabs(b.x() - c.x());
+                                sumdy += fabs(b.y() - c.y());
+                                sumdz += fabs(b.z() - c.z());
+
+                            }
+                            double mean = sum / indexes->size();
+                            double meandx = sumdx / indexes->size();
+                            double meandy = sumdy / indexes->size();
+                            double meandz = sumdz / indexes->size();
+
+                            float threshold = 9.0f * mean; // warning : squares !
+                            float thresholdx = 100.0f * meandx;
+                            float thresholdy = 100.0f * meandy;
+                            float thresholdz = 100.0f * meandz;
 
                             osg::ref_ptr<osg::Vec3Array> outPoints = new osg::Vec3Array;
                             osg::ref_ptr<osg::Vec3Array> outNormals = new osg::Vec3Array;
 
+                            nitr = normals->begin();
+                            iitr = indexes->begin();
                             while(nitr != normals->end())
                             {
-                                outPoints->push_back((*vertexes)[*iitr]);
+                                osg::Vec3 a = (*vertexes)[*iitr];
                                 ++iitr;
-                                outPoints->push_back((*vertexes)[*iitr]);
+                                osg::Vec3 b = (*vertexes)[*iitr];
                                 ++iitr;
-                                outPoints->push_back((*vertexes)[*iitr]);
+                                osg::Vec3 c = (*vertexes)[*iitr];
                                 ++iitr;
 
                                 // triangles with normals to bottom
                                 osg::Vec3 n = *nitr;
+                                ++nitr;
+
+                                // ab
+                                if((a.x()-b.x())*(a.x()-b.x()) > threshold)
+                                    continue;
+                                if((a.y()-b.y())*(a.y()-b.y()) > threshold)
+                                    continue;
+                                if((a.z()-b.z())*(a.z()-b.z()) > threshold)
+                                    continue;
+                                // ac
+                                if((a.x()-c.x())*(a.x()-c.x()) > threshold)
+                                    continue;
+                                if((a.y()-c.y())*(a.y()-c.y()) > threshold)
+                                    continue;
+                                if((a.z()-c.z())*(a.z()-c.z()) > threshold)
+                                    continue;
+
+                                // bc
+                                if((b.x()-c.x())*(b.x()-c.x()) > threshold)
+                                    continue;
+                                if((b.y()-c.y())*(b.y()-c.y()) > threshold)
+                                    continue;
+                                if((b.z()-c.z())*(b.z()-c.z()) > threshold)
+                                    continue;
+
+                                // dx threshold
+                                if(fabs(a.x() - b.x()) > thresholdx)
+                                    continue;
+                                if(fabs(a.x() - c.x()) > thresholdx)
+                                    continue;
+                                if(fabs(b.x() - c.x()) > thresholdx)
+                                    continue;
+
+                                // dy threshold
+                                if(fabs(a.y() - b.y()) > thresholdy)
+                                    continue;
+                                if(fabs(a.y() - c.y()) > thresholdy)
+                                    continue;
+                                if(fabs(b.y() - c.y()) > thresholdy)
+                                    continue;
+
+                                // dz threshold
+                                if(fabs(a.z() - b.z()) > thresholdz)
+                                    continue;
+                                if(fabs(a.z() - c.z()) > thresholdz)
+                                    continue;
+                                if(fabs(b.z() - c.z()) > thresholdz)
+                                    continue;
+
+                                outPoints->push_back(a);
+                                outPoints->push_back(b);
+                                outPoints->push_back(c);
+
                                 if(n.z() < 0)
                                 {
                                     n.x() = -n.x();
@@ -766,13 +872,40 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
                                 outNormals->push_back(n);
                                 outNormals->push_back(n);
                                 outNormals->push_back(n);
-                                ++nitr;
                             }
                             geometry->setVertexArray( outPoints );
                             geometry->setNormalArray( outNormals );
                             geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
 
                             bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
+
+                            // ask for saving
+                            QMessageBox::StandardButton save = QMessageBox::question( this, tr("Generated mesh"),
+                                                                                      tr("Save generated triangle mesh?"),
+                                                                                      QMessageBox::No | QMessageBox::Yes,
+                                                                                      QMessageBox::No);
+                            if(save == QMessageBox::Yes)
+                            {
+                                // save in file
+                                QString mesh_filename = getSaveFileName(this, "Save Generated mesh : ","",
+                                                                        "*.osgb",(_hasGeneratedmesh + "-mesh.osgb").c_str());
+                                QFileInfo file_mesh_info(mesh_filename);
+
+                                // check filename is not empty
+                                if(file_mesh_info.fileName().isEmpty())
+                                {
+                                    QMessageBox::critical(this, tr("Error : ave Generated mesh"), tr("Error : you didn't give a name to the file"));
+                                }
+                                else
+                                {
+                                    std::string path = mesh_filename.toStdString();
+                                    osg::ref_ptr<osg::Geode> geodesave = new osg::Geode;
+                                    geodesave->addDrawable( geometry.get() );
+                                    bool status = osgDB::writeNodeFile(*geodesave,
+                                                                       path,
+                                                                       new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+                                }
+                            }
 
                             osg::Vec4Array *color = new osg::Vec4Array;
                             osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
@@ -818,6 +951,13 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
         }
     }
 
+    ***/
+    if(_hasGeneratedmesh)
+    {
+        data->composite = true;
+        data->hasMesh = true;
+        data->swappriorities = false;
+    }
     matrix->setUserData(data);
 
     //    // optimize the scene graph, remove redundant nodes and state etc.
