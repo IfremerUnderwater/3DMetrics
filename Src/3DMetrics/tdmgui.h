@@ -122,7 +122,7 @@ public slots:
     void slot_open3dModel();
     void slot_load3DModel(osg::Node*, QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item,
                           double _transp, double _offsetX, double _offsetY, double offsetZ,
-                          float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir);
+                          float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir, bool _inProjectOpen);
 
     void slot_openMeasurementFile();
     void slot_saveMeasurementFile();

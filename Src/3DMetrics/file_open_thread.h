@@ -50,10 +50,13 @@ public:
     int getNTilesY() const;
     void setNTilesY(int nTilesY);
 
+    bool getInProjectOpen() const;
+    void setInProjectOpen(bool inProjectOpen);
+
 signals :
     void signal_createNode(osg::Node*, QString, QString _name, TdmLayerItem*, bool _select_item,
                            double _transp, double _offsetX, double _offsetY, double offsetZ,
-                           float _th1, float _th2, int _loadingMode, QString _itemsDir);
+                           float _th1, float _th2, int _loadingMode, QString _itemsDir, bool _inProjectOpen);
 
 private:
     OSGWidget *m_osg_widget;
@@ -82,6 +85,8 @@ private:
     // tiles
     int m_nTilesX;
     int m_nTilesY;
+
+    bool m_inProjectOpen;
 };
 
 #endif // FILE_OPEN_THREAD_H

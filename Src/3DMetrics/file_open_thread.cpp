@@ -23,7 +23,8 @@ FileOpenThread::FileOpenThread() :
     m_threshold1(0),
     m_threshold2(0),
     m_nTilesX(1),
-    m_nTilesY(1)
+    m_nTilesY(1),
+    m_inProjectOpen(false)
 {
 
 }
@@ -128,7 +129,7 @@ void FileOpenThread::run()
 
     QApplication::restoreOverrideCursor();
     emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ,
-                           m_threshold1, m_threshold2, m_loadingMode, relItemsDir);
+                           m_threshold1, m_threshold2, m_loadingMode, relItemsDir, m_inProjectOpen);
 
 }
 
@@ -185,4 +186,14 @@ int FileOpenThread::getNTilesY() const
 void FileOpenThread::setNTilesY(int nTilesY)
 {
     m_nTilesY = nTilesY;
+}
+
+bool FileOpenThread::getInProjectOpen() const
+{
+    return m_inProjectOpen;
+}
+
+void FileOpenThread::setInProjectOpen(bool inProjectOpen)
+{
+    m_inProjectOpen = inProjectOpen;
 }

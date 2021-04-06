@@ -69,6 +69,7 @@ add_executable(3DMetrics
     qtable_arrowkey_detector.cpp
     edit_lod_threshold_dialog.cpp
     model_loadingmode_dialog.cpp
+    triangulation_threshold_dialog.cpp
 	ressources.qrc
 	3DMetrics.rc)
 	
