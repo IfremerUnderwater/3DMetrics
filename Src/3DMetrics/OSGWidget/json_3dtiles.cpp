@@ -136,7 +136,7 @@ bool Json3dTiles::writeFile(std::string _fileName)
                 osg::BoundingBox tileBox = buildTileBox(box,x,y);
 
                 // build filename
-                std::string name = m_rootFilename;
+                std::string name = m_baseName;
                 // add tile number
                 char buffer[80];
                 sprintf(buffer, ".%03d_%03d", x, y);

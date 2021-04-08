@@ -17,6 +17,7 @@ ChooseLoadingModeDialog::ChooseLoadingModeDialog(QWidget *parent) :
     connect(ui->useSmartLODTiles_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->useSmartLODTilesDir_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->buildLOD_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->buildTiles_radio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
 }
 
 ChooseLoadingModeDialog::~ChooseLoadingModeDialog()
@@ -62,6 +63,10 @@ void ChooseLoadingModeDialog::setMode(LoadingMode _mode)
     case LoadingModeBuildLODTiles:
         ui->buildLOD_radio->setChecked(true);
         break;
+
+    case LoadingModeBuildTiles:
+        ui->buildTiles_radio->setChecked(true);
+        break;
     }
 }
 
@@ -102,6 +107,10 @@ void ChooseLoadingModeDialog::radioToggled()
     if(ui->buildLOD_radio->isChecked())
     {
         m_mode = LoadingModeBuildLODTiles;
+    }
+    if(ui->buildTiles_radio->isChecked())
+    {
+        m_mode = LoadingModeBuildTiles;
     }
 }
 

@@ -42,7 +42,7 @@ add_executable(3DMetrics
     TreeView/tdm_layer_model.cpp
     decimation_dialog.cpp
     osg_axes.cpp
-    ask_for_lod_dialog.cpp
+#    ask_for_lod_dialog.cpp
     attrib_area_widget.cpp
     attrib_categories_widget.cpp
     attrib_line_widget.cpp

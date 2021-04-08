@@ -873,7 +873,14 @@ osg::ref_ptr<osg::Group> GridFileProcessor::loadGridFileAndBuildTiles(std::strin
                         char buffer[80];
                         sprintf(buffer, ".%03d_%03d",i, (y == nYSize-1) ? (y / TILESIZE) : (y / TILESIZE - 1));
                         path = path + buffer;
-                        path = path + SmartLOD::EXTLOD0;
+                        if(_lod)
+                        {
+                            path = path + SmartLOD::EXTLOD0;
+                        }
+                        else
+                        {
+                            path = path + ".osgb";
+                        }
                         osgDB::writeNodeFile(*towrite,
                                              path,
                                              new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
@@ -1151,6 +1158,58 @@ bool GridFileProcessor::createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, st
                                      path,
                                      new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
             }
+        }
+    }
+
+    return true;
+}
+
+bool GridFileProcessor::createTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY)
+{
+    if(_nTilesX < 1 || _nTilesY < 1)
+    {
+        return false;
+    }
+
+    // get bounding box
+    BoxVisitor bv;
+    _node->accept(bv);
+    osg::BoundingBox bb = bv.getBoundingBox();
+
+    for(int nx=0; nx < _nTilesX; nx++)
+    {
+        for(int ny=0; ny < _nTilesY; ny++)
+        {
+            osg::BoundingBox clipped( bb.xMin() + nx * (bb.xMax() - bb.xMin()) / _nTilesX,
+                                      bb.yMin() + ny * (bb.yMax() - bb.yMin()) / _nTilesY,
+                                      bb.zMin(),
+                                      bb.xMin() + (nx+1) * (bb.xMax() - bb.xMin()) / _nTilesX,
+                                      bb.yMin() + (ny+1) * (bb.yMax() - bb.yMin()) / _nTilesY,
+                                      bb.zMax());
+            ClipModelVisitor cv(clipped);
+            _node->accept(cv);
+            osg::ref_ptr<osg::Group> node = cv.getClippedNode()->asGroup();
+            if(node == nullptr)
+                continue;
+
+            if(node->getNumChildren() == 0)
+            {
+                continue;
+            }
+
+            // build LOD
+            std::string name = _scene_file_basename;
+            // add tile number
+            char buffer[80];
+            sprintf(buffer, ".%03d_%03d", nx, ny);
+            name = name + buffer;
+
+            // LOD processing
+            std::string path0 = name;
+            path0 = path0 + ".osgb";
+            osgDB::writeNodeFile(*node,
+                                 path0,
+                                 new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
         }
     }
 

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>343</width>
-    <height>298</height>
+    <height>335</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>110</x>
-     <y>260</y>
+     <y>300</y>
      <width>97</width>
      <height>27</height>
     </rect>
@@ -32,7 +32,7 @@
      <x>13</x>
      <y>6</y>
      <width>311</width>
-     <height>257</height>
+     <height>286</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
@@ -102,6 +102,13 @@
      <widget class="QRadioButton" name="buildLOD_radio">
       <property name="text">
        <string>Build LOD Tiles (very slow)</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QRadioButton" name="buildTiles_radio">
+      <property name="text">
+       <string>Build Tiles - without LOD</string>
       </property>
      </widget>
     </item>

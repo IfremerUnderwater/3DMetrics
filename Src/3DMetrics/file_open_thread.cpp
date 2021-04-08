@@ -107,7 +107,6 @@ void FileOpenThread::run()
             LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
             break;
 
-
         case LoadingModeBuildLODTiles:
             m_node = m_osg_widget->createNodeFromFile(pathToFile);
             // KML processing
@@ -147,6 +146,39 @@ void FileOpenThread::run()
 
                 json.setRootNode(m_node, m_filename.toStdString());
                 json.addRootLODTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0, 0.1, 1.0);
+                json.writeFile(pathToFile + ".json");
+            }
+            break;
+
+        case LoadingModeBuildTiles:
+            m_node = m_osg_widget->createNodeFromFile(pathToFile);
+            // KML processing
+            if(extension == "kml")
+            {
+                // kml
+                KMLHandler kh;
+                kh.readFile(pathToFile);
+
+                pathToFile = kh.getModelPath();
+
+                // check relative path
+                if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                {
+                    std::string base_directory, lfname;
+                    kmlbase::File::SplitFilePath(m_filename.toStdString(),
+                                                 &base_directory,
+                                                 &lfname);
+                    pathToFile = base_directory + string(DIRSEP) + pathToFile;
+                }
+            }
+            gfp.createTilesFromNode(m_node,pathToFile,m_nTilesX,m_nTilesY);
+            m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString(), LoadingModeLODTiles);
+            if(true)
+            {
+                Json3dTiles json;
+
+                json.setRootNode(m_node, "");
+                json.addRootTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0);
                 json.writeFile(pathToFile + ".json");
             }
             break;

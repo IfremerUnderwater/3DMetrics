@@ -30,7 +30,10 @@ enum LoadingMode {
 
     // Build tiles (could be slow)
     // (in current directory)
-    LoadingModeBuildLODTiles = 40
+    LoadingModeBuildLODTiles = 40,
+
+    // Only build tiles (for Grid Files)
+    LoadingModeBuildTiles = 50
 
 };
 

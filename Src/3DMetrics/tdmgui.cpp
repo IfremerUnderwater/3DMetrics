@@ -4300,7 +4300,7 @@ void TDMGui::open3DModel(const QString _filename)
     else
     {
         ModelLoadingModeDialog dlg(this);
-        dlg.setMode(LoadingModeDefault);
+        //dlg.setMode(LoadingModeDefault); // useless
 
         //check allowed modes
         // Use OSGB

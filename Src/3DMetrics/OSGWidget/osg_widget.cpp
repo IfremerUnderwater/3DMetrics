@@ -475,6 +475,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, L
         }
         break;
 
+        // TODO : processing is in thread....
         // Build tiles (could be slow)
         // (in current directory)
     case LoadingModeBuildLODTiles:
@@ -490,6 +491,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, L
             Json3dTiles json;
             json.setRootNode(model_node, "");
 
+            // TODO
             json.writeFile(scene_file + ".json");
         }
         break;
@@ -607,6 +609,10 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 
     case LoadingModeBuildLODTiles:
         group = processor.loadGridFileAndBuildTiles(_scene_file, local_lat_lon, local_alt, true);
+        break;
+
+    case LoadingModeBuildTiles:
+        group = processor.loadGridFileAndBuildTiles(_scene_file, local_lat_lon, local_alt, false);
         break;
     }
 
