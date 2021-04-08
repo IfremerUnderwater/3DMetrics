@@ -396,6 +396,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
     model_data.setLODThreshold(_threshold1, _threshold2);
     LODTools::applyLODValuesInTree(_node,_threshold1,_threshold2);
 
+    bool noOptimize = false;
+
     // put modified loading mode for use in project file
     LoadingMode load = (LoadingMode)_loadingMode;
     switch(load)
@@ -412,6 +414,19 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
 
     case LoadingModeBuildLODTiles:
         load = LoadingModeSmartLODTiles;
+        noOptimize = true;
+        break;
+
+    case LoadingModeBuildTiles:
+        load = LoadingModeLODTiles; // NB LOD tiles are similar to standard tiles (Group instead of LOD)
+        noOptimize = true;
+        break;
+
+    case LoadingModeLODTiles:
+    case LoadingModeLODTilesDir:
+    case LoadingModeSmartLODTiles:
+    case LoadingModeSmartLODTilesDir:
+        noOptimize = true;
         break;
     }
 
@@ -489,7 +504,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
         }
     }
 
-    ui->display_widget->addNodeToScene(node, _transp, mesh);
+    ui->display_widget->addNodeToScene(node, _transp, mesh); //, noOptimize);
 
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 

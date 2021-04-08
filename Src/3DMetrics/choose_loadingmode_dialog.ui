@@ -73,14 +73,14 @@
     <item>
      <widget class="QRadioButton" name="useLODTiles_radio">
       <property name="text">
-       <string>Use existing LOD files</string>
+       <string>Use existing Tiles or LOD files</string>
       </property>
      </widget>
     </item>
     <item>
      <widget class="QRadioButton" name="useLODTilesDir_radio">
       <property name="text">
-       <string>Use existing LOD files in folder...</string>
+       <string>Use existing Tiles or LOD files in folder...</string>
       </property>
      </widget>
     </item>

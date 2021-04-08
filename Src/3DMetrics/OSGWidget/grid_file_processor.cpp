@@ -13,6 +13,7 @@
 #include <osg/LOD>
 #include <osgUtil/Simplifier>
 #include <osgUtil/SmoothingVisitor>
+#include <osgUtil/Optimizer>
 
 #if defined(_WIN32) || defined(__APPLE__)
 #include "gdal_priv.h"
@@ -1196,6 +1197,10 @@ bool GridFileProcessor::createTilesFromNode(osg::ref_ptr<osg::Node> _node, std::
             {
                 continue;
             }
+
+            // Optimize
+            osgUtil::Optimizer optimizer;
+            optimizer.optimize(node.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
             // build LOD
             std::string name = _scene_file_basename;

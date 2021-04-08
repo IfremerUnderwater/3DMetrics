@@ -106,7 +106,7 @@ public:
     /// \return true if loading succeded
     ///
     ///
-    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0, bool _hasGeneratedmesh = false);
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0, bool _hasGeneratedmesh = false, bool _noOptimize = false);
 
     ///
     /// \brief removeNodeFromScene remove a node from the scene

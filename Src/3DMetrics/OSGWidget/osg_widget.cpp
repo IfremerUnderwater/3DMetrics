@@ -637,18 +637,17 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
         model_transform->setMatrix(osg::Matrix::translate(E,N,U));
     }
 
-    // TEST save osgb file
-    // warning : SmartLOD saving not supported
-    if(_mode == LoadingModeTriangle // || _mode == LoadingModeTriangleNormals (not working)
-            || _mode == LoadingModeLODTiles || _mode == LoadingModeLODTilesDir)
-    {
-        std::string path = _scene_file;
-        path = path + ".osgb";
-        osgDB::writeNodeFile(*group,
-                             path,
-                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-
-    }
+    //    // TEST save osgb file
+    //    // warning : SmartLOD saving not supported
+    //    if(_mode == LoadingModeTriangle // || _mode == LoadingModeTriangleNormals (not working)
+    //            || _mode == LoadingModeLODTiles || _mode == LoadingModeLODTilesDir)
+    //    {
+    //        std::string path = _scene_file;
+    //        path = path + ".osgb";
+    //        osgDB::writeNodeFile(*group,
+    //                             path,
+    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+    //    }
     model_transform->addChild(group);
 
     return  model_transform;
@@ -661,7 +660,7 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
 /// \param _filename
 /// \return true if loading succeded
 ///
-bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency, bool _hasGeneratedmesh) //, bool _buildLOD, std::string _pathToLodFile)
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency, bool _hasGeneratedmesh, bool _noOptimize) //, bool _buildLOD, std::string _pathToLodFile)
 {
     osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
     osg::ref_ptr<osg::Node> root = matrix->getChild(0);
@@ -712,27 +711,30 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     }
     matrix->setUserData(data);
 
-    //    // optimize the scene graph, remove redundant nodes and state etc.
-    //    osgUtil::Optimizer optimizer;
-    //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
-    osgUtil::Optimizer optimizer;
-    optimizer.optimize(matrix.get(),
-                       osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
-                       osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
-                       osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
-                       osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
-                       osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
-                       osgUtil::Optimizer::MERGE_GEODES |
-                       osgUtil::Optimizer::MERGE_GEOMETRY |
-                       osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
-                       osgUtil::Optimizer::SPATIALIZE_GROUPS |
-                       osgUtil::Optimizer::COPY_SHARED_NODES |
-                       osgUtil::Optimizer::TRISTRIP_GEOMETRY |
-                       osgUtil::Optimizer::INDEX_MESH |
-                       osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
-                       osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
-                       osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+    if(!_noOptimize)
+    {
+        //    // optimize the scene graph, remove redundant nodes and state etc.
+        //    osgUtil::Optimizer optimizer;
+        //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+        osgUtil::Optimizer optimizer;
+        optimizer.optimize(matrix.get(),
+                           osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
+                           osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
+                           osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
+                           osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
+                           osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
+                           osgUtil::Optimizer::MERGE_GEODES |
+                           osgUtil::Optimizer::MERGE_GEOMETRY |
+                           osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
+                           osgUtil::Optimizer::SPATIALIZE_GROUPS |
+                           osgUtil::Optimizer::COPY_SHARED_NODES |
+                           osgUtil::Optimizer::TRISTRIP_GEOMETRY |
+                           osgUtil::Optimizer::INDEX_MESH |
+                           osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
+                           osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
+                           osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
+    }
     //configureShaders( root->getOrCreateStateSet() );
     matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
     matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
