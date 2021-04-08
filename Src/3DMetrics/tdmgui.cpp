@@ -36,6 +36,7 @@
 
 #include "OSGWidget/osg_widget_tool.h"
 #include "OSGWidget/mesh_builder.h"
+#include "OSGWidget/json_3dtiles.h"
 
 #include "tool_point_dialog.h"
 #include "tool_line_dialog.h"
@@ -440,7 +441,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
             TriangulationThresholdDialog dlg(this);
             dlg.setThreshold(1000.0);;
             dlg.setDXthreshold(20.0);
-            dlg.setDYthreshold(25.0);
+            dlg.setDYthreshold(20.0);
             dlg.setDZthreshold(100.0);
             int res = dlg.exec();
             if(res == QDialog::Accepted)
@@ -475,17 +476,20 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
                         bool status = meshBuilder.saveGeneratedMesh(mesh_filename.toStdString());
                         if(!status)
                         {
-                            QMessageBox::critical(this, tr("Error : Save Generated mesh"), tr("Error writing file"));
+                            QMessageBox::critical(this, tr("Error : Save Generated mesh"), tr("Error writing file") + "\n" + mesh_filename);
                         }
-                    }
 
+                        Json3dTiles json;
+                        // node used only for bounding box
+                        json.setRootNode(_node, mesh_filename.toStdString());
+                        json.writeFile(mesh_filename.toStdString() + ".json");
+                    }
                 }
             }
         }
     }
 
     ui->display_widget->addNodeToScene(node, _transp, mesh);
-
 
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
@@ -4146,7 +4150,6 @@ void TDMGui::slot_noNodeClicked()
     unselectAllMeasureGraph();
 }
 
-
 void TDMGui::slot_toggleDepthToColor(bool _state)
 {
     QTreeView *view = ui->tree_widget;
@@ -4198,7 +4201,7 @@ void TDMGui::getLODThresholds(osg::Node *node, float &step1, float &step2)
             osg::ref_ptr<osg::Group> group = child->asGroup();
             if(group.valid())
             {
-                qDebug() << "child#:" << group->getNumChildren();
+                //qDebug() << "child#:" << group->getNumChildren();
 
                 osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
                 if(lod.valid())
@@ -4257,7 +4260,6 @@ void TDMGui::open3DModel(const QString _filename)
         {
             extension = pathToFile.substr(idx+1);
         }
-
     }
 
     // check grd files
@@ -4330,7 +4332,6 @@ void TDMGui::open3DModel(const QString _filename)
         {
             dlg.enableUseSmartLODTiles(false);
         }
-
 
         if(dlg.exec() == QDialog::Accepted)
         {
@@ -4437,7 +4438,6 @@ void TDMGui::openProject(QString _filename)
     QApplication::restoreOverrideCursor();
 
     slot_unselect();
-
 }
 
 bool TDMGui::closeProjectAndAskForSaving()

@@ -7,6 +7,8 @@
 
 #include "osgDB/WriteFile"
 
+#include "OSGWidget/json_3dtiles.h"
+
 #if defined(_WIN32) || defined(WIN32)
 #define DIRSEP "\\"
 #else
@@ -65,6 +67,22 @@ void FileOpenThread::run()
             m_node = m_osg_widget->createNodeFromFile(pathToFile);
             m_osg_widget->createLODFiles(m_node, pathToFile, m_saveCompLOD);
             m_node = m_osg_widget->createLODNodeFromFiles(pathToFile);
+            if(true)
+            {
+                // 3dTiles file
+                if(m_saveCompLOD)
+                {
+                    Json3dTiles json;
+                    json.setRootNode(m_node, pathToFile + ".osgb");
+                    json.writeFile(pathToFile + "-compound.json");
+                }
+
+                Json3dTiles json;
+
+                json.setRootNode(m_node, "");
+                json.addRootLODFiles(pathToFile, 0, 0.1, 1.0);
+                json.writeFile(pathToFile + ".json");
+            }
             break;
 
         case LoadingModeUseSmartLOD:
@@ -114,6 +132,23 @@ void FileOpenThread::run()
             gfp.createLODTilesFromNodeGlobalSimplify(m_node,pathToFile,m_nTilesX,m_nTilesY,m_saveCompLOD,m_threshold1, m_threshold2);
             m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString(), LoadingModeSmartLODTiles);
             LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
+            if(true)
+            {
+                // 3dTiles file
+                if(m_saveCompLOD)
+                {
+                    Json3dTiles json;
+                    json.setRootNode(m_node, m_filename.toStdString());
+                    json.addRootTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0);
+                    json.writeFile(pathToFile + "-compound.json");
+                }
+
+                Json3dTiles json;
+
+                json.setRootNode(m_node, m_filename.toStdString());
+                json.addRootLODTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0, 0.1, 1.0);
+                json.writeFile(pathToFile + ".json");
+            }
             break;
 
         default:
