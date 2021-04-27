@@ -48,7 +48,7 @@ void AttribLineWidget::update()
     {
         QString nb_pts_string = QString::number(m_line_item->nbPts());
         ui->pts_label->setText(nb_pts_string);
-        QString length_string = QString::number(m_line_item->length(),'f',2);
+        QString length_string = QString::number(m_line_item->length(),'f',3);
         ui->length_label->setText(length_string + " m");
 
         if(m_line_item->nbPts() > 0)

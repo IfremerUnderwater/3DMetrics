@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name and version
-project(3DMetricsProject VERSION 0.6.0)
+project(3DMetricsProject VERSION 0.6.1)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
