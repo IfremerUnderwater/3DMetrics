@@ -16,7 +16,6 @@
 #include <osg/ShapeDrawable>
 #include <osg/StateSet>
 #include <osg/LOD>
-//#include <osg/PagedLOD>
 
 #include <osg/TexGen>
 
@@ -31,11 +30,6 @@
 #include <osgUtil/Optimizer>
 #include <osgUtil/Simplifier>
 
-#include <osgUtil/DelaunayTriangulator>
-
-//#include "delaunay_triangulator_nosort.h"
-//#include "deprecated_geometry.h"
-
 #include <osgViewer/View>
 #include <osgViewer/ViewerEventHandlers>
 #include <osgViewer/config/SingleWindow>
@@ -45,7 +39,6 @@
 
 #include <stdexcept>
 #include <vector>
-
 
 #include <osg/Referenced>
 #include <osg/LineSegment>
@@ -77,6 +70,8 @@
 #include "snap_geotiff_image.h"
 #include "elevation_map_creator.h"
 #include "snap_geotiff_depth.h"
+
+#include "json_3dtiles.h"
 
 #define DEFAULT_POINT_SIZE 30.0f
 
@@ -316,14 +311,14 @@ OSGWidget::~OSGWidget()
 {
 }
 
-bool OSGWidget::setSceneFromFile(std::string _scene_file)
-{
-    osg::ref_ptr<osg::Node> node = createNodeFromFile(_scene_file);
-    if(!node)
-        return false;
+//bool OSGWidget::setSceneFromFile(std::string _scene_file)
+//{
+//    osg::ref_ptr<osg::Node> node = createNodeFromFile(_scene_file);
+//    if(!node)
+//        return false;
 
-    return addNodeToScene(node);
-}
+//    return addNodeToScene(node,0.0, _scene_file);
+//}
 
 ///
 /// \brief createNodeFromFile load a scene from a 3D file
@@ -466,19 +461,21 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, L
         break;
 
     case LoadingModeUseOSGB:
-    {
-        QFileInfo f((scene_file + ".osgb").c_str());
-        if(f.exists())
+        if(true) // to have correct indentation
         {
-            model_node=osgDB::readRefNodeFile(scene_file + ".osgb", new osgDB::Options("noRotation"));
+            QFileInfo f((scene_file + ".osgb").c_str());
+            if(f.exists())
+            {
+                model_node=osgDB::readRefNodeFile(scene_file + ".osgb", new osgDB::Options("noRotation"));
+            }
+            else
+            {
+                model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
+            }
         }
-        else
-        {
-            model_node=osgDB::readRefNodeFile(scene_file, new osgDB::Options("noRotation"));
-        }
-    }
         break;
 
+        // TODO : processing is in thread....
         // Build tiles (could be slow)
         // (in current directory)
     case LoadingModeBuildLODTiles:
@@ -488,6 +485,15 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, L
         // hack
         LODTools::applyLODValuesInTree(group, 40.0, 200.0);
         model_node = group;
+        // write 3dTiles json file
+        if(true) // to have correct indentation
+        {
+            Json3dTiles json;
+            json.setRootNode(model_node, "");
+
+            // TODO
+            json.writeFile(scene_file + ".json");
+        }
         break;
 
     case LoadingModeBuildOSGB:
@@ -495,10 +501,14 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFile(std::string _scene_file, L
         osgDB::writeNodeFile(*model_node,
                              scene_file + ".osgb",
                              new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-        //test  to write .mlt file...
-        //        osgDB::writeNodeFile(*model_node,
-        //                             scene_file + "OBJ.obj",
-        //                             new osgDB::Options("WriteImageHint=IncludeData"));
+
+        // write 3dTiles json file
+        if(true) // to have correct indentation
+        {
+            Json3dTiles json;
+            json.setRootNode(model_node, scene_file + ".osgb");
+            json.writeFile(scene_file + ".osgb.json");
+        }
         break;
 
         // use createLODNodeFromFiles instead
@@ -600,6 +610,10 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
     case LoadingModeBuildLODTiles:
         group = processor.loadGridFileAndBuildTiles(_scene_file, local_lat_lon, local_alt, true);
         break;
+
+    case LoadingModeBuildTiles:
+        group = processor.loadGridFileAndBuildTiles(_scene_file, local_lat_lon, local_alt, false);
+        break;
     }
 
     if(group == nullptr)
@@ -623,33 +637,30 @@ osg::ref_ptr<osg::Node> OSGWidget::createNodeFromFileWithGDAL(std::string _scene
         model_transform->setMatrix(osg::Matrix::translate(E,N,U));
     }
 
-    // TEST save osgb file
-    // warning : SmartLOD saving not supported
-    if(_mode == LoadingModeTriangle // || _mode == LoadingModeTriangleNormals (not working)
-            || _mode == LoadingModeLODTiles || _mode == LoadingModeLODTilesDir)
-    {
-        std::string path = _scene_file;
-        path = path + ".osgb";
-        osgDB::writeNodeFile(*group,
-                             path,
-                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
-
-    }
+    //    // TEST save osgb file
+    //    // warning : SmartLOD saving not supported
+    //    if(_mode == LoadingModeTriangle // || _mode == LoadingModeTriangleNormals (not working)
+    //            || _mode == LoadingModeLODTiles || _mode == LoadingModeLODTilesDir)
+    //    {
+    //        std::string path = _scene_file;
+    //        path = path + ".osgb";
+    //        osgDB::writeNodeFile(*group,
+    //                             path,
+    //                             new osgDB::Options("WriteImageHint=IncludeData Compressor=zlib"));
+    //    }
     model_transform->addChild(group);
 
-
     return  model_transform;
-
-
 }
 
 ///
 /// \brief addNodeToScene add a binary OSG node to the scene
 /// \param _node node to be added
-/// \param _transparency transparency (default to 0
+/// \param _transparency transparency (default to 0)
+/// \param _filename
 /// \return true if loading succeded
 ///
-bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency) //, bool _buildLOD, std::string _pathToLodFile)
+bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency, bool _hasGeneratedmesh, bool _noOptimize) //, bool _buildLOD, std::string _pathToLodFile)
 {
     osg::ref_ptr<osg::MatrixTransform> matrix = dynamic_cast<osg::MatrixTransform*>(_node.get());
     osg::ref_ptr<osg::Node> root = matrix->getChild(0);
@@ -692,155 +703,38 @@ bool OSGWidget::addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparen
     data->hasMesh = geomcount.getNbTriangles() > 0;
     data->composite = false;
 
-    // Delaunaytriangulation for models with only points
-    if(geomcount.getNbTriangles() == 0 && geomcount.getNbPoints() > 0 && root->asGeode() != nullptr)
+    if(_hasGeneratedmesh)
     {
-        QMessageBox::StandardButton res = QMessageBox::question( this, tr("Loading point cloud"),
-                                                                 tr("Build model with Delaunay triangulation?\nWARNING : could be slow"),
-                                                                 QMessageBox::No | QMessageBox::Yes,
-                                                                 QMessageBox::No);
-        if(res == QMessageBox::Yes)
-        {
-            osg::ref_ptr<osgUtil::DelaunayTriangulator> dt = new osgUtil::DelaunayTriangulator;
-            //osg::ref_ptr<osg3DMETRICS::DelaunayTriangulatorNosort> dt = new osg3DMETRICS::DelaunayTriangulatorNosort;
-
-            osg::Geode *geode = root->asGeode();
-            unsigned int num_drawables = geode->getNumDrawables();
-            for( unsigned int i = 0; i < num_drawables; i++ )
-            {
-                // Use 'asGeometry' as its supposed to be faster than a dynamic_cast
-                // every little saving counts
-                osg::Geometry *current_geometry = geode->getDrawable(i)->asGeometry();
-
-                // Only process if the drawable is geometry
-                if ( current_geometry )
-                {
-                    // get the list of different geometry mode which were created
-                    osg::Geometry::PrimitiveSetList primitive_list = current_geometry->getPrimitiveSetList();
-
-                    for(unsigned int j = 0; j < primitive_list.size(); j++)
-                    {
-                        osg::PrimitiveSet *primitive_set = primitive_list[j];
-
-                        if(primitive_set->getMode() == osg::PrimitiveSet::POINTS)
-                        {
-                            osg::Array *array = current_geometry->getVertexArray();
-                            osg::Vec3Array *v = new osg::Vec3Array;
-                            v->resize(((osg::Vec3Array*)array)->size());
-                            std::copy( ((osg::Vec3Array*)array)->begin(), ((osg::Vec3Array*)array)->end(), v->begin() );
-
-                            dt->setInputPointArray( v);
-                            dt->setOutputNormalArray( new osg::Vec3Array );
-                            dt->triangulate();
-
-                            // rebuild in order not to use depracated osg::Geometry::BIND_PER_PRIMITIVE
-                            osg::ref_ptr<osg::Geometry> geometry = new osg::Geometry;
-                            osg::Vec3Array* vertexes = dt->getInputPointArray();
-
-                            osg::Vec3Array* normals = dt->getOutputNormalArray();
-                            osg::Vec3Array::iterator nitr = normals->begin();
-
-                            osg::DrawElementsUInt *indexes = dt->getTriangles();
-                            osg::DrawElementsUInt::iterator iitr =   indexes->begin();
-
-                            osg::ref_ptr<osg::Vec3Array> outPoints = new osg::Vec3Array;
-                            osg::ref_ptr<osg::Vec3Array> outNormals = new osg::Vec3Array;
-
-                            while(nitr != normals->end())
-                            {
-                                outPoints->push_back((*vertexes)[*iitr]);
-                                ++iitr;
-                                outPoints->push_back((*vertexes)[*iitr]);
-                                ++iitr;
-                                outPoints->push_back((*vertexes)[*iitr]);
-                                ++iitr;
-
-                                // triangles with normals to bottom
-                                osg::Vec3 n = *nitr;
-                                if(n.z() < 0)
-                                {
-                                    n.x() = -n.x();
-                                    n.y() = -n.y();
-                                    n.z() = -n.z();
-                                }
-                                outNormals->push_back(n);
-                                outNormals->push_back(n);
-                                outNormals->push_back(n);
-                                ++nitr;
-                            }
-                            geometry->setVertexArray( outPoints );
-                            geometry->setNormalArray( outNormals );
-                            geometry->setNormalBinding( osg::Geometry::BIND_PER_VERTEX );
-
-                            bool res = geometry->addPrimitiveSet(new osg::DrawArrays(osg::PrimitiveSet::TRIANGLES,0,outPoints->size()));
-
-                            osg::Vec4Array *color = new osg::Vec4Array;
-                            osg::Vec4f c(0.5f, 0.5f,0.5f,0.5f);
-                            color->push_back(c);
-                            geometry->setColorBinding( osg::Geometry::BIND_OVERALL );
-
-                            osg::StateSet* stateSet = geometry->getOrCreateStateSet();
-                            stateSet->setMode( GL_BLEND, osg::StateAttribute::ON);
-                            stateSet->setRenderBinDetails(2, "RenderBin");
-
-                            //
-                            osg::StateSet* stateSetpts = current_geometry->getOrCreateStateSet();
-                            stateSetpts->setMode( GL_BLEND, osg::StateAttribute::ON);
-                            stateSetpts->setRenderBinDetails(1, "RenderBin");
-                            //stateSetpts->addUniform( new osg::Uniform( "hasmesh", false));
-
-                            // material
-                            // Add the possibility of modifying the transparence
-                            osg::Material* material = material = new osg::Material;
-
-                            //material->setDiffuse( osg::Material::FRONT, osg::Vec4( 0.5f, 0.5f, 0.5f, 1.f ) );
-                            //material->setSpecular( osg::Material::FRONT, osg::Vec4( 1.f, 1.f, 1.f, 0.f ) );
-                            material->setShininess( osg::Material::FRONT, 96.f );
-                            material->setEmission( osg::Material::FRONT, osg::Vec4( 0.4f, 0.4f, 0.4f, 0.f ) );
-
-                            // Put the 3D model 50% opaque
-                            stateSet->setAttributeAndModes ( material, osg::StateAttribute::ON );
-                            material->setAlpha(osg::Material::FRONT, 0.5f );
-                            //stateSet->addUniform( new osg::Uniform( "hasmesh", true));
-
-                            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
-                            stateSet->setAttributeAndModes(bf);
-
-                            geode->addDrawable( geometry.get() );
-
-                            data->composite = true;
-                            data->hasMesh = true;
-                            data->swappriorities = false;
-                        }
-                    }
-                }
-            }
-        }
+        data->composite = true;
+        data->hasMesh = true;
+        data->swappriorities = false;
     }
-
     matrix->setUserData(data);
 
-    //    // optimize the scene graph, remove redundant nodes and state etc.
-    //    osgUtil::Optimizer optimizer;
-    //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
-    osgUtil::Optimizer optimizer;
-    optimizer.optimize(matrix.get(),
-                       osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
-                       osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
-                       osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
-                       osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
-                       osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
-                       osgUtil::Optimizer::MERGE_GEODES |
-                       osgUtil::Optimizer::MERGE_GEOMETRY |
-                       osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
-                       osgUtil::Optimizer::SPATIALIZE_GROUPS |
-                       osgUtil::Optimizer::COPY_SHARED_NODES |
-                       osgUtil::Optimizer::TRISTRIP_GEOMETRY |
-                       osgUtil::Optimizer::INDEX_MESH |
-                       osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
-                       osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
-                       osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+    if(!_noOptimize)
+    {
+        //    // optimize the scene graph, remove redundant nodes and state etc.
+        //    osgUtil::Optimizer optimizer;
+        //    optimizer.optimize(matrix.get(), osgUtil::Optimizer::ALL_OPTIMIZATIONS  | osgUtil::Optimizer::TESSELLATE_GEOMETRY);
+        osgUtil::Optimizer optimizer;
+        optimizer.optimize(matrix.get(),
+                           osgUtil::Optimizer::FLATTEN_STATIC_TRANSFORMS |
+                           osgUtil::Optimizer::REMOVE_REDUNDANT_NODES |
+                           osgUtil::Optimizer::REMOVE_LOADED_PROXY_NODES |
+                           osgUtil::Optimizer::COMBINE_ADJACENT_LODS |
+                           osgUtil::Optimizer::SHARE_DUPLICATE_STATE |
+                           osgUtil::Optimizer::MERGE_GEODES |
+                           osgUtil::Optimizer::MERGE_GEOMETRY |
+                           osgUtil::Optimizer::MAKE_FAST_GEOMETRY |
+                           osgUtil::Optimizer::SPATIALIZE_GROUPS |
+                           osgUtil::Optimizer::COPY_SHARED_NODES |
+                           osgUtil::Optimizer::TRISTRIP_GEOMETRY |
+                           osgUtil::Optimizer::INDEX_MESH |
+                           osgUtil::Optimizer::STATIC_OBJECT_DETECTION |
+                           osgUtil::Optimizer::BUFFER_OBJECT_SETTINGS |
+                           osgUtil::Optimizer::TESSELLATE_GEOMETRY);
 
+    }
     //configureShaders( root->getOrCreateStateSet() );
     matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "zmin", zmin));
     matrix->getOrCreateStateSet()->addUniform( new osg::Uniform( "deltaz", zmax - zmin));
@@ -1915,16 +1809,7 @@ void OSGWidget::changePointSize(float _newPointSize)
 
 void OSGWidget::setZScale(double _newValue)
 {
-
-    //    osgViewer::View *view = m_viewer->getView(0);
-    //    osg::Vec3d eye1, center1, up1;
-    //    osgGA::CameraManipulator *man = view->getCameraManipulator();
-    //    man->getHomePosition(eye1,center1, up1);
-
-    //    osg::Matrixd matrix = man->getMatrix();
-
     // change
-    //double oldScale = m_zScale;
     m_zScale = _newValue;
 
     m_matrixTransform->setMatrix(osg::Matrix::scale(1.0, 1.0, m_zScale));
@@ -1941,11 +1826,7 @@ void OSGWidget::setZScale(double _newValue)
         }
     }
 
-    //view->getCameraManipulator()->setHomePosition(eye,target,normal);
     home();
-
-    //    matrix.ptr()[14] *= m_zScale / oldScale;
-    //    view->getCameraManipulator()->setByMatrix(matrix);
 }
 
 void OSGWidget::configureShaders( osg::StateSet* stateSet )

@@ -1,10 +1,10 @@
 # add the executable
 add_executable(3DMetrics
     main.cpp
-	tdmgui.cpp
+    tdmgui.cpp
     OSGWidget/kml_handler.cpp
-	OSGWidget/point3d.cpp
-	OSGWidget/osg_widget_tool.cpp
+    OSGWidget/point3d.cpp
+    OSGWidget/osg_widget_tool.cpp
     OSGWidget/osg_widget.cpp
     OSGWidget/box_visitor.cpp
     OSGWidget/area_computation_visitor.cpp
@@ -22,8 +22,10 @@ add_executable(3DMetrics
     OSGWidget/smartlod.cpp
     OSGWidget/shader_builder.cpp
     OSGWidget/snap_geotiff_depth.cpp
-    OSGWidget/delaunay_triangulator_nosort.cpp
-    OSGWidget/deprecated_geometry.cpp
+#    OSGWidget/delaunay_triangulator_nosort.cpp
+#    OSGWidget/deprecated_geometry.cpp
+    OSGWidget/mesh_builder.cpp
+    OSGWidget/json_3dtiles.cpp
     Measurement/measurement_area.cpp
     Measurement/measurement_item.cpp
     Measurement/measurement_point.cpp
@@ -36,11 +38,11 @@ add_executable(3DMetrics
     Measurement/tdm_categories_manager.cpp
     TreeView/tdm_measurement_layerdata.cpp
     TreeView/tdm_model_layerdata.cpp
-	TreeView/tdm_layer_item.cpp
+    TreeView/tdm_layer_item.cpp
     TreeView/tdm_layer_model.cpp
     decimation_dialog.cpp
     osg_axes.cpp
-    ask_for_lod_dialog.cpp
+#    ask_for_lod_dialog.cpp
     attrib_area_widget.cpp
     attrib_categories_widget.cpp
     attrib_line_widget.cpp
@@ -68,6 +70,7 @@ add_executable(3DMetrics
     qtable_arrowkey_detector.cpp
     edit_lod_threshold_dialog.cpp
     model_loadingmode_dialog.cpp
+    triangulation_threshold_dialog.cpp
 	ressources.qrc
 	3DMetrics.rc)
 	

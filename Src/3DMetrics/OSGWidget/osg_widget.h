@@ -48,12 +48,12 @@ public:
 
     virtual ~OSGWidget();
 
-    ///
-    /// \brief setSceneFromFile load a scene from a 3D file
-    /// \param _sceneFile path to any 3D file supported by osg
-    /// \return true if loading succeded
-    ///
-    bool setSceneFromFile(std::string _scene_file);
+//    ///
+//    /// \brief setSceneFromFile load a scene from a 3D file
+//    /// \param _sceneFile path to any 3D file supported by osg
+//    /// \return true if loading succeded
+//    ///
+//    bool setSceneFromFile(std::string _scene_file);
 
     ///
     /// \brief createNodeFromFile load a scene from a 3D file
@@ -99,12 +99,14 @@ public:
     osg::ref_ptr<osg::Node> createNodeFromFileWithGDAL(std::string _scene_file, LoadingMode _mode, std::string _tileDir = "");
 
     ///
-    /// \brief addNodeToScene add a node to the scene
+    /// \brief addNodeToScene add a binary OSG node to the scene
     /// \param _node node to be added
-    /// \param _transparency transparency (default to 0
+    /// \param _transparency transparency (default to 0)
+    /// \param _filename
     /// \return true if loading succeded
     ///
-    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0); //, bool _buildLOD = false, std::string _pathToLodFile = "");
+    ///
+    bool addNodeToScene(osg::ref_ptr<osg::Node> _node, double _transparency=0.0, bool _hasGeneratedmesh = false, bool _noOptimize = false);
 
     ///
     /// \brief removeNodeFromScene remove a node from the scene

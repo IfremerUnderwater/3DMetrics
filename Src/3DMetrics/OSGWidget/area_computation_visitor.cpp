@@ -58,7 +58,7 @@ void AreaComputationVisitor::apply( osg::Geode &geode )
                 }
                 else
                 {
-                    return;
+                    continue;
                 }
                 if(primitive_set->getNumIndices() < 3)
                 {

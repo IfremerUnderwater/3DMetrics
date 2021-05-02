@@ -21,6 +21,7 @@ ModelLoadingModeDialog::ModelLoadingModeDialog(QWidget *parent) :
     connect(ui->useSmartLODTilesRadio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->useTilesFolderRadio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
     connect(ui->useTilesRadio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
+    connect(ui->buildTilesRadio,SIGNAL(toggled(bool)),this,SLOT(radioToggled()));
 
     ui->defaultRadio->setChecked(true);
     radioToggled();
@@ -107,6 +108,16 @@ void ModelLoadingModeDialog::radioToggled()
     {
         m_mode = LoadingModeBuildLODTiles;
         ui->saveCompoudCheck->setEnabled(true);
+        ui->XspinBox->setEnabled(true);
+        ui->YspinBox->setEnabled(true);
+        ui->Xlabel->setEnabled(true);
+        ui->Ylabel->setEnabled(true);
+    }
+
+    if(ui->buildTilesRadio->isChecked())
+    {
+        m_mode = LoadingModeBuildTiles;
+        ui->saveCompoudCheck->setEnabled(false);
         ui->XspinBox->setEnabled(true);
         ui->YspinBox->setEnabled(true);
         ui->Xlabel->setEnabled(true);

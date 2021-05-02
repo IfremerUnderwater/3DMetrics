@@ -35,6 +35,8 @@
 #include "Measurement/osg_measurement_row.h"
 
 #include "OSGWidget/osg_widget_tool.h"
+#include "OSGWidget/mesh_builder.h"
+#include "OSGWidget/json_3dtiles.h"
 
 #include "tool_point_dialog.h"
 #include "tool_line_dialog.h"
@@ -46,6 +48,7 @@
 
 #include "OSGWidget/area_computation_visitor.h"
 #include "meas_geom_export_dialog.h"
+#include "triangulation_threshold_dialog.h"
 
 #if defined(_WIN32) || defined(__APPLE__)
 #include "ogr_spatialref.h"
@@ -364,9 +367,9 @@ void TDMGui::slot_open3dModel()
     }
 }
 
-void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name, TdmLayerItem *_parent, bool _select_item,
+void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name, TdmLayerItem *_parent, bool _select_item,
                               double _transp, double _offsetX, double _offsetY, double _offsetZ,
-                              float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir)
+                              float _threshold1, float _threshold2, int _loadingMode, QString _itemsDir, bool _inProjectOpen)
 {
     if(_node == 0)
     {
@@ -393,6 +396,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     model_data.setLODThreshold(_threshold1, _threshold2);
     LODTools::applyLODValuesInTree(_node,_threshold1,_threshold2);
 
+    bool noOptimize = false;
+
     // put modified loading mode for use in project file
     LoadingMode load = (LoadingMode)_loadingMode;
     switch(load)
@@ -409,6 +414,19 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
 
     case LoadingModeBuildLODTiles:
         load = LoadingModeSmartLODTiles;
+        noOptimize = true;
+        break;
+
+    case LoadingModeBuildTiles:
+        load = LoadingModeLODTiles; // NB LOD tiles are similar to standard tiles (Group instead of LOD)
+        noOptimize = true;
+        break;
+
+    case LoadingModeLODTiles:
+    case LoadingModeLODTilesDir:
+    case LoadingModeSmartLODTiles:
+    case LoadingModeSmartLODTilesDir:
+        noOptimize = true;
         break;
     }
 
@@ -424,8 +442,69 @@ void TDMGui::slot_load3DModel(osg::Node* _node ,QString _filename,QString _name,
     added->setChecked(true);
 
     // processing in file_open_thread
-    ui->display_widget->addNodeToScene(node, _transp);
+    bool mesh = false;
+    MeshBuilder meshBuilder(_node);
+    if(!_inProjectOpen && meshBuilder.hasPointsAndNotMesh())
+    {
+        QMessageBox::StandardButton res = QMessageBox::question( this, tr("Loading point cloud"),
+                                                                 tr("Build model with Delaunay triangulation?\nWARNING : could be slow"),
+                                                                 QMessageBox::No | QMessageBox::Yes,
+                                                                 QMessageBox::No);
+        if(res == QMessageBox::Yes)
+        {
+            // parameters
+            TriangulationThresholdDialog dlg(this);
+            dlg.setThreshold(1000.0);;
+            dlg.setDXthreshold(20.0);
+            dlg.setDYthreshold(20.0);
+            dlg.setDZthreshold(100.0);
+            int res = dlg.exec();
+            if(res == QDialog::Accepted)
+            {
+                meshBuilder.setThreshold(dlg.threshold());
+                meshBuilder.setThresholdx(dlg.dXthreshold());
+                meshBuilder.setThresholdy(dlg.dYthreshold());
+                meshBuilder.setThresholdz(dlg.dZthreshold());
+            }
+            mesh = meshBuilder.Triangulate();
+            if(mesh)
+            {
+                // ask for saving
+                QMessageBox::StandardButton save = QMessageBox::question( this, tr("Generated mesh"),
+                                                                          tr("Save generated triangle mesh?"),
+                                                                          QMessageBox::No | QMessageBox::Yes,
+                                                                          QMessageBox::No);
+                if(save == QMessageBox::Yes)
+                {
+                    // save in file
+                    QString mesh_filename = getSaveFileName(this, "Save Generated mesh : ","",
+                                                            "*.osgb", _filename + "-mesh.osgb");
+                    QFileInfo file_mesh_info(mesh_filename);
 
+                    // check filename is not empty
+                    if(file_mesh_info.fileName().isEmpty())
+                    {
+                        QMessageBox::critical(this, tr("Error : Save Generated mesh"), tr("Error : you didn't give a name to the file"));
+                    }
+                    else
+                    {
+                        bool status = meshBuilder.saveGeneratedMesh(mesh_filename.toStdString());
+                        if(!status)
+                        {
+                            QMessageBox::critical(this, tr("Error : Save Generated mesh"), tr("Error writing file") + "\n" + mesh_filename);
+                        }
+
+                        Json3dTiles json;
+                        // node used only for bounding box
+                        json.setRootNode(_node, mesh_filename.toStdString());
+                        json.writeFile(mesh_filename.toStdString() + ".json");
+                    }
+                }
+            }
+        }
+    }
+
+    ui->display_widget->addNodeToScene(node, _transp, mesh); //, noOptimize);
 
     ui->display_widget->setNodeTranslationOffset(_offsetX, _offsetY, _offsetZ, _node, model_data.getOriginalTranslation());
 
@@ -2689,8 +2768,8 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         // load 3D model
         FileOpenThread *thread_node = new FileOpenThread();
-        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)),
-                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
+        connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString, bool)),
+                this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString, bool)));
 
         thread_node->setFileName(file_path);
         QString name = _obj["Model3D"].toString();
@@ -2698,7 +2777,6 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         thread_node->setTDMLayerItem(_parent ? _parent : root);
         thread_node->setSelectItem(false);
         thread_node->setOSGWidget(ui->display_widget);
-
 
         LoadingMode loadingMode = (LoadingMode)_obj.value("LoadingMode").toInt(0);
         float lodTh1 = (float)_obj.value("LODThreshold1").toDouble(0);
@@ -2850,6 +2928,8 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
 
         double offsetZ = _obj.value("OffsetZ").toDouble(0);
         thread_node->setOffsetZ(offsetZ);
+
+        thread_node->setInProjectOpen(true);
 
         thread_node->start();
 
@@ -3269,10 +3349,13 @@ void TDMGui::slot_computeTotalArea()
 
         QApplication::setOverrideCursor(Qt::WaitCursor);
 
+        unsigned int nodeMask = node->getNodeMask();
+        node->setNodeMask(0xFFFFFFFF);
         // compute the surface of the 3D model selected through his node
         AreaComputationVisitor total_area;
         node->accept(total_area);
         double total_area_double = total_area.getArea();
+        node->setNodeMask(nodeMask);
 
         QApplication::restoreOverrideCursor();
 
@@ -4082,7 +4165,6 @@ void TDMGui::slot_noNodeClicked()
     unselectAllMeasureGraph();
 }
 
-
 void TDMGui::slot_toggleDepthToColor(bool _state)
 {
     QTreeView *view = ui->tree_widget;
@@ -4134,7 +4216,7 @@ void TDMGui::getLODThresholds(osg::Node *node, float &step1, float &step2)
             osg::ref_ptr<osg::Group> group = child->asGroup();
             if(group.valid())
             {
-                qDebug() << "child#:" << group->getNumChildren();
+                //qDebug() << "child#:" << group->getNumChildren();
 
                 osg::ref_ptr<osg::LOD> lod = LODTools::getFirstLODNode(group.get());
                 if(lod.valid())
@@ -4151,8 +4233,8 @@ void TDMGui::getLODThresholds(osg::Node *node, float &step1, float &step2)
 void TDMGui::open3DModel(const QString _filename)
 {
     FileOpenThread *thread_node = new FileOpenThread();
-    connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)),
-            this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString)));
+    connect(thread_node,SIGNAL(signal_createNode(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString, bool)),
+            this, SLOT(slot_load3DModel(osg::Node*,QString,QString, TdmLayerItem*,bool, double, double, double, double, float, float, int, QString, bool)));
 
     thread_node->setSaveCompLOD(false);
 
@@ -4193,7 +4275,6 @@ void TDMGui::open3DModel(const QString _filename)
         {
             extension = pathToFile.substr(idx+1);
         }
-
     }
 
     // check grd files
@@ -4234,7 +4315,7 @@ void TDMGui::open3DModel(const QString _filename)
     else
     {
         ModelLoadingModeDialog dlg(this);
-        dlg.setMode(LoadingModeDefault);
+        //dlg.setMode(LoadingModeDefault); // useless
 
         //check allowed modes
         // Use OSGB
@@ -4266,7 +4347,6 @@ void TDMGui::open3DModel(const QString _filename)
         {
             dlg.enableUseSmartLODTiles(false);
         }
-
 
         if(dlg.exec() == QDialog::Accepted)
         {
@@ -4373,7 +4453,6 @@ void TDMGui::openProject(QString _filename)
     QApplication::restoreOverrideCursor();
 
     slot_unselect();
-
 }
 
 bool TDMGui::closeProjectAndAskForSaving()

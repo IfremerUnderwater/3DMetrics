@@ -7,6 +7,8 @@
 
 #include "osgDB/WriteFile"
 
+#include "OSGWidget/json_3dtiles.h"
+
 #if defined(_WIN32) || defined(WIN32)
 #define DIRSEP "\\"
 #else
@@ -23,7 +25,8 @@ FileOpenThread::FileOpenThread() :
     m_threshold1(0),
     m_threshold2(0),
     m_nTilesX(1),
-    m_nTilesY(1)
+    m_nTilesY(1),
+    m_inProjectOpen(false)
 {
 
 }
@@ -64,6 +67,22 @@ void FileOpenThread::run()
             m_node = m_osg_widget->createNodeFromFile(pathToFile);
             m_osg_widget->createLODFiles(m_node, pathToFile, m_saveCompLOD);
             m_node = m_osg_widget->createLODNodeFromFiles(pathToFile);
+            if(true)
+            {
+                // 3dTiles file
+                if(m_saveCompLOD)
+                {
+                    Json3dTiles json;
+                    json.setRootNode(m_node, pathToFile + ".osgb");
+                    json.writeFile(pathToFile + "-compound.json");
+                }
+
+                Json3dTiles json;
+
+                json.setRootNode(m_node, "");
+                json.addRootLODFiles(pathToFile, 0, 0.1, 1.0);
+                json.writeFile(pathToFile + ".json");
+            }
             break;
 
         case LoadingModeUseSmartLOD:
@@ -87,7 +106,6 @@ void FileOpenThread::run()
             m_node = m_osg_widget->createNodeFromFile(pathToFile, LoadingModeSmartLODTilesDir,  m_tileFolderName.toStdString());
             LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
             break;
-
 
         case LoadingModeBuildLODTiles:
             m_node = m_osg_widget->createNodeFromFile(pathToFile);
@@ -113,6 +131,56 @@ void FileOpenThread::run()
             gfp.createLODTilesFromNodeGlobalSimplify(m_node,pathToFile,m_nTilesX,m_nTilesY,m_saveCompLOD,m_threshold1, m_threshold2);
             m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString(), LoadingModeSmartLODTiles);
             LODTools::applyLODValuesInTree(m_node, m_threshold1, m_threshold2);
+            if(true)
+            {
+                // 3dTiles file
+                if(m_saveCompLOD)
+                {
+                    Json3dTiles json;
+                    json.setRootNode(m_node, m_filename.toStdString());
+                    json.addRootTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0);
+                    json.writeFile(pathToFile + "-compound.json");
+                }
+
+                Json3dTiles json;
+
+                json.setRootNode(m_node, m_filename.toStdString());
+                json.addRootLODTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0, 0.1, 1.0);
+                json.writeFile(pathToFile + ".json");
+            }
+            break;
+
+        case LoadingModeBuildTiles:
+            m_node = m_osg_widget->createNodeFromFile(pathToFile);
+            // KML processing
+            if(extension == "kml")
+            {
+                // kml
+                KMLHandler kh;
+                kh.readFile(pathToFile);
+
+                pathToFile = kh.getModelPath();
+
+                // check relative path
+                if(pathToFile.size() > 0 && (!(pathToFile[0] == '/')))
+                {
+                    std::string base_directory, lfname;
+                    kmlbase::File::SplitFilePath(m_filename.toStdString(),
+                                                 &base_directory,
+                                                 &lfname);
+                    pathToFile = base_directory + string(DIRSEP) + pathToFile;
+                }
+            }
+            gfp.createTilesFromNode(m_node,pathToFile,m_nTilesX,m_nTilesY);
+            m_node = m_osg_widget->createNodeFromFile(m_filename.toStdString(), LoadingModeLODTiles);
+            if(true)
+            {
+                Json3dTiles json;
+
+                json.setRootNode(m_node, "");
+                json.addRootTilesFiles(pathToFile, m_nTilesX, m_nTilesY, 0);
+                json.writeFile(pathToFile + ".json");
+            }
             break;
 
         default:
@@ -128,7 +196,7 @@ void FileOpenThread::run()
 
     QApplication::restoreOverrideCursor();
     emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ,
-                           m_threshold1, m_threshold2, m_loadingMode, relItemsDir);
+                           m_threshold1, m_threshold2, m_loadingMode, relItemsDir, m_inProjectOpen);
 
 }
 
@@ -185,4 +253,14 @@ int FileOpenThread::getNTilesY() const
 void FileOpenThread::setNTilesY(int nTilesY)
 {
     m_nTilesY = nTilesY;
+}
+
+bool FileOpenThread::getInProjectOpen() const
+{
+    return m_inProjectOpen;
+}
+
+void FileOpenThread::setInProjectOpen(bool inProjectOpen)
+{
+    m_inProjectOpen = inProjectOpen;
 }

@@ -94,6 +94,16 @@
      </widget>
     </item>
     <item>
+     <widget class="QRadioButton" name="buildTilesRadio">
+      <property name="toolTip">
+       <string>Build and use Tiles - without LOD computing</string>
+      </property>
+      <property name="text">
+       <string>Build and use Tiles</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QRadioButton" name="useSmartLODTilesRadio">
       <property name="toolTip">
        <string>Use existing Smart LOD tiles in the same folder</string>

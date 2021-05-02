@@ -21,7 +21,6 @@ public:
     ///
     osg::ref_ptr<osg::Group>  loadGridFile(std::string _scene_file, LoadingMode _mode, QPointF &_local_lat_lon, double &_local_alt);
 
-
     ///
     /// \brief getGridLatLonAlt
     /// \param _scene_file
@@ -70,6 +69,16 @@ public:
     /// \return
     ///
     bool createLODTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY, bool _buildCompoundLOD, float _threshold1 = 40.0f, float _threshold2 = 200.0f);
+
+    ///
+    /// \brief createTilesFromNode
+    /// \param _node
+    /// \param _scene_file_basename
+    /// \param _nTilesX
+    /// \param _nTilesY
+    /// \return
+    ///
+    bool createTilesFromNode(osg::ref_ptr<osg::Node> _node, std::string _scene_file_basename, int _nTilesX, int _nTilesY);
 
     ///
     /// \brief createLODTilesFromNodeGlobalSimplify
