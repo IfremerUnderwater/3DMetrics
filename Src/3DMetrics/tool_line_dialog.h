@@ -36,6 +36,7 @@ private:
 
     MeasLine *m_meas_line;
     osg::ref_ptr<osg::Geode> m_geode;
+
 };
 
 #endif // TOOL_LINE_DIALOG_H

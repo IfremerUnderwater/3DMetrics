@@ -13,6 +13,8 @@
 #include "OSGWidget/osg_widget_tool.h"
 
 #include <osgGA/TrackballManipulator>
+#include <QFile>
+#include <QMessageBox>
 
 
 ProfileDepthDialog::ProfileDepthDialog(QWidget *parent) :
@@ -27,6 +29,7 @@ ProfileDepthDialog::ProfileDepthDialog(QWidget *parent) :
     QObject::connect(ui->close_btn, SIGNAL(clicked(bool)), this, SLOT(close()));
     QObject::connect(ui->drawing_widget, SIGNAL(mousemoved(float,float)), this, SLOT(onCoordChanged(float,float)));
     QObject::connect(ui->drawing_widget, SIGNAL(mouseleaved()), this, SLOT(onWidgetLeaved()));
+    QObject::connect(ui->export_csv_btn, SIGNAL(clicked(bool)), this, SLOT(sl_exportProfileAsCsv()));
 }
 
 ProfileDepthDialog::~ProfileDepthDialog()
@@ -59,12 +62,12 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line, bool _topview)
     double delta = alt - z0;
 
     // polyline pts
-    QVector<QPointF> fpts;
-    fpts.append(QPointF(0,pts[0].z+delta));
+    m_fpts.clear();
+    m_fpts.append(QPointF(0,pts[0].z+delta));
 
     // model points (polyline + projeted inter pts)
-    QVector<QPointF> mpts;
-    mpts.append(QPointF(0,pts[0].z+delta));
+    m_mpts.clear();
+    m_mpts.append(QPointF(0,pts[0].z+delta));
 
     // save camera parameters
     osg::Vec3 eye, center, up;
@@ -136,23 +139,23 @@ void ProfileDepthDialog::setMeasLine(MeasLine *_line, bool _topview)
             if(exists)
             {
                 float dn = n * (d / NIP);
-                mpts.append(QPointF(d0 + dn,ip[2]+delta));
+                m_mpts.append(QPointF(d0 + dn,ip[2]+delta));
             }
         }
 
         d0 += d;
-        fpts.append(QPointF(d0,pts[i].z+delta));
+        m_fpts.append(QPointF(d0,pts[i].z+delta));
 
         // last
-        mpts.append(QPointF(d0,pts[i].z+delta));
+        m_mpts.append(QPointF(d0,pts[i].z+delta));
 
         x0 = pts[i].x;
         y0 = pts[i].y;
         z0 = pts[i].z;
     }
 
-    ui->drawing_widget->setMainPolyLine(fpts);
-    ui->drawing_widget->setModelPolyLine(mpts);
+    ui->drawing_widget->setMainPolyLine(m_fpts);
+    ui->drawing_widget->setModelPolyLine(m_mpts);
     ui->drawing_widget->buildGraph();
 
     // restore camera
@@ -180,5 +183,41 @@ void ProfileDepthDialog::onCoordChanged(float _d, float _z)
 void ProfileDepthDialog::onWidgetLeaved()
 {
     ui->coords_label->setText("");
+}
+
+void ProfileDepthDialog::sl_exportProfileAsCsv()
+{
+    QString profile_filename = QFileDialog::getSaveFileName(this,
+        tr("Save Z Profile as csv"), "",
+        tr("csv file (*.csv)"));
+
+    if (profile_filename.isEmpty())
+    {
+        QMessageBox::warning(this, "File empty", "You did not select a valid file path");
+        return;
+    }
+
+    QFile profile_file(profile_filename);
+    profile_file.open(QIODevice::WriteOnly);
+
+    if (!profile_file.isOpen())
+    {
+        QMessageBox::warning(this, "Impossible to write", "Cannot write the file, check permissions");
+        return;
+    }
+
+    QTextStream profile_file_stream(&profile_file);
+
+    profile_file_stream << "#Axial distance (m), Z profile (m)\n";
+
+    for (int i = 0; i < m_mpts.size(); i++)
+    {
+        profile_file_stream << m_mpts[i].x() <<","<< m_mpts[i].y() << "\n";
+    }
+
+    profile_file.close();
+
+    QMessageBox::information(this, "File written", "File as been written successfully");
+
 }
 

@@ -208,7 +208,7 @@ void SlopeTool::slot_toolEnded()
 
             double dip = asin(plane_direction.norm())* 180.0 / M_PI;
 
-            // Without fromLatin1 degre symbol is not working :(
+            // Without fromLatin1 degre symbol is not working :( !?
             txt = QString::fromLatin1("Plane information in Aki convention : Strike = %1 \u00B0 , Dip = %2 \u00B0").arg(QString::number(strike, 'f', 1)).arg(QString::number(dip, 'f', 1));
             ui->plane_info_label->setText(txt );
             // Project points on plane

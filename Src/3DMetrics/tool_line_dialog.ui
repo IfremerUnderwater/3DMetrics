@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>380</width>
-    <height>116</height>
+    <width>498</width>
+    <height>112</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -62,7 +62,7 @@
           <string>Show profile from top view</string>
          </property>
          <property name="text">
-          <string>Z Profile</string>
+          <string>Z Profile from top</string>
          </property>
         </widget>
        </item>
@@ -72,7 +72,7 @@
           <string>Show Profile from current view</string>
          </property>
          <property name="text">
-          <string>Profile</string>
+          <string>Z profile Profile from view</string>
          </property>
         </widget>
        </item>

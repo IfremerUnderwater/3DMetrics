@@ -22,11 +22,14 @@ public:
 public slots:
     void onCoordChanged(float _d, float _z);
     void onWidgetLeaved();
+    void sl_exportProfileAsCsv();
 
 private:
     Ui::ProfileDepthDialog *ui;
 
     MeasLine *m_measLine;
+    QVector<QPointF> m_fpts;
+    QVector<QPointF> m_mpts;
 };
 
 #endif // PROFILE_DEPTH_DIALOG_H
