@@ -2,6 +2,7 @@
 #include <QtWidgets>
 #include "tdmgui.h"
 #include <QLocale>
+#include "3DMetricsConfig.h"
 
 // GDAL
 #if defined(_WIN32) || defined(__APPLE__)
@@ -29,6 +30,7 @@ int main(int argc, char *argv[])
     GDALAllRegister();
 
     TDMGui tdm_gui;
+    tdm_gui.setWindowTitle(QString("3D Metrics v%1.%2.%3").arg(TDM_VERSION_MAJOR).arg(TDM_VERSION_MINOR).arg(TDM_VERSION_PATCH));
     tdm_gui.show();
 
     int res = app.exec();

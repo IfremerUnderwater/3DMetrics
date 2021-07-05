@@ -14,7 +14,7 @@
    <bool>true</bool>
   </property>
   <property name="windowTitle">
-   <string>3D Metrics v0.6.0</string>
+   <string>3D Metrics</string>
   </property>
   <property name="styleSheet">
    <string notr="true"/>

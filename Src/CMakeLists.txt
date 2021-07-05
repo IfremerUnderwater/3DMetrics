@@ -25,6 +25,9 @@ endif(MSVC)
 
 string(TIMESTAMP BUILD_DATE "%Y-%m-%d")
 
+configure_file(3DMetricsConfig.h.in 3DMetricsConfig.h)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 # define Runtime directories as config dependent folders (and create them)
 set(TDM_RUNTIME_ROOT ${PROJECT_BINARY_DIR}/Run/$<$<CONFIG:Release>:Release>$<$<CONFIG:Debug>:Debug>$<$<CONFIG:RelWithDebInfo>:RelWithDebInfo>)
 
