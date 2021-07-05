@@ -97,6 +97,7 @@ void ToolLineDialog::removelast()
 void ToolLineDialog::profile()
 {
     ProfileDepthDialog *dialog = new ProfileDepthDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setMeasLine( m_meas_line );
     dialog->show();
 }
@@ -105,6 +106,7 @@ void ToolLineDialog::profile()
 void ToolLineDialog::profile_z()
 {
     ProfileDepthDialog *dialog = new ProfileDepthDialog(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     dialog->setMeasLine( m_meas_line, true );
     dialog->show();
 }

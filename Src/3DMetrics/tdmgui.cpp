@@ -2233,6 +2233,7 @@ void TDMGui::slot_messageEndTool(QString&_msg)
 void TDMGui::slot_tempLineTool()
 {
     ToolLineDialog *line_dialog = new ToolLineDialog(this);
+    line_dialog->setAttribute(Qt::WA_DeleteOnClose);
     QPoint point = QCursor::pos();
     line_dialog->move(point.x()+20, point.y()+20);
     line_dialog->show();
@@ -2243,6 +2244,7 @@ void TDMGui::slot_tempLineTool()
 void TDMGui::slot_tempPointTool()
 {
     ToolPointDialog *point_dialog = new ToolPointDialog(this);
+    point_dialog->setAttribute(Qt::WA_DeleteOnClose);
     QPoint point = QCursor::pos();
     point_dialog->move(point.x()+20, point.y()+20);
     point_dialog->show();
@@ -2253,6 +2255,7 @@ void TDMGui::slot_tempPointTool()
 void TDMGui::slot_tempAreaTool()
 {
     ToolAreaDialog *area_dialog = new ToolAreaDialog(this);
+    area_dialog->setAttribute(Qt::WA_DeleteOnClose);
     QPoint point = QCursor::pos();
     area_dialog->move(point.x()+20, point.y()+20);
     area_dialog->show();
@@ -4009,6 +4012,7 @@ void TDMGui::slot_editModelOffset()
 void TDMGui::slot_slopeTool()
 {
     SlopeTool *dialog = new SlopeTool(this);
+    dialog->setAttribute(Qt::WA_DeleteOnClose);
     QPoint point = QCursor::pos();
     dialog->move(point.x()+20, point.y()+20);
     dialog->show();
