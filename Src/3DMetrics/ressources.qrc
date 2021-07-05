@@ -1,18 +1,19 @@
 <RCC>
-    <qresource prefix="/icons">
-        <file>ressources/camera.svg</file>
-        <file>ressources/cancel.svg</file>
-        <file>ressources/cube-outline.svg</file>
-        <file>ressources/folder.svg</file>
-        <file>ressources/image-filter-center-focus.svg</file>
-        <file>ressources/image-filter-hdr.svg</file>
-        <file>ressources/layers-outline.svg</file>
-        <file>ressources/magnify-minus.svg</file>
-        <file>ressources/magnify-plus.svg</file>
-        <file>ressources/map-marker-plus.svg</file>
-        <file>ressources/vector-polyline.svg</file>
-        <file>ressources/vector-closed-polyline.svg</file>
-        <file>ressources/3dm_icon.svg</file>
-        <file>ressources/ack.svg</file>
-    </qresource>
+  <qresource prefix="/icons">
+    <file>ressources/fault-aki-conv.svg</file>
+    <file>ressources/camera.svg</file>
+    <file>ressources/cancel.svg</file>
+    <file>ressources/cube-outline.svg</file>
+    <file>ressources/folder.svg</file>
+    <file>ressources/image-filter-center-focus.svg</file>
+    <file>ressources/image-filter-hdr.svg</file>
+    <file>ressources/layers-outline.svg</file>
+    <file>ressources/magnify-minus.svg</file>
+    <file>ressources/magnify-plus.svg</file>
+    <file>ressources/map-marker-plus.svg</file>
+    <file>ressources/vector-polyline.svg</file>
+    <file>ressources/vector-closed-polyline.svg</file>
+    <file>ressources/3dm_icon.svg</file>
+    <file>ressources/ack.svg</file>
+  </qresource>
 </RCC>

@@ -35,7 +35,7 @@ SlopeTool::SlopeTool(QWidget *parent) :
     ui->x_label->setText("");
     ui->y_label->setText("");
     ui->z_label->setText("");
-    ui->slope_label->setText("");
+    ui->plane_info_label->setText("");
 }
 
 SlopeTool::~SlopeTool()
@@ -75,7 +75,7 @@ void SlopeTool::start()
     ui->x_label->setText("");
     ui->y_label->setText("");
     ui->z_label->setText("");
-    ui->slope_label->setText("");
+    ui->plane_info_label->setText("");
 
     ui->message_label->setText("Select Center Point");
 
@@ -182,6 +182,12 @@ void SlopeTool::slot_toolEnded()
                 }
             }
 
+            // Fill normal info
+            Eigen::Vector3f plane_normal = plane_coeffs.second;
+            plane_normal.normalize();
+            if (plane_normal[2] < 0) // force orientation up
+                plane_normal = -plane_normal;
+
             QString txt = QString::number(plane_coeffs.second[0],'f',3);
             ui->x_label->setText("X= " + txt);
             txt = QString::number(plane_coeffs.second[1],'f',3);
@@ -189,15 +195,22 @@ void SlopeTool::slot_toolEnded()
             txt = QString::number(plane_coeffs.second[2],'f',3);
             ui->z_label->setText("Z= " + txt);
 
-            osg::Vec3d vect;
-            vect[0] = plane_coeffs.second[0];
-            vect[1] = plane_coeffs.second[1];
-            vect[2] = plane_coeffs.second[2];
+            // Compute Aki convention informations on plane (Strike, Dip)
+            Eigen::Vector3f up(0.0, 0.0, 1.0);
+            Eigen::Vector3f north(0.0, 1.0, 0.0);
+            Eigen::Vector3f plane_direction = up.cross(plane_normal);
+            
+            double strike_sin = plane_direction.cross(north).dot(up);
+            double strike_cos = plane_direction.dot(north);
+            double strike = atan2(strike_sin, strike_cos) * 180.0 / M_PI;
+            if (strike < 0)
+                strike += 360.0;
 
-            vect.normalize();
-            double slope = acos( fabs(vect[2])) * 180.0 / M_PI;
-            txt = QString::number(slope,'f',1);
-            ui->slope_label->setText("slope= " + txt +"°");
+            double dip = asin(plane_direction.norm())* 180.0 / M_PI;
+
+            // Without fromLatin1 degre symbol is not working :(
+            txt = QString::fromLatin1("Plane information in Aki convention : Strike = %1 \u00B0 , Dip = %2 \u00B0").arg(QString::number(strike, 'f', 1)).arg(QString::number(dip, 'f', 1));
+            ui->plane_info_label->setText(txt );
             // Project points on plane
             std::vector<Eigen::Vector3f> proj_points;
             Geometry::project3DPointsToPlane(plane_coeffs, pcircle, proj_points);
