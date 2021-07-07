@@ -45,8 +45,14 @@
      <x>0</x>
      <y>0</y>
      <width>1340</width>
-     <height>22</height>
+     <height>30</height>
     </rect>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>0</width>
+     <height>30</height>
+    </size>
    </property>
    <widget class="QMenu" name="menuFile">
     <property name="title">
@@ -90,7 +96,7 @@
     <addaction name="depth_colot_chooser_action"/>
     <addaction name="show_z_scale_action"/>
    </widget>
-   <widget class="QMenu" name="menuHelp_2">
+   <widget class="QMenu" name="menuHelp">
     <property name="title">
      <string>Help</string>
     </property>
@@ -100,7 +106,7 @@
    <addaction name="menuFile"/>
    <addaction name="menuData"/>
    <addaction name="menuView"/>
-   <addaction name="menuHelp_2"/>
+   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="main_toolbar">
@@ -119,7 +125,6 @@
    <addaction name="line_tool"/>
    <addaction name="surface_tool"/>
    <addaction name="pick_point"/>
-   <addaction name="separator"/>
    <addaction name="slope_tool"/>
    <addaction name="separator"/>
    <addaction name="cancel_measurement"/>
@@ -131,7 +136,7 @@
     <string>toolBar_2</string>
    </property>
    <attribute name="toolBarArea">
-    <enum>LeftToolBarArea</enum>
+    <enum>TopToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>

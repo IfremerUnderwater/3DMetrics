@@ -6,6 +6,7 @@
 #include <QSettings>
 #include <QShortcut>
 #include <QMultiMap>
+#include <QMouseEvent>
 #include "about_dialog.h"
 
 #include "Measurement/measurement_pattern.h"
@@ -45,6 +46,9 @@ public:
 private:
     Ui::TDMGui *ui;
     AboutDialog m_dialog;
+
+    // Init stylesheet
+    void initStyleSheet();
 
     // Map of opened transparency dialogs
     QMultiMap<TdmLayerItem*, QWidget*> toolWindowsMap;
@@ -238,6 +242,8 @@ public slots:
     void slot_addLine();
 
 private slots:
+
+    void slot_moveWindows(QMouseEvent* _event);
 
 };
 

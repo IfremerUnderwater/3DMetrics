@@ -36,6 +36,11 @@ add_custom_target(copy_install ALL
  COMMENT "Copying install folder ..."
 )
 
+add_custom_target(copy_styles ALL
+ COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/../Styles ${TDM_RUNTIME_ROOT}/Styles
+ COMMENT "Copying styles folder ..."
+)
+
 configure_file(../Install/generate_installer.bat.in Install/generate_installer.bat)
 configure_file(../Install/packages/3DMetrics/meta/package.xml.in Install/packages/3DMetrics/meta/package.xml)
 set(BINARYTOOL_HOMEDIR @HomeDir@)

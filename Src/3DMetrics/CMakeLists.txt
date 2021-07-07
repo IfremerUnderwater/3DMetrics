@@ -71,8 +71,10 @@ add_executable(3DMetrics
     edit_lod_threshold_dialog.cpp
     model_loadingmode_dialog.cpp
     triangulation_threshold_dialog.cpp
-	ressources.qrc
-	3DMetrics.rc)
+    style_utils.cpp
+    ressources.qrc
+    style.qrc
+    3DMetrics.rc)
 	
 set_target_properties(3DMetrics PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${TDM_RUNTIME_ROOT}/$<0:>)
 	

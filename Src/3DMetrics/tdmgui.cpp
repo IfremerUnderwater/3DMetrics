@@ -77,6 +77,7 @@
 //#include "ask_for_lod_dialog.h"
 #include "edit_lod_threshold_dialog.h"
 #include "model_loadingmode_dialog.h"
+#include "style_utils.h"
 
 #if defined(_WIN32) || defined(WIN32)
 #define DIRSEP "\\"
@@ -103,9 +104,11 @@ TDMGui::TDMGui(QWidget *_parent) :
 {
     qRegisterMetaType<MeasPattern>();
 
+    initStyleSheet();
+
     ui->setupUi(this);
     //ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
-
+    this->setWindowFlags(Qt::FramelessWindowHint);
 
     // set icon
     this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
@@ -127,6 +130,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
 
+    QObject::connect(ui->menubar, SIGNAL(mouseMoveEvent(QMouseEvent*)), this, SLOT(slot_moveWindows(QMouseEvent*)));
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
     QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
     QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
@@ -319,6 +323,11 @@ TDMGui::TDMGui(QWidget *_parent) :
 TDMGui::~TDMGui()
 {    
     delete ui;
+}
+
+void TDMGui::slot_moveWindows(QMouseEvent* _event)
+{
+    std::cout << "tito_debug\n";
 }
 
 // ask on close
@@ -1406,6 +1415,32 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
     menu->addSeparator();
 
     menu->exec(QCursor::pos());
+}
+
+void TDMGui::initStyleSheet()
+{
+    QFile generic_style_sheet("Styles/3DMetrics.css");
+    QMap<QString, QString> current_color_set = style_tools::StyleUtils::readPropertiesFile("Styles/3DMetricsColorsDay.properties");
+
+    if (!generic_style_sheet.exists()) {
+        qWarning() << "Stylesheet files not found";
+    }
+    else {
+        if (!generic_style_sheet.open(QIODevice::ReadOnly)) {
+            qWarning() << "Generic stylesheet file could not be opened\n" << generic_style_sheet.error();
+        }
+        else {
+            QByteArray global_styles_bytes = generic_style_sheet.readAll();
+            generic_style_sheet.close();
+
+            // Substituting stylesheet variables
+            QString global_styles_with_variables(global_styles_bytes);
+            QString global_styles = style_tools::StyleUtils::substitutePlaceHolders(global_styles_with_variables, current_color_set);
+
+            // Applying stylesheet
+            qApp->setStyleSheet(global_styles);
+        }
+    }
 }
 
 // recursively delete datas (in column 1 - not shown in treeview)

@@ -1,0 +1,28 @@
+<RCC>
+    <qresource prefix="/qss_icons">
+        <file>ressources/style/up_arrow_disabled.png</file>
+        <file>ressources/style/Hmovetoolbar.png</file>
+        <file>ressources/style/stylesheet-branch-end.png</file>
+        <file>ressources/style/branch_closed-on.png</file>
+        <file>ressources/style/stylesheet-vline.png</file>
+        <file>ressources/style/branch_closed.png</file>
+        <file>ressources/style/branch_open-on.png</file>
+        <file>ressources/style/transparent.png</file>
+        <file>ressources/style/right_arrow_disabled.png</file>
+        <file>ressources/style/sizegrip.png</file>
+        <file>ressources/style/down_arrow.png</file>
+        <file>ressources/style/Vmovetoolbar.png</file>
+        <file>ressources/style/left_arrow.png</file>
+        <file>ressources/style/stylesheet-branch-more.png</file>
+        <file>ressources/style/up_arrow.png</file>
+        <file>ressources/style/right_arrow.png</file>
+        <file>ressources/style/left_arrow_disabled.png</file>
+        <file>ressources/style/Hsepartoolbar.png</file>
+        <file>ressources/style/checkbox.png</file>
+        <file>ressources/style/checkbox_indeterminate.png</file>
+        <file>ressources/style/branch_open.png</file>
+        <file>ressources/style/Vsepartoolbar.png</file>
+        <file>ressources/style/down_arrow_disabled.png</file>
+        <file>ressources/style/radio_checked.svg</file>
+    </qresource>
+</RCC>
