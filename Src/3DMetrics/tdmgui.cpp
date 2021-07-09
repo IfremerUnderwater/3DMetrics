@@ -107,12 +107,11 @@ TDMGui::TDMGui(QWidget *_parent) :
     initStyleSheet();
 
     ui->setupUi(this);
-    //ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
     this->setWindowFlags(Qt::FramelessWindowHint);
 
     // set icon
-    this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
-    m_dialog.setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
+    //this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
+    //m_dialog.setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
 
     // to add in reverse because toolbar order is right to left
     m_alt_label = new QLabel("", ui->coords_toolbar);
@@ -130,7 +129,6 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
 
-    QObject::connect(ui->menubar, SIGNAL(mouseMoveEvent(QMouseEvent*)), this, SLOT(slot_moveWindows(QMouseEvent*)));
     QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
     QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
     QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
@@ -321,13 +319,8 @@ TDMGui::TDMGui(QWidget *_parent) :
 }
 
 TDMGui::~TDMGui()
-{    
+{   
     delete ui;
-}
-
-void TDMGui::slot_moveWindows(QMouseEvent* _event)
-{
-    std::cout << "tito_debug\n";
 }
 
 // ask on close

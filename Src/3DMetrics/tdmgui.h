@@ -2,6 +2,7 @@
 #define TDMGUI_H
 
 #include <QMainWindow>
+#include <QtWidgets>
 #include <QLabel>
 #include <QSettings>
 #include <QShortcut>
@@ -240,10 +241,6 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
-
-private slots:
-
-    void slot_moveWindows(QMouseEvent* _event);
 
 };
 

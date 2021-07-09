@@ -2,6 +2,8 @@
 add_executable(3DMetrics
     main.cpp
     tdmgui.cpp
+    CustomWidgets/framelesswindow.cpp
+    CustomWidgets/windowdragger.cpp
     OSGWidget/kml_handler.cpp
     OSGWidget/point3d.cpp
     OSGWidget/osg_widget_tool.cpp
