@@ -29,6 +29,7 @@ class FramelessWindow : public QWidget {
   explicit FramelessWindow(QWidget *parent = Q_NULLPTR);
   virtual ~FramelessWindow();
   void setContent(QWidget *w);
+  void writeMessage(QString _message);
 
   QMenuBar* m_menu_bar;
   QMenu* m_file_menu;
@@ -89,7 +90,6 @@ class FramelessWindow : public QWidget {
 
   // does not follow the code style as they are autoconnected slot and naming is imposed by Qt
   void on_minimize_button_clicked();
-  void on_restore_button_clicked();
   void on_maximize_button_clicked();
   void on_close_button_clicked();
   void on_window_title_bar_doubleClicked();

@@ -111,22 +111,8 @@ TDMGui::TDMGui(QWidget *_parent) :
     setCustomWindow(dynamic_cast<FramelessWindow*>(_parent));
     this->setWindowFlags(Qt::FramelessWindowHint);
 
-    // set icon
-    //this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
-    //m_dialog.setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
-
     // to add in reverse because toolbar order is right to left
-    m_alt_label = new QLabel("", ui->coords_toolbar);
-    m_alt_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_alt_label);
-
-    m_lon_label = new QLabel("", ui->coords_toolbar);
-    m_lon_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_lon_label);
-
-    m_lat_label = new QLabel("", ui->coords_toolbar);
-    m_lat_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_lat_label);
+    m_cw->writeMessage("");
 
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
@@ -3218,22 +3204,18 @@ void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton /* _button */, int _x, i
         ui->display_widget->getGeoOrigin(ref_lat_lon, ref_alt);
         if(ref_alt == INVALID_VALUE)
         {
-            m_lat_label->setText("");
-            m_lon_label->setText("");
-            m_alt_label->setText("");
+            m_cw->writeMessage("");
             return;
         }
         ui->display_widget->xyzToLatLonAlt(vect[0], vect[1], vect[2], lat, lon, alt);
 
-        m_lat_label->setText("lat: "+QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
-        m_lon_label->setText("lon: "+QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        m_alt_label->setText("alt: "+QString::number(alt,'f',1) + "m");
+        m_cw->writeMessage("lat: " + QString::number(fabs(lat), 'f', 7) + (lat >= 0 ? "N" : "S")+
+            " lon: " + QString::number(fabs(lon), 'f', 7) + (lon >= 0 ? "E" : "W")+
+            " alt: " + QString::number(alt, 'f', 1) + "m");
     }
     else
     {
-        m_lat_label->setText("");
-        m_lon_label->setText("");
-        m_alt_label->setText("");
+        m_cw->writeMessage("");
     }
 }
 
@@ -4428,9 +4410,7 @@ void TDMGui::open3DModel(const QString _filename)
     ui->pick_point->setEnabled(true);
     ui->slope_tool->setEnabled(true);
 
-    m_alt_label->setText("");
-    m_lon_label->setText("");
-    m_lat_label->setText("");
+    m_cw->writeMessage("");
 }
 
 void TDMGui::openMeasurement(QString _filename)
@@ -4541,9 +4521,7 @@ bool TDMGui::closeProjectAndAskForSaving()
     ui->pick_point->setEnabled(false);
     ui->slope_tool->setEnabled(false);
 
-    m_alt_label->setText("");
-    m_lon_label->setText("");
-    m_lat_label->setText("");
+    m_cw->writeMessage("");
 
     return true;
 }

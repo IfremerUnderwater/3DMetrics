@@ -25,8 +25,8 @@ FramelessWindow::FramelessWindow(QWidget *parent)
 #if defined(Q_OS_WIN)
   setWindowFlags(windowFlags() | Qt::WindowMinimizeButtonHint);
 #endif
-  setAttribute(Qt::WA_NoSystemBackground, true);
-  setAttribute(Qt::WA_TranslucentBackground);
+  //setAttribute(Qt::WA_NoSystemBackground, true);
+  //setAttribute(Qt::WA_TranslucentBackground);
 
   ui->setupUi(this);
 
@@ -40,7 +40,6 @@ FramelessWindow::FramelessWindow(QWidget *parent)
 
   m_tdm_gui = new TDMGui(this);
   setContent(m_tdm_gui);
-  //m_tdm_gui.setCustomWindow(this);
 
 }
 
@@ -50,30 +49,26 @@ FramelessWindow::~FramelessWindow()
     delete m_tdm_gui;
 }
 
-void FramelessWindow::on_restore_button_clicked() {
-  //ui->restore_button->setVisible(false);
-
-  ui->maximize_button->setVisible(true);
-  setWindowState(Qt::WindowNoState);
-  // on MacOS this hack makes sure the
-  // background window is repaint correctly
-  hide();
-  show();
-}
-
 void FramelessWindow::on_maximize_button_clicked() {
-  ui->maximize_button->setVisible(false);
-  this->setWindowState(Qt::WindowMaximized);
-  this->showMaximized();
+
+  if (windowState().testFlag(Qt::WindowNoState)) {
+      this->setWindowState(Qt::WindowMaximized);
+      this->showMaximized();
+  }
+  else if (windowState().testFlag(Qt::WindowMaximized)) {
+      this->setWindowState(Qt::WindowNoState);
+      this->showNormal();
+  }
+
 }
 
 void FramelessWindow::changeEvent(QEvent *event) {
   if (event->type() == QEvent::WindowStateChange) {
     if (windowState().testFlag(Qt::WindowNoState)) {
-      ui->maximize_button->setVisible(true);
+      //ui->maximize_button->setVisible(true);
       event->ignore();
     } else if (windowState().testFlag(Qt::WindowMaximized)) {
-      ui->maximize_button->setVisible(false);
+      //ui->maximize_button->setVisible(false);
       event->ignore();
     }
   }
@@ -82,6 +77,11 @@ void FramelessWindow::changeEvent(QEvent *event) {
 
 void FramelessWindow::setContent(QWidget *w) {
   ui->window_content->layout()->addWidget(w);
+}
+
+void FramelessWindow::writeMessage(QString _message)
+{
+    ui->message->setText(_message);
 }
 
 void FramelessWindow::setWindowTitle(const QString &text) {
@@ -99,11 +99,7 @@ void FramelessWindow::on_minimize_button_clicked() {
 void FramelessWindow::on_close_button_clicked() { close(); }
 
 void FramelessWindow::on_window_title_bar_doubleClicked() {
-  if (windowState().testFlag(Qt::WindowNoState)) {
-    on_maximize_button_clicked();
-  } else if (windowState().testFlag(Qt::WindowFullScreen)) {
-    on_restore_button_clicked();
-  }
+  on_maximize_button_clicked();
 }
 
 void FramelessWindow::mouseDoubleClickEvent(QMouseEvent *event) {

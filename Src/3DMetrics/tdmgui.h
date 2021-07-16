@@ -84,10 +84,6 @@ private:
 
     QString m_project_filename;
 
-    QLabel *m_lat_label;
-    QLabel *m_lon_label;
-    QLabel *m_alt_label;
-
     DecimationDialog m_decimation_dialog;
 
     MeasGeomExportDialog m_meas_geom_export_dialog;
