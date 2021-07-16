@@ -30,13 +30,56 @@ class FramelessWindow : public QWidget {
   virtual ~FramelessWindow();
   void setContent(QWidget *w);
 
+  QMenuBar* m_menu_bar;
+  QMenu* m_file_menu;
+  QMenu* m_tools_menu;
+  QMenu* m_view_menu;
+  QMenu* m_help_menu;
+
+  // File menu actions
+  QAction* m_open_3d_model_action;
+  //separator
+  QAction* m_open_measurement_file_action;
+  QAction* m_save_measurement_file_action;
+  QAction* m_save_measurement_file_as_action;
+  //separator
+  QAction* m_open_project_action;
+  QAction* m_save_project_action;
+  QAction* m_close_project_action;
+  //separator
+  QAction* m_import_old_measurement_format_action;
+  //separator
+  QAction* m_quit_action;
+
+  // Tools menu
+  QAction* m_export_data_to_csv_action;
+  QAction* m_decimate_model_action;
+  QAction* m_take_snapshot_action;
+
+  // View menu
+  QAction* m_layers_tree_window_action;
+  QAction* m_attrib_table_window_action;
+  //QAction* m_separator;
+  QAction* m_add_axes_action;
+  QAction* m_stereo_action;
+  QAction* m_light_action;
+  //QAction* m_separator;
+  QAction* m_z_scale_action;
+  //QAction* m_separator;
+  QAction* m_depth_colot_chooser_action;
+  QAction* m_show_z_scale_action;
+
+  // Help menu
+  QAction* m_action_user_manual;
+  QAction* m_about_action;
+
  private:
   bool leftBorderHit(const QPoint &pos);
   bool rightBorderHit(const QPoint &pos);
   bool topBorderHit(const QPoint &pos);
   bool bottomBorderHit(const QPoint &pos);
 
-  TDMGui m_tdm_gui;
+  TDMGui *m_tdm_gui;
 
  public slots:
   void setWindowTitle(const QString &text);
@@ -72,48 +115,7 @@ class FramelessWindow : public QWidget {
   bool m_drag_right;
   bool m_drag_bottom;
 
-  QMenuBar* m_menu_bar;
-  QMenu* m_file_menu;
-  QMenu* m_tools_menu;
-  QMenu* m_view_menu;
-  QMenu* m_help_menu;
 
-  // File menu actions
-  QAction* m_open_3d_model_action;
-  //separator
-  QAction* m_open_measurement_file_action;
-  QAction* m_save_measurement_file_action;
-  QAction* m_save_measurement_file_as_action;
-  //separator
-  QAction * m_open_project_action;
-  QAction* m_save_project_action;
-  QAction* m_close_project_action;
-  //separator
-  QAction * m_import_old_measurement_format_action;
-  //separator
-  QAction * m_quit_action;
-
-  // Tools menu
-  QAction* m_export_data_to_csv_action;
-  QAction* m_decimate_model_action;
-  QAction* m_take_snapshot_action;
-
-  // View menu
-  QAction* m_layers_tree_window_action;
-  QAction* m_attrib_table_window_action;
-  //QAction* m_separator;
-  QAction* m_add_axes_action;
-  QAction* m_stereo_action;
-  QAction* m_light_action;
-  //QAction* m_separator;
-  QAction* m_z_scale_action;
-  //QAction* m_separator;
-  QAction* m_depth_colot_chooser_action;
-  QAction* m_show_z_scale_action;
-
-  // Help menu
-  QAction* m_action_user_manual;
-  QAction* m_about_action;
 
 };
 

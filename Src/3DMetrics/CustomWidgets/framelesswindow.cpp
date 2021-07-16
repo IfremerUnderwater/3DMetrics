@@ -34,13 +34,19 @@ FramelessWindow::FramelessWindow(QWidget *parent)
   // important to watch mouse move from all child widgets
   QApplication::instance()->installEventFilter(this);
 
-  setContent(&m_tdm_gui);
-
   initMenu();
+
+  m_tdm_gui = new TDMGui(this);
+  setContent(m_tdm_gui);
+  //m_tdm_gui.setCustomWindow(this);
 
 }
 
-FramelessWindow::~FramelessWindow() { delete ui; }
+FramelessWindow::~FramelessWindow()
+{
+    delete ui;
+    delete m_tdm_gui;
+}
 
 void FramelessWindow::on_restore_button_clicked() {
   //ui->restore_button->setVisible(false);

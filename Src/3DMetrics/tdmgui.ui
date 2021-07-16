@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1340</width>
-    <height>907</height>
+    <width>1344</width>
+    <height>916</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -38,75 +38,6 @@
      </widget>
     </item>
    </layout>
-  </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1340</width>
-     <height>30</height>
-    </rect>
-   </property>
-   <property name="minimumSize">
-    <size>
-     <width>0</width>
-     <height>30</height>
-    </size>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="open_3d_model_action"/>
-    <addaction name="separator"/>
-    <addaction name="open_measurement_file_action"/>
-    <addaction name="save_measurement_file_action"/>
-    <addaction name="save_measurement_file_as_action"/>
-    <addaction name="separator"/>
-    <addaction name="open_project_action"/>
-    <addaction name="save_project_action"/>
-    <addaction name="close_project_action"/>
-    <addaction name="separator"/>
-    <addaction name="import_old_measurement_format_action"/>
-    <addaction name="separator"/>
-    <addaction name="quit_action"/>
-   </widget>
-   <widget class="QMenu" name="menuData">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-    <addaction name="export_data_to_csv_action"/>
-    <addaction name="decimate_model_action"/>
-    <addaction name="take_snapshot_action"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <addaction name="layers_tree_window_action"/>
-    <addaction name="attrib_table_window_action"/>
-    <addaction name="separator"/>
-    <addaction name="add_axes_action"/>
-    <addaction name="stereo_action"/>
-    <addaction name="light_action"/>
-    <addaction name="separator"/>
-    <addaction name="z_scale_action"/>
-    <addaction name="separator"/>
-    <addaction name="depth_colot_chooser_action"/>
-    <addaction name="show_z_scale_action"/>
-   </widget>
-   <widget class="QMenu" name="menuHelp">
-    <property name="title">
-     <string>Help</string>
-    </property>
-    <addaction name="action_user_manual"/>
-    <addaction name="about_action"/>
-   </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuData"/>
-   <addaction name="menuView"/>
-   <addaction name="menuHelp"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="main_toolbar">

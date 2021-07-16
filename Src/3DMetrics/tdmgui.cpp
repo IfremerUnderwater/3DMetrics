@@ -9,6 +9,7 @@
 
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
+#include "CustomWidgets/framelesswindow.h"
 
 #include "TreeView/tdm_layer_item.h"
 #include "TreeView/tdm_layer_model.h"
@@ -107,6 +108,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     initStyleSheet();
 
     ui->setupUi(this);
+    setCustomWindow(dynamic_cast<FramelessWindow*>(_parent));
     this->setWindowFlags(Qt::FramelessWindowHint);
 
     // set icon
@@ -129,26 +131,35 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
 
-    QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
-    QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
-    QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
-    QObject::connect(ui->save_measurement_file_as_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFileAs()));
-    QObject::connect(ui->import_old_measurement_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasurementFile()));
-    QObject::connect(ui->open_project_action, SIGNAL(triggered()), this, SLOT(slot_openProject()));
-    QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
-    QObject::connect(ui->close_project_action, SIGNAL(triggered()), this, SLOT(slot_closeProject()));
-    QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
-    QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
-    QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
-    QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
-    QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
-    QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
-    QObject::connect(ui->depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
-    QObject::connect(ui->show_z_scale_action, SIGNAL(triggered()),this, SLOT(slot_toggleZScale()));
+    // Connect menu actions
+    QObject::connect(m_cw->m_open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
+    QObject::connect(m_cw->m_open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
+    QObject::connect(m_cw->m_save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
+    QObject::connect(m_cw->m_save_measurement_file_as_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFileAs()));
+    QObject::connect(m_cw->m_import_old_measurement_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasurementFile()));
+    QObject::connect(m_cw->m_open_project_action, SIGNAL(triggered()), this, SLOT(slot_openProject()));
+    QObject::connect(m_cw->m_save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
+    QObject::connect(m_cw->m_close_project_action, SIGNAL(triggered()), this, SLOT(slot_closeProject()));
+    QObject::connect(m_cw->m_layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
+    QObject::connect(m_cw->m_attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
+    QObject::connect(m_cw->m_add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
+    QObject::connect(m_cw->m_stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
+    QObject::connect(m_cw->m_light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
+    QObject::connect(m_cw->m_z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+    QObject::connect(m_cw->m_depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
+    QObject::connect(m_cw->m_show_z_scale_action, SIGNAL(triggered()),this, SLOT(slot_toggleZScale()));
+    QObject::connect(m_cw->m_quit_action, SIGNAL(triggered()), this, SLOT(close()));
+    QObject::connect(m_cw->m_about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
+    QObject::connect(m_cw->m_decimate_model_action, SIGNAL(triggered(bool)), this, SLOT(slot_showDecimationDialog()));
+    QObject::connect(&m_decimation_dialog, SIGNAL(accepted()), this, SLOT(slot_decimateSelectedModel()));
+    QObject::connect(m_cw->m_export_data_to_csv_action, SIGNAL(triggered(bool)), this, SLOT(slot_saveAttribTableToASCII()));
+    QObject::connect(m_cw->m_take_snapshot_action, SIGNAL(triggered(bool)), this, SLOT(slot_saveSnapshot()));
 
-    QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
-
-    QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
+    // file menu
+    m_cw->m_open_measurement_file_action->setEnabled(true);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(false);
+    m_cw->m_import_old_measurement_format_action->setEnabled(false);
 
     QObject::connect(ui->tree_widget_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_layersTreeWindowVisibilityChanged(bool)));
     QObject::connect(ui->attrib_table_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_attribTableWindowVisibilityChanged(bool)));
@@ -201,12 +212,6 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->cancel_measurement->setEnabled(false);
     ui->cancel_last_point->setEnabled(false);
 
-    // file menu
-    ui->open_measurement_file_action->setEnabled(true);
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(false);
-    ui->import_old_measurement_format_action->setEnabled(false);
-
     updateAttributeTable(0);
 
 
@@ -222,20 +227,10 @@ TDMGui::TDMGui(QWidget *_parent) :
     connect(ui->line_tool, SIGNAL(triggered()), this, SLOT(slot_tempLineTool()));
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
-
     connect(ui->slope_tool, SIGNAL(triggered()), this,  SLOT(slot_slopeTool()));
 
     connect(ui->display_widget, SIGNAL(signal_onMousePress(Qt::MouseButton, int, int)), this, SLOT(slot_mouseClickInOsgWidget(Qt::MouseButton, int,int)));
 
-    // decimation
-    connect(ui->decimate_model_action,SIGNAL(triggered(bool)),this,SLOT(slot_showDecimationDialog()));
-    connect(&m_decimation_dialog, SIGNAL(accepted()),this,SLOT(slot_decimateSelectedModel()));
-
-    // csv export
-    connect(ui->export_data_to_csv_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveAttribTableToASCII()));
-
-    // snapshot
-    connect(ui->take_snapshot_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveSnapshot()));
 
     // settings
     bool ready_to_apply = true;
@@ -343,6 +338,13 @@ void TDMGui::closeEvent(QCloseEvent *_event)
 
         _event->accept();
     }
+
+    m_cw->close();
+}
+
+void TDMGui::setCustomWindow(FramelessWindow* _cw)
+{
+    m_cw = _cw;
 }
 
 void TDMGui::slot_open3dModel()
