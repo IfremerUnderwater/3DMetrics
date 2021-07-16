@@ -367,7 +367,7 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
         return;
     }
 
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    //QApplication::setOverrideCursor(Qt::WaitCursor);
 
     osg::ref_ptr<osg::Node> node = _node;
 
