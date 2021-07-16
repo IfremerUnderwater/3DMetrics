@@ -36,21 +36,7 @@ FramelessWindow::FramelessWindow(QWidget *parent)
 
   setContent(&m_tdm_gui);
 
-  QVBoxLayout* box_layout = new QVBoxLayout(ui->menu_bar); // Main layout of widget
-  box_layout->setAlignment(Qt::AlignVCenter);
-  //box_layout->setContentsMargins(0, 0, 0, 0);
-  setLayout(box_layout);
-
-  m_menu_bar = new QMenuBar(ui->menu_bar);
-  m_menu_bar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-  ui->menu_bar->layout()->addWidget(m_menu_bar);
-
-  QAction *newAct = new QAction(tr("&New"), this);
-
-  m_file_menu = m_menu_bar->addMenu("File");
-  m_file_menu->addAction(newAct);
-
-
+  initMenu();
 
 }
 
@@ -362,4 +348,101 @@ bool FramelessWindow::eventFilter(QObject *obj, QEvent *event) {
   }
 
   return QWidget::eventFilter(obj, event);
+}
+
+void FramelessWindow::initMenu()
+{
+    QVBoxLayout* box_layout = new QVBoxLayout(ui->menu_bar); // Main layout of widget
+    box_layout->setAlignment(Qt::AlignVCenter);
+    //box_layout->setContentsMargins(0, 0, 0, 0);
+    setLayout(box_layout);
+
+    // Create menubar
+    m_menu_bar = new QMenuBar(ui->menu_bar);
+    m_menu_bar->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    ui->menu_bar->layout()->addWidget(m_menu_bar);
+
+    // Add menus to menu bar (& is in front of the keyboard shortcut letter)
+    m_file_menu = m_menu_bar->addMenu("&File");
+    m_tools_menu = m_menu_bar->addMenu("&Tools");
+    m_view_menu = m_menu_bar->addMenu("&View");
+    m_help_menu = m_menu_bar->addMenu("&Help");
+
+    // File menu actions
+    m_open_3d_model_action = new QAction(tr("&Open a 3D model"),this); // todo add icon
+    m_file_menu->addAction(m_open_3d_model_action);
+    m_file_menu->addSeparator();
+
+    m_open_measurement_file_action = new QAction(tr("Open a measurement file"), this);
+    m_file_menu->addAction(m_open_measurement_file_action);
+    m_save_measurement_file_action = new QAction(tr("Save current measurement changes"), this);
+    m_file_menu->addAction(m_save_measurement_file_action);
+    m_save_measurement_file_as_action = new QAction(tr("Save measurement layer as file"), this);
+    m_file_menu->addAction(m_save_measurement_file_as_action);
+    m_file_menu->addSeparator();
+
+    m_open_project_action = new QAction(tr("Open a project file"), this);
+    m_file_menu->addAction(m_open_project_action);
+    m_save_project_action = new QAction(tr("Save current layers as a project file"), this);
+    m_file_menu->addAction(m_save_project_action);
+    m_close_project_action = new QAction(tr("Close current project"), this);
+    m_file_menu->addAction(m_close_project_action);
+    m_file_menu->addSeparator();
+
+    m_import_old_measurement_format_action = new QAction(tr("Import old measurement format"), this);
+    m_file_menu->addAction(m_import_old_measurement_format_action);
+    m_file_menu->addSeparator();
+
+    m_quit_action = new QAction(tr("&Quit"), this);
+    m_file_menu->addAction(m_quit_action);
+
+    // Tools menu
+    m_export_data_to_csv_action = new QAction(tr("Export data table to text (*.csv, *.txt)"), this);
+    m_tools_menu->addAction(m_export_data_to_csv_action);
+    m_decimate_model_action = new QAction(tr("Decimate model (smartly reduce model size)"), this);
+    m_tools_menu->addAction(m_decimate_model_action);
+    m_take_snapshot_action = new QAction(tr("Take a snapshot of current view"), this);
+    m_tools_menu->addAction(m_take_snapshot_action);
+
+    // View menu
+    m_layers_tree_window_action = new QAction(tr("Layers tree window"), this);
+    m_layers_tree_window_action->setCheckable(true);
+    m_layers_tree_window_action->setChecked(true);
+    m_view_menu->addAction(m_layers_tree_window_action);
+    m_attrib_table_window_action = new QAction(tr("Attribute table window"), this);
+    m_attrib_table_window_action->setCheckable(true);
+    m_attrib_table_window_action->setChecked(true);
+    m_view_menu->addAction(m_attrib_table_window_action);
+    m_view_menu->addSeparator();
+
+    m_add_axes_action = new QAction(tr("Add reference axis on scene"), this);
+    m_add_axes_action->setCheckable(true);
+    m_add_axes_action->setChecked(false);
+    m_view_menu->addAction(m_add_axes_action);
+    m_stereo_action = new QAction(tr("Enable/Disable stereo view"), this);
+    m_stereo_action->setCheckable(true);
+    m_stereo_action->setChecked(false);
+    m_view_menu->addAction(m_stereo_action);
+    m_light_action = new QAction(tr("Enable/Disable light"), this);
+    m_light_action->setCheckable(true);
+    m_light_action->setChecked(false);
+    m_view_menu->addAction(m_light_action);
+    m_view_menu->addSeparator();
+
+    m_z_scale_action = new QAction(tr("Exaggerating Z scale"), this);
+    m_view_menu->addAction(m_z_scale_action);
+    m_view_menu->addSeparator();
+
+    m_depth_colot_chooser_action = new QAction(tr("Choose depth colormap"), this);
+    m_view_menu->addAction(m_depth_colot_chooser_action);
+    m_show_z_scale_action = new QAction(tr("Show/Hide Z scale"), this);
+    m_show_z_scale_action->setCheckable(true);
+    m_show_z_scale_action->setChecked(false);
+    m_view_menu->addAction(m_show_z_scale_action);
+
+    // Help menu
+    m_action_user_manual = new QAction(tr("Open user manual"), this);
+    m_help_menu->addAction(m_action_user_manual);
+    m_about_action = new QAction(tr("About"), this);
+    m_help_menu->addAction(m_about_action);
 }
