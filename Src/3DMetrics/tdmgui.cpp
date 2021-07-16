@@ -278,7 +278,7 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     m_help_shortcut.setKey(Qt::Key_F1);
     connect(&m_help_shortcut, SIGNAL(activated()),this, SLOT(slot_help()));
-    connect(ui->action_user_manual, SIGNAL(triggered(bool)),this, SLOT(slot_help()));
+    connect(m_cw->m_action_user_manual, SIGNAL(triggered(bool)),this, SLOT(slot_help()));
 
     m_addline_shortcut.setKey(Qt::Key_F2);
     connect(&m_addline_shortcut, SIGNAL(activated()),this, SLOT(slot_addLine ()));
@@ -544,8 +544,8 @@ void TDMGui::slot_newMeasurement()
     view->setExpanded(index.parent(),true);
     view->edit(index);
 
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(true);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(true);
 
     updateAttributeTable(0);
     QItemSelection is;
@@ -1119,8 +1119,8 @@ void TDMGui::slot_newGroup()
     // select created item
     selectItem(index);
 
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(false);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(false);
 }
 
 void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSelection& _desel)
@@ -1165,8 +1165,8 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                     view->selectionModel()->currentIndex());
         if(selected != nullptr)
         {
-            ui->save_measurement_file_action->setEnabled(false);
-            ui->save_measurement_file_as_action->setEnabled(false);
+            m_cw->m_save_measurement_file_action->setEnabled(false);
+            m_cw->m_save_measurement_file_as_action->setEnabled(false);
             QString fileName = selected->getFileName();
 
             if(selected->type() == TdmLayerItem::ModelLayer)
@@ -1192,8 +1192,8 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                 qDebug() << layer_data.fileName() << " " <<  doc.object().value("Data").toArray().count() << " " << layer_data.rows().size();
                 loadAttribTableFromJson(doc, false);
 
-                ui->save_measurement_file_as_action->setEnabled(true);
-                ui->save_measurement_file_action->setEnabled(!fileName.isEmpty());
+                m_cw->m_save_measurement_file_as_action->setEnabled(true);
+                m_cw->m_save_measurement_file_action->setEnabled(!fileName.isEmpty());
             }
 
             statusBar()->showMessage(tr("%1 - %2").arg(selected->getName()).arg(fileName));
@@ -1268,7 +1268,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
         menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
         QAction *new_measurement =  menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
 
-        if(ui->open_measurement_file_action->isEnabled())
+        if(m_cw->m_open_measurement_file_action->isEnabled())
             new_measurement->setEnabled(true);
         else
             new_measurement->setDisabled(true);
@@ -1547,8 +1547,8 @@ void TDMGui::slot_unselect()
     view->selectionModel()->clear();
     view->selectionModel()->clearSelection();
 
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(false);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(false);
 
     updateAttributeTable(0);
 
@@ -2953,8 +2953,8 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         thread_node->start();
 
         // allow measurement to be loaded
-        //ui->open_measurement_file_action->setEnabled(true);
-        ui->import_old_measurement_format_action->setEnabled(true);
+        //m_cw->m_open_measurement_file_action->setEnabled(true);
+        m_cw->m_import_old_measurement_format_action->setEnabled(true);
 
         // measurement tools
         ui->line_tool->setEnabled(true);
@@ -3152,7 +3152,7 @@ void TDMGui::slot_closeProject()
 
 void TDMGui::slot_layersTreeWindow()
 {
-    if(ui->layers_tree_window_action->isChecked())
+    if(m_cw->m_layers_tree_window_action->isChecked())
     {
         ui->tree_widget_dock->show();
     }
@@ -3164,7 +3164,7 @@ void TDMGui::slot_layersTreeWindow()
 
 void TDMGui::slot_attribTableWindow()
 {
-    if(ui->attrib_table_window_action->isChecked())
+    if(m_cw->m_attrib_table_window_action->isChecked())
     {
         ui->attrib_table_dock->show();
     }
@@ -3176,12 +3176,12 @@ void TDMGui::slot_attribTableWindow()
 
 void TDMGui::slot_layersTreeWindowVisibilityChanged(bool value)
 {
-    ui->layers_tree_window_action->setChecked(value);
+    m_cw->m_layers_tree_window_action->setChecked(value);
 }
 
 void TDMGui::slot_attribTableWindowVisibilityChanged(bool value)
 {
-    ui->attrib_table_window_action->setChecked(value);
+    m_cw->m_attrib_table_window_action->setChecked(value);
 }
 
 void TDMGui::slot_about()
@@ -3328,7 +3328,7 @@ void TDMGui::slot_applySettings()
 
 void TDMGui::slot_axeView()
 {
-    if(ui->add_axes_action->isChecked())
+    if(m_cw->m_add_axes_action->isChecked())
     {
         //scale
         bool ok;
@@ -3587,21 +3587,21 @@ void TDMGui::slot_addLine()
 
 void TDMGui::slot_stereoShortcut()
 {
-    if(ui->stereo_action->isChecked())
+    if(m_cw->m_stereo_action->isChecked())
     {
-        ui->stereo_action->setChecked(false);
+        m_cw->m_stereo_action->setChecked(false);
         slot_toggleStereoView();
     }
     else
     {
-        ui->stereo_action->setChecked(true);
+        m_cw->m_stereo_action->setChecked(true);
         slot_toggleStereoView();
     }
 }
 
 void TDMGui::slot_toggleStereoView()
 {
-    if(ui->stereo_action->isChecked())
+    if(m_cw->m_stereo_action->isChecked())
     {
         ui->display_widget->enableStereo(true);
     }
@@ -3613,21 +3613,21 @@ void TDMGui::slot_toggleStereoView()
 
 void TDMGui::slot_lightShorcut()
 {
-    if(ui->light_action->isChecked())
+    if(m_cw->m_light_action->isChecked())
     {
-        ui->light_action->setChecked(false);
+        m_cw->m_light_action->setChecked(false);
         slot_toggleLight();
     }
     else
     {
-        ui->light_action->setChecked(true);
+        m_cw->m_light_action->setChecked(true);
         slot_toggleLight();
     }
 }
 
 void TDMGui::slot_toggleLight()
 {
-    if(ui->light_action->isChecked())
+    if(m_cw->m_light_action->isChecked())
     {
         ui->display_widget->enableLight(false);
     }
@@ -3639,7 +3639,7 @@ void TDMGui::slot_toggleLight()
 
 void TDMGui::slot_toggleZScale()
 {
-    if(ui->show_z_scale_action->isChecked())
+    if(m_cw->m_show_z_scale_action->isChecked())
     {
         ui->display_widget->showZScale(true);
     }
@@ -4203,7 +4203,7 @@ void TDMGui::slot_toggleDepthToColor(bool _state)
 
         if(_state)
         {
-            ui->show_z_scale_action->setChecked(true);
+            m_cw->m_show_z_scale_action->setChecked(true);
             this->slot_toggleZScale();
         }
     }
@@ -4401,8 +4401,8 @@ void TDMGui::open3DModel(const QString _filename)
     thread_node->start();
 
     // allow measurement to be loaded
-    //ui->open_measurement_file_action->setEnabled(true);
-    ui->import_old_measurement_format_action->setEnabled(true);
+    //m_cw->m_open_measurement_file_action->setEnabled(true);
+    m_cw->m_import_old_measurement_format_action->setEnabled(true);
 
     // measurement tools
     ui->line_tool->setEnabled(true);
@@ -4440,8 +4440,8 @@ void TDMGui::openMeasurement(QString _filename)
         return;
     }
 
-    ui->save_measurement_file_action->setEnabled(true);
-    ui->save_measurement_file_as_action->setEnabled(true);
+    m_cw->m_save_measurement_file_action->setEnabled(true);
+    m_cw->m_save_measurement_file_as_action->setEnabled(true);
 }
 
 void TDMGui::openProject(QString _filename)
@@ -4512,8 +4512,8 @@ bool TDMGui::closeProjectAndAskForSaving()
     ui->display_widget->clearSceneData();
 
     // disallow measurement to be loaded
-    //ui->open_measurement_file_action->setEnabled(false);
-    ui->import_old_measurement_format_action->setEnabled(false);
+    //m_cw->m_open_measurement_file_action->setEnabled(false);
+    m_cw->m_import_old_measurement_format_action->setEnabled(false);
 
     // disallow measurement tools
     ui->line_tool->setEnabled(false);

@@ -9,18 +9,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 INCLUDE_DIRECTORIES(/opt/local/include)
 
-#path to Geographic lib
-#ist(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
-#set(GeographicLib_DIR /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
-#list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/eigen-3.3.7/build/cmake)
-set(Eigen3_DIR /home/data/ThirdPartyLibs/eigen-3.3.7/build/cmake)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4005")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 endif(MSVC)
 
 string(TIMESTAMP BUILD_DATE "%Y-%m-%d")
