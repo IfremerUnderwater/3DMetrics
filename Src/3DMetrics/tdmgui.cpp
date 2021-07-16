@@ -366,8 +366,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
         QMessageBox::critical(this, tr("Error : model file"), tr("Error : model file is missing"));
         return;
     }
-
-    //QApplication::setOverrideCursor(Qt::WaitCursor);
+    
+    QApplication::restoreOverrideCursor();
 
     osg::ref_ptr<osg::Node> node = _node;
 
@@ -3547,7 +3547,7 @@ void TDMGui::slot_saveFastAltMap()
 
 void TDMGui::slot_help()
 {
-    QString userManualFileName = "help/3DMetricsStartGuide.pdf";
+    QString userManualFileName = "Help/3DMetricsStartGuide.pdf";
 
     QFileInfo userManualFile(userManualFileName);
 
@@ -4411,6 +4411,8 @@ void TDMGui::open3DModel(const QString _filename)
     ui->slope_tool->setEnabled(true);
 
     m_cw->writeMessage("");
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
 }
 
 void TDMGui::openMeasurement(QString _filename)

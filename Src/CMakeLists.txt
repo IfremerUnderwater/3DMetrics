@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name and version
-project(3DMetricsProject VERSION 0.6.1)
+project(3DMetricsProject VERSION 1.0.0)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -34,6 +34,11 @@ add_custom_target(copy_install ALL
 add_custom_target(copy_styles ALL
  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/../Styles ${TDM_RUNTIME_ROOT}/Styles
  COMMENT "Copying styles folder ..."
+)
+
+add_custom_target(copy_help ALL
+ COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/../Help ${TDM_RUNTIME_ROOT}/Help
+ COMMENT "Copying help folder ..."
 )
 
 configure_file(../Install/generate_installer.bat.in Install/generate_installer.bat)
