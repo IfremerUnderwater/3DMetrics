@@ -33,7 +33,7 @@ FileOpenThread::FileOpenThread() :
 
 void FileOpenThread::run()
 {
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    //QApplication::setOverrideCursor(Qt::WaitCursor);
 
     std::string pathToFile = m_filename.toStdString();
     std::string extension = "";
@@ -194,7 +194,7 @@ void FileOpenThread::run()
     QDir dir( QFileInfo(m_filename).absoluteDir());
     QString relItemsDir = dir.relativeFilePath(m_tileFolderName);
 
-    QApplication::restoreOverrideCursor();
+    //QApplication::restoreOverrideCursor();
     emit signal_createNode(m_node.get(),m_filename,m_name, m_parent,m_select_item, m_transparency_value, m_offsetX, m_offsetY, m_offsetZ,
                            m_threshold1, m_threshold2, m_loadingMode, relItemsDir, m_inProjectOpen);
 

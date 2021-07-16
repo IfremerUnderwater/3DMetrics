@@ -2,10 +2,12 @@
 #define TDMGUI_H
 
 #include <QMainWindow>
+#include <QtWidgets>
 #include <QLabel>
 #include <QSettings>
 #include <QShortcut>
 #include <QMultiMap>
+#include <QMouseEvent>
 #include "about_dialog.h"
 
 #include "Measurement/measurement_pattern.h"
@@ -22,6 +24,7 @@ class TDMMeasurementLayerData;
 class TDMModelLayerData;
 class AreaComputationVisitor;
 class BoxVisitor;
+class TDMMenuBarWindow;
 
 namespace Ui {
 class TDMGui;
@@ -42,9 +45,15 @@ public:
     virtual void dragEnterEvent(QDragEnterEvent * evt) override;
     virtual void dropEvent(QDropEvent * evt) override;
 
+    void setCustomWindow(TDMMenuBarWindow* _cw);
+
 private:
     Ui::TDMGui *ui;
     AboutDialog m_dialog;
+    TDMMenuBarWindow* m_cw; // custom window encapsulator;
+
+    // Init stylesheet
+    void initStyleSheet();
 
     // Map of opened transparency dialogs
     QMultiMap<TdmLayerItem*, QWidget*> toolWindowsMap;
@@ -74,10 +83,6 @@ private:
     void buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent);
 
     QString m_project_filename;
-
-    QLabel *m_lat_label;
-    QLabel *m_lon_label;
-    QLabel *m_alt_label;
 
     DecimationDialog m_decimation_dialog;
 
@@ -236,8 +241,6 @@ public slots:
     // Keys event
     void slot_help();
     void slot_addLine();
-
-private slots:
 
 };
 

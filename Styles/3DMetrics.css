@@ -1,0 +1,444 @@
+/*
+*
+* GLOBAL STYLESHEET FOR 3DMetrics
+* Generic styles (application mode independent)
+*
+*/
+
+/************************/
+/*** Generic Widgets ***/
+/************************/
+QWidget{
+   background-color: <%color.grey.darker%>;
+   font-family: "Montserrat";
+   font-size: 11pt;
+   font-weight: normal;
+   border: none;
+}
+
+QLabel
+{
+  background-color: none;
+  border: none;
+  font-family: "Montserrat";
+  font-size: 11pt;
+  font-weight: normal;
+  color: <%color.white%>; 
+}
+
+QPushButton {
+  background-color: <%color.grey.darker%>;
+  border: 2px solid <%color.grey%>;
+  color: <%color.white%>;
+  min-height: 26px;
+}
+
+/* Main menu bar */
+QMenuBar {
+    color: <%color.white%>;
+    font-size: 10pt;
+    font-weight: bold;
+    padding-top: 4px; /* center the menu bar content vertically */
+}
+
+/* Contextual and static menu popups */
+QMenu {
+    background-color: <%color.grey.darkest%>;
+    margin: 5px; /* impossible to set margins individually */
+}
+
+QMenu::item {
+    background-color: <%color.grey.darkest%>;
+    padding: 1px 20px 1px 20px;
+    color: <%color.white%>;
+    border: 2px solid <%color.grey.darkest%>; /* border is merged with background 
+												to avoid the 2px offset on selection */
+}
+
+QMenu::separator {
+    height: 2px;
+    background: <%color.white%>;
+    margin-left: 20px;
+    margin-right: 0px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+QMenu::item:disabled {
+    color: #7c828c;
+}
+
+QMenu::item:disabled:selected {
+    border: 2px solid <%color.grey.darkest%>; /* border is invisible because merged with the background */
+}
+
+
+QProgressBar {
+    text-align: right;
+    color: <%color.white%>;
+    font-size: 10pt;
+}
+
+
+QTreeView {
+   alternate-background-color: <%color.grey.darker%>;
+   color: <%color.white%>;
+}
+
+
+QScrollBar, QScrollbar:disabled {
+    background: <%color.grey.darkest%>;
+}
+
+QScrollBar::sub-page, QScrollBar::add-page {
+    background: <%color.grey.dark%>;
+}
+
+QSplitter::handle {
+    border: 1px solid <%color.grey%>;
+}
+
+
+QSplitter::handle:vertical {
+    height: 0px;
+}
+
+QTabWidget::pane {
+    padding: 0;
+}
+
+QTabBar::tab {
+    background: transparent;
+    color: <%color.grey%>;
+    font-size: 9.5pt;
+    font-weight: bold;
+    border: none;
+    margin: 0;
+    padding: 7px 5px 7px 5px;
+}
+
+
+
+QTabBar::tab:hover {
+    color: <%color.white%>;
+}
+
+/* Alternating colors in elements lists */
+QListWidget {
+    alternate-background-color: <%color.grey%>;
+    color: <%color.white%>; 
+}
+
+/* STATUS BAR */
+QStatusBar {
+    border: none;
+}
+
+QStatusBar::item {
+    border: none; /* allows to remove the trailing separator (following StatusMessageWidget) */
+}
+
+
+/* Other buttons */
+QPushButton:hover {
+   border: 1px solid <%color.grey%>;
+}
+
+/* GroupBox */
+QGroupBox {
+     background-color: <%color.grey.darker%>;
+     border: none;
+     /* font attributes for the ::title part */
+     font-weight: bold;
+     padding-top: 15;
+ }
+
+QGroupBox::title {
+    subcontrol-origin: margin;
+    subcontrol-position: top left; /* position at the top left */
+    padding-top: 2;
+    padding-left: 0;
+    /* Font attributes are defined
+     * for the groupbox widget
+     * Do not work for the ::title part */
+    color: <%color.grey%>;
+ }
+
+
+/* Used ? */
+Line {
+  color: <%color.grey%>;
+  border: none;
+}
+
+/* Combo boxes */
+QComboBox
+{
+    background-color: <%color.black%>;
+    border: 1px solid <%color.grey%>;
+    padding: 2px;
+    min-width: 75px;
+    color: <%color.white%>;
+}
+
+QComboBox:hover,QPushButton:hover,QAbstractSpinBox:hover,QLineEdit:hover,QTextEdit:hover,QPlainTextEdit:hover,QAbstractView:hover
+{
+    border: 1px solid <%color.grey%>;
+    color: <%color.white%>;
+}
+
+QComboBox:on
+{
+    background-color: <%color.grey.dark%>;
+    padding-top: 3px;
+    padding-left: 4px;
+    selection-background-color: <%color.grey.darker%>;
+}
+
+QComboBox QAbstractItemView
+{
+    background-color: <%color.black%>;
+    border: 1px solid <%color.grey%>;
+    color: <%color.white%>;
+}
+
+QComboBox::drop-down
+{
+    subcontrol-origin: padding;
+    subcontrol-position: top right;
+    width: 15px;
+
+    border-left-width: 0px;
+    border-left-color: darkgray;
+    border-left-style: solid;
+    border-top-right-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+QComboBox::down-arrow
+{
+    image: url(:/qss_icons/ressources/style/down_arrow_disabled.png);
+}
+
+QComboBox::down-arrow:on, QComboBox::down-arrow:hover,
+QComboBox::down-arrow:focus
+{
+    image: url(:/qss_icons/ressources/style/down_arrow.png);
+}
+
+
+/* Table widgets (matrix parameters) */
+QTableWidget {
+    color: <%color.white%>;
+    /*background: <%color.black%>;*/
+    gridline-color: <%color.grey%>;
+}
+
+QTableView::item:selected {
+    color:<%color.mauve%>;
+    background:<%color.mauve%>;
+}
+
+QHeaderView::section {
+    color: <%color.white%>;
+    background: <%color.grey.darker%>;
+	border-top: 0px solid <%color.grey.darker%>;
+	border-right: 1px solid <%color.grey%>;
+}
+
+QTableWidget QTableCornerButton::section {
+    background-color: <%color.grey.darker%>;
+}
+
+QLineEdit, QTextEdit
+{
+    background-color: <%color.black%>;
+    padding: 2px;
+    border: 1px solid <%color.grey%>;
+    color: <%color.white%>;
+}
+
+/* Spin boxes (parameters) */
+QAbstractSpinBox {
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border: 1px solid <%color.grey%>;
+    background-color: <%color.black%>;
+    color: <%color.white%>;
+}
+
+QAbstractSpinBox:up-button
+{
+    background-color: transparent;
+    subcontrol-origin: border;
+    subcontrol-position: center right;
+}
+
+QAbstractSpinBox:down-button
+{
+    background-color: transparent;
+    subcontrol-origin: border;
+    subcontrol-position: center left;
+}
+
+QAbstractSpinBox::up-arrow {
+    image: url(:/qss_icons/ressources/style/up_arrow_disabled.png);
+    width: 10px;
+    height: 10px;
+}
+
+QAbstractSpinBox::up-arrow:disabled,QAbstractSpinBox::up-arrow:off {
+    image: url(:/qss_icons/ressources/style/up_arrow_disabled.png);
+}
+
+
+QAbstractSpinBox::up-arrow:hover
+{
+    image: url(:/qss_icons/ressources/style/up_arrow.png);
+}
+
+
+QAbstractSpinBox::down-arrow,QAbstractSpinBox::down-arrow:disabled,QAbstractSpinBox::down-arrow:off
+{
+    image: url(:/qss_icons/ressources/style/down_arrow_disabled.png);
+    width: 10px;
+    height: 10px;
+}
+QAbstractSpinBox::down-arrow:hover
+{
+    image: url(:/qss_icons/ressources/style/down_arrow.png);
+}
+
+/* Check boxes and radio buttons */
+QCheckBox:disabled
+{
+    color: <%color.grey.darker%>;
+}
+
+QCheckBox, QRadioButton
+{
+    padding: 3px;
+    outline: none;
+}
+
+QRadioButton {
+    color: <%color.white%>;
+}
+
+
+QCheckBox::indicator, QGroupBox::indicator, QListView::indicator, QMenu::indicator:non-exclusive{
+    color: <%color.grey%>;
+    background-color: <%color.black%>;
+    border: 1px solid <%color.grey%>;
+}
+
+QCheckBox::indicator {
+    width: 12px;
+    height: 12px;
+}
+
+/*QCheckBox::indicator,*/ QMenu::indicator:non-exclusive{
+    width: 12px;
+    height: 12px;
+    background-color: <%color.grey.darker%>;
+}
+
+
+
+QRadioButton::indicator
+{
+    border-radius: 5px;
+    width: 12px;
+    height: 12px;
+    background-color: <%color.black%>;
+    border: 1px solid <%color.grey%>;
+}
+
+QRadioButton::indicator:checked {
+    image:url(:/qss_icons/ressources/style/radio_checked.svg);
+}
+
+
+
+QCheckBox::indicator:pressed
+{
+    border: 1px solid <%color.grey%>;
+}
+
+QRadioButton::indicator:hover, QCheckBox::indicator:hover
+{
+    border: 1px solid <%color.grey%>;
+}
+
+QCheckBox::indicator:checked, QGroupBox::indicator:checked, QListView::indicator:checked, QMenu::indicator:non-exclusive:checked
+{
+    image:url(:/qss_icons/ressources/style/checkbox.png);
+}
+
+QCheckBox::indicator:disabled, QRadioButton::indicator:disabled
+{
+    border: 1px solid <%color.grey.darker%>;
+}
+
+QCheckBox::indicator:indeterminate {
+    image: url(:/qss_icons/ressources/style/checkbox_indeterminate.png);
+}
+
+
+QMenuBar::item::selected {
+    background: <%color.mauve%>;
+}
+
+QMenu::item:selected {
+    border: 2px solid <%color.mauve%>;
+}
+
+/* SELECTION COLORS : trees, lists and combos */
+QTreeView::item:selected, QTreeView::item:hover, QListWidget::item:selected, QListWidget::item:hover {
+    border: 1px solid rgb(<%color.mauve.rgb%>);
+    padding-left: -1px;
+    color: <%color.white%>;
+}
+
+QTreeView::item:selected:active, QListWidget::item:selected:active {
+    background: rgba(<%color.mauve.rgb%>,60%);
+}
+
+QTreeView::item:selected:!active, QListWidget::item:selected:!active {
+    background: rgba(<%color.mauve.rgb%>,45%);
+}
+
+QTreeView::item:hover, QListWidget::item:hover {
+    background: rgba(<%color.mauve.rgb%>,20%);
+}
+
+QComboBox
+{
+    selection-background-color: <%color.mauve%>;
+}
+
+QComboBox QAbstractItemView
+{
+    selection-background-color: <%color.mauve%>;
+}
+
+/* BUTTONS */
+QPushButton:pressed {
+  background-color: <%color.mauve%>;
+}
+
+QPushButton:checked {
+  background-color: <%color.mauve%>;
+}
+
+QPushButton:flat {
+     border: 2px solid <%color.mauve%>;
+}
+
+
+/* ONGLETS */
+QTabBar::tab:selected {
+    margin: 0;
+    background: <%color.mauve%>;
+    color: <%color.white%>;
+}

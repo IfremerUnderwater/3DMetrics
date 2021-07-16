@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 
 # set the project name and version
-project(3DMetricsProject VERSION 0.6.1)
+project(3DMetricsProject VERSION 1.0.0)
 
 # specify the C++ standard
 set(CMAKE_CXX_STANDARD 11)
@@ -9,18 +9,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 INCLUDE_DIRECTORIES(/opt/local/include)
 
-#path to Geographic lib
-#ist(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
-#set(GeographicLib_DIR /home/data/ThirdPartyLibs/GeographicLib-1.50.1/cmake)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 
-#list(APPEND CMAKE_MODULE_PATH /home/data/ThirdPartyLibs/eigen-3.3.7/build/cmake)
-set(Eigen3_DIR /home/data/ThirdPartyLibs/eigen-3.3.7/build/cmake)
 find_package (Eigen3 3.3 REQUIRED NO_MODULE)
 
 if(MSVC)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4005")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /SUBSYSTEM:WINDOWS /ENTRY:mainCRTStartup")
 endif(MSVC)
 
 string(TIMESTAMP BUILD_DATE "%Y-%m-%d")
@@ -34,6 +29,16 @@ set(TDM_RUNTIME_ROOT ${PROJECT_BINARY_DIR}/Run/$<$<CONFIG:Release>:Release>$<$<C
 add_custom_target(copy_install ALL
  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/../Install ${PROJECT_BINARY_DIR}/Install
  COMMENT "Copying install folder ..."
+)
+
+add_custom_target(copy_styles ALL
+ COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/../Styles ${TDM_RUNTIME_ROOT}/Styles
+ COMMENT "Copying styles folder ..."
+)
+
+add_custom_target(copy_help ALL
+ COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/../Help ${TDM_RUNTIME_ROOT}/Help
+ COMMENT "Copying help folder ..."
 )
 
 configure_file(../Install/generate_installer.bat.in Install/generate_installer.bat)

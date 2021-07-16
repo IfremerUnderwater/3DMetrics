@@ -9,6 +9,7 @@
 
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
+#include "CustomWidgets/tdmmenubarwindow.h"
 
 #include "TreeView/tdm_layer_item.h"
 #include "TreeView/tdm_layer_model.h"
@@ -77,6 +78,7 @@
 //#include "ask_for_lod_dialog.h"
 #include "edit_lod_threshold_dialog.h"
 #include "model_loadingmode_dialog.h"
+#include "style_utils.h"
 
 #if defined(_WIN32) || defined(WIN32)
 #define DIRSEP "\\"
@@ -103,50 +105,47 @@ TDMGui::TDMGui(QWidget *_parent) :
 {
     qRegisterMetaType<MeasPattern>();
 
+    initStyleSheet();
+
     ui->setupUi(this);
-    //ui->tree_widget_dock->setFixedWidth(ui->tree_widget_dock->minimumWidth());
-
-
-    // set icon
-    this->setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
-    m_dialog.setWindowIcon(QIcon(":/icons/ressources/3dm_icon.svg"));
+    setCustomWindow(dynamic_cast<TDMMenuBarWindow*>(_parent));
+    this->setWindowFlags(Qt::FramelessWindowHint);
 
     // to add in reverse because toolbar order is right to left
-    m_alt_label = new QLabel("", ui->coords_toolbar);
-    m_alt_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_alt_label);
-
-    m_lon_label = new QLabel("", ui->coords_toolbar);
-    m_lon_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_lon_label);
-
-    m_lat_label = new QLabel("", ui->coords_toolbar);
-    m_lat_label->setMinimumWidth(120);
-    ui->coords_toolbar->addWidget(m_lat_label);
+    m_cw->writeMessage("");
 
     ui->tree_widget->setModel(TdmLayersModel::instance());
     ui->tree_widget->hideColumn(1);
 
-    QObject::connect(ui->open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
-    QObject::connect(ui->open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
-    QObject::connect(ui->save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
-    QObject::connect(ui->save_measurement_file_as_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFileAs()));
-    QObject::connect(ui->import_old_measurement_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasurementFile()));
-    QObject::connect(ui->open_project_action, SIGNAL(triggered()), this, SLOT(slot_openProject()));
-    QObject::connect(ui->save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
-    QObject::connect(ui->close_project_action, SIGNAL(triggered()), this, SLOT(slot_closeProject()));
-    QObject::connect(ui->layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
-    QObject::connect(ui->attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
-    QObject::connect(ui->add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
-    QObject::connect(ui->stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
-    QObject::connect(ui->light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
-    QObject::connect(ui->z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
-    QObject::connect(ui->depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
-    QObject::connect(ui->show_z_scale_action, SIGNAL(triggered()),this, SLOT(slot_toggleZScale()));
+    // Connect menu actions
+    QObject::connect(m_cw->m_open_3d_model_action, SIGNAL(triggered()), this, SLOT(slot_open3dModel()));
+    QObject::connect(m_cw->m_open_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_openMeasurementFile()));
+    QObject::connect(m_cw->m_save_measurement_file_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFile()));
+    QObject::connect(m_cw->m_save_measurement_file_as_action, SIGNAL(triggered()), this, SLOT(slot_saveMeasurementFileAs()));
+    QObject::connect(m_cw->m_import_old_measurement_format_action, SIGNAL(triggered()), this, SLOT(slot_importOldMeasurementFile()));
+    QObject::connect(m_cw->m_open_project_action, SIGNAL(triggered()), this, SLOT(slot_openProject()));
+    QObject::connect(m_cw->m_save_project_action, SIGNAL(triggered()), this, SLOT(slot_saveProject()));
+    QObject::connect(m_cw->m_close_project_action, SIGNAL(triggered()), this, SLOT(slot_closeProject()));
+    QObject::connect(m_cw->m_layers_tree_window_action, SIGNAL(triggered()), this, SLOT(slot_layersTreeWindow()));
+    QObject::connect(m_cw->m_attrib_table_window_action, SIGNAL(triggered()), this, SLOT(slot_attribTableWindow()));
+    QObject::connect(m_cw->m_add_axes_action, SIGNAL(triggered()),this, SLOT(slot_axeView()));
+    QObject::connect(m_cw->m_stereo_action, SIGNAL(triggered()),this, SLOT(slot_toggleStereoView()));
+    QObject::connect(m_cw->m_light_action, SIGNAL(triggered()),this, SLOT(slot_toggleLight()));
+    QObject::connect(m_cw->m_z_scale_action, SIGNAL(triggered()), this, SLOT(slot_zScale()));
+    QObject::connect(m_cw->m_depth_colot_chooser_action, SIGNAL(triggered()), this, SLOT(slot_depthColorsChooser()));
+    QObject::connect(m_cw->m_show_z_scale_action, SIGNAL(triggered()),this, SLOT(slot_toggleZScale()));
+    QObject::connect(m_cw->m_quit_action, SIGNAL(triggered()), this, SLOT(close()));
+    QObject::connect(m_cw->m_about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
+    QObject::connect(m_cw->m_decimate_model_action, SIGNAL(triggered(bool)), this, SLOT(slot_showDecimationDialog()));
+    QObject::connect(&m_decimation_dialog, SIGNAL(accepted()), this, SLOT(slot_decimateSelectedModel()));
+    QObject::connect(m_cw->m_export_data_to_csv_action, SIGNAL(triggered(bool)), this, SLOT(slot_saveAttribTableToASCII()));
+    QObject::connect(m_cw->m_take_snapshot_action, SIGNAL(triggered(bool)), this, SLOT(slot_saveSnapshot()));
 
-    QObject::connect(ui->quit_action, SIGNAL(triggered()), this, SLOT(close()));
-
-    QObject::connect(ui->about_action, SIGNAL(triggered()), this, SLOT(slot_about()));
+    // file menu
+    m_cw->m_open_measurement_file_action->setEnabled(true);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(false);
+    m_cw->m_import_old_measurement_format_action->setEnabled(false);
 
     QObject::connect(ui->tree_widget_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_layersTreeWindowVisibilityChanged(bool)));
     QObject::connect(ui->attrib_table_dock, SIGNAL(visibilityChanged(bool)), this, SLOT(slot_attribTableWindowVisibilityChanged(bool)));
@@ -199,12 +198,6 @@ TDMGui::TDMGui(QWidget *_parent) :
     ui->cancel_measurement->setEnabled(false);
     ui->cancel_last_point->setEnabled(false);
 
-    // file menu
-    ui->open_measurement_file_action->setEnabled(true);
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(false);
-    ui->import_old_measurement_format_action->setEnabled(false);
-
     updateAttributeTable(0);
 
 
@@ -220,20 +213,10 @@ TDMGui::TDMGui(QWidget *_parent) :
     connect(ui->line_tool, SIGNAL(triggered()), this, SLOT(slot_tempLineTool()));
     connect(ui->surface_tool, SIGNAL(triggered()), this, SLOT(slot_tempAreaTool()));
     connect(ui->pick_point, SIGNAL(triggered()), this,  SLOT(slot_tempPointTool()));
-
     connect(ui->slope_tool, SIGNAL(triggered()), this,  SLOT(slot_slopeTool()));
 
     connect(ui->display_widget, SIGNAL(signal_onMousePress(Qt::MouseButton, int, int)), this, SLOT(slot_mouseClickInOsgWidget(Qt::MouseButton, int,int)));
 
-    // decimation
-    connect(ui->decimate_model_action,SIGNAL(triggered(bool)),this,SLOT(slot_showDecimationDialog()));
-    connect(&m_decimation_dialog, SIGNAL(accepted()),this,SLOT(slot_decimateSelectedModel()));
-
-    // csv export
-    connect(ui->export_data_to_csv_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveAttribTableToASCII()));
-
-    // snapshot
-    connect(ui->take_snapshot_action,SIGNAL(triggered(bool)),this,SLOT(slot_saveSnapshot()));
 
     // settings
     bool ready_to_apply = true;
@@ -295,7 +278,7 @@ TDMGui::TDMGui(QWidget *_parent) :
 
     m_help_shortcut.setKey(Qt::Key_F1);
     connect(&m_help_shortcut, SIGNAL(activated()),this, SLOT(slot_help()));
-    connect(ui->action_user_manual, SIGNAL(triggered(bool)),this, SLOT(slot_help()));
+    connect(m_cw->m_action_user_manual, SIGNAL(triggered(bool)),this, SLOT(slot_help()));
 
     m_addline_shortcut.setKey(Qt::Key_F2);
     connect(&m_addline_shortcut, SIGNAL(activated()),this, SLOT(slot_addLine ()));
@@ -317,7 +300,7 @@ TDMGui::TDMGui(QWidget *_parent) :
 }
 
 TDMGui::~TDMGui()
-{    
+{   
     delete ui;
 }
 
@@ -341,6 +324,13 @@ void TDMGui::closeEvent(QCloseEvent *_event)
 
         _event->accept();
     }
+
+    m_cw->close();
+}
+
+void TDMGui::setCustomWindow(TDMMenuBarWindow* _cw)
+{
+    m_cw = _cw;
 }
 
 void TDMGui::slot_open3dModel()
@@ -376,8 +366,8 @@ void TDMGui::slot_load3DModel(osg::Node* _node, QString _filename, QString _name
         QMessageBox::critical(this, tr("Error : model file"), tr("Error : model file is missing"));
         return;
     }
-
-    QApplication::setOverrideCursor(Qt::WaitCursor);
+    
+    QApplication::restoreOverrideCursor();
 
     osg::ref_ptr<osg::Node> node = _node;
 
@@ -554,8 +544,8 @@ void TDMGui::slot_newMeasurement()
     view->setExpanded(index.parent(),true);
     view->edit(index);
 
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(true);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(true);
 
     updateAttributeTable(0);
     QItemSelection is;
@@ -1129,8 +1119,8 @@ void TDMGui::slot_newGroup()
     // select created item
     selectItem(index);
 
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(false);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(false);
 }
 
 void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSelection& _desel)
@@ -1175,8 +1165,8 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                     view->selectionModel()->currentIndex());
         if(selected != nullptr)
         {
-            ui->save_measurement_file_action->setEnabled(false);
-            ui->save_measurement_file_as_action->setEnabled(false);
+            m_cw->m_save_measurement_file_action->setEnabled(false);
+            m_cw->m_save_measurement_file_as_action->setEnabled(false);
             QString fileName = selected->getFileName();
 
             if(selected->type() == TdmLayerItem::ModelLayer)
@@ -1202,8 +1192,8 @@ void TDMGui::slot_selectionChanged(const QItemSelection& /*_sel*/, const QItemSe
                 qDebug() << layer_data.fileName() << " " <<  doc.object().value("Data").toArray().count() << " " << layer_data.rows().size();
                 loadAttribTableFromJson(doc, false);
 
-                ui->save_measurement_file_as_action->setEnabled(true);
-                ui->save_measurement_file_action->setEnabled(!fileName.isEmpty());
+                m_cw->m_save_measurement_file_as_action->setEnabled(true);
+                m_cw->m_save_measurement_file_action->setEnabled(!fileName.isEmpty());
             }
 
             statusBar()->showMessage(tr("%1 - %2").arg(selected->getName()).arg(fileName));
@@ -1278,7 +1268,7 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
         menu->addAction(tr("Create new group"), this, SLOT(slot_newGroup()));
         QAction *new_measurement =  menu->addAction(tr("Create new measurement"), this, SLOT(slot_newMeasurement()));
 
-        if(ui->open_measurement_file_action->isEnabled())
+        if(m_cw->m_open_measurement_file_action->isEnabled())
             new_measurement->setEnabled(true);
         else
             new_measurement->setDisabled(true);
@@ -1408,6 +1398,32 @@ void TDMGui::slot_treeViewContextMenu(const QPoint &)
     menu->exec(QCursor::pos());
 }
 
+void TDMGui::initStyleSheet()
+{
+    QFile generic_style_sheet("Styles/3DMetrics.css");
+    QMap<QString, QString> current_color_set = style_tools::StyleUtils::readPropertiesFile("Styles/3DMetricsColorsDay.properties");
+
+    if (!generic_style_sheet.exists()) {
+        qWarning() << "Stylesheet files not found";
+    }
+    else {
+        if (!generic_style_sheet.open(QIODevice::ReadOnly)) {
+            qWarning() << "Generic stylesheet file could not be opened\n" << generic_style_sheet.error();
+        }
+        else {
+            QByteArray global_styles_bytes = generic_style_sheet.readAll();
+            generic_style_sheet.close();
+
+            // Substituting stylesheet variables
+            QString global_styles_with_variables(global_styles_bytes);
+            QString global_styles = style_tools::StyleUtils::substitutePlaceHolders(global_styles_with_variables, current_color_set);
+
+            // Applying stylesheet
+            qApp->setStyleSheet(global_styles);
+        }
+    }
+}
+
 // recursively delete datas (in column 1 - not shown in treeview)
 void TDMGui::deleteTreeItemsData(TdmLayerItem *_item)
 {
@@ -1531,8 +1547,8 @@ void TDMGui::slot_unselect()
     view->selectionModel()->clear();
     view->selectionModel()->clearSelection();
 
-    ui->save_measurement_file_action->setEnabled(false);
-    ui->save_measurement_file_as_action->setEnabled(false);
+    m_cw->m_save_measurement_file_action->setEnabled(false);
+    m_cw->m_save_measurement_file_as_action->setEnabled(false);
 
     updateAttributeTable(0);
 
@@ -2937,8 +2953,8 @@ void TDMGui::buildProjectTree(QJsonObject _obj, TdmLayerItem *_parent)
         thread_node->start();
 
         // allow measurement to be loaded
-        //ui->open_measurement_file_action->setEnabled(true);
-        ui->import_old_measurement_format_action->setEnabled(true);
+        //m_cw->m_open_measurement_file_action->setEnabled(true);
+        m_cw->m_import_old_measurement_format_action->setEnabled(true);
 
         // measurement tools
         ui->line_tool->setEnabled(true);
@@ -3136,7 +3152,7 @@ void TDMGui::slot_closeProject()
 
 void TDMGui::slot_layersTreeWindow()
 {
-    if(ui->layers_tree_window_action->isChecked())
+    if(m_cw->m_layers_tree_window_action->isChecked())
     {
         ui->tree_widget_dock->show();
     }
@@ -3148,7 +3164,7 @@ void TDMGui::slot_layersTreeWindow()
 
 void TDMGui::slot_attribTableWindow()
 {
-    if(ui->attrib_table_window_action->isChecked())
+    if(m_cw->m_attrib_table_window_action->isChecked())
     {
         ui->attrib_table_dock->show();
     }
@@ -3160,12 +3176,12 @@ void TDMGui::slot_attribTableWindow()
 
 void TDMGui::slot_layersTreeWindowVisibilityChanged(bool value)
 {
-    ui->layers_tree_window_action->setChecked(value);
+    m_cw->m_layers_tree_window_action->setChecked(value);
 }
 
 void TDMGui::slot_attribTableWindowVisibilityChanged(bool value)
 {
-    ui->attrib_table_window_action->setChecked(value);
+    m_cw->m_attrib_table_window_action->setChecked(value);
 }
 
 void TDMGui::slot_about()
@@ -3188,22 +3204,18 @@ void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton /* _button */, int _x, i
         ui->display_widget->getGeoOrigin(ref_lat_lon, ref_alt);
         if(ref_alt == INVALID_VALUE)
         {
-            m_lat_label->setText("");
-            m_lon_label->setText("");
-            m_alt_label->setText("");
+            m_cw->writeMessage("");
             return;
         }
         ui->display_widget->xyzToLatLonAlt(vect[0], vect[1], vect[2], lat, lon, alt);
 
-        m_lat_label->setText("lat: "+QString::number(fabs(lat),'f',7) + (lat >= 0 ? "N" : "S"));
-        m_lon_label->setText("lon: "+QString::number(fabs(lon),'f',7) + (lon >= 0 ? "E" : "W"));
-        m_alt_label->setText("alt: "+QString::number(alt,'f',1) + "m");
+        m_cw->writeMessage("lat: " + QString::number(fabs(lat), 'f', 7) + (lat >= 0 ? "N" : "S")+
+            " lon: " + QString::number(fabs(lon), 'f', 7) + (lon >= 0 ? "E" : "W")+
+            " alt: " + QString::number(alt, 'f', 1) + "m");
     }
     else
     {
-        m_lat_label->setText("");
-        m_lon_label->setText("");
-        m_alt_label->setText("");
+        m_cw->writeMessage("");
     }
 }
 
@@ -3316,7 +3328,7 @@ void TDMGui::slot_applySettings()
 
 void TDMGui::slot_axeView()
 {
-    if(ui->add_axes_action->isChecked())
+    if(m_cw->m_add_axes_action->isChecked())
     {
         //scale
         bool ok;
@@ -3535,7 +3547,7 @@ void TDMGui::slot_saveFastAltMap()
 
 void TDMGui::slot_help()
 {
-    QString userManualFileName = "help/3DMetricsStartGuide.pdf";
+    QString userManualFileName = "Help/3DMetricsStartGuide.pdf";
 
     QFileInfo userManualFile(userManualFileName);
 
@@ -3575,21 +3587,21 @@ void TDMGui::slot_addLine()
 
 void TDMGui::slot_stereoShortcut()
 {
-    if(ui->stereo_action->isChecked())
+    if(m_cw->m_stereo_action->isChecked())
     {
-        ui->stereo_action->setChecked(false);
+        m_cw->m_stereo_action->setChecked(false);
         slot_toggleStereoView();
     }
     else
     {
-        ui->stereo_action->setChecked(true);
+        m_cw->m_stereo_action->setChecked(true);
         slot_toggleStereoView();
     }
 }
 
 void TDMGui::slot_toggleStereoView()
 {
-    if(ui->stereo_action->isChecked())
+    if(m_cw->m_stereo_action->isChecked())
     {
         ui->display_widget->enableStereo(true);
     }
@@ -3601,21 +3613,21 @@ void TDMGui::slot_toggleStereoView()
 
 void TDMGui::slot_lightShorcut()
 {
-    if(ui->light_action->isChecked())
+    if(m_cw->m_light_action->isChecked())
     {
-        ui->light_action->setChecked(false);
+        m_cw->m_light_action->setChecked(false);
         slot_toggleLight();
     }
     else
     {
-        ui->light_action->setChecked(true);
+        m_cw->m_light_action->setChecked(true);
         slot_toggleLight();
     }
 }
 
 void TDMGui::slot_toggleLight()
 {
-    if(ui->light_action->isChecked())
+    if(m_cw->m_light_action->isChecked())
     {
         ui->display_widget->enableLight(false);
     }
@@ -3627,7 +3639,7 @@ void TDMGui::slot_toggleLight()
 
 void TDMGui::slot_toggleZScale()
 {
-    if(ui->show_z_scale_action->isChecked())
+    if(m_cw->m_show_z_scale_action->isChecked())
     {
         ui->display_widget->showZScale(true);
     }
@@ -4191,7 +4203,7 @@ void TDMGui::slot_toggleDepthToColor(bool _state)
 
         if(_state)
         {
-            ui->show_z_scale_action->setChecked(true);
+            m_cw->m_show_z_scale_action->setChecked(true);
             this->slot_toggleZScale();
         }
     }
@@ -4389,8 +4401,8 @@ void TDMGui::open3DModel(const QString _filename)
     thread_node->start();
 
     // allow measurement to be loaded
-    //ui->open_measurement_file_action->setEnabled(true);
-    ui->import_old_measurement_format_action->setEnabled(true);
+    //m_cw->m_open_measurement_file_action->setEnabled(true);
+    m_cw->m_import_old_measurement_format_action->setEnabled(true);
 
     // measurement tools
     ui->line_tool->setEnabled(true);
@@ -4398,9 +4410,9 @@ void TDMGui::open3DModel(const QString _filename)
     ui->pick_point->setEnabled(true);
     ui->slope_tool->setEnabled(true);
 
-    m_alt_label->setText("");
-    m_lon_label->setText("");
-    m_lat_label->setText("");
+    m_cw->writeMessage("");
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
 }
 
 void TDMGui::openMeasurement(QString _filename)
@@ -4430,8 +4442,8 @@ void TDMGui::openMeasurement(QString _filename)
         return;
     }
 
-    ui->save_measurement_file_action->setEnabled(true);
-    ui->save_measurement_file_as_action->setEnabled(true);
+    m_cw->m_save_measurement_file_action->setEnabled(true);
+    m_cw->m_save_measurement_file_as_action->setEnabled(true);
 }
 
 void TDMGui::openProject(QString _filename)
@@ -4502,8 +4514,8 @@ bool TDMGui::closeProjectAndAskForSaving()
     ui->display_widget->clearSceneData();
 
     // disallow measurement to be loaded
-    //ui->open_measurement_file_action->setEnabled(false);
-    ui->import_old_measurement_format_action->setEnabled(false);
+    //m_cw->m_open_measurement_file_action->setEnabled(false);
+    m_cw->m_import_old_measurement_format_action->setEnabled(false);
 
     // disallow measurement tools
     ui->line_tool->setEnabled(false);
@@ -4511,9 +4523,7 @@ bool TDMGui::closeProjectAndAskForSaving()
     ui->pick_point->setEnabled(false);
     ui->slope_tool->setEnabled(false);
 
-    m_alt_label->setText("");
-    m_lon_label->setText("");
-    m_lat_label->setText("");
+    m_cw->writeMessage("");
 
     return true;
 }

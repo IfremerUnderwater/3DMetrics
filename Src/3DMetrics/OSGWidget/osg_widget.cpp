@@ -16,6 +16,7 @@
 #include <osg/ShapeDrawable>
 #include <osg/StateSet>
 #include <osg/LOD>
+#include <osg/BlendFunc>
 
 #include <osg/TexGen>
 
@@ -228,7 +229,7 @@ OSGWidget::OSGWidget(QWidget* parent)
     camera->setCullingMode(cullingMode);
 
     // Set clear color
-    QColor clearColor = QColor(0,0,0);
+    QColor clearColor = QColor(36, 39, 43);
     camera->setClearColor( osg::Vec4( clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF() ) );
 
     camera->setGraphicsContext( m_graphicsWindow );
@@ -1039,6 +1040,7 @@ void OSGWidget::initializeGL(){
     state_set->setMode(GL_LINE_SMOOTH, osg::StateAttribute::ON);
     // if selected : only parts on top of all models are shown
     //state_set->setMode( GL_DEPTH_TEST, osg::StateAttribute::ON );
+
 }
 
 void OSGWidget::paintGL()
@@ -1677,6 +1679,8 @@ void OSGWidget::enableStereo(bool _state)
 
 void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _transparency_value)
 {
+    _transparency_value = 1 - _transparency_value;
+
     osg::StateSet* state_set = _node->getOrCreateStateSet();
     osg::StateAttribute* attr = state_set->getAttribute(osg::StateAttribute::MATERIAL);
     osg::Material* material = dynamic_cast<osg::Material*>(attr);
@@ -1731,12 +1735,12 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
     }
     else
     {
-        if(_transparency_value == 0.0)
+        /*if(_transparency_value == 0.0)
         {
             state_set->removeAttribute(osg::StateAttribute::MATERIAL);
-            state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
+            //state_set->setMode( GL_BLEND, osg::StateAttribute::OFF);
         }
-        else
+        else*/
         {
             state_set->setMode( GL_BLEND, osg::StateAttribute::ON);
 
@@ -1753,7 +1757,8 @@ void OSGWidget::setNodeTransparency(osg::ref_ptr<osg::Node> _node, double _trans
             material->setAlpha(osg::Material::FRONT, _transparency_value );
 
             // Turn on blending
-            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+            //osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE_MINUS_SRC_ALPHA,osg::BlendFunc::SRC_ALPHA );
+            osg::ref_ptr<osg::BlendFunc> bf = new osg::BlendFunc(osg::BlendFunc::ONE, osg::BlendFunc::ONE_MINUS_SRC_ALPHA);
             state_set->setAttributeAndModes(bf);
 
             state_set->setAttributeAndModes( material, osg::StateAttribute::ON | osg::StateAttribute::OVERRIDE);

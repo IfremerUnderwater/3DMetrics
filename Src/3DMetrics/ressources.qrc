@@ -1,5 +1,8 @@
 <RCC>
   <qresource prefix="/icons">
+    <file>ressources/style/close.svg</file>
+    <file>ressources/style/maximize.svg</file>
+    <file>ressources/style/reduce.svg</file>
     <file>ressources/fault-aki-conv.svg</file>
     <file>ressources/camera.svg</file>
     <file>ressources/cancel.svg</file>

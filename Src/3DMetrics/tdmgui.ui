@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1340</width>
-    <height>907</height>
+    <width>1344</width>
+    <height>916</height>
    </rect>
   </property>
   <property name="acceptDrops">
@@ -39,69 +39,6 @@
     </item>
    </layout>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1340</width>
-     <height>22</height>
-    </rect>
-   </property>
-   <widget class="QMenu" name="menuFile">
-    <property name="title">
-     <string>File</string>
-    </property>
-    <addaction name="open_3d_model_action"/>
-    <addaction name="separator"/>
-    <addaction name="open_measurement_file_action"/>
-    <addaction name="save_measurement_file_action"/>
-    <addaction name="save_measurement_file_as_action"/>
-    <addaction name="separator"/>
-    <addaction name="open_project_action"/>
-    <addaction name="save_project_action"/>
-    <addaction name="close_project_action"/>
-    <addaction name="separator"/>
-    <addaction name="import_old_measurement_format_action"/>
-    <addaction name="separator"/>
-    <addaction name="quit_action"/>
-   </widget>
-   <widget class="QMenu" name="menuData">
-    <property name="title">
-     <string>Tools</string>
-    </property>
-    <addaction name="export_data_to_csv_action"/>
-    <addaction name="decimate_model_action"/>
-    <addaction name="take_snapshot_action"/>
-   </widget>
-   <widget class="QMenu" name="menuView">
-    <property name="title">
-     <string>View</string>
-    </property>
-    <addaction name="layers_tree_window_action"/>
-    <addaction name="attrib_table_window_action"/>
-    <addaction name="separator"/>
-    <addaction name="add_axes_action"/>
-    <addaction name="stereo_action"/>
-    <addaction name="light_action"/>
-    <addaction name="separator"/>
-    <addaction name="z_scale_action"/>
-    <addaction name="separator"/>
-    <addaction name="depth_colot_chooser_action"/>
-    <addaction name="show_z_scale_action"/>
-   </widget>
-   <widget class="QMenu" name="menuHelp_2">
-    <property name="title">
-     <string>Help</string>
-    </property>
-    <addaction name="action_user_manual"/>
-    <addaction name="about_action"/>
-   </widget>
-   <addaction name="menuFile"/>
-   <addaction name="menuData"/>
-   <addaction name="menuView"/>
-   <addaction name="menuHelp_2"/>
-  </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QToolBar" name="main_toolbar">
    <property name="windowTitle">
@@ -111,7 +48,7 @@
     <string/>
    </property>
    <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
+    <enum>LeftToolBarArea</enum>
    </attribute>
    <attribute name="toolBarBreak">
     <bool>false</bool>
@@ -119,7 +56,6 @@
    <addaction name="line_tool"/>
    <addaction name="surface_tool"/>
    <addaction name="pick_point"/>
-   <addaction name="separator"/>
    <addaction name="slope_tool"/>
    <addaction name="separator"/>
    <addaction name="cancel_measurement"/>
@@ -228,35 +164,6 @@
     </attribute>
    </widget>
   </widget>
-  <widget class="QToolBar" name="coords_toolbar">
-   <property name="sizePolicy">
-    <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-     <horstretch>0</horstretch>
-     <verstretch>0</verstretch>
-    </sizepolicy>
-   </property>
-   <property name="windowTitle">
-    <string>toolBar</string>
-   </property>
-   <property name="layoutDirection">
-    <enum>Qt::RightToLeft</enum>
-   </property>
-   <property name="movable">
-    <bool>true</bool>
-   </property>
-   <property name="allowedAreas">
-    <set>Qt::BottomToolBarArea|Qt::RightToolBarArea|Qt::TopToolBarArea</set>
-   </property>
-   <property name="toolButtonStyle">
-    <enum>Qt::ToolButtonTextOnly</enum>
-   </property>
-   <attribute name="toolBarArea">
-    <enum>TopToolBarArea</enum>
-   </attribute>
-   <attribute name="toolBarBreak">
-    <bool>false</bool>
-   </attribute>
-  </widget>
   <action name="line_tool">
    <property name="icon">
     <iconset resource="ressources.qrc">
@@ -317,140 +224,6 @@
     <string>Focus back on the scene</string>
    </property>
   </action>
-  <action name="open_3d_model_action">
-   <property name="enabled">
-    <bool>true</bool>
-   </property>
-   <property name="icon">
-    <iconset resource="ressources.qrc">
-     <normaloff>:/icons/ressources/folder.svg</normaloff>:/icons/ressources/folder.svg</iconset>
-   </property>
-   <property name="text">
-    <string>Open 3D model</string>
-   </property>
-  </action>
-  <action name="open_measurement_file_action">
-   <property name="text">
-    <string>Open measurement file</string>
-   </property>
-  </action>
-  <action name="open_project_action">
-   <property name="text">
-    <string>Open project</string>
-   </property>
-  </action>
-  <action name="save_measurement_file_action">
-   <property name="text">
-    <string>Save current measurement changes</string>
-   </property>
-  </action>
-  <action name="export_data_to_csv_action">
-   <property name="text">
-    <string>Export data to ASCII (.csv or .txt)</string>
-   </property>
-  </action>
-  <action name="layers_tree_window_action">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Layers tree window</string>
-   </property>
-   <property name="iconText">
-    <string>Layers tree window</string>
-   </property>
-   <property name="toolTip">
-    <string>Show/hide layers tree window</string>
-   </property>
-  </action>
-  <action name="attrib_table_window_action">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Attrib table window</string>
-   </property>
-   <property name="toolTip">
-    <string>Show/Hide Attrib table window</string>
-   </property>
-  </action>
-  <action name="action_user_manual">
-   <property name="text">
-    <string>User manual</string>
-   </property>
-  </action>
-  <action name="about_action">
-   <property name="text">
-    <string>About</string>
-   </property>
-  </action>
-  <action name="quit_action">
-   <property name="text">
-    <string>Quit</string>
-   </property>
-  </action>
-  <action name="import_old_measurement_format_action">
-   <property name="text">
-    <string>Import old measurement format</string>
-   </property>
-  </action>
-  <action name="save_measurement_file_as_action">
-   <property name="text">
-    <string>Save measurement as file...</string>
-   </property>
-  </action>
-  <action name="decimate_model_action">
-   <property name="text">
-    <string>Decimate model (for lighter models)</string>
-   </property>
-  </action>
-  <action name="take_snapshot_action">
-   <property name="text">
-    <string>Take a snapshot of current view</string>
-   </property>
-  </action>
-  <action name="add_axes_action">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Add ref frame on scene</string>
-   </property>
-   <property name="toolTip">
-    <string>Add axes on the 3D model</string>
-   </property>
-  </action>
-  <action name="stereo_action">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Stereo (F3)</string>
-   </property>
-   <property name="toolTip">
-    <string>Add stéréo on the model</string>
-   </property>
-  </action>
-  <action name="light_action">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Light (L)</string>
-   </property>
-   <property name="toolTip">
-    <string>Add the light on the model</string>
-   </property>
-  </action>
   <action name="slope_tool">
    <property name="icon">
     <iconset resource="ressources.qrc">
@@ -490,32 +263,6 @@
    </property>
    <property name="toolTip">
     <string>Measure Picker</string>
-   </property>
-  </action>
-  <action name="depth_colot_chooser_action">
-   <property name="text">
-    <string>Depth Color Chooser</string>
-   </property>
-  </action>
-  <action name="show_z_scale_action">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>false</bool>
-   </property>
-   <property name="text">
-    <string>Show Z scale</string>
-   </property>
-  </action>
-  <action name="close_project_action">
-   <property name="text">
-    <string>Close project</string>
-   </property>
-  </action>
-  <action name="save_project_action">
-   <property name="text">
-    <string>Save project</string>
    </property>
   </action>
  </widget>
