@@ -117,12 +117,24 @@
             <widget class="QLabel" name="icon">
              <property name="minimumSize">
               <size>
-               <width>60</width>
-               <height>60</height>
+               <width>40</width>
+               <height>40</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>40</width>
+               <height>40</height>
               </size>
              </property>
              <property name="text">
               <string/>
+             </property>
+             <property name="pixmap">
+              <pixmap resource="../ressources.qrc">:/icons/ressources/3dm_icon.svg</pixmap>
+             </property>
+             <property name="scaledContents">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -130,13 +142,13 @@
             <widget class="QLabel" name="title_text">
              <property name="minimumSize">
               <size>
-               <width>150</width>
+               <width>200</width>
                <height>60</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>150</width>
+               <width>200</width>
                <height>16777215</height>
               </size>
              </property>
@@ -226,6 +238,10 @@
                <property name="styleSheet">
                 <string notr="true"/>
                </property>
+               <property name="icon">
+                <iconset resource="../ressources.qrc">
+                 <normaloff>:/icons/ressources/style/close.svg</normaloff>:/icons/ressources/style/close.svg</iconset>
+               </property>
               </widget>
              </item>
              <item>
@@ -247,6 +263,10 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="../ressources.qrc">
+                 <normaloff>:/icons/ressources/style/maximize.svg</normaloff>:/icons/ressources/style/maximize.svg</iconset>
                </property>
               </widget>
              </item>
@@ -275,6 +295,10 @@
                </property>
                <property name="text">
                 <string/>
+               </property>
+               <property name="icon">
+                <iconset resource="../ressources.qrc">
+                 <normaloff>:/icons/ressources/style/reduce.svg</normaloff>:/icons/ressources/style/reduce.svg</iconset>
                </property>
               </widget>
              </item>
@@ -329,6 +353,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../ressources.qrc"/>
+ </resources>
  <connections/>
 </ui>

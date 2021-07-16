@@ -228,7 +228,8 @@ OSGWidget::OSGWidget(QWidget* parent)
     camera->setCullingMode(cullingMode);
 
     // Set clear color
-    QColor clearColor = QColor(0,0,0);
+    //QColor clearColor = QColor(36, 39, 43);
+    QColor clearColor = QColor(0, 0, 0);
     camera->setClearColor( osg::Vec4( clearColor.redF(), clearColor.greenF(), clearColor.blueF(), clearColor.alphaF() ) );
 
     camera->setGraphicsContext( m_graphicsWindow );

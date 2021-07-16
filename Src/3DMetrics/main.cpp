@@ -1,8 +1,6 @@
 #include <QApplication>
 #include <QtWidgets>
-//#include "tdmgui.h"
 #include <QLocale>
-#include "3DMetricsConfig.h"
 #include "CustomWidgets/framelesswindow.h"
 
 // GDAL
@@ -30,11 +28,8 @@ int main(int argc, char *argv[])
     // GDAL
     GDALAllRegister();
 
+    // Main window container
     FramelessWindow fless_windows;
-    //TDMGui *tdm_gui = new TDMGui; // GUI will delete itself
-    //tdm_gui.setWindowTitle(QString("3D Metrics v%1.%2.%3").arg(TDM_VERSION_MAJOR).arg(TDM_VERSION_MINOR).arg(TDM_VERSION_PATCH));
-    //tdm_gui->showCustomWindow();
-
     fless_windows.show();
 
     int res = app.exec();

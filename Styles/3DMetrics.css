@@ -230,7 +230,7 @@ QComboBox::down-arrow:focus
 /* Table widgets (matrix parameters) */
 QTableWidget {
     color: <%color.white%>;
-    background: <%color.black%>;
+    /*background: <%color.black%>;*/
     gridline-color: <%color.grey%>;
 }
 
@@ -384,13 +384,13 @@ QCheckBox::indicator:indeterminate {
     image: url(:/qss_icons/ressources/style/checkbox_indeterminate.png);
 }
 
-QMenuBar {
+/*QMenuBar {
     background-color: <%color.mauve%>;
 }
 
 QMenuBar::item {
     background: <%color.mauve%>;
-}
+}*/
 
 QMenu::item:selected {
     border: 2px solid <%color.mauve%>;

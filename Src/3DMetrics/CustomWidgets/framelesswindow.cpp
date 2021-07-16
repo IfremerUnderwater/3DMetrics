@@ -1,5 +1,6 @@
 // Inspired by https://github.com/Jorgen-VikingGod/Qt-Frameless-Window-DarkStyle
 
+#include "3DMetricsConfig.h"
 #include "framelesswindow.h"
 #include <QApplication>
 #include <QDesktopWidget>
@@ -35,6 +36,7 @@ FramelessWindow::FramelessWindow(QWidget *parent)
   QApplication::instance()->installEventFilter(this);
 
   initMenu();
+  initTitleAndVersion();
 
   m_tdm_gui = new TDMGui(this);
   setContent(m_tdm_gui);
@@ -451,4 +453,10 @@ void FramelessWindow::initMenu()
     m_help_menu->addAction(m_action_user_manual);
     m_about_action = new QAction(tr("About"), this);
     m_help_menu->addAction(m_about_action);
+}
+
+void FramelessWindow::initTitleAndVersion()
+{
+    ui->title_text->setText(QString("3D Metrics v%1.%2.%3").arg(TDM_VERSION_MAJOR).arg(TDM_VERSION_MINOR).arg(TDM_VERSION_PATCH));
+    ui->title_text->setAlignment(Qt::AlignCenter);
 }
