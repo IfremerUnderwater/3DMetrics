@@ -28,7 +28,7 @@ QLabel
 
 QPushButton {
   background-color: <%color.grey.darker%>;
-  border: none;
+  border: 2px solid <%color.grey%>;
   color: <%color.white%>;
   min-height: 26px;
 }
@@ -181,7 +181,7 @@ QComboBox
     color: <%color.white%>;
 }
 
-QComboBox:hover,QPushButton:hover,QAbstractSpinBox:hover,QLineEdit:hover,QTextEdit:hover,QPlainTextEdit:hover,QAbstractView:hover,QTreeView:hover
+QComboBox:hover,QPushButton:hover,QAbstractSpinBox:hover,QLineEdit:hover,QTextEdit:hover,QPlainTextEdit:hover,QAbstractView:hover
 {
     border: 1px solid <%color.grey%>;
     color: <%color.white%>;
@@ -384,13 +384,10 @@ QCheckBox::indicator:indeterminate {
     image: url(:/qss_icons/ressources/style/checkbox_indeterminate.png);
 }
 
-/*QMenuBar {
-    background-color: <%color.mauve%>;
-}
 
-QMenuBar::item {
+QMenuBar::item::selected {
     background: <%color.mauve%>;
-}*/
+}
 
 QMenu::item:selected {
     border: 2px solid <%color.mauve%>;
@@ -428,12 +425,10 @@ QComboBox QAbstractItemView
 /* BUTTONS */
 QPushButton:pressed {
   background-color: <%color.mauve%>;
-  border: none;
 }
 
 QPushButton:checked {
   background-color: <%color.mauve%>;
-  border: none;
 }
 
 QPushButton:flat {

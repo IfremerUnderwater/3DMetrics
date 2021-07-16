@@ -9,7 +9,7 @@
 
 #include "tdmgui.h"
 #include "ui_tdmgui.h"
-#include "CustomWidgets/framelesswindow.h"
+#include "CustomWidgets/tdmmenubarwindow.h"
 
 #include "TreeView/tdm_layer_item.h"
 #include "TreeView/tdm_layer_model.h"
@@ -108,7 +108,7 @@ TDMGui::TDMGui(QWidget *_parent) :
     initStyleSheet();
 
     ui->setupUi(this);
-    setCustomWindow(dynamic_cast<FramelessWindow*>(_parent));
+    setCustomWindow(dynamic_cast<TDMMenuBarWindow*>(_parent));
     this->setWindowFlags(Qt::FramelessWindowHint);
 
     // to add in reverse because toolbar order is right to left
@@ -328,7 +328,7 @@ void TDMGui::closeEvent(QCloseEvent *_event)
     m_cw->close();
 }
 
-void TDMGui::setCustomWindow(FramelessWindow* _cw)
+void TDMGui::setCustomWindow(TDMMenuBarWindow* _cw)
 {
     m_cw = _cw;
 }

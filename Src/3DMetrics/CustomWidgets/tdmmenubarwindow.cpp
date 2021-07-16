@@ -1,17 +1,17 @@
 // Inspired by https://github.com/Jorgen-VikingGod/Qt-Frameless-Window-DarkStyle
 
 #include "3DMetricsConfig.h"
-#include "framelesswindow.h"
+#include "tdmmenubarwindow.h"
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QGraphicsDropShadowEffect>
 #include <QScreen>
 
-#include "ui_framelesswindow.h"
+#include "ui_tdmmenubarwindow.h"
 
-FramelessWindow::FramelessWindow(QWidget *parent)
+TDMMenuBarWindow::TDMMenuBarWindow(QWidget *parent)
     : QWidget(parent),
-      ui(new Ui::FramelessWindow),
+      ui(new Ui::TDMMenuBarWindow),
       m_mouse_pressed(false),
       m_drag_top(false),
       m_drag_left(false),
@@ -43,13 +43,13 @@ FramelessWindow::FramelessWindow(QWidget *parent)
 
 }
 
-FramelessWindow::~FramelessWindow()
+TDMMenuBarWindow::~TDMMenuBarWindow()
 {
     delete ui;
     delete m_tdm_gui;
 }
 
-void FramelessWindow::on_maximize_button_clicked() {
+void TDMMenuBarWindow::on_maximize_button_clicked() {
 
   if (windowState().testFlag(Qt::WindowNoState)) {
       this->setWindowState(Qt::WindowMaximized);
@@ -62,7 +62,7 @@ void FramelessWindow::on_maximize_button_clicked() {
 
 }
 
-void FramelessWindow::changeEvent(QEvent *event) {
+void TDMMenuBarWindow::changeEvent(QEvent *event) {
   if (event->type() == QEvent::WindowStateChange) {
     if (windowState().testFlag(Qt::WindowNoState)) {
       //ui->maximize_button->setVisible(true);
@@ -75,38 +75,38 @@ void FramelessWindow::changeEvent(QEvent *event) {
   event->accept();
 }
 
-void FramelessWindow::setContent(QWidget *w) {
+void TDMMenuBarWindow::setContent(QWidget *w) {
   ui->window_content->layout()->addWidget(w);
 }
 
-void FramelessWindow::writeMessage(QString _message)
+void TDMMenuBarWindow::writeMessage(QString _message)
 {
     ui->message->setText(_message);
 }
 
-void FramelessWindow::setWindowTitle(const QString &text) {
+void TDMMenuBarWindow::setWindowTitle(const QString &text) {
   ui->title_text->setText(text);
 }
 
-void FramelessWindow::setWindowIcon(const QIcon &ico) {
+void TDMMenuBarWindow::setWindowIcon(const QIcon &ico) {
   ui->icon->setPixmap(ico.pixmap(16, 16));
 }
 
-void FramelessWindow::on_minimize_button_clicked() {
+void TDMMenuBarWindow::on_minimize_button_clicked() {
   setWindowState(Qt::WindowMinimized);
 }
 
-void FramelessWindow::on_close_button_clicked() { close(); }
+void TDMMenuBarWindow::on_close_button_clicked() { close(); }
 
-void FramelessWindow::on_window_title_bar_doubleClicked() {
+void TDMMenuBarWindow::on_window_title_bar_doubleClicked() {
   on_maximize_button_clicked();
 }
 
-void FramelessWindow::mouseDoubleClickEvent(QMouseEvent *event) {
+void TDMMenuBarWindow::mouseDoubleClickEvent(QMouseEvent *event) {
   Q_UNUSED(event);
 }
 
-void FramelessWindow::checkBorderDragging(QMouseEvent *event) {
+void TDMMenuBarWindow::checkBorderDragging(QMouseEvent *event) {
   if (isMaximized()) {
     return;
   }
@@ -233,7 +233,7 @@ void FramelessWindow::checkBorderDragging(QMouseEvent *event) {
 }
 
 // pos in global virtual desktop coordinates
-bool FramelessWindow::leftBorderHit(const QPoint &pos) {
+bool TDMMenuBarWindow::leftBorderHit(const QPoint &pos) {
   const QRect &rect = this->geometry();
   if (pos.x() >= rect.x() && pos.x() <= rect.x() + CONST_DRAG_BORDER_SIZE) {
     return true;
@@ -241,7 +241,7 @@ bool FramelessWindow::leftBorderHit(const QPoint &pos) {
   return false;
 }
 
-bool FramelessWindow::rightBorderHit(const QPoint &pos) {
+bool TDMMenuBarWindow::rightBorderHit(const QPoint &pos) {
   const QRect &rect = this->geometry();
   int tmp = rect.x() + rect.width();
   if (pos.x() <= tmp && pos.x() >= (tmp - CONST_DRAG_BORDER_SIZE)) {
@@ -250,7 +250,7 @@ bool FramelessWindow::rightBorderHit(const QPoint &pos) {
   return false;
 }
 
-bool FramelessWindow::topBorderHit(const QPoint &pos) {
+bool TDMMenuBarWindow::topBorderHit(const QPoint &pos) {
   const QRect &rect = this->geometry();
   if (pos.y() >= rect.y() && pos.y() <= rect.y() + CONST_DRAG_BORDER_SIZE) {
     return true;
@@ -258,7 +258,7 @@ bool FramelessWindow::topBorderHit(const QPoint &pos) {
   return false;
 }
 
-bool FramelessWindow::bottomBorderHit(const QPoint &pos) {
+bool TDMMenuBarWindow::bottomBorderHit(const QPoint &pos) {
   const QRect &rect = this->geometry();
   int tmp = rect.y() + rect.height();
   if (pos.y() <= tmp && pos.y() >= (tmp - CONST_DRAG_BORDER_SIZE)) {
@@ -267,7 +267,7 @@ bool FramelessWindow::bottomBorderHit(const QPoint &pos) {
   return false;
 }
 
-void FramelessWindow::mousePressEvent(QMouseEvent *event) {
+void TDMMenuBarWindow::mousePressEvent(QMouseEvent *event) {
   if (isMaximized()) {
     return;
   }
@@ -306,7 +306,7 @@ void FramelessWindow::mousePressEvent(QMouseEvent *event) {
   }
 }
 
-void FramelessWindow::mouseReleaseEvent(QMouseEvent *event) {
+void TDMMenuBarWindow::mouseReleaseEvent(QMouseEvent *event) {
   Q_UNUSED(event);
   if (isMaximized()) {
     return;
@@ -324,7 +324,7 @@ void FramelessWindow::mouseReleaseEvent(QMouseEvent *event) {
   }
 }
 
-bool FramelessWindow::eventFilter(QObject *obj, QEvent *event) {
+bool TDMMenuBarWindow::eventFilter(QObject *obj, QEvent *event) {
   if (isMaximized()) {
     return QWidget::eventFilter(obj, event);
   }
@@ -354,7 +354,7 @@ bool FramelessWindow::eventFilter(QObject *obj, QEvent *event) {
   return QWidget::eventFilter(obj, event);
 }
 
-void FramelessWindow::initMenu()
+void TDMMenuBarWindow::initMenu()
 {
     QVBoxLayout* box_layout = new QVBoxLayout(ui->menu_bar); // Main layout of widget
     box_layout->setAlignment(Qt::AlignVCenter);
@@ -451,7 +451,7 @@ void FramelessWindow::initMenu()
     m_help_menu->addAction(m_about_action);
 }
 
-void FramelessWindow::initTitleAndVersion()
+void TDMMenuBarWindow::initTitleAndVersion()
 {
     ui->title_text->setText(QString("3D Metrics v%1.%2.%3").arg(TDM_VERSION_MAJOR).arg(TDM_VERSION_MINOR).arg(TDM_VERSION_PATCH));
     ui->title_text->setAlignment(Qt::AlignCenter);

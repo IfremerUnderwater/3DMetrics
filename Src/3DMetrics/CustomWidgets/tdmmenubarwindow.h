@@ -11,23 +11,23 @@
 ###############################################################################
 */
 
-#ifndef FRAMELESSWINDOW_H
-#define FRAMELESSWINDOW_H
+#ifndef TDMMENUBARWINDOW_H
+#define TDMMENUBARWINDOW_H
 
 #include <QWidget>
 #include "tdmgui.h"
 #include <QAction>
 
 namespace Ui {
-class FramelessWindow;
+class TDMMenuBarWindow;
 }
 
-class FramelessWindow : public QWidget {
+class TDMMenuBarWindow : public QWidget {
   Q_OBJECT
 
  public:
-  explicit FramelessWindow(QWidget *parent = Q_NULLPTR);
-  virtual ~FramelessWindow();
+  explicit TDMMenuBarWindow(QWidget *parent = Q_NULLPTR);
+  virtual ~TDMMenuBarWindow();
   void setContent(QWidget *w);
   void writeMessage(QString _message);
 
@@ -107,7 +107,7 @@ class FramelessWindow : public QWidget {
   void initMenu();
   void initTitleAndVersion();
 
-  Ui::FramelessWindow *ui;
+  Ui::TDMMenuBarWindow *ui;
   QRect m_StartGeometry;
   const quint8 CONST_DRAG_BORDER_SIZE = 5;
   bool m_mouse_pressed;
@@ -118,4 +118,4 @@ class FramelessWindow : public QWidget {
 
 };
 
-#endif  // FRAMELESSWINDOW_H
+#endif  // TDMMENUBARWINDOW_H

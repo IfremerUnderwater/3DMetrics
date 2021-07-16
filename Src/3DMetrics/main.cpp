@@ -1,7 +1,7 @@
 #include <QApplication>
 #include <QtWidgets>
 #include <QLocale>
-#include "CustomWidgets/framelesswindow.h"
+#include "CustomWidgets/tdmmenubarwindow.h"
 
 // GDAL
 #if defined(_WIN32) || defined(__APPLE__)
@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     GDALAllRegister();
 
     // Main window container
-    FramelessWindow fless_windows;
+    TDMMenuBarWindow fless_windows;
     fless_windows.show();
 
     int res = app.exec();

@@ -24,7 +24,7 @@ class TDMMeasurementLayerData;
 class TDMModelLayerData;
 class AreaComputationVisitor;
 class BoxVisitor;
-class FramelessWindow;
+class TDMMenuBarWindow;
 
 namespace Ui {
 class TDMGui;
@@ -45,12 +45,12 @@ public:
     virtual void dragEnterEvent(QDragEnterEvent * evt) override;
     virtual void dropEvent(QDropEvent * evt) override;
 
-    void setCustomWindow(FramelessWindow* _cw);
+    void setCustomWindow(TDMMenuBarWindow* _cw);
 
 private:
     Ui::TDMGui *ui;
     AboutDialog m_dialog;
-    FramelessWindow* m_cw; // custom window encapsulator;
+    TDMMenuBarWindow* m_cw; // custom window encapsulator;
 
     // Init stylesheet
     void initStyleSheet();
