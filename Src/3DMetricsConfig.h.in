@@ -1,0 +1,6 @@
+#define TDM_VERSION_MAJOR @3DMetricsProject_VERSION_MAJOR@
+#define TDM_VERSION_MINOR @3DMetricsProject_VERSION_MINOR@
+#define TDM_VERSION_PATCH @3DMetricsProject_VERSION_PATCH@
+
+#define TDM_BUILD_DATE @BUILD_DATE@
+

@@ -1,0 +1,19 @@
+@ECHO OFF
+
+rem This script generates the matisse installer. It has to be executed in its directory
+rem cmake -E rm "..\Run\Release\opencv_cuda*"
+del /s /q /f ..\Run\Release\opencv_cuda*
+ 
+rem remove any residual data
+rmdir /S /Q .\packages\3DMetrics\data
+
+rem copy new data
+xcopy /s /i ..\Run\Release .\packages\3DMetrics\data
+
+rem generate installer
+binarycreator.exe --offline-only -c config\config.xml -p packages 3DMectrics-setup-@3DMetricsProject_VERSION_MAJOR@.@3DMetricsProject_VERSION_MINOR@.@3DMetricsProject_VERSION_PATCH@.exe
+
+rem remove data
+rmdir /S /Q .\packages\3DMetrics\data
+
+PAUSE

@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TDMGui</class>
+ <widget class="QMainWindow" name="TDMGui">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1344</width>
+    <height>916</height>
+   </rect>
+  </property>
+  <property name="acceptDrops">
+   <bool>true</bool>
+  </property>
+  <property name="windowTitle">
+   <string>3D Metrics</string>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <item>
+     <widget class="OSGWidget" name="display_widget" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>800</width>
+        <height>500</height>
+       </size>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QToolBar" name="main_toolbar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="toolTip">
+    <string/>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="line_tool"/>
+   <addaction name="surface_tool"/>
+   <addaction name="pick_point"/>
+   <addaction name="slope_tool"/>
+   <addaction name="separator"/>
+   <addaction name="cancel_measurement"/>
+   <addaction name="cancel_last_point"/>
+   <addaction name="separator"/>
+  </widget>
+  <widget class="QToolBar" name="view_toolbar">
+   <property name="windowTitle">
+    <string>toolBar_2</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="focusing_tool_action"/>
+   <addaction name="measure_picker_action"/>
+  </widget>
+  <widget class="QDockWidget" name="tree_widget_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+     <horstretch>0</horstretch>
+     <verstretch>1</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>300</width>
+     <height>200</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>Layers</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QTreeView" name="tree_widget">
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+      <horstretch>0</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="sizeAdjustPolicy">
+     <enum>QAbstractScrollArea::AdjustToContents</enum>
+    </property>
+    <property name="dragEnabled">
+     <bool>true</bool>
+    </property>
+    <property name="dragDropMode">
+     <enum>QAbstractItemView::InternalMove</enum>
+    </property>
+    <property name="defaultDropAction">
+     <enum>Qt::MoveAction</enum>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectItems</enum>
+    </property>
+    <property name="allColumnsShowFocus">
+     <bool>true</bool>
+    </property>
+    <property name="headerHidden">
+     <bool>true</bool>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="attrib_table_dock">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+     <horstretch>1</horstretch>
+     <verstretch>1</verstretch>
+    </sizepolicy>
+   </property>
+   <property name="minimumSize">
+    <size>
+     <width>300</width>
+     <height>275</height>
+    </size>
+   </property>
+   <property name="features">
+    <set>QDockWidget::AllDockWidgetFeatures</set>
+   </property>
+   <property name="windowTitle">
+    <string>Attributes</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>8</number>
+   </attribute>
+   <widget class="QTableWidget" name="attrib_table">
+    <property name="selectionMode">
+     <enum>QAbstractItemView::SingleSelection</enum>
+    </property>
+    <property name="selectionBehavior">
+     <enum>QAbstractItemView::SelectRows</enum>
+    </property>
+    <property name="columnCount">
+     <number>0</number>
+    </property>
+    <attribute name="verticalHeaderVisible">
+     <bool>false</bool>
+    </attribute>
+   </widget>
+  </widget>
+  <action name="line_tool">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/vector-polyline.svg</normaloff>:/icons/ressources/vector-polyline.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Polyline tool</string>
+   </property>
+   <property name="toolTip">
+    <string>Tool for fast line measurement</string>
+   </property>
+  </action>
+  <action name="surface_tool">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/vector-closed-polyline.svg</normaloff>:/icons/ressources/vector-closed-polyline.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Surface tool</string>
+   </property>
+   <property name="toolTip">
+    <string>Tool for surface measurement</string>
+   </property>
+  </action>
+  <action name="pick_point">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/map-marker-plus.svg</normaloff>:/icons/ressources/map-marker-plus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Pick point</string>
+   </property>
+   <property name="toolTip">
+    <string>Pick coordinates of a point</string>
+   </property>
+  </action>
+  <action name="cancel_measurement">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/cancel.svg</normaloff>:/icons/ressources/cancel.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Cancel measurement</string>
+   </property>
+   <property name="toolTip">
+    <string>Cancel current measurement</string>
+   </property>
+  </action>
+  <action name="focusing_tool_action">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/image-filter-center-focus.svg</normaloff>:/icons/ressources/image-filter-center-focus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Reset view (center on model)</string>
+   </property>
+   <property name="toolTip">
+    <string>Focus back on the scene</string>
+   </property>
+  </action>
+  <action name="slope_tool">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/image-filter-hdr.svg</normaloff>:/icons/ressources/image-filter-hdr.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Slope Tool</string>
+   </property>
+   <property name="toolTip">
+    <string>Tool to compute slope</string>
+   </property>
+  </action>
+  <action name="cancel_last_point">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/magnify-minus.svg</normaloff>:/icons/ressources/magnify-minus.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Cancel last point</string>
+   </property>
+   <property name="toolTip">
+    <string>Remove the last point</string>
+   </property>
+  </action>
+  <action name="z_scale_action">
+   <property name="text">
+    <string>Z Scale</string>
+   </property>
+  </action>
+  <action name="measure_picker_action">
+   <property name="icon">
+    <iconset resource="ressources.qrc">
+     <normaloff>:/icons/ressources/layers-outline.svg</normaloff>:/icons/ressources/layers-outline.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Measure Picker</string>
+   </property>
+   <property name="toolTip">
+    <string>Measure Picker</string>
+   </property>
+  </action>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>OSGWidget</class>
+   <extends>QWidget</extends>
+   <header>OSGWidget/osg_widget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources>
+  <include location="ressources.qrc"/>
+ </resources>
+ <connections/>
+</ui>
