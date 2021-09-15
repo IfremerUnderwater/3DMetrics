@@ -33,6 +33,7 @@ typedef void (APIENTRY *GLDEBUGPROC)(GLenum source,GLenum type,GLuint id,GLenum 
 #include <osgViewer/CompositeViewer>
 #include <GeographicLib/LocalCartesian.hpp>
 #include <osg/Material>
+#include <osgGA/TrackballManipulator>
 
 #include "kml_handler.h"
 #include "loading_mode.h"
@@ -130,6 +131,12 @@ public:
     /// \param _alpha transparency [0..1]
     ///
     void setClearColor(double _r, double _g, double _b, double _alpha=1.0);
+
+    /// <summary>
+    /// Change camera manipulator center
+    /// </summary>
+    /// <param name="_center">new center</param>
+    void setManipulatorCenter(const osg::Vec3d& _center);
 
     ///
     /// \brief clearSceneData removes scene data
@@ -280,6 +287,7 @@ private:
 
     osg::ref_ptr<osgViewer::GraphicsWindowEmbedded> m_graphicsWindow;
     osg::ref_ptr<osgViewer::CompositeViewer> m_viewer;
+    osg::ref_ptr < osgGA::TrackballManipulator> m_manipulator;
 
     osg::ref_ptr<osg::Group> m_globalGroup;
     osg::ref_ptr<osg::Group> m_modelsGroup;
