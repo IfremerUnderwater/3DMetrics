@@ -242,10 +242,10 @@ OSGWidget::OSGWidget(QWidget* parent)
     view->addEventHandler(new KeyboardEventHandler(view->getCamera()->getOrCreateStateSet(), this));
 
 
-    osgGA::TrackballManipulator* manipulator = new osgGA::TrackballManipulator;
-    manipulator->setAllowThrow( false );
+    m_manipulator = new osgGA::TrackballManipulator;
+    m_manipulator->setAllowThrow( false );
 
-    view->setCameraManipulator( manipulator );
+    view->setCameraManipulator(m_manipulator);
 
     m_viewer->addView( view );
     m_viewer->setThreadingModel( osgViewer::CompositeViewer::SingleThreaded );
@@ -974,6 +974,11 @@ void OSGWidget::setClearColor(double _r, double _g, double _b, double _alpha)
         cameras[i]->setClearColor( osg::Vec4( _r, _g, _b, _alpha ));
     }
 
+}
+
+void OSGWidget::setManipulatorCenter(const osg::Vec3d& _center)
+{
+    m_manipulator->setCenter(_center);
 }
 
 // To rewrite /////////////////////////////////////////////////////////////////////////////////////
