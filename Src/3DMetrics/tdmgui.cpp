@@ -87,7 +87,7 @@
 #endif
 
 // extension used for drag and drop
-static const std::list<std::string> MODELSEXTENSION = {"kml", "obj","ply", "grd", "osgb"};
+static const std::list<std::string> MODELSEXTENSION = {"kml", "obj","ply", "grd", "osgb", "ive" };
 static const std::list<std::string> MEASUREEXTENSION = {"json"};
 static const std::list<std::string> PROJECTEXTENSION = {"tdm"};
 
@@ -341,7 +341,7 @@ void TDMGui::slot_open3dModel()
     //                this,
     //                "Select one 3d Model to open");
 
-    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd *.osgb)"));
+    QString filename = getOpenFileName(this,tr("Select a 3d Model to open"),m_path_model3D, tr("3D files (*.kml *.obj *.ply *.grd *.osgb *.ive)"));
 
     // save Path Model 3D
     m_path_model3D = filename;
@@ -3189,33 +3189,37 @@ void TDMGui::slot_about()
     m_dialog.show();
 }
 
-void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton /* _button */, int _x, int _y)
+void TDMGui::slot_mouseClickInOsgWidget(Qt::MouseButton _button, int _x, int _y)
 {
     // clic
-    bool exists = false;
-    osg::Vec3d vect;
-    ui->display_widget->getIntersectionPoint(_x, _y, vect, exists);
-    if(exists)
+    if (_button == Qt::RightButton)
     {
-        double lat, lon, alt;
+        bool exists = false;
+        osg::Vec3d vect;
+        ui->display_widget->getIntersectionPoint(_x, _y, vect, exists);
+        ui->display_widget->setManipulatorCenter(vect);
+        if (exists)
+        {
+            double lat, lon, alt;
 
-        // transform to lat/lon
-        QPointF ref_lat_lon; double ref_alt;
-        ui->display_widget->getGeoOrigin(ref_lat_lon, ref_alt);
-        if(ref_alt == INVALID_VALUE)
+            // transform to lat/lon
+            QPointF ref_lat_lon; double ref_alt;
+            ui->display_widget->getGeoOrigin(ref_lat_lon, ref_alt);
+            if (ref_alt == INVALID_VALUE)
+            {
+                m_cw->writeMessage("");
+                return;
+            }
+            ui->display_widget->xyzToLatLonAlt(vect[0], vect[1], vect[2], lat, lon, alt);
+
+            m_cw->writeMessage("lat: " + QString::number(fabs(lat), 'f', 7) + (lat >= 0 ? "N" : "S") +
+                " lon: " + QString::number(fabs(lon), 'f', 7) + (lon >= 0 ? "E" : "W") +
+                " alt: " + QString::number(alt, 'f', 1) + "m");
+        }
+        else
         {
             m_cw->writeMessage("");
-            return;
         }
-        ui->display_widget->xyzToLatLonAlt(vect[0], vect[1], vect[2], lat, lon, alt);
-
-        m_cw->writeMessage("lat: " + QString::number(fabs(lat), 'f', 7) + (lat >= 0 ? "N" : "S")+
-            " lon: " + QString::number(fabs(lon), 'f', 7) + (lon >= 0 ? "E" : "W")+
-            " alt: " + QString::number(alt, 'f', 1) + "m");
-    }
-    else
-    {
-        m_cw->writeMessage("");
     }
 }
 
